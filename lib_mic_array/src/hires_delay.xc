@@ -1,6 +1,6 @@
 #include <xs1.h>
 
-void delay_and_sum(
+void hires_delay(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1,
         streaming chanend c_sync,

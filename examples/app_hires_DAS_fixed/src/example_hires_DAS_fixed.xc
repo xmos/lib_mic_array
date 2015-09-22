@@ -91,18 +91,18 @@ int main(){
                 unsigned long long * unsafe p_shared_memory = shared_memory;
                 par{
                     //Input stage
-                    pdm_first_stage_only_delay_and_sum(
+                    pdm_rx_only_hires_delay(
                             p_pdm_mics,
                             p_shared_memory,
                             PDM_BUFFER_LENGTH_LOG2,
                             c_sync);
 
-                   delay_and_sum(c_4x_pdm_mic_0, c_4x_pdm_mic_1,
+                    hires_delay(c_4x_pdm_mic_0, c_4x_pdm_mic_1,
                            c_sync, PDM_BUFFER_LENGTH_LOG2,
                            p_taps, p_shared_memory);
 
-                    pdm_to_pcm_4x_48KHz(c_4x_pdm_mic_0, c_ds_output_0);
-                    pdm_to_pcm_4x_48KHz(c_4x_pdm_mic_1, c_ds_output_1);
+                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0);
+                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1);
 
 
                     hires_DAS_fixed(c_ds_output_0, c_ds_output_1, p_taps);
