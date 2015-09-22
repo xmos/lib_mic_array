@@ -7,12 +7,12 @@
 extern unsigned windowing_function[1<<FRAME_SIZE_LOG2];
 
 void pdm_rx(
-        in buffered port:8 p_pdm_mics,
+        in port p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1);
 
 void pdm_rx_with_hires_delay(
-        in buffered port:8 p_pdm_mics,
+        in port p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync,
@@ -21,7 +21,7 @@ void pdm_rx_with_hires_delay(
 
 
 void pdm_rx_only_hires_delay(
-        in buffered port:8 p_pdm_mics,
+        in port p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync);

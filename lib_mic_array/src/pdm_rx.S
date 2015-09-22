@@ -7,11 +7,11 @@
 	.issue_mode dual
 
 #define p_pdm_mics 			 r0
-#define mask 		 		 r1
-#define expander			 r2
-#define c_4x_pdm_mic_1       r3
-#define c_4x_pdm_mic_0		 r4
+#define c_4x_pdm_mic_1       r1
+#define c_4x_pdm_mic_0		 r2
+#define mask 		 		 r3
 
+#define shared_memory_array	 r4
 #define c_sync			     r5
 #define index			 	 r6
 #define memory_depth_log2	 r7
@@ -24,13 +24,12 @@
 //Stack
 #define STACKWORDS 8
 
-#define S_INT_0 1
-#define S_INT_1 2
-#define S_EXPANDER 4
+#define S_INT_0 0
+#define S_INT_1 1
 
 #define INTEGRATE() \
-	{in t, res[p_pdm_mics]; ldw s, sp[S_EXPANDER]};\
-	ldd s, t, s[t];\
+	{in s, res[p_pdm_mics]; ldaw t, cp[g_expand]};\
+	ldd s, t, t[s];\
     ldd a, b, sp[S_INT_0];\
 	{add a, a, s; add b, b, t};\
 	{and a, a, mask; and b, b, mask};\
@@ -51,10 +50,9 @@ pdm_rx_with_hires_delay_asm://(
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 
-	ldaw t, cp[g_expand]
-	mov expander, t
-
+	mov shared_memory_array, r1
 	mov memory_depth_log2, r2
+	mov c_sync, r3
 	ldw c_4x_pdm_mic_1, sp[1+STACKWORDS]
 	ldw c_4x_pdm_mic_0, sp[2+STACKWORDS]
 
@@ -75,7 +73,7 @@ pdm_rx_with_hires_delay_loop:
 	INTEGRATE()
 	INTEGRATE()
 	INTEGRATE()
-	std s, t, t[index];
+	std s, t, shared_memory_array[index];
 	{outct res[c_sync], 0; add index, index, 1}
 	{out res[c_4x_pdm_mic_0], s; zext index, memory_depth_log2}
 	{out res[c_4x_pdm_mic_1], t; bl pdm_rx_with_hires_delay_loop}
@@ -105,15 +103,13 @@ pdm_rx_asm://(
 
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
-	{mov c_4x_pdm_mic_1, r1;mov c_4x_pdm_mic_0, r2}
-	ldaw t, cp[g_expand]
-	mov expander, t
 	ldw mask, cp[cic_mask]
 
 	//Initialise the integrators
 	ldc a, 0
 	std a, a, sp[S_INT_0]
 	std a, a, sp[S_INT_1]
+
 	.align 8
 pdm_rx_loop:
 	INTEGRATE()
@@ -156,11 +152,9 @@ pdm_rx_only_hires_delay_asm://{
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 
-	ldaw t, cp[g_expand]
-	mov expander, t
-
+	mov shared_memory_array, r1
 	mov memory_depth_log2, r2
-
+	mov c_sync, r3
 	ldw mask, cp[cic_mask]
 
 	//Initialise the integrators
@@ -169,7 +163,6 @@ pdm_rx_only_hires_delay_asm://{
 	std index, index, sp[S_INT_1]
 
 	.align 8
-
 pdm_rx_only_hires_delay_loop:
 	INTEGRATE()
 	INTEGRATE()
@@ -179,7 +172,7 @@ pdm_rx_only_hires_delay_loop:
 	INTEGRATE()
 	INTEGRATE()
 	INTEGRATE()
-	std s, t, t[index];
+	std s, t, shared_memory_array[index];
 	{outct res[c_sync], 0; add index, index, 1}
 	{zext index, memory_depth_log2; bl pdm_rx_only_hires_delay_loop}
 

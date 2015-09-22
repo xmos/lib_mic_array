@@ -39,7 +39,6 @@
 	{add s, s, a; add t, t, b};\
 	std s, t, p[M];
 
-#define FIRST_STAGE_N  3
 #define SECOND_STAGE_N 6
 #define FILTER_PATHS   4
 #define STACK 32
@@ -97,7 +96,6 @@ decimate_to_pcm_4ch_48KHz:
 	stw t,  sp[S_PREV_X_3]
 	stw t,  sp[S_PREV_Y_3]
 
-
 	std t, t, sp[0]
 	std t, t, sp[1]
 	std t, t, sp[2]
@@ -118,8 +116,10 @@ decimate_to_pcm_4ch_48KHz:
 	ldc t, 0
 	stw t, sp[S_AUDIO_POINTER_INDEX]
 
+	//grab the first pointer
     in t, res[c_output]
 	stw t, sp[S_AUDIO_POINTER]
+
 ds_loop:
 	//comb the output from the mic listener
 	{in a, res[c_input]    ; nop}
@@ -135,8 +135,6 @@ ds_loop:
 	// Integrate - mic 0 and 1
 	{mov s, comb_output    ; shr t, comb_output, 8}
 	{zext s, 8; zext t,  8}
-	{shl s, s, 5; shl t, t, 5}
-	//AGC goes here
 	INT(p_int, 0, 1)
 	INT(p_int, 2, 3)
 	INT(p_int, 4, 5)
@@ -144,8 +142,6 @@ ds_loop:
 	// Integrate - mic 2 and 3
 	{shr s, comb_output, 16; shr t, comb_output, 24}
 	{zext s,  8; zext t,  8}
-	{shl s, s, 5; shl t, t, 5}
-	//AGC goes here
 	INT(p_int, 6, 7)
 	INT(p_int, 8, 9)
 	INT(p_int, 10, 11)
@@ -157,112 +153,43 @@ ds_loop:
 	{bru counter; add counter, counter, 1}
 
 	bu comb			//0
-	bu fir_0		//1
-	bu fir_1		//2
-	bu fir_2		//3
-	bu fir_3		//4
-	bu window		//5
-	bu dc_offset_removal			//6
+	bu ds_loop		//1
+	bu ds_loop		//2
+	bu ds_loop		//3
+	bu ds_loop		//4
+	bu ds_loop		//5
+	bu ds_loop		//6
 	bu bitrev		//7
 
 comb:
 	//load the integral
-	ldw t, sp[STACK + 11]
+	ldw t, sp[STACK + 10]
 	COMB(p_comb, 0)
 	COMB(p_comb, 1)
 	COMB(p_comb, 2)
 	stw t, sp[S_FILTERED_0]
 
-	ldw t, sp[STACK + 10]
+	ldw t, sp[STACK + 11]
 	COMB(p_comb, 3)
 	COMB(p_comb, 4)
 	COMB(p_comb, 5)
 	stw t, sp[S_FILTERED_1]
 
-	ldw t, sp[STACK + 23]
+	ldw t, sp[STACK + 22]
 	COMB(p_comb, 6)
 	COMB(p_comb, 7)
 	COMB(p_comb, 8)
 	stw t, sp[S_FILTERED_2]
 
-	ldw t, sp[STACK + 22]
+	ldw t, sp[STACK + 23]
 	COMB(p_comb, 9)
 	COMB(p_comb, 10)
 	COMB(p_comb, 11)
 	stw t, sp[S_FILTERED_3]
 	bu ds_loop
 
-fir_0:
-fir_1:
-fir_2:
-fir_3:
-	bu ds_loop
-
-window:
-#if APPLY_WINDOW_FUNCTION
-    ldw a, sp[S_AUDIO_POINTER_INDEX]
-	ldaw r11, cp[window]
-	{ldw s, r11[a];ldc b, 0}
-	{ldw t, sp[S_FILTERED_0];ldc a, 0}
-	maccu a, b, s, t
-	{stw a, sp[S_FILTERED_0];ldc b, 0}
-	{ldw t, sp[S_FILTERED_1];ldc a, 0}
-	maccu a, b, s, t
-	{stw a, sp[S_FILTERED_1];ldc b, 0}
-	{ldw t, sp[S_FILTERED_2];ldc a, 0}
-	maccu a, b, s, t
-	{stw a, sp[S_FILTERED_2];ldc b, 0}
-	{ldw t, sp[S_FILTERED_3];ldc a, 0}
-	maccu a, b, s, t
-	stw a, sp[S_FILTERED_3];
-	bu ds_loop
-#endif
-
-dc_offset_removal:
-#if 1
-	ldc a, 22+5
-	mkmsk a, a
-	ldd s, t, sp[S_FILTERED_0_1]
-	{sub t, t, a; sub s, s, a}
-	std s, t, sp[S_FILTERED_0_1]
-	ldd s, t, sp[S_FILTERED_2_3]
-	{sub t, t, a; sub s, s, a}
-	std s, t, sp[S_FILTERED_2_3]
-#else
-
-	{ldw a, sp[S_PREV_Y_0]}
-	ashr b, a, 8
-	{sub b, b, a; ldw a, sp[S_PREV_X_0]}
-	{sub b, b, a; ldw a, sp[S_FILTERED_0]}
-	{add b, b, a; nop}
-	{stw a, sp[S_PREV_X_0]}
-	{stw b, sp[S_PREV_Y_0]}
-	{stw b, sp[S_FILTERED_0]}
-
-
-#endif
-
-
-
-	bu ds_loop
-
 bitrev:
-#if APPLY_BIT_REVERSING
-    ldw a, sp[S_AUDIO_POINTER_INDEX]
-	{bitrev a, a;ldc s, 32-FRAME_SIZE_LOG2}
-	{shr a, a, s;ldw b, sp[S_AUDIO_POINTER]}
-	{ldw t, sp[S_FILTERED_0];}
-	{ldw s, sp[S_FILTERED_1];}
-	std s, t, b[a]
-	{ldc a, (1<<FRAME_SIZE_LOG2)*1}
-	{ldw b, sp[S_AUDIO_POINTER]}
-	{ldw t, sp[S_AUDIO_POINTER_INDEX];}
-	{bitrev t, t;ldc s, 32-FRAME_SIZE_LOG2}
-	{shr t, t, s;ldc s, 0}
-	{ldw t, sp[S_FILTERED_2]; add a, a, t}
-	{ldw s, sp[S_FILTERED_3];}
-	std s, t, b[a]
-#else
+
     ldw a, sp[S_AUDIO_POINTER_INDEX]
 	ldw b, sp[S_AUDIO_POINTER]
 	{ldw t, sp[S_FILTERED_0];}
@@ -274,11 +201,10 @@ bitrev:
 	{ldw t, sp[S_FILTERED_2]; add a, a, t}
 	{ldw s, sp[S_FILTERED_3];}
 	std s, t, b[a]
-#endif
 
+#if FRAME_SIZE_LOG2
 	//reset the index if we have completed a frame
 	ldw t, sp[S_AUDIO_POINTER_INDEX]
-#if FRAME_SIZE_LOG2
 	{add t, t, 1; ldc s, FRAME_SIZE_LOG2}
 	zext t, s
 	stw t, sp[S_AUDIO_POINTER_INDEX];

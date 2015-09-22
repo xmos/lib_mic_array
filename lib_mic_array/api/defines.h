@@ -3,7 +3,7 @@
 
 // This defines the number of sample in a frame
 #define FRAME_SIZE_LOG2        (0)
-
+/*
 //Applies DC offset removal to the raw audio
 #define APPLY_DC_OFFSET_REMOVAL 0
 
@@ -21,5 +21,5 @@
 #define MAX_NUM_CHANNELS        8
 #define PDM_BUFFER_LENGTH_LOG2  (10)
 #define PDM_BUFFER_LENGTH  ((1<<PDM_BUFFER_LENGTH_LOG2)*MAX_NUM_CHANNELS) / sizeof(unsigned long long)
-
+*/
 #endif /* DEFINES_H_ */

@@ -9,12 +9,11 @@
 
 #include "mic_array.h"
 
-on tile[0]: in port p_pdm_clk = XS1_PORT_1E;
-on tile[0]: in buffered port:8 p_pdm_mics = XS1_PORT_8B;
-in port p_mclk                 = on tile[0]: XS1_PORT_1F;
-clock mclk                     = on tile[0]: XS1_CLKBLK_1;
-clock pdmclk                   = on tile[0]: XS1_CLKBLK_3;
-
+on tile[0]: in port p_pdm_clk             = XS1_PORT_1E;
+on tile[0]: in port p_pdm_mics            = XS1_PORT_8B;
+on tile[0]: in port p_mclk                = XS1_PORT_1F;
+on tile[0]: clock mclk                    = XS1_CLKBLK_1;
+on tile[0]: clock pdmclk                  = XS1_CLKBLK_2;
 
 void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1){
 
@@ -41,11 +40,12 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
             //sum
             //output
 
-
-
+            xscope_int(0, audio[buffer].data[0][0].ch_a);
+            xscope_int(1, audio[buffer].data[0][0].ch_b);
+            xscope_int(2, audio[buffer].data[1][0].ch_a);
+            xscope_int(3, audio[buffer].data[1][0].ch_b);
         }
     }
-
 }
 
 int main(){
@@ -56,23 +56,19 @@ int main(){
             streaming chan c_ds_output_0, c_ds_output_1;
 
             configure_clock_src(mclk, p_mclk);
-            configure_clock_src_divide(pdmclk, p_mclk, 2);
+            configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(mclk);
             start_clock(pdmclk);
 
             par{
-                //Input stage
                 pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                 decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0);
                 decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1);
-
                 lores_DAS_fixed(c_ds_output_0, c_ds_output_1);
-
             }
         }
     }
-
     return 0;
 }
