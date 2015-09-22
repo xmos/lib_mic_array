@@ -2,7 +2,7 @@
 #define MIC_ARRAY_H_
 
 #include "defines.h"
-#include "pcm_frame.h"
+#include "frame.h"
 
 extern unsigned windowing_function[1<<FRAME_SIZE_LOG2];
 

@@ -219,7 +219,7 @@ window:
 #endif
 
 dc_offset_removal:
-//TODO
+#if 1
 	ldc a, 22+5
 	mkmsk a, a
 	ldd s, t, sp[S_FILTERED_0_1]
@@ -228,6 +228,22 @@ dc_offset_removal:
 	ldd s, t, sp[S_FILTERED_2_3]
 	{sub t, t, a; sub s, s, a}
 	std s, t, sp[S_FILTERED_2_3]
+#else
+
+	{ldw a, sp[S_PREV_Y_0]}
+	ashr b, a, 8
+	{sub b, b, a; ldw a, sp[S_PREV_X_0]}
+	{sub b, b, a; ldw a, sp[S_FILTERED_0]}
+	{add b, b, a; nop}
+	{stw a, sp[S_PREV_X_0]}
+	{stw b, sp[S_PREV_Y_0]}
+	{stw b, sp[S_FILTERED_0]}
+
+
+#endif
+
+
+
 	bu ds_loop
 
 bitrev:

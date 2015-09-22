@@ -9,22 +9,12 @@
 
 #include "mic_array.h"
 
-on tile[1]: in port p_pdm_clk = XS1_PORT_1C;
-on tile[1]: in buffered port:8 p_pdm_mics = XS1_PORT_8B;
+on tile[0]: in port p_pdm_clk = XS1_PORT_1E;
+on tile[0]: in buffered port:8 p_pdm_mics = XS1_PORT_8B;
+in port p_mclk                 = on tile[0]: XS1_PORT_1F;
+clock mclk                     = on tile[0]: XS1_CLKBLK_1;
+clock pdmclk                   = on tile[0]: XS1_CLKBLK_3;
 
-out buffered port:32 p_dout[2] = on tile[1]: {XS1_PORT_1D, XS1_PORT_1H};
-in buffered port:32 p_din[1] = on tile[1]: {XS1_PORT_1K};
-
-in port p_mclk                 = on tile[1]: XS1_PORT_1E;
-out buffered port:32 p_bclk    = on tile[1]: XS1_PORT_1A;
-out buffered port:32 p_lrclk   = on tile[1]: XS1_PORT_1I;
-port p_i2c                     = on tile[1]: XS1_PORT_4F;
-port p_aud_shared              = on tile[1]: XS1_PORT_4E;
-clock mclk                     = on tile[1]: XS1_CLKBLK_1;
-clock bclk                     = on tile[1]: XS1_CLKBLK_2;
-clock pdmclk                   = on tile[1]: XS1_CLKBLK_3;
-
-in port p_buttons = on tile[0]: XS1_PORT_4C;
 
 void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1){
 
@@ -61,12 +51,12 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 int main(){
 
     par{
-        on tile[1]: {
+        on tile[0]: {
             streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
             streaming chan c_ds_output_0, c_ds_output_1;
 
             configure_clock_src(mclk, p_mclk);
-            configure_clock_src_divide(pdmclk, p_mclk, 8/2);
+            configure_clock_src_divide(pdmclk, p_mclk, 2);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(mclk);
