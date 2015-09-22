@@ -6,12 +6,12 @@
 
 extern unsigned windowing_function[1<<FRAME_SIZE_LOG2];
 
-void pdm_first_stage(
+void pdm_rx(
         in buffered port:8 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1);
 
-void pdm_first_stage_with_delay_and_sum(
+void pdm_rx_with_hires_delay(
         in buffered port:8 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
@@ -20,13 +20,13 @@ void pdm_first_stage_with_delay_and_sum(
         streaming chanend c_4x_pdm_mic_1);
 
 
-void pdm_first_stage_only_delay_and_sum(
+void pdm_rx_only_hires_delay(
         in buffered port:8 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync);
 
-void delay_and_sum(
+void hires_delay(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1,
         streaming chanend c_sync,
@@ -34,15 +34,15 @@ void delay_and_sum(
         unsigned long long * unsafe p_taps,
         unsigned long long * unsafe p_shared_memory_array);
 
-void pdm_to_pcm_4x_48KHz(
+void decimate_to_pcm_4ch_48KHz(
         streaming chanend c_4x_pdm_mic,
         streaming chanend c_frame_output);
 /*
-void pdm_to_pcm_4x_16KHz(
+void decimate_to_pcm_4ch_16KHz(
         streaming chanend c_4x_pdm_mic,
         streaming chanend c_frame_output);
 
-void pdm_to_pcm_4x_8KHz(
+void decimate_to_pcm_4ch_8KHz(
         streaming chanend c_4x_pdm_mic,
         streaming chanend c_frame_output);
 */

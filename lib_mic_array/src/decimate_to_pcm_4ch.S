@@ -1,9 +1,9 @@
 	.section	.dp.data,"awd",@progbits
 	.text
-	.cc_top pdm_to_pcm_4x_48KHz.function
-	.globl	pdm_to_pcm_4x_48KHz
+	.cc_top decimate_to_pcm_4ch_48KHz.function
+	.globl	decimate_to_pcm_4ch_48KHz
 	.align	4
-	.type	pdm_to_pcm_4x_48KHz,@function
+	.type	decimate_to_pcm_4ch_48KHz,@function
 
 #include "defines.h"
 
@@ -76,7 +76,7 @@
 
 #define NSTACKWORDS (STACK + SECOND_STAGE_N*FILTER_PATHS+SECOND_STAGE_N*FILTER_PATHS)
 
-pdm_to_pcm_4x_48KHz:
+decimate_to_pcm_4ch_48KHz:
 .align 8
 .issue_mode dual
 
@@ -276,16 +276,16 @@ bitrev:
 	bu ds_loop
 
 
-.tmp_pdm_to_pcm_4x_48KHz:
-	.size	pdm_to_pcm_4x_48KHz, .tmp_pdm_to_pcm_4x_48KHz-pdm_to_pcm_4x_48KHz
+.tmp_decimate_to_pcm_4ch_48KHz:
+	.size	decimate_to_pcm_4ch_48KHz, .tmp_decimate_to_pcm_4ch_48KHz-decimate_to_pcm_4ch_48KHz
 	.align	4
-	.cc_bottom pdm_to_pcm_4x_48KHz.function
+	.cc_bottom decimate_to_pcm_4ch_48KHz.function
 
-	.set	pdm_to_pcm_4x_48KHz.nstackwords,NSTACKWORDS
-	.globl	pdm_to_pcm_4x_48KHz.nstackwords
-	.set	pdm_to_pcm_4x_48KHz.maxcores,1
-	.globl	pdm_to_pcm_4x_48KHz.maxcores
-	.set	pdm_to_pcm_4x_48KHz.maxtimers,0
-	.globl	pdm_to_pcm_4x_48KHz.maxtimers
-	.set	pdm_to_pcm_4x_48KHz.maxchanends,0
-	.globl	pdm_to_pcm_4x_48KHz.maxchanends
+	.set	decimate_to_pcm_4ch_48KHz.nstackwords,NSTACKWORDS
+	.globl	decimate_to_pcm_4ch_48KHz.nstackwords
+	.set	decimate_to_pcm_4ch_48KHz.maxcores,1
+	.globl	decimate_to_pcm_4ch_48KHz.maxcores
+	.set	decimate_to_pcm_4ch_48KHz.maxtimers,0
+	.globl	decimate_to_pcm_4ch_48KHz.maxtimers
+	.set	decimate_to_pcm_4ch_48KHz.maxchanends,0
+	.globl	decimate_to_pcm_4ch_48KHz.maxchanends

@@ -74,9 +74,9 @@ int main(){
 
             par{
                 //Input stage
-                pdm_first_stage(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                pdm_to_pcm_4x_48KHz(c_4x_pdm_mic_0, c_ds_output_0);
-                pdm_to_pcm_4x_48KHz(c_4x_pdm_mic_1, c_ds_output_1);
+                pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+                decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0);
+                decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1);
 
                 lores_DAS_fixed(c_ds_output_0, c_ds_output_1);
 

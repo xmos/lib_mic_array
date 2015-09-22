@@ -73,12 +73,12 @@ void wait_for_mics_to_settle_down(){
     delay_milliseconds(1000);
 }
 
-extern void pdm_first_stage_asm(
+extern void pdm_rx_asm(
         in buffered port:8 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1);
 
-void pdm_first_stage(
+void pdm_rx(
         in buffered port:8 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1){
@@ -86,11 +86,11 @@ void pdm_first_stage(
     wait_for_mics_to_settle_down();
 
     //This will never return
-    pdm_first_stage_asm(p_pdm_mics,
+    pdm_rx_asm(p_pdm_mics,
             c_4x_pdm_mic_0,c_4x_pdm_mic_1);
 }
 
-extern void pdm_first_stage_with_delay_and_sum_asm(
+extern void pdm_rx_with_hires_delay_asm(
         in buffered port:8 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
@@ -98,7 +98,7 @@ extern void pdm_first_stage_with_delay_and_sum_asm(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1);
 
-void pdm_first_stage_with_delay_and_sum(
+void pdm_rx_with_hires_delay(
         in buffered port:8 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
@@ -115,19 +115,19 @@ void pdm_first_stage_with_delay_and_sum(
     wait_for_mics_to_settle_down();
 
     //This will never return
-    pdm_first_stage_with_delay_and_sum_asm(
+    pdm_rx_with_hires_delay_asm(
             p_pdm_mics, shared_memory_array,
             ch_memory_depth_log2, c_sync,
             c_4x_pdm_mic_0,c_4x_pdm_mic_1);
 }
 
-extern void pdm_first_stage_only_delay_and_sum_asm(
+extern void pdm_rx_only_hires_delay_asm(
         in buffered port:8 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync);
 
-void pdm_first_stage_only_delay_and_sum(
+void pdm_rx_only_hires_delay(
         in buffered port:8 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
@@ -142,7 +142,7 @@ void pdm_first_stage_only_delay_and_sum(
     wait_for_mics_to_settle_down();
 
     //This will never return
-    pdm_first_stage_only_delay_and_sum_asm(
+    pdm_rx_only_hires_delay_asm(
             p_pdm_mics, shared_memory_array,
             ch_memory_depth_log2, c_sync);
 }
