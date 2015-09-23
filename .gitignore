@@ -22,3 +22,4 @@ Doxyfile-e
 .DS_Store
 *.pyc
 *.xmt
+*.prefs
