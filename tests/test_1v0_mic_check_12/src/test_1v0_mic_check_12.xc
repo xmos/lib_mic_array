@@ -21,10 +21,17 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
     frame_audio audio[2];    //double buffered
     memset(audio, sizeof(frame_audio), 2);
 
+    unsigned long long energy[8] = {0};
+    int prev_val[8] = {0};
+    int val[8] = {0};
+
+
+
     unsafe{
         c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
         c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[2];
 
+        unsigned count = 0;
         while(1){
 
             schkct(c_ds_output_0, 8);
@@ -32,23 +39,47 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
             c_ds_output_0 <: (frame_audio * unsafe)audio[buffer].data[0];
             c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[2];
-
+            count++;
             buffer = 1 - buffer;
 
 
-            //todo buffer the frame
-            //sum
-            //output
+            prev_val[0] = val[0];
+            val[0] = audio[buffer].data[0][0].ch_a;
+            prev_val[1] = val[1];
+            val[1] = audio[buffer].data[0][0].ch_b;
+            prev_val[2] = val[2];
+            val[2] = audio[buffer].data[1][0].ch_a;
+            prev_val[3] = val[3];
+            val[3] = audio[buffer].data[1][0].ch_b;
+            prev_val[4] = val[4];
+            val[4] = audio[buffer].data[2][0].ch_a;
+            prev_val[5] = val[5];
+            val[5] = audio[buffer].data[2][0].ch_b;
+            prev_val[6] = val[6];
+            val[6] = audio[buffer].data[3][0].ch_a;
+            prev_val[7] = val[7];
+            val[7] = audio[buffer].data[3][0].ch_b;
 
-            xscope_int(0, audio[buffer].data[0][0].ch_a);
-            xscope_int(1, audio[buffer].data[0][0].ch_b);
-            xscope_int(2, audio[buffer].data[1][0].ch_a);
-            xscope_int(3, audio[buffer].data[1][0].ch_b);
+#define N 4
+            for(unsigned i=0;i<8;i++){
+                int delta = val[i] - prev_val[i];
+                energy[i] += (delta*delta);
+                energy[i] =  energy[i] - (energy[i]>>N);
+            }
 
-            xscope_int(4, audio[buffer].data[2][0].ch_a);
-            xscope_int(5, audio[buffer].data[2][0].ch_b);
-            xscope_int(6, audio[buffer].data[3][0].ch_a);
-            xscope_int(7, audio[buffer].data[3][0].ch_b);
+             if(count == (24000)){
+                for(unsigned i=0;i<8;i++){
+                    if(energy[i] <= (1<<N)){
+                        printf("* ");
+                    } else {
+                        printf("%d ", i);
+                    }
+                }
+                printf("\n");
+                count = 0;
+             }
+
+
         }
     }
 }

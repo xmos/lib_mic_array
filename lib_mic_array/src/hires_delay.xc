@@ -1,5 +1,16 @@
 #include <xs1.h>
 
+
+/*
+ * This implements a high resolution delay for 8 channels
+ *
+ *  TODO
+ *  - double buffered tap arrays for safe changing of the taps
+ *  - tests
+ *  - 4, 8, 12, and 16 channel versions
+ *  - use of synchroniser instead of a channel
+ */
+
 void hires_delay(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1,
@@ -19,21 +30,21 @@ void hires_delay(
             int t;
             asm volatile("inct %0, res[%1]":"=r"(t):"r"(c_sync));
             unsigned v=0, q=0;
-            v += mic_array[((index-taps[0]) * 8 + 0)];
+            v += mic_array[zext(index-taps[0], ch_memory_depth_log2) * 8 + 0];
             v<<=8;
-            v += mic_array[((index-taps[1]) * 8 + 1)];
+            v += mic_array[zext(index-taps[1], ch_memory_depth_log2) * 8 + 1];
             v<<=8;
-            v += mic_array[((index-taps[2]) * 8 + 2)];
+            v += mic_array[zext(index-taps[2], ch_memory_depth_log2) * 8 + 2];
             v<<=8;
-            v += mic_array[((index-taps[3]) * 8 + 3)];
+            v += mic_array[zext(index-taps[3], ch_memory_depth_log2) * 8 + 3];
 
-            q += mic_array[((index-taps[4]) * 8 + 4)];
+            q += mic_array[zext(index-taps[4], ch_memory_depth_log2) * 8 + 4];
             q<<=8;
-            q += mic_array[((index-taps[5]) * 8 + 5)];
+            q += mic_array[zext(index-taps[5], ch_memory_depth_log2) * 8 + 5];
             q<<=8;
-            q += mic_array[((index-taps[6]) * 8 + 6)];
+            q += mic_array[zext(index-taps[6], ch_memory_depth_log2) * 8 + 6];
             q<<=8;
-            q += mic_array[((index-taps[7]) * 8 + 7)];
+            q += mic_array[zext(index-taps[7], ch_memory_depth_log2) * 8 + 7];
 
             index++;
             index = zext(index, ch_memory_depth_log2);
