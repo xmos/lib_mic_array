@@ -47,7 +47,6 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
                 xscope_int(0, sum);
         }
     }
-
 }
 
 int main(){
@@ -67,8 +66,10 @@ int main(){
             start_clock(pdmclk);
 
             unsigned frame_size_log2 = 0;
-            unsigned long long taps[4];
+            unsigned long long taps[4] = {0};
             unsigned long long shared_memory[PDM_BUFFER_LENGTH] = {0};
+
+            decimator_config dc = {0, 1, 0, 0};
             unsafe {
                 unsigned long long * unsafe p_taps = taps;
                 unsigned long long * unsafe p_shared_memory = shared_memory;
@@ -84,8 +85,8 @@ int main(){
                            c_sync, PDM_BUFFER_LENGTH_LOG2,
                            p_taps, p_shared_memory);
 
-                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0,frame_size_log2);
-                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1,frame_size_log2);
+                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0, dc);
+                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1, dc);
 
                    hires_DAS_fixed(c_ds_output_0, c_ds_output_1, p_taps);
 

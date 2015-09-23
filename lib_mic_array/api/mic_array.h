@@ -34,10 +34,18 @@ void hires_delay(
         unsigned long long * unsafe p_taps,
         unsigned long long * unsafe p_shared_memory_array);
 
+typedef struct {
+    unsigned frame_size_log2;
+    int apply_dc_offset;
+    int index_bit_reversal;
+    unsigned * unsafe windowing_function;
+} decimator_config;
+
 void decimate_to_pcm_4ch_48KHz(
         streaming chanend c_4x_pdm_mic,
         streaming chanend c_frame_output,
-        unsigned frame_size_log2);
+        decimator_config config
+);
 /*
 void decimate_to_pcm_4ch_16KHz(
         streaming chanend c_4x_pdm_mic,

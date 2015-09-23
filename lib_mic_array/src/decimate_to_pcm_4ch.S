@@ -61,6 +61,8 @@
 #define S_COMB_2_2 5
 #define S_COMB_2_4 6
 
+#define S_UNUSED 7
+
 //This muse be double word aligned
 #define S_FILTERED_0 8
 #define S_FILTERED_1 9
@@ -73,7 +75,6 @@
 #define S_PREV_X_0 12
 #define S_PREV_Y_0 13
 #define S_D_PREV_XY_0 6
-
 #define S_PREV_X_1 14
 #define S_PREV_Y_1 15
 #define S_D_PREV_XY_1 7
@@ -87,6 +88,11 @@
 #define S_AUDIO_POINTER 20
 #define S_AUDIO_POINTER_INDEX 21
 #define S_D_AUDIO_POINTER_AND_INDEX 10
+
+#define WINDOWING_ENABLED 22
+#define INDEX_BITREVERSING_ENABLED 23
+#define DC_OFFSET_REMOVAL_ENABLED 24
+
 #define STACK 32
 
 #define NSTACKWORDS (STACK + SECOND_STAGE_N*FILTER_PATHS+SECOND_STAGE_N*FILTER_PATHS)
@@ -97,11 +103,22 @@ decimate_to_pcm_4ch_48KHz:
 
 	//extend the stack
 	DUALENTSP_lu6 NSTACKWORDS
-	mov frame_size_log2, r2
+	//copy the setting out of the struct
+	ldw frame_size_log2, r2[0] //frame_size_log2
+
+	ldw t, r2[1] //apply_dc_offset
+	stw t, sp[DC_OFFSET_REMOVAL_ENABLED]
+
+	ldw t, r2[2] //index_bit_reversal
+	stw t, sp[INDEX_BITREVERSING_ENABLED]
+
+	ldw t, r2[3] //windowing_function
+	stw t, sp[WINDOWING_ENABLED]
+
+
 
 	ldaw p_int,  sp[STACK]
 	ldaw p_comb, sp[STACK+(SECOND_STAGE_N*FILTER_PATHS)]
-
 
 	ldc t, 0
 
@@ -212,11 +229,14 @@ comb:
 	bu ds_loop
 
 signal_conditioning:
-	DC_OFFSET_REMOVAL(S_D_PREV_XY_0, S_FILTERED_0);
-	DC_OFFSET_REMOVAL(S_D_PREV_XY_1, S_FILTERED_1);
-	DC_OFFSET_REMOVAL(S_D_PREV_XY_2, S_FILTERED_2);
-	DC_OFFSET_REMOVAL(S_D_PREV_XY_3, S_FILTERED_3);
-	//Now S_FILTERED_x is an int
+	ldw t, sp[DC_OFFSET_REMOVAL_ENABLED]
+	bf t, skip_dc_offset_removal
+		DC_OFFSET_REMOVAL(S_D_PREV_XY_0, S_FILTERED_0);
+		DC_OFFSET_REMOVAL(S_D_PREV_XY_1, S_FILTERED_1);
+		DC_OFFSET_REMOVAL(S_D_PREV_XY_2, S_FILTERED_2);
+		DC_OFFSET_REMOVAL(S_D_PREV_XY_3, S_FILTERED_3);
+		//Now S_FILTERED_x is an int
+	skip_dc_offset_removal:
 	bu ds_loop
 
 bitrev:
