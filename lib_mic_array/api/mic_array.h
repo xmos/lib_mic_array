@@ -26,12 +26,19 @@ void pdm_rx_only_hires_delay(
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync);
 
+typedef struct {
+    unsigned active_delay_set;
+    unsigned memory_depth_log2;
+    unsigned delay_set_in_use;
+    unsigned long long n;
+    unsigned delays[2][MAX_NUM_CHANNELS];
+} hires_delay_config;
+
 void hires_delay(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1,
         streaming chanend c_sync,
-        unsigned ch_memory_depth_log2,
-        unsigned long long * unsafe p_taps,
+        hires_delay_config * unsafe config,
         unsigned long long * unsafe p_shared_memory_array);
 
 typedef struct {
