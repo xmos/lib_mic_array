@@ -203,25 +203,25 @@ ds_loop:
 
 comb:
 	//load the integral
-	ldw t, sp[STACK + 10]
+	ldw t, sp[STACK + 11]
 	COMB(p_comb, 0)
 	COMB(p_comb, 1)
 	COMB(p_comb, 2)
 	stw t, sp[S_FILTERED_0]
 
-	ldw t, sp[STACK + 11]
+	ldw t, sp[STACK + 10]
 	COMB(p_comb, 3)
 	COMB(p_comb, 4)
 	COMB(p_comb, 5)
 	stw t, sp[S_FILTERED_1]
 
-	ldw t, sp[STACK + 22]
+	ldw t, sp[STACK + 23]
 	COMB(p_comb, 6)
 	COMB(p_comb, 7)
 	COMB(p_comb, 8)
 	stw t, sp[S_FILTERED_2]
 
-	ldw t, sp[STACK + 23]
+	ldw t, sp[STACK + 22]
 	COMB(p_comb, 9)
 	COMB(p_comb, 10)
 	COMB(p_comb, 11)
