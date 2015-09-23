@@ -2,7 +2,7 @@
 #define DEFINES_H_
 
 // This defines the number of sample in a frame
-#define FRAME_SIZE_LOG2        (0)
+//#define FRAME_SIZE_LOG2        (0)
 /*
 //Applies DC offset removal to the raw audio
 #define APPLY_DC_OFFSET_REMOVAL 0

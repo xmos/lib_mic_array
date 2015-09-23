@@ -19,8 +19,7 @@
 #define mask			     r8
 #define counter			     r9
 #define comb_output			 r10
-
-//not using r11! ops
+#define frame_size_log2      r11
 
 #define S_CHAN_INPUT 7
 #define S_COMB_POINTER 8
@@ -58,8 +57,8 @@
 #define S_FILTERED_2 10
 #define S_FILTERED_3 11
 
-#define S_FILTERED_0_1 4
-#define S_FILTERED_2_3 5
+#define S_D_FILTERED_0_1 4
+#define S_D_FILTERED_2_3 5
 
 #define S_PREV_X_0 12
 #define S_PREV_Y_0 13
@@ -72,6 +71,9 @@
 
 #define S_AUDIO_POINTER 20
 #define S_AUDIO_POINTER_INDEX 21
+#define S_D_AUDIO_POINTER_AND_INDEX 10
+
+
 
 #define NSTACKWORDS (STACK + SECOND_STAGE_N*FILTER_PATHS+SECOND_STAGE_N*FILTER_PATHS)
 
@@ -81,9 +83,11 @@ decimate_to_pcm_4ch_48KHz:
 
 	//extend the stack
 	DUALENTSP_lu6 NSTACKWORDS
+	mov frame_size_log2, r2
 
 	ldaw p_int,  sp[STACK]
 	ldaw p_comb, sp[STACK+(SECOND_STAGE_N*FILTER_PATHS)]
+
 
 	ldc t, 0
 
@@ -190,26 +194,25 @@ comb:
 
 bitrev:
 
-    ldw a, sp[S_AUDIO_POINTER_INDEX]
-	ldw b, sp[S_AUDIO_POINTER]
-	{ldw t, sp[S_FILTERED_0];}
-	{ldw s, sp[S_FILTERED_1];}
+	ldd a, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
+	ldd s, t, sp[S_D_FILTERED_0_1]
 	std s, t, b[a]
-	{ldc a, (1<<FRAME_SIZE_LOG2)*1}
-	{ldw b, sp[S_AUDIO_POINTER]}
-	{ldw t, sp[S_AUDIO_POINTER_INDEX];}
-	{ldw t, sp[S_FILTERED_2]; add a, a, t}
-	{ldw s, sp[S_FILTERED_3];}
+	ldc t, 1
+	shr a, t, frame_size_log2
+	ldd t, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
+	{add a, a, t}
+	ldd s, t, sp[S_D_FILTERED_2_3]
 	std s, t, b[a]
 
-#if FRAME_SIZE_LOG2
-	//reset the index if we have completed a frame
-	ldw t, sp[S_AUDIO_POINTER_INDEX]
-	{add t, t, 1; ldc s, FRAME_SIZE_LOG2}
-	zext t, s
-	stw t, sp[S_AUDIO_POINTER_INDEX];
-	bt t, ds_loop
-#endif
+    bf frame_size_log2, exchange_buffers
+		//reset the index if we have completed a frame
+		ldw t, sp[S_AUDIO_POINTER_INDEX]
+		{add t, t, 1;}
+		zext t, frame_size_log2
+		stw t, sp[S_AUDIO_POINTER_INDEX];
+		bt t, ds_loop
+
+exchange_buffers:
 
 	//buffer exchange
 	outct res[c_output], 8 //WARNING: do not change this

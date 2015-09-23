@@ -36,7 +36,8 @@ void hires_delay(
 
 void decimate_to_pcm_4ch_48KHz(
         streaming chanend c_4x_pdm_mic,
-        streaming chanend c_frame_output);
+        streaming chanend c_frame_output,
+        unsigned frame_size_log2);
 /*
 void decimate_to_pcm_4ch_16KHz(
         streaming chanend c_4x_pdm_mic,

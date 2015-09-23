@@ -3,6 +3,7 @@
 
 #define NUM_MICS 8
 #define DOUBLE_CHANNELS ((NUM_MICS+1)/2)
+#define FRAME_SIZE_LOG2        (0)
 
 /* Two channels of raw PCM audio */
 typedef struct {
