@@ -153,7 +153,9 @@ ds_loop:
 	// Integrate - mic 0 and 1
 	{mov s, comb_output    ; shr t, comb_output, 8}
 	{zext s, 8; zext t,  8}
+#if PRE_GAIN
 	{shl s, s, PRE_GAIN; shl t, t,PRE_GAIN}
+#endif
 	INT(p_int, 0, 1)
 	INT(p_int, 2, 3)
 	INT(p_int, 4, 5)
@@ -161,14 +163,15 @@ ds_loop:
 	// Integrate - mic 2 and 3
 	{shr s, comb_output, 16; shr t, comb_output, 24}
 	{zext s,  8; zext t,  8}
+#if PRE_GAIN
 	{shl s, s, PRE_GAIN; shl t, t,PRE_GAIN}
+#endif
 	INT(p_int, 6, 7)
 	INT(p_int, 8, 9)
 	INT(p_int, 10, 11)
 
 	//~50 instructions used
 
-	//TODO improve to allow dividers > 8
 	zext counter, 3
 	{bru counter; add counter, counter, 1}
 
@@ -213,6 +216,7 @@ signal_conditioning:
 	DC_OFFSET_REMOVAL(S_D_PREV_XY_1, S_FILTERED_1);
 	DC_OFFSET_REMOVAL(S_D_PREV_XY_2, S_FILTERED_2);
 	DC_OFFSET_REMOVAL(S_D_PREV_XY_3, S_FILTERED_3);
+	//Now S_FILTERED_x is an int
 	bu ds_loop
 
 bitrev:

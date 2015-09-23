@@ -24,15 +24,11 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
     frame_audio audio[2];    //double buffered
     memset(audio, sizeof(frame_audio), 2);
 
-
-
     unsafe{
         c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
         c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[2];
 
         //set the taps
-
-
         while(1){
 
                 schkct(c_ds_output_0, 8);
@@ -63,7 +59,6 @@ int main(){
 
             streaming chan c_sync;
 
-
             configure_clock_src(mclk, p_mclk);
             configure_clock_src_divide(pdmclk, p_mclk, 2);
             configure_port_clock_output(p_pdm_clk, pdmclk);
@@ -92,8 +87,7 @@ int main(){
                    decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0,frame_size_log2);
                    decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1,frame_size_log2);
 
-
-                    hires_DAS_fixed(c_ds_output_0, c_ds_output_1, p_taps);
+                   hires_DAS_fixed(c_ds_output_0, c_ds_output_1, p_taps);
 
                 }
             }
