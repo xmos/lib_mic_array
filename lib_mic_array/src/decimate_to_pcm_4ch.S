@@ -21,8 +21,10 @@
 #define comb_output			 r10
 #define frame_size_log2      r11
 
-#define S_CHAN_INPUT 7
-#define S_COMB_POINTER 8
+//This sets the gain on the signals before the second stage CIC.
+//The signals are left shifted by PRE_GAIN such that the output is
+//maximised without overflow.
+#define PRE_GAIN 5
 
 #define COMB(p, N) \
 		ldd a, b, p[N];\
@@ -38,9 +40,17 @@
 	{add s, s, a; add t, t, b};\
 	std s, t, p[M];
 
+#define DC_OFFSET_REMOVAL(PREV_XY, FILTERED) \
+	ldd a, s, sp[PREV_XY];\
+	ashr b, a, 8;\
+	{sub a, a, b; nop};\
+	{sub a, a, s; ldw b, sp[FILTERED]};\
+	{add a, a, b; nop};\
+	{stw a, sp[FILTERED]};\
+	std a, b, sp[PREV_XY];
+
 #define SECOND_STAGE_N 6
 #define FILTER_PATHS   4
-#define STACK 32
 
 #define S_COMB_1_0 0
 #define S_COMB_1_1 1
@@ -62,18 +72,22 @@
 
 #define S_PREV_X_0 12
 #define S_PREV_Y_0 13
+#define S_D_PREV_XY_0 6
+
 #define S_PREV_X_1 14
 #define S_PREV_Y_1 15
+#define S_D_PREV_XY_1 7
 #define S_PREV_X_2 16
 #define S_PREV_Y_2 17
+#define S_D_PREV_XY_2 8
 #define S_PREV_X_3 18
 #define S_PREV_Y_3 19
+#define S_D_PREV_XY_3 9
 
 #define S_AUDIO_POINTER 20
 #define S_AUDIO_POINTER_INDEX 21
 #define S_D_AUDIO_POINTER_AND_INDEX 10
-
-
+#define STACK 32
 
 #define NSTACKWORDS (STACK + SECOND_STAGE_N*FILTER_PATHS+SECOND_STAGE_N*FILTER_PATHS)
 
@@ -139,6 +153,7 @@ ds_loop:
 	// Integrate - mic 0 and 1
 	{mov s, comb_output    ; shr t, comb_output, 8}
 	{zext s, 8; zext t,  8}
+	{shl s, s, PRE_GAIN; shl t, t,PRE_GAIN}
 	INT(p_int, 0, 1)
 	INT(p_int, 2, 3)
 	INT(p_int, 4, 5)
@@ -146,6 +161,7 @@ ds_loop:
 	// Integrate - mic 2 and 3
 	{shr s, comb_output, 16; shr t, comb_output, 24}
 	{zext s,  8; zext t,  8}
+	{shl s, s, PRE_GAIN; shl t, t,PRE_GAIN}
 	INT(p_int, 6, 7)
 	INT(p_int, 8, 9)
 	INT(p_int, 10, 11)
@@ -162,7 +178,7 @@ ds_loop:
 	bu ds_loop		//3
 	bu ds_loop		//4
 	bu ds_loop		//5
-	bu ds_loop		//6
+	bu signal_conditioning		//6
 	bu bitrev		//7
 
 comb:
@@ -192,8 +208,31 @@ comb:
 	stw t, sp[S_FILTERED_3]
 	bu ds_loop
 
-bitrev:
+signal_conditioning:
+	DC_OFFSET_REMOVAL(S_D_PREV_XY_0, S_FILTERED_0);
+	DC_OFFSET_REMOVAL(S_D_PREV_XY_1, S_FILTERED_1);
+	DC_OFFSET_REMOVAL(S_D_PREV_XY_2, S_FILTERED_2);
+	DC_OFFSET_REMOVAL(S_D_PREV_XY_3, S_FILTERED_3);
+	bu ds_loop
 
+bitrev:
+//TODO make this a run time thing
+#if BITREV
+//TODO test this
+//TODO remove the FRAME_SIZE_LOG2
+    ldw a, sp[S_AUDIO_POINTER_INDEX]
+	{bitrev a, a;ldc s, 32-FRAME_SIZE_LOG2}
+	{shr a, a, s;ldw b, sp[S_AUDIO_POINTER]}
+	ldd s, t, sp[S_D_FILTERED_0_1]
+	std s, t, b[a]
+	{ldc a, (1<<FRAME_SIZE_LOG2)*1}
+	ldd t, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
+	{bitrev t, t;ldc s, 32-FRAME_SIZE_LOG2}
+	{shr t, t, s;ldc s, 0}
+	{add a, a, t}
+	ldd s, t, sp[S_D_FILTERED_2_3]
+	std s, t, b[a]
+#else
 	ldd a, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
 	ldd s, t, sp[S_D_FILTERED_0_1]
 	std s, t, b[a]
@@ -203,7 +242,7 @@ bitrev:
 	{add a, a, t}
 	ldd s, t, sp[S_D_FILTERED_2_3]
 	std s, t, b[a]
-
+#endif
     bf frame_size_log2, exchange_buffers
 		//reset the index if we have completed a frame
 		ldw t, sp[S_AUDIO_POINTER_INDEX]
@@ -213,8 +252,6 @@ bitrev:
 		bt t, ds_loop
 
 exchange_buffers:
-
-	//buffer exchange
 	outct res[c_output], 8 //WARNING: do not change this
 	in t, res[c_output]
 	{stw t, sp[S_AUDIO_POINTER]}

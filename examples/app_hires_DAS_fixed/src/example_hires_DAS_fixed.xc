@@ -10,7 +10,7 @@
 #include "mic_array.h"
 
 on tile[0]: in port p_pdm_clk = XS1_PORT_1E;
-on tile[0]: in buffered port:8 p_pdm_mics = XS1_PORT_8B;
+on tile[0]: in port p_pdm_mics = XS1_PORT_8B;
 in port p_mclk                 = on tile[0]: XS1_PORT_1F;
 clock mclk                     = on tile[0]: XS1_CLKBLK_1;
 clock pdmclk                   = on tile[0]: XS1_CLKBLK_3;
@@ -71,6 +71,7 @@ int main(){
             start_clock(mclk);
             start_clock(pdmclk);
 
+            unsigned frame_size_log2 = 0;
             unsigned long long taps[4];
             unsigned long long shared_memory[PDM_BUFFER_LENGTH] = {0};
             unsafe {
@@ -88,8 +89,8 @@ int main(){
                            c_sync, PDM_BUFFER_LENGTH_LOG2,
                            p_taps, p_shared_memory);
 
-                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0);
-                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1);
+                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0,frame_size_log2);
+                   decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1,frame_size_log2);
 
 
                     hires_DAS_fixed(c_ds_output_0, c_ds_output_1, p_taps);
