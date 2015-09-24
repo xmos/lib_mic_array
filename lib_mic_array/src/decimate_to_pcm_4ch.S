@@ -24,7 +24,12 @@
 //This sets the gain on the signals before the second stage CIC.
 //The signals are left shifted by PRE_GAIN such that the output is
 //maximised without overflow.
-#define PRE_GAIN 5
+#define PRE_GAIN 8
+
+//This is for removing the known DC offset from the signal in order to
+//reduce the settling of the DC blocker. It should be the first stage
+//filter range on 2.
+#define FILTER_DC_OFFSET (32)	//TODO check that this actually improves convergence
 
 #define COMB(p, N) \
 		ldd a, b, p[N];\
@@ -163,15 +168,17 @@ ds_loop:
 	{andnot s, mask        ; nop}
 	{add a, s, mask        ; ldw t, sp[S_COMB_1_1]}
 	{sub comb_output, a, t ; stw s, sp[S_COMB_1_1]}
-	{nop                   ; andnot comb_output, mask}
 
 	//comb_output contains 4 bytes of comb mic data
 
 	// Integrate - mic 0 and 1
 	{mov s, comb_output    ; shr t, comb_output, 8}
-	{zext s, 8; zext t,  8}
+	{zext s, 7; zext t,  7}
 #if PRE_GAIN
-	{shl s, s, PRE_GAIN; shl t, t,PRE_GAIN}
+	{ldc a, FILTER_DC_OFFSET; mkmsk b, PRE_GAIN}
+	{sub s, s, a ; sub t, t, a}
+	mul s, s, b
+	mul t, t, b
 #endif
 	INT(p_int, 0, 1)
 	INT(p_int, 2, 3)
@@ -179,9 +186,12 @@ ds_loop:
 
 	// Integrate - mic 2 and 3
 	{shr s, comb_output, 16; shr t, comb_output, 24}
-	{zext s,  8; zext t,  8}
+	{zext s,  7; zext t,  7}
 #if PRE_GAIN
-	{shl s, s, PRE_GAIN; shl t, t,PRE_GAIN}
+	{ldc a, FILTER_DC_OFFSET; mkmsk b, PRE_GAIN}
+	{sub s, s, a ; sub t, t, a}
+	mul s, s, b
+	mul t, t, b
 #endif
 	INT(p_int, 6, 7)
 	INT(p_int, 8, 9)
