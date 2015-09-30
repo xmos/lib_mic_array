@@ -39,10 +39,8 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
 
             buffer = 1 - buffer;
 
-            xscope_int(0, audio[buffer].data[0][0].ch_a);
-            xscope_int(1, audio[buffer].data[0][0].ch_b);
-            xscope_int(2, audio[buffer].data[1][0].ch_a);
-            xscope_int(3, audio[buffer].data[1][0].ch_b);
+            for(unsigned i=0;i<7;i++)
+                xscope_int(i, audio[buffer].data[i][0]);
         }
     }
 }

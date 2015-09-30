@@ -50,10 +50,8 @@ void lo_hi_res_DAS_fixed(
 
             buffer = 1 - buffer;
 
-            xscope_int(0, hires_audio[buffer].data[0][0].ch_a);
-            xscope_int(1, hires_audio[buffer].data[0][0].ch_b);
-            xscope_int(2, lores_audio[buffer].data[0][0].ch_a);
-            xscope_int(3, lores_audio[buffer].data[0][0].ch_b);
+            for(unsigned i=0;i<7;i++)
+                xscope_int(i, hires_audio[buffer].data[i][0]);
         }
     }
 }

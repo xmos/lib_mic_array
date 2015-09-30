@@ -26,7 +26,7 @@ typedef struct {
 
 /* A frame of  */
 typedef struct {
-    double_packed_audio data[DOUBLE_CHANNELS][1<<FRAME_SIZE_LOG2];
+    int data[8][1<<FRAME_SIZE_LOG2];
 } frame_audio;
 
 typedef struct {

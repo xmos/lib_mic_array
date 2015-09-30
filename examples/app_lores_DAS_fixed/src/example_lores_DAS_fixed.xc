@@ -23,7 +23,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
     unsafe{
         c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
-        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[2];
+        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[4];
 
         while(1){
 
@@ -31,24 +31,12 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
             schkct(c_ds_output_1, 8);
 
             c_ds_output_0 <: (frame_audio * unsafe)audio[buffer].data[0];
-            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[2];
+            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[4];
 
             buffer = 1 - buffer;
 
-
-            //todo buffer the frame
-            //sum
-            //output
-
-            xscope_int(0, audio[buffer].data[0][0].ch_a);
-            xscope_int(1, audio[buffer].data[0][0].ch_b);
-            xscope_int(2, audio[buffer].data[1][0].ch_a);
-            xscope_int(3, audio[buffer].data[1][0].ch_b);
-
-            xscope_int(4, audio[buffer].data[2][0].ch_a);
-            xscope_int(5, audio[buffer].data[2][0].ch_b);
-            xscope_int(6, audio[buffer].data[3][0].ch_a);
-            xscope_int(7, audio[buffer].data[3][0].ch_b);
+            for(unsigned i=0;i<7;i++)
+                xscope_int(i, audio[buffer].data[i][0]);
         }
     }
 }

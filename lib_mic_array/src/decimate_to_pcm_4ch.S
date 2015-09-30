@@ -250,33 +250,34 @@ signal_conditioning:
 	bu ds_loop
 
 bitrev:
-//TODO make this a run time thing
-#if BITREV
-//TODO test this
-//TODO remove the FRAME_SIZE_LOG2
-    ldw a, sp[S_AUDIO_POINTER_INDEX]
-	{bitrev a, a;ldc s, 32-FRAME_SIZE_LOG2}
-	{shr a, a, s;ldw b, sp[S_AUDIO_POINTER]}
-	ldd s, t, sp[S_D_FILTERED_0_1]
-	std s, t, b[a]
-	{ldc a, (1<<FRAME_SIZE_LOG2)*1}
-	ldd t, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
-	{bitrev t, t;ldc s, 32-FRAME_SIZE_LOG2}
-	{shr t, t, s;ldc s, 0}
-	{add a, a, t}
-	ldd s, t, sp[S_D_FILTERED_2_3]
-	std s, t, b[a]
-#else
-	ldd a, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
-	ldd s, t, sp[S_D_FILTERED_0_1]
-	std s, t, b[a]
-	ldc t, 1
-	shr a, t, frame_size_log2
-	ldd t, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
-	{add a, a, t}
-	ldd s, t, sp[S_D_FILTERED_2_3]
-	std s, t, b[a]
-#endif
+	ldw t, sp[INDEX_BITREVERSING_ENABLED]
+	bf t, write_out_audio_frames
+	write_out_fft_frames:
+	    {ldw a, sp[S_AUDIO_POINTER_INDEX]; ldc s, 32}
+		{bitrev a, a; sub s, s, frame_size_log2}
+		{shr a, a, s;ldw b, sp[S_AUDIO_POINTER]}
+		ldd s, t, sp[S_D_FILTERED_0_1]
+		std s, t, b[a]
+		{ldc s, 1;nop}
+		{shl s, s, frame_size_log2;nop}
+		{add a, a, s;nop}
+		ldd s, t, sp[S_D_FILTERED_2_3]
+		std s, t, b[a]
+		bu inc_audio_index
+	write_out_audio_frames:
+		ldd a, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
+		ldd s, t, sp[S_D_FILTERED_0_1]
+		ldaw b, b[a]
+		{ldc a, 1; stw t, b[0]}
+		{shl a, a, frame_size_log2; nop}
+		stw s, b[a]
+		add a, a, a
+		ldd s, t, sp[S_D_FILTERED_2_3]
+		stw t, b[a]
+		{ldc a, 3; nop}
+		shl a, a, frame_size_log2
+		stw s, b[a]
+inc_audio_index:
     bf frame_size_log2, exchange_buffers
 		//reset the index if we have completed a frame
 		ldw t, sp[S_AUDIO_POINTER_INDEX]

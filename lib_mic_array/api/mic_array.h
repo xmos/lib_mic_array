@@ -61,13 +61,13 @@ void decimate_to_pcm_4ch_48KHz(
         decimator_config config
 );
 
+void decimate_to_pcm_4ch_16kHz(
+        streaming chanend c_4x_pdm_mic,
+        streaming chanend c_frame_output,
+        decimator_config config);
 
 
 /*
-void decimate_to_pcm_4ch_16KHz(
-        streaming chanend c_4x_pdm_mic,
-        streaming chanend c_frame_output);
-
 void decimate_to_pcm_4ch_8KHz(
         streaming chanend c_4x_pdm_mic,
         streaming chanend c_frame_output);
