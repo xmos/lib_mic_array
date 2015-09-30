@@ -15,7 +15,9 @@ static void pdm_interface(in port p_pdm_mics){
     unsigned count = 0;
 
     int broken[8] = {0};
+    int tied_to_clock[8] = {0};
 
+    unsigned print_counter = 0;
     for(unsigned i=0;i<0xfffff;i++)
         p_pdm_mics:> v;
 
@@ -29,10 +31,10 @@ static void pdm_interface(in port p_pdm_mics){
                 zeros[i]++;
         }
         count++;
-#define N 4096
+#define N (1<<13)
 
         if((count&(N-1)) == 0){
-            for(unsigned i=0;i<8;i++){
+            for(unsigned i=0;i<7;i++){
                 if(ones[i] == N){
                     if(!broken[i])
                         printf("%d broken - tied high\n", i);
@@ -53,18 +55,31 @@ static void pdm_interface(in port p_pdm_mics){
                         printf("%d broken - tied high\n", i);
                     broken[i] = 1;
                 }
-                if((ones[i] - N/2) <  32){
-                    if(!broken[i])
-                        printf("%d broken - tied to clock\n", i);
-                    broken[i] = 1;
+                if((ones[i] - N/2) <  16){
+                    tied_to_clock[i]++;
+                    if(tied_to_clock > 64){
+                        if(!broken[i])
+                            printf("%d broken - tied to clock\n", i);
+                        broken[i] = 1;
+                    }
+                } else if((zeros[i] - N/2) <  16){
+                    tied_to_clock[i]++;
+                    if(tied_to_clock > 64){
+                        if(!broken[i])
+                            printf("%d broken - tied to clock\n", i);
+                        broken[i] = 1;
+                    }
+                } else {
+                    tied_to_clock[i]--;
+                    if(tied_to_clock < 0)
+                        tied_to_clock[i] = 0;
                 }
-                if((zeros[i] - N/2) <  32){
-                    if(!broken[i])
-                        printf("%d broken - tied to clock\n", i);
-                    broken[i] = 1;
-                }
+               // printf("%d %8d %8d\n", i, ones[i], zeros[i]);
                 ones[i]=0;
                 zeros[i]=0;
+                print_counter++;
+                if(!(print_counter&0xff))
+                        printf("Working\n");
             }
         }
         p_pdm_mics:> v;
