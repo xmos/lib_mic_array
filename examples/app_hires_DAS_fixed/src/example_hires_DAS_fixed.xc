@@ -26,7 +26,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
 
     unsafe{
         c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
-        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[2];
+        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[4];
 
         //set the taps
         while(1){
@@ -35,7 +35,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
             schkct(c_ds_output_1, 8);
 
             c_ds_output_0 <: (frame_audio * unsafe)audio[buffer].data[0];
-            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[2];
+            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[4];
 
             buffer = 1 - buffer;
 

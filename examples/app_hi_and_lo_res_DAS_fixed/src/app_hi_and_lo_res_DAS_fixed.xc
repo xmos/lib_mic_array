@@ -31,9 +31,9 @@ void lo_hi_res_DAS_fixed(
 
     unsafe{
         c_hires_0 <: (frame_audio * unsafe)hires_audio[0].data[0];
-        c_hires_1 <: (frame_audio * unsafe)hires_audio[0].data[2];
+        c_hires_1 <: (frame_audio * unsafe)hires_audio[0].data[4];
         c_lores_0 <: (frame_audio * unsafe)lores_audio[0].data[0];
-        c_lores_1 <: (frame_audio * unsafe)lores_audio[0].data[2];
+        c_lores_1 <: (frame_audio * unsafe)lores_audio[0].data[4];
 
         //set the taps
         while(1){
@@ -44,9 +44,9 @@ void lo_hi_res_DAS_fixed(
             schkct(c_lores_1, 8);
 
             c_hires_0 <: (frame_audio * unsafe)hires_audio[buffer].data[0];
-            c_hires_1 <: (frame_audio * unsafe)hires_audio[buffer].data[2];
+            c_hires_1 <: (frame_audio * unsafe)hires_audio[buffer].data[4];
             c_lores_0 <: (frame_audio * unsafe)lores_audio[buffer].data[0];
-            c_lores_1 <: (frame_audio * unsafe)lores_audio[buffer].data[2];
+            c_lores_1 <: (frame_audio * unsafe)lores_audio[buffer].data[4];
 
             buffer = 1 - buffer;
 
