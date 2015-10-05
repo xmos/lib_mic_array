@@ -135,7 +135,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
                             break;
                         }
                         case 2:{
-                            if(delay > 5){
+                            if(delay > 0){
                                 delay--;
                                 printf("n: %d\n", delay);
                             }
@@ -154,30 +154,40 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
                 }
                 default:break;
             }
-
+#if 0
             int output = - 2*delay_buffer[(delay_head-delay)%MAX_DELAY][0];
             switch(dir){
             case 0:
                 output = delay_buffer[delay_head][1] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][4];
                 break;
             case 1:
-                output = delay_buffer[delay_head][2] + delay_buffer[(delay_head-delay)%MAX_DELAY][5];
+                output = delay_buffer[delay_head][2] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][5];
                 break;
             case 2:
-                output = delay_buffer[delay_head][3] + delay_buffer[(delay_head-delay)%MAX_DELAY][6];
+                output = delay_buffer[delay_head][3] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][6];
                 break;
             case 3:
-                output = delay_buffer[delay_head][4] + delay_buffer[(delay_head-delay)%MAX_DELAY][1];
+                output = delay_buffer[delay_head][4] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][1];
                 break;
             case 4:
-                output = delay_buffer[delay_head][5] + delay_buffer[(delay_head-delay)%MAX_DELAY][2];
+                output = delay_buffer[delay_head][5] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][2];
                 break;
             case 5:
-                output = delay_buffer[delay_head][6] + delay_buffer[(delay_head-delay)%MAX_DELAY][3];
+                output = delay_buffer[delay_head][6] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][3];
                 break;
             }
             c_audio <: output<<2;
             c_audio <: output<<2;
+#else
+            int output = 0;
+            for(unsigned i=1;i<6;i++){
+                output += audio[buffer].data[i][0];
+            }
+            c_audio <: output;
+            c_audio <: output;
+#endif
+            delay_head++;
+            delay_head%=MAX_DELAY;
         }
     }
 }
