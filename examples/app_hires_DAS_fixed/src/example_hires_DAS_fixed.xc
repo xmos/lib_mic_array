@@ -17,7 +17,7 @@ on tile[0]: clock pdmclk                  = XS1_CLKBLK_2;
 
 void hires_DAS_fixed(streaming chanend c_ds_output_0,
         streaming chanend c_ds_output_1,
-        unsigned long long * unsafe p_taps
+        hires_delay_config * unsafe config
 ){
 
     unsigned buffer = 1;     //buffer index
@@ -26,7 +26,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
 
     unsafe{
         c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
-        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[2];
+        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[4];
 
         //set the taps
         while(1){
@@ -35,14 +35,12 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
             schkct(c_ds_output_1, 8);
 
             c_ds_output_0 <: (frame_audio * unsafe)audio[buffer].data[0];
-            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[2];
+            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[4];
 
             buffer = 1 - buffer;
 
-            xscope_int(0, audio[buffer].data[0][0].ch_a);
-            xscope_int(1, audio[buffer].data[0][0].ch_b);
-            xscope_int(2, audio[buffer].data[1][0].ch_a);
-            xscope_int(3, audio[buffer].data[1][0].ch_b);
+            for(unsigned i=0;i<7;i++)
+                xscope_int(i, audio[buffer].data[i][0]);
         }
     }
 }
@@ -62,12 +60,15 @@ int main(){
             start_clock(mclk);
             start_clock(pdmclk);
 
-            unsigned long long taps[4] = {0};
             unsigned long long shared_memory[PDM_BUFFER_LENGTH] = {0};
 
             decimator_config dc = {0, 1, 0, 0};
             unsafe {
-                unsigned long long * unsafe p_taps = taps;
+                hires_delay_config hrd_config;
+                hrd_config.active_delay_set = 0;
+                hrd_config.memory_depth_log2 = PDM_BUFFER_LENGTH_LOG2;
+
+                hires_delay_config * unsafe config = &hrd_config;
                 unsigned long long * unsafe p_shared_memory = shared_memory;
                 par{
                     //Input stage
@@ -78,13 +79,12 @@ int main(){
                             c_sync);
 
                     hires_delay(c_4x_pdm_mic_0, c_4x_pdm_mic_1,
-                           c_sync, PDM_BUFFER_LENGTH_LOG2,
-                           p_taps, p_shared_memory);
+                           c_sync, config, p_shared_memory);
 
                    decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0, dc);
                    decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1, dc);
 
-                   hires_DAS_fixed(c_ds_output_0, c_ds_output_1, p_taps);
+                   hires_DAS_fixed(c_ds_output_0, c_ds_output_1, config);
 
                 }
             }

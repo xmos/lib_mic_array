@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Network xmlns="http://www.xmos.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.xmos.com http://www.xmos.com">
   <Type>Board</Type>
-  <Name>xCORE-200 Explorer Kit</Name>
+  <Name>Microphone Array Reference Hardware (XU216)</Name>
   <Declarations>
     <Declaration>tileref tile[2]</Declaration>
     <Declaration>tileref usb_tile</Declaration>
   </Declarations>
   <Packages>
-    <Package id="0" Type="XS2-UEnA-512-FB236">
+    <Package id="0" Type="XS2-UnA-512-FB236">
       <Nodes>
         <Node Id="0" InPackageId="0" Type="XS2-L16A-512" OscillatorSrc="1" SystemFrequency="500MHz">
           <Boot>

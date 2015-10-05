@@ -24,7 +24,12 @@
 //This sets the gain on the signals before the second stage CIC.
 //The signals are left shifted by PRE_GAIN such that the output is
 //maximised without overflow.
-#define PRE_GAIN 5
+#define PRE_GAIN 8
+
+//This is for removing the known DC offset from the signal in order to
+//reduce the settling of the DC blocker. It should be the first stage
+//filter range on 2.
+#define FILTER_DC_OFFSET (32)	//TODO check that this actually improves convergence
 
 #define COMB(p, N) \
 		ldd a, b, p[N];\
@@ -163,15 +168,17 @@ ds_loop:
 	{andnot s, mask        ; nop}
 	{add a, s, mask        ; ldw t, sp[S_COMB_1_1]}
 	{sub comb_output, a, t ; stw s, sp[S_COMB_1_1]}
-	{nop                   ; andnot comb_output, mask}
 
 	//comb_output contains 4 bytes of comb mic data
 
 	// Integrate - mic 0 and 1
 	{mov s, comb_output    ; shr t, comb_output, 8}
-	{zext s, 8; zext t,  8}
+	{zext s, 7; zext t,  7}
 #if PRE_GAIN
-	{shl s, s, PRE_GAIN; shl t, t,PRE_GAIN}
+	{ldc a, FILTER_DC_OFFSET; mkmsk b, PRE_GAIN}
+	{sub s, s, a ; sub t, t, a}
+	mul s, s, b
+	mul t, t, b
 #endif
 	INT(p_int, 0, 1)
 	INT(p_int, 2, 3)
@@ -179,9 +186,12 @@ ds_loop:
 
 	// Integrate - mic 2 and 3
 	{shr s, comb_output, 16; shr t, comb_output, 24}
-	{zext s,  8; zext t,  8}
+	{zext s,  7; zext t,  7}
 #if PRE_GAIN
-	{shl s, s, PRE_GAIN; shl t, t,PRE_GAIN}
+	{ldc a, FILTER_DC_OFFSET; mkmsk b, PRE_GAIN}
+	{sub s, s, a ; sub t, t, a}
+	mul s, s, b
+	mul t, t, b
 #endif
 	INT(p_int, 6, 7)
 	INT(p_int, 8, 9)
@@ -240,33 +250,34 @@ signal_conditioning:
 	bu ds_loop
 
 bitrev:
-//TODO make this a run time thing
-#if BITREV
-//TODO test this
-//TODO remove the FRAME_SIZE_LOG2
-    ldw a, sp[S_AUDIO_POINTER_INDEX]
-	{bitrev a, a;ldc s, 32-FRAME_SIZE_LOG2}
-	{shr a, a, s;ldw b, sp[S_AUDIO_POINTER]}
-	ldd s, t, sp[S_D_FILTERED_0_1]
-	std s, t, b[a]
-	{ldc a, (1<<FRAME_SIZE_LOG2)*1}
-	ldd t, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
-	{bitrev t, t;ldc s, 32-FRAME_SIZE_LOG2}
-	{shr t, t, s;ldc s, 0}
-	{add a, a, t}
-	ldd s, t, sp[S_D_FILTERED_2_3]
-	std s, t, b[a]
-#else
-	ldd a, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
-	ldd s, t, sp[S_D_FILTERED_0_1]
-	std s, t, b[a]
-	ldc t, 1
-	shr a, t, frame_size_log2
-	ldd t, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
-	{add a, a, t}
-	ldd s, t, sp[S_D_FILTERED_2_3]
-	std s, t, b[a]
-#endif
+	ldw t, sp[INDEX_BITREVERSING_ENABLED]
+	bf t, write_out_audio_frames
+	write_out_fft_frames:
+	    {ldw a, sp[S_AUDIO_POINTER_INDEX]; ldc s, 32}
+		{bitrev a, a; sub s, s, frame_size_log2}
+		{shr a, a, s;ldw b, sp[S_AUDIO_POINTER]}
+		ldd s, t, sp[S_D_FILTERED_0_1]
+		std s, t, b[a]
+		{ldc s, 1;nop}
+		{shl s, s, frame_size_log2;nop}
+		{add a, a, s;nop}
+		ldd s, t, sp[S_D_FILTERED_2_3]
+		std s, t, b[a]
+		bu inc_audio_index
+	write_out_audio_frames:
+		ldd a, b, sp[S_D_AUDIO_POINTER_AND_INDEX]
+		ldd s, t, sp[S_D_FILTERED_0_1]
+		ldaw b, b[a]
+		{ldc a, 1; stw t, b[0]}
+		{shl a, a, frame_size_log2; nop}
+		stw s, b[a]
+		add a, a, a
+		ldd s, t, sp[S_D_FILTERED_2_3]
+		stw t, b[a]
+		{ldc a, 3; nop}
+		shl a, a, frame_size_log2
+		stw s, b[a]
+inc_audio_index:
     bf frame_size_log2, exchange_buffers
 		//reset the index if we have completed a frame
 		ldw t, sp[S_AUDIO_POINTER_INDEX]
