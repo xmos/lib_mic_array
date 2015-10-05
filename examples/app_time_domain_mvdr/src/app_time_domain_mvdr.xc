@@ -6,16 +6,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <xclib.h>
-
 #include "debug_print.h"
 #include "xassert.h"
 
-#include "mic_array.h"
-#include "mic_array_board_support.h"
-
 #include "i2c.h"
 #include "i2s.h"
-#include "sine.h"
+
+#include "mic_array.h"
+#include "mic_array_board_support.h"
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
@@ -25,9 +23,6 @@ on tile[0]: in port p_pdm_mics            = XS1_PORT_8B;
 on tile[0]: in port p_mclk                = XS1_PORT_1F;
 on tile[0]: clock mclk0                    = XS1_CLKBLK_1;
 on tile[0]: clock pdmclk                  = XS1_CLKBLK_2;
-
-
-
 out buffered port:32 p_i2s_dout[1]  = on tile[1]: {XS1_PORT_1P};
 in port p_mclk_in1                  = on tile[1]: XS1_PORT_1O;
 out buffered port:32 p_bclk         = on tile[1]: XS1_PORT_1M;
@@ -38,45 +33,9 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-static void set_dir(client interface led_button_if lb, unsigned dir){
 
-    for(unsigned i=0;i<13;i++)
-        lb.set_led_brightness(i, 0);
-    switch(dir){
-    case 0:{
-        lb.set_led_brightness(0, 255);
-        lb.set_led_brightness(1, 255);
-        break;
-    }
-    case 1:{
-        lb.set_led_brightness(2, 255);
-        lb.set_led_brightness(3, 255);
-        break;
-    }
-    case 2:{
-        lb.set_led_brightness(4, 255);
-        lb.set_led_brightness(5, 255);
-        break;
-    }
-    case 3:{
-        lb.set_led_brightness(6, 255);
-        lb.set_led_brightness(7, 255);
-        break;
-    }
-    case 4:{
-        lb.set_led_brightness(8, 255);
-        lb.set_led_brightness(9, 255);
-        break;
-    }
-    case 5:{
-        lb.set_led_brightness(10, 255);
-        lb.set_led_brightness(11, 255);
-        break;
-    }
-    }
-}
 
-void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+void app(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         client interface led_button_if lb, chanend c_audio){
 
     unsigned buffer = 1;     //buffer index
@@ -85,12 +44,9 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
 #define MAX_DELAY 128
 
-    unsigned delay = 6;
     int delay_buffer[MAX_DELAY][7];
     memset(delay_buffer, sizeof(int)*8*8, 0);
     unsigned delay_head = 0;
-    unsigned dir = 0;
-    set_dir(lb, dir);
 
     unsafe{
         c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
@@ -106,86 +62,13 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
             buffer = 1 - buffer;
 
-            //copy the current sample to the delay buffer
             for(unsigned i=0;i<7;i++)
                 delay_buffer[delay_head][i] = audio[buffer].data[i][0];
 
-            //light the LED for the current direction
 
-            int t;
 
-            select {
-                case lb.button_event():{
-                    unsigned button;
-                    e_button_state pressed;
-                    lb.get_button_event(button, pressed);
-                    if(pressed == BUTTON_PRESSED){
-                        switch(button){
-                        case 0:{
-                            dir--;
-                            if(dir == -1)
-                                dir = 5;
-                            break;
-                        }
-                        case 1:{
-                            if(delay +1 < MAX_DELAY){
-                                delay++;
-                                printf("n: %d\n", delay);
-                            }
-                            break;
-                        }
-                        case 2:{
-                            if(delay > 0){
-                                delay--;
-                                printf("n: %d\n", delay);
-                            }
-                            break;
-                        }
-                        case 3:{
-                            dir++;
-                            if(dir == 6)
-                                dir = 0;
-                            break;
-                        }
-                        }
-                        set_dir(lb, dir);
-                    }
-                    break;
-                }
-                default:break;
-            }
-#if 1
-            int output = - 2*delay_buffer[(delay_head-delay)%MAX_DELAY][0];
-            switch(dir){
-            case 0:
-                output = delay_buffer[delay_head][1] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][4];
-                break;
-            case 1:
-                output = delay_buffer[delay_head][2] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][5];
-                break;
-            case 2:
-                output = delay_buffer[delay_head][3] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][6];
-                break;
-            case 3:
-                output = delay_buffer[delay_head][4] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][1];
-                break;
-            case 4:
-                output = delay_buffer[delay_head][5] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][2];
-                break;
-            case 5:
-                output = delay_buffer[delay_head][6] + delay_buffer[(delay_head-2*delay)%MAX_DELAY][3];
-                break;
-            }
-            c_audio <: output<<2;
-            c_audio <: output<<2;
-#else
-            int output = 0;
-            for(unsigned i=1;i<6;i++){
-                output += audio[buffer].data[i][0];
-            }
-            c_audio <: output;
-            c_audio <: output;
-#endif
+
+
             delay_head++;
             delay_head%=MAX_DELAY;
         }
@@ -283,7 +166,7 @@ int main(){
                 pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                 decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0, dc);
                 decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1, dc);
-                lores_DAS_fixed(c_ds_output_0, c_ds_output_1, lb,c_audio);
+                app(c_ds_output_0, c_ds_output_1, lb,c_audio);
             }
         }
     }
