@@ -42,11 +42,9 @@ void app(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
     frame_audio audio[2];    //double buffered
     memset(audio, sizeof(frame_audio), 0);
 
-#define MAX_DELAY 128
+    int64_t scm[7][7];
+    memset(scm, sizeof(int64_t)*7*7, 0);
 
-    int delay_buffer[MAX_DELAY][7];
-    memset(delay_buffer, sizeof(int)*8*8, 0);
-    unsigned delay_head = 0;
 
     unsafe{
         c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
@@ -62,15 +60,13 @@ void app(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
 
             buffer = 1 - buffer;
 
-            for(unsigned i=0;i<7;i++)
-                delay_buffer[delay_head][i] = audio[buffer].data[i][0];
+            for(unsigned i=0;i<7;i++){
+                for(unsigned j=0;j<7;j++){
+                     scm[i][j] =0;
+                }
+            }
 
 
-
-
-
-            delay_head++;
-            delay_head%=MAX_DELAY;
         }
     }
 }
