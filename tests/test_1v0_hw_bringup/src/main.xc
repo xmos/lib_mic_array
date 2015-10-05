@@ -179,6 +179,7 @@ void buttons_and_leds(void)
         if (on_led >= 12) {
           on_led = 0;
         }
+
         // update the timestamp for the next timeout
         glow_time += delay;
         break;
@@ -193,53 +194,59 @@ void buttons_and_leds(void)
 void i2s_handler(server i2s_callback_if i2s,
                  client i2c_master_if i2c)
 {
-    int sine_count[2] = {0, 0};
-    int sine_inc[2] = {0x080, 0x080};
+  int sine_count[2] = {0, 0};
+  int sine_inc[2] = {0x080, 0x080};
 
-    while (1) {
-        select {
-        case i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
-            /*
-            i2c_regop_res_t res;
-            for (int i = 0x48; i < 0x4A; i++) {
-                uint8_t data = i2c.read_reg(i, 1, res);
-                debug_printf("I2C ID: %x, res: %d\n", data, res);
+  p_rst_shared <: 0xF;
 
-                res = i2c.write_reg(i, 0x02, 0x01); // Power down
-                debug_printf("res: %d\n", res);
-                i2c.write_reg(i, 0x03, 0x35); // Mode
-                i2c.write_reg(i, 0x04, 0x09); // Control
-                i2c.write_reg(i, 0x05, 0x60);
-                i2c.write_reg(i, 0x06, 0x00);
-                i2c.write_reg(i, 0x07, 0x00);
-                i2c.write_reg(i, 0x08, 0x00);
-                i2c.write_reg(i, 0x02, 0x00);
-            }
-            */
+  i2c_regop_res_t res;
+  int i = 0x4A;
+  uint8_t data = i2c.read_reg(i, 1, res);
+  debug_printf("I2C ID: %x, res: %d\n", data, res);
 
-            /* Configure the I2S bus */
-            i2s_config.mode = I2S_MODE_I2S;
-            i2s_config.mclk_bclk_ratio = (MASTER_CLOCK_FREQUENCY/OUTPUT_SAMPLE_RATE)/64;
+  data = i2c.read_reg(i, 0x02, res);
+  data |= 1;
+  res = i2c.write_reg(i, 0x02, data); // Power down
 
-            break;
+  // Setting MCLKDIV2 high if using 24.576MHz.
+  data = i2c.read_reg(i, 0x03, res);
+  data |= 1;
+  res = i2c.write_reg(i, 0x03, data);
 
-        case i2s.restart_check() -> i2s_restart_t restart:
-            // This application never restarts the I2S bus
-            restart = I2S_NO_RESTART;
-            break;
+  data = 0b01110000;
+  res = i2c.write_reg(i, 0x10, data);
 
-        case i2s.receive(size_t index, int32_t sample):
-            break;
+  data = i2c.read_reg(i, 0x02, res);
+  data &= ~1;
+  res = i2c.write_reg(i, 0x02, data); // Power up
 
-        case i2s.send(size_t index) -> int32_t sample:
-            sample = i2s_sine[sine_count[index]>>8];
-            sine_count[index] += sine_inc[index];
-            if (sine_count[index] >= 100 * 256) {
-                sine_count[index] -= 100 * 256;
-            }
-            break;
-        }
+
+  while (1) {
+    select {
+    case i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
+      /* Configure the I2S bus */
+      i2s_config.mode = I2S_MODE_I2S;
+      i2s_config.mclk_bclk_ratio = (MASTER_CLOCK_FREQUENCY/OUTPUT_SAMPLE_RATE)/64;
+
+      break;
+
+    case i2s.restart_check() -> i2s_restart_t restart:
+      // This application never restarts the I2S bus
+      restart = I2S_NO_RESTART;
+      break;
+
+    case i2s.receive(size_t index, int32_t sample):
+      break;
+
+    case i2s.send(size_t index) -> int32_t sample:
+      sample = i2s_sine[sine_count[index]>>8];
+      sine_count[index] += sine_inc[index];
+      if (sine_count[index] >= 100 * 256) {
+          sine_count[index] -= 100 * 256;
+      }
+      break;
     }
+  }
 };
 
 enum eth_clients {
@@ -263,8 +270,6 @@ void lan8710a_phy_driver(client interface smi_if smi,
   timer tmr;
   int t;
   tmr :> t;
-
-  p_rst_shared <: 0xF;
 
   while (smi_phy_is_powered_down(smi, phy_address));
   smi_configure(smi, phy_address, LINK_100_MBPS_FULL_DUPLEX, SMI_ENABLE_AUTONEG);
@@ -307,7 +312,11 @@ int main(void)
   par {
     on tile[0]: buttons_and_leds();
 
-    on tile[1]: i2s_master(i_i2s, p_i2s_dout, 1, null, 0, p_bclk, p_lrclk, bclk, mclk);
+    on tile[1]: {
+      configure_clock_src(mclk, p_mclk_in1);
+      start_clock(mclk);
+      i2s_master(i_i2s, p_i2s_dout, 1, null, 0, p_bclk, p_lrclk, bclk, mclk);
+    }
 
     on tile[1]: [[distribute]] i2c_master_single_port(i_i2c, 1, p_i2c, 100, 0, 1, 0);
     on tile[1]: [[distribute]] i2s_handler(i_i2s, i_i2c[0]);

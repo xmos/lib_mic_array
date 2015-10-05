@@ -9,7 +9,7 @@ TARGET = MIC-ARRAY-1V0
 APP_NAME = example_lores_DAS_fixed
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_mic_array
+USED_MODULES = lib_mic_array lib_mic_array_support
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:

@@ -28,5 +28,6 @@
     <Probe name="E" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
     <Probe name="F" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
     <Probe name="G" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-   
+    <Probe name="H" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+
 </xSCOPEconfig>

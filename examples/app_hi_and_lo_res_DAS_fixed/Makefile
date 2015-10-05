@@ -6,10 +6,10 @@ TARGET = MIC-ARRAY-1V0
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to
 # the project name
-APP_NAME = test_1v0_mic_check_12
+APP_NAME = app_hi_and_lo_res_DAS_fixed
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = 
+USED_MODULES = lib_mic_array
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:
