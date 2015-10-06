@@ -15,7 +15,6 @@
 
 #include "i2c.h"
 #include "i2s.h"
-#include "sine.h"
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
@@ -25,8 +24,6 @@ on tile[0]: in port p_pdm_mics            = XS1_PORT_8B;
 on tile[0]: in port p_mclk                = XS1_PORT_1F;
 on tile[0]: clock mclk0                    = XS1_CLKBLK_1;
 on tile[0]: clock pdmclk                  = XS1_CLKBLK_2;
-
-
 
 out buffered port:32 p_i2s_dout[1]  = on tile[1]: {XS1_PORT_1P};
 in port p_mclk_in1                  = on tile[1]: XS1_PORT_1O;
@@ -76,7 +73,7 @@ static void set_dir(client interface led_button_if lb, unsigned dir){
     }
 }
 
-void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+void demo(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         client interface led_button_if lb, chanend c_audio){
 
     unsigned buffer = 1;     //buffer index
@@ -154,7 +151,6 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
                 }
                 default:break;
             }
-#if 1
             int output = - 2*delay_buffer[(delay_head-delay)%MAX_DELAY][0];
             switch(dir){
             case 0:
@@ -178,14 +174,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
             }
             c_audio <: output<<2;
             c_audio <: output<<2;
-#else
-            int output = 0;
-            for(unsigned i=1;i<6;i++){
-                output += audio[buffer].data[i][0];
-            }
-            c_audio <: output;
-            c_audio <: output;
-#endif
+
             delay_head++;
             delay_head%=MAX_DELAY;
         }
@@ -283,7 +272,7 @@ int main(){
                 pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                 decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0, dc);
                 decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1, dc);
-                lores_DAS_fixed(c_ds_output_0, c_ds_output_1, lb,c_audio);
+                demo(c_ds_output_0, c_ds_output_1, lb,c_audio);
             }
         }
     }
