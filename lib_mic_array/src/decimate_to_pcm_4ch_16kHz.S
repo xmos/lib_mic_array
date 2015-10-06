@@ -44,7 +44,8 @@
 	{sub r1, r1, r2 ; mov r2, r1};\
 	{sub r1, r1, r3 ; mov r3, r1};\
 	std r2, r3, r0[OFF_2];\
-	stw r1, sp[OUTPUT]
+	ldaw r2, sp[S_SECOND_STAGE_OUTPUT_OFFSET];\
+	stw r1, r2[OUTPUT]
 
 
 //TODO make sure all input have been masked already
@@ -99,7 +100,7 @@
 #define S_D_INPUT_6 6
 #define S_D_INPUT_7 7
 
-#define S_INTEGRAL_OFFSET 16
+#define S_INTEGRAL_OFFSET (S_INPUT_OFFSET+16)
 #define S_D_INT_0_01 0
 #define S_D_INT_0_23 1
 #define S_D_INT_0_45 2
@@ -113,7 +114,7 @@
 #define S_D_INT_3_23 10
 #define S_D_INT_3_45 11
 
-#define S_COMB_OFFSET (16+24)
+#define S_COMB_OFFSET (S_INTEGRAL_OFFSET+24)
 #define S_D_COMB_0_01 0
 #define S_D_COMB_0_23 1
 #define S_D_COMB_0_45 2
@@ -127,33 +128,47 @@
 #define S_D_COMB_3_23 10
 #define S_D_COMB_3_45 11
 
-#define S_DC_ELIMINATE_OFFSET (16+24+24)
+#define S_DC_ELIMINATE_OFFSET (S_COMB_OFFSET+24)
 #define S_D_PREV_XY_0 0
 #define S_D_PREV_XY_1 1
 #define S_D_PREV_XY_2 2
 #define S_D_PREV_XY_3 3
 
-#define S_SECOND_STAGE_OUTPUT_0 0 //TODO set these right
+#define S_SECOND_STAGE_OUTPUT_OFFSET (S_DC_ELIMINATE_OFFSET+8)
+#define S_SECOND_STAGE_OUTPUT_0 0
 #define S_SECOND_STAGE_OUTPUT_1 1
 #define S_SECOND_STAGE_OUTPUT_2 2
 #define S_SECOND_STAGE_OUTPUT_3 3
 
 //frame
-#define S_AUDIO_POINTER 20
-#define S_AUDIO_POINTER_INDEX 21
-#define S_D_AUDIO_POINTER_AND_INDEX 10
-#define S_FRAME_SIZE_LOG2
+#define S_FRAME_OFFSET (S_SECOND_STAGE_OUTPUT_OFFSET+4)
+#define S_AUDIO_POINTER 		0
+#define S_AUDIO_POINTER_INDEX 	1
+#define S_C_OUTPUT				2
+#define S_FRAME_SIZE_LOG2		3
 
 
-//for the settings
-#define WINDOWING_ENABLED 22
-#define INDEX_BITREVERSING_ENABLED 23
-#define DC_OFFSET_REMOVAL_ENABLED 24
-#define DECIMATION_FACTOR 25
+//fir decimator
+#define S_FIR_OFFSET (S_FRAME_OFFSET+4)
+#define SUM_0 		0
+#define SUM_1 		1
+#define SUM_2 		2
+#define SUM_3 		3
+#define FIR_PHASE	4
+#define COEFS_0		5
+#define COEFS_1		6
+#define COEFS_2		7
+#define COEFS_3		8
+#define COEFS_4		9
+#define COEFS_5		10
+#define COEFS_6		11
+#define COEFS_7		12
 
-#define STACK 32
-
-#define NSTACKWORDS  128
+#define S_SETTINGS_OFFSET (S_FIR_OFFSET+16)	//TODO finishe the fir stack
+#define WINDOWING_ENABLED 			0
+#define INDEX_BITREVERSING_ENABLED 	1
+#define DC_OFFSET_REMOVAL_ENABLED 	2
+#define DECIMATION_FACTOR 			3
 
 decimate_to_pcm_4ch_16kHz:
 .align 8
@@ -182,15 +197,16 @@ decimate_to_pcm_4ch_16kHz:
 
 	//init all arrays to zero
 
-	//stw t, sp[S_AUDIO_POINTER_INDEX]
+	//init fir phase to 0
+
 
 	//grab the first pointer
-    //in t, res[c_output]
-	//stw t, sp[S_AUDIO_POINTER]
+    in t, res[c_output]
+	stw t, sp[S_AUDIO_POINTER]
 
 ds_loop:
 	INPUT(S_D_INPUT_0)  //comb and dc eliminate all mics
-		COMB(S_SECOND_STAGE_OUTPUT_0, 5, 0, 1, 2)
+		COMB(S_SECOND_STAGE_OUTPUT_0, 5, 0, 1, 2)	//make sure these input fields match the intergator outputs
 		COMB(S_SECOND_STAGE_OUTPUT_1, 11, 3, 4, 5)
 		COMB(S_SECOND_STAGE_OUTPUT_2, 17, 6, 7, 8)
 		COMB(S_SECOND_STAGE_OUTPUT_3, 23, 9, 10, 11)
@@ -293,19 +309,28 @@ ds_loop:
 
 
 #define DOUBLE_TAP(I)\
-	nop
-	/*
 	ldd c1, c0, coefs[I];\
-	maccs hi, lo, c0, n;\
+	maccs r1, r0, c0, n;\
 	ldd d1, d0, data[I];\
-	maccs hi, lo, c0, n;\
+	maccs r1, r0, c1, n;\
 	std d0, n, data[I];\
 	ldd c1, c0, coefs[I+1];\
-	maccs hi, lo, c0, d1;\
+	maccs r1, r0, c0, d1;\
 	ldd n, d0, data[I+1];\
-	maccs hi, lo, c0, d0;\
+	maccs r1, r0, c1, d0;\
 	std d0, d1, data[I+1]
-	*/
+
+/*
+lo		0
+hi		1
+c0		t
+c1		2
+d0		3
+d1		4
+n		5
+coefs	6
+data	7
+*/
 
 
 fir_impl:
@@ -317,10 +342,14 @@ fir_impl:
 	DOUBLE_TAP(6)
 	DOUBLE_TAP(8)
 	DOUBLE_TAP(10)
-	//ldaw data, data[24]
-	//ldaw coefs, coefs[24]
+	ldc t, 24*4
+	{add data, data, t; add coefs, coefs, t}
 	DOUBLE_TAP(0)
 	DOUBLE_TAP(2)
+	DOUBLE_TAP(4)
+	DOUBLE_TAP(6)
+	DOUBLE_TAP(8)
+	DOUBLE_TAP(10)
 	retsp 0
 .tmp_fir_impl:
 	.size	fir_impl, .tmp_fir_impl-fir_impl
