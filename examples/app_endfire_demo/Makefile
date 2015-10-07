@@ -9,7 +9,7 @@ TARGET = MIC-ARRAY-1V0
 APP_NAME = app_endfire_demo
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_i2c lib_i2s/lib_i2s lib_mic_array lib_mic_array_support
+USED_MODULES = lib_i2c lib_i2s lib_mic_array lib_mic_array_support
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:
