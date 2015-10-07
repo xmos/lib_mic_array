@@ -66,6 +66,8 @@ typedef struct {
     //The data for the FIR deciamtors
     int * unsafe data;    //This needs to be fir_decimation_factor*4*60*sizeof(int)//this need not be unsafe
 
+    unsigned mic_gain_compensation[4];
+
 } decimator_config;
 
 /*
