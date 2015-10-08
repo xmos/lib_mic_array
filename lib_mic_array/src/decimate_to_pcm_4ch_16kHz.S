@@ -1,9 +1,9 @@
 	.section	.dp.data,"awd",@progbits
 	.text
-	.cc_top decimate_to_pcm_4ch_16kHz.function
-	.globl	decimate_to_pcm_4ch_16kHz
+	.cc_top decimate_to_pcm_4ch.function
+	.globl	decimate_to_pcm_4ch
 	.align	4
-	.type	decimate_to_pcm_4ch_16kHz,@function
+	.type	decimate_to_pcm_4ch,@function
 
 #include "defines.h"
 
@@ -85,6 +85,20 @@
 	add r4, r4, 1;\
 	eq r3, r4, t;\
 	bf r3, label
+
+#define FIR(DATA, SECOND_STAGE_OUTPUT, SUM)\
+	ldaw t, sp[S_FIR_OFFSET];\
+	{ldw r1, t[S_FIR_PHASE]; ldc r0, DATA};\
+	ldaw r7, t[r0];\
+	ldw r7, r7[r1];\
+	ldaw r6, t[S_COEFS];\
+	ldw r6, r6[r1];\
+	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]};\
+	ldw r5, r0[SECOND_STAGE_OUTPUT];\
+	ldd r1, r0, t[SUM];\
+	{bl fir_impl};\
+	ldaw t, sp[S_FIR_OFFSET];\
+	std r1, r0, t[SUM];\
 
 
 #define S_INPUT_OFFSET 0 //this one needs to be first
@@ -180,13 +194,13 @@
 #define NSTACKWORDS (S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
 
 /*
-void decimate_to_pcm_4ch_16kHz(
+void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,		//r0
         streaming chanend c_frame_output,	//r1
         decimator_config config); 			//r2
 */
 
-decimate_to_pcm_4ch_16kHz:
+decimate_to_pcm_4ch:
 .align 8
 .issue_mode dual
 
@@ -312,73 +326,25 @@ input_sample_1:
 
 		//TODO gain compensation
 
-
 input_sample_2:
-	INPUT(S_D_INPUT_2)	/*
-fir0:
-	ldaw t, sp[S_FIR_OFFSET]
-	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_0}
-	ldw r7, t[r0]
-	{ldw r7, r7[r1];}
-	ldw r6, t[S_COEFS]
-	{ldw r6, r6[r1];}
-	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]}
-	ldw r5, r0[S_SECOND_STAGE_OUTPUT_0]
-	ldd r1, r0, t[S_D_SUM_0]
-	{bl fir_impl}
-	ldaw t, sp[S_FIR_OFFSET]
-	std r1, r0, t[S_D_SUM_0]
-	*/
+	INPUT(S_D_INPUT_2)
+	fir0:
+	FIR(S_DATA_0, S_SECOND_STAGE_OUTPUT_0, S_D_SUM_0)
 
 input_sample_3:
-	INPUT(S_D_INPUT_3) //fir mic 1
-	/*
-	ldaw t, sp[S_FIR_OFFSET]
-	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_1}
-	ldw r7, t[r0]
-	{ldw r7, r7[r1]; ldc r0, S_COEFS}
-	ldw r6, t[r0]
-	{ldw r6, r6[r1];}
-	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]}
-	ldw r5, r0[S_SECOND_STAGE_OUTPUT_1]
-	ldd r1, r0, t[S_D_SUM_1]
-	bl fir_impl
-	ldaw t, sp[S_FIR_OFFSET]
-	std r1, r0, t[S_D_SUM_1]
-	*/
+	INPUT(S_D_INPUT_3)
+	fir1:
+	FIR(S_DATA_1, S_SECOND_STAGE_OUTPUT_1, S_D_SUM_1)
+
 input_sample_4:
-	INPUT(S_D_INPUT_4)//fir mic 2
-	/*
-	ldaw t, sp[S_FIR_OFFSET]
-	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_2}
-	ldw r7, t[r0]
-	{ldw r7, r7[r1]; ldc r0, S_COEFS}
-	ldw r6, t[r0]
-	{ldw r6, r6[r1];}
-	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]}
-	ldw r5, r0[S_SECOND_STAGE_OUTPUT_2]
-	ldd r1, r0, t[S_D_SUM_2]
-	bl fir_impl
-	ldaw t, sp[S_FIR_OFFSET]
-	std r1, r0, t[S_D_SUM_2]
-	*/
+	INPUT(S_D_INPUT_4)
+	fir2:
+	FIR(S_DATA_2, S_SECOND_STAGE_OUTPUT_2, S_D_SUM_2)
 
 input_sample_5:
-	INPUT(S_D_INPUT_5)//fir mic 3
-	/*
-	ldaw t, sp[S_FIR_OFFSET]
-	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_3}
-	ldw r7, t[r0]
-	{ldw r7, r7[r1]; ldc r0, S_COEFS}
-	ldw r6, t[r0]
-	{ldw r6, r6[r1];}
-	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]}
-	ldw r5, r0[S_SECOND_STAGE_OUTPUT_3]
-	ldd r1, r0, t[S_D_SUM_3]
-	bl fir_impl
-	ldaw t, sp[S_FIR_OFFSET]
-	std r1, r0, t[S_D_SUM_3]
-	*/
+	INPUT(S_D_INPUT_5)
+	fir3:
+	FIR(S_DATA_3, S_SECOND_STAGE_OUTPUT_3, S_D_SUM_3)
 
 input_sample_6:
 	INPUT(S_D_INPUT_6)
@@ -455,6 +421,7 @@ input_sample_6:
 		outct res[r1], 8 //WARNING: do not change this
 		in r1, res[r1]
 		{stw r1, r0[S_AUDIO_POINTER]}
+		//reset the min and max vals for the frame
 
 
 input_sample_7:
@@ -465,19 +432,19 @@ input_sample_7:
 		INTEGRATE(1, 3,  4,  5) //71 inst
 	bl ds_loop
 
-.tmp_decimate_to_pcm_4ch_16kHz:
-	.size	decimate_to_pcm_4ch_16kHz, .tmp_decimate_to_pcm_4ch_16kHz-decimate_to_pcm_4ch_16kHz
+.tmp_decimate_to_pcm_4ch:
+	.size	decimate_to_pcm_4ch, .tmp_decimate_to_pcm_4ch-decimate_to_pcm_4ch
 	.align	4
-	.cc_bottom decimate_to_pcm_4ch_16kHz.function
+	.cc_bottom decimate_to_pcm_4ch.function
 
-	.set	decimate_to_pcm_4ch_16kHz.nstackwords,NSTACKWORDS
-	.globl	decimate_to_pcm_4ch_16kHz.nstackwords
-	.set	decimate_to_pcm_4ch_16kHz.maxcores,1
-	.globl	decimate_to_pcm_4ch_16kHz.maxcores
-	.set	decimate_to_pcm_4ch_16kHz.maxtimers,0
-	.globl	decimate_to_pcm_4ch_16kHz.maxtimers
-	.set	decimate_to_pcm_4ch_16kHz.maxchanends,0
-	.globl	decimate_to_pcm_4ch_16kHz.maxchanends
+	.set	decimate_to_pcm_4ch.nstackwords,NSTACKWORDS
+	.globl	decimate_to_pcm_4ch.nstackwords
+	.set	decimate_to_pcm_4ch.maxcores,1
+	.globl	decimate_to_pcm_4ch.maxcores
+	.set	decimate_to_pcm_4ch.maxtimers,0
+	.globl	decimate_to_pcm_4ch.maxtimers
+	.set	decimate_to_pcm_4ch.maxchanends,0
+	.globl	decimate_to_pcm_4ch.maxchanends
 
 
 .cc_top fir_impl.function
@@ -514,7 +481,6 @@ data	7
 .align 8
 .issue_mode dual
 fir_impl:
-/*
 	DOUBLE_TAP(0)
 	DOUBLE_TAP(2)
 	DOUBLE_TAP(4)
@@ -530,7 +496,6 @@ fir_impl:
 	DOUBLE_TAP(8)
 	DOUBLE_TAP(10)
 	//TODO add the most possible - try to get to 60
-	*/
 	retsp 0
 .tmp_fir_impl:
 	.size	fir_impl, .tmp_fir_impl-fir_impl
