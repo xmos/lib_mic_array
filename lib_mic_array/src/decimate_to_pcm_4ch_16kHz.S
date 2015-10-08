@@ -15,13 +15,12 @@
 #define t                     r11
 
 #define DC_OFFSET_REMOVAL(PREV_XY, COMB_OUTPUT) \
-	ldaw r3, sp[S_DC_ELIMINATE_OFFSET];\
 	ldd r1, r0, r3[PREV_XY];\
 	ashr r2, r1, 8;\
 	{sub r1, r1, r2; nop};\
-	{sub r1, r1, r0; ldw r2, sp[COMB_OUTPUT]};\
+	{sub r1, r1, r0; ldw r2, r4[COMB_OUTPUT]};\
 	{add r1, r1, r2; nop};\
-	{stw r1, sp[COMB_OUTPUT]};\
+	{stw r1, r4[COMB_OUTPUT]};\
 	std r1, r2, r3[PREV_XY];
 
 #define INPUT(S) \
@@ -31,7 +30,7 @@
 
 #define COMB(OUTPUT, INPUT, OFF_0, OFF_1, OFF_2) \
 	{ldc r1, INPUT;ldaw r0, sp[S_COMB_OFFSET]};\
-	{ldaw r1, p_integral[r1]};\
+	{ldw r1, p_integral[r1]};\
     ldd r2, r3, r0[OFF_0];\
 	{sub r1, r1, r2 ; mov r2, r1};\
 	{sub r1, r1, r3 ; mov r3, r1};\
@@ -48,44 +47,29 @@
 	stw r1, r2[OUTPUT]
 
 
-//TODO make sure all input have been masked already
+#define INTEGRATE_ITT() \
+	{ld8u t, r7[r6]; add r6, r6, 4};\
+	{ld8u t, r7[r6]; add r0, r0, t};\
+	{add r1, r1, r0; add r0, r0, t};\
+	{add r2, r2, r1; add r1, r1, r0};\
+	{add r3, r3, r2; add r2, r2, r1};\
+	{add r4, r4, r3; add r3, r3, r2};\
+	{add r5, r5, r4; add r4, r4, r3};\
+	{add r6, r6, 4;  add r5, r5, r4};\
+
 #define INTEGRATE(MICROPHONE, OFF_0, OFF_1, OFF_2)\
 	ldd r1, r0, p_integral[OFF_0];\
 	ldd r3, r2, p_integral[OFF_1];\
-	ldd r5, r4, p_integral[OFF_2];\
 	{ldc r6, MICROPHONE; ldaw r7, sp[S_INPUT_OFFSET]};\
-	{ld8u t, r7[r6];   add r6, r6, 4};\
-	{ld8u t, r7[r6];  add r0, r0, t};\
-	{add r1, r1, r0; add r0, r0, t};\
-	{add r2, r2, r1; add r1, r1, r0};\
-	{add r3, r3, r2; add r2, r2, r1};\
-	{add r4, r4, r3; add r3, r3, r2};\
-	{add r5, r5, r4; add r4, r4, r3};\
-	{add r6, r6, 4;  add r5, r5, r4};\
-	{ld8u t, r7[r6];  add r6, r6, 4};\
-	{ld8u t, r7[r6];  add r0, r0, t};\
-	{add r1, r1, r0; add r0, r0, t};\
-	{add r2, r2, r1; add r1, r1, r0};\
-	{add r3, r3, r2; add r2, r2, r1};\
-	{add r4, r4, r3; add r3, r3, r2};\
-	{add r5, r5, r4; add r4, r4, r3};\
-	{add r6, r6, 4;  add r5, r5, r4};\
-	{ld8u t, r7[r6];  add r6, r6, 4};\
-	{ld8u t, r7[r6];  add r0, r0, t};\
-	{add r1, r1, r0; add r0, r0, t};\
-	{add r2, r2, r1; add r1, r1, r0};\
-	{add r3, r3, r2; add r2, r2, r1};\
-	{add r4, r4, r3; add r3, r3, r2};\
-	{add r5, r5, r4; add r4, r4, r3};\
-	{add r6, r6, 4;  add r5, r5, r4};\
-	{ld8u t, r7[r6];  add r6, r6, 4};\
-	{ld8u t, r7[r6];  add r0, r0, t};\
-	{add r1, r1, r0; add r0, r0, t};\
-	{add r2, r2, r1; add r1, r1, r0};\
-	{add r3, r3, r2; add r2, r2, r1};\
-	{add r4, r4, r3; add r3, r3, r2};\
-	{add r5, r5, r4; add r4, r4, r3};\
-	{              ; add r5, r5, r4};\
+	ldd r5, r4, p_integral[OFF_2];\
+	INTEGRATE_ITT();\
+	INTEGRATE_ITT();\
+	INTEGRATE_ITT();\
+	INTEGRATE_ITT();\
+	INTEGRATE_ITT();\
+	INTEGRATE_ITT();\
+	INTEGRATE_ITT();\
+	INTEGRATE_ITT();\
 	std r1, r0, p_integral[OFF_0];\
 	std r3, r2, p_integral[OFF_1];\
 	std r5, r4, p_integral[OFF_2]
@@ -293,7 +277,14 @@ get_frame_pointer:
 
 ds_loop:
 input_sample_0:
-	INPUT(S_D_INPUT_0)  //comb and dc eliminate all mics
+	INPUT(S_D_INPUT_0)
+		integrate_2:
+		INTEGRATE(2, 6,  7,  8) //78 inst
+		integrate_3:
+		INTEGRATE(3, 9, 10, 11) //78 inst
+
+input_sample_1:
+	INPUT(S_D_INPUT_1)//comb and dc eliminate all mics
 		comb0:
 		COMB(S_SECOND_STAGE_OUTPUT_0, 5, 0, 1, 2)	//make sure these input fields match the intergator outputs
 		comb1:
@@ -306,6 +297,8 @@ input_sample_0:
 		ldaw t, sp[S_SETTINGS_OFFSET]
 		ldw t, t[S_DC_OFFSET_REMOVAL_ENABLED]
 		bf t, skip_dc_offset_removal
+			ldaw r3, sp[S_DC_ELIMINATE_OFFSET]
+			ldaw r4, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
 			dc_offset_removal_0:
 			DC_OFFSET_REMOVAL(S_D_PREV_XY_0, S_SECOND_STAGE_OUTPUT_0);
 			dc_offset_removal_1:
@@ -315,10 +308,13 @@ input_sample_0:
 			dc_offset_removal_3:
 			DC_OFFSET_REMOVAL(S_D_PREV_XY_3, S_SECOND_STAGE_OUTPUT_3);
 		skip_dc_offset_removal:
+		//64 + 33 used = 97 -> ~ 50 spare
 
-input_sample_1:
-	INPUT(S_D_INPUT_1) //fir mic 0
-	/*
+		//TODO gain compensation
+
+
+input_sample_2:
+	INPUT(S_D_INPUT_2)	/*
 fir0:
 	ldaw t, sp[S_FIR_OFFSET]
 	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_0}
@@ -333,8 +329,9 @@ fir0:
 	ldaw t, sp[S_FIR_OFFSET]
 	std r1, r0, t[S_D_SUM_0]
 	*/
-input_sample_2:
-	INPUT(S_D_INPUT_2) //fir mic 1
+
+input_sample_3:
+	INPUT(S_D_INPUT_3) //fir mic 1
 	/*
 	ldaw t, sp[S_FIR_OFFSET]
 	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_1}
@@ -349,9 +346,8 @@ input_sample_2:
 	ldaw t, sp[S_FIR_OFFSET]
 	std r1, r0, t[S_D_SUM_1]
 	*/
-
-input_sample_3:
-	INPUT(S_D_INPUT_3) //fir mic 2
+input_sample_4:
+	INPUT(S_D_INPUT_4)//fir mic 2
 	/*
 	ldaw t, sp[S_FIR_OFFSET]
 	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_2}
@@ -367,8 +363,8 @@ input_sample_3:
 	std r1, r0, t[S_D_SUM_2]
 	*/
 
-input_sample_4:
-	INPUT(S_D_INPUT_4) //fir mic 3
+input_sample_5:
+	INPUT(S_D_INPUT_5)//fir mic 3
 	/*
 	ldaw t, sp[S_FIR_OFFSET]
 	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_3}
@@ -384,8 +380,8 @@ input_sample_4:
 	std r1, r0, t[S_D_SUM_3]
 	*/
 
-input_sample_5:
-	INPUT(S_D_INPUT_5)
+input_sample_6:
+	INPUT(S_D_INPUT_6)
 /*
 	//move all the fir outputs back into the second stage outputs
 	ldaw r0, sp[S_FIR_OFFSET]
@@ -400,10 +396,6 @@ input_sample_5:
 	stw r2, r1[S_SECOND_STAGE_OUTPUT_3]
 */
 	//TODO update the min and max vals
-
-input_sample_6:
-	INPUT(S_D_INPUT_6)
-
 	ldaw r0, sp[S_FIR_OFFSET]
 	ldw r2, r0[S_FIR_PHASE]
 	add r2, r2, 1
@@ -468,13 +460,9 @@ input_sample_6:
 input_sample_7:
 	INPUT(S_D_INPUT_7)	//162 instruction per loop
 		integrate_0:
-		INTEGRATE(0, 0,  1,  2)	//39 inst
+		INTEGRATE(0, 0,  1,  2)	//71 inst
 		integrate_1:
-		INTEGRATE(1, 3,  4,  5) //39 inst
-		integrate_2:
-		INTEGRATE(2, 6,  7,  8) //39 inst
-		integrate_3:
-		INTEGRATE(3, 9, 10, 11) //39 inst
+		INTEGRATE(1, 3,  4,  5) //71 inst
 	bl ds_loop
 
 .tmp_decimate_to_pcm_4ch_16kHz:

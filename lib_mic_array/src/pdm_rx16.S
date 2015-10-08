@@ -100,7 +100,7 @@ pdm_rx_loop:	//81 instructions per loop
 	{and s, s, mask; and t, t, mask}
 
 	{out res[c_4x_pdm_mic_0], s; nop}
-	{out res[c_4x_pdm_mic_1], t; bl pdm_rx_loop}
+	{out res[c_4x_pdm_mic_1], t; bl pdm_rx_loop}	//77 used
 
 .pdm_rx16_asm_tmp:
 	.size	pdm_rx16_asm, .pdm_rx16_asm_tmp-pdm_rx16_asm
