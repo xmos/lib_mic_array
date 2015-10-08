@@ -45,6 +45,8 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
         }
     }
 }
+
+//#define SIM
 void pdm_rx16_asm(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
@@ -55,8 +57,9 @@ void pdm_rx16(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1){
 
+#ifndef SIM
     delay_milliseconds(1000);
-
+#endif
     //This will never return
     pdm_rx16_asm(p_pdm_mics,
             c_4x_pdm_mic_0,c_4x_pdm_mic_1);
@@ -67,12 +70,16 @@ void decimate_to_pcm_4ch_16kHz(
         streaming chanend c_frame_output,
         decimator_config config);
 
+
 int main(){
 
     par{
         on tile[0]: {
+
             streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
             streaming chan c_ds_output_0, c_ds_output_1;
+
+#ifndef SIM
 
             configure_clock_src(mclk, p_mclk);
             configure_clock_src_divide(pdmclk, p_mclk, 4);
@@ -83,6 +90,7 @@ int main(){
 
             unsafe {
                 uint64_t coefs[3][30];
+                memset(coefs, 0 ,sizeof(unsigned)*60*3);
                 unsigned * unsafe p[3] = {coefs[0], coefs[1], coefs[2]};
                 printf("%p %p %p\n", coefs[0], coefs[1], coefs[2]);
 
@@ -98,6 +106,26 @@ int main(){
                     lores_DAS_fixed(c_ds_output_0, c_ds_output_1);
                 }
             }
+#else
+            configure_clock_ref(mclk, 50);
+            configure_in_port(p_pdm_mics, mclk);
+            start_clock(mclk);
+            unsafe {
+                uint64_t coefs[3][30];
+                memset(coefs, 0 ,sizeof(unsigned)*60*3);
+                unsigned * unsafe p[3] = {coefs[0], coefs[1], coefs[2]};
+                unsigned data[4*60*3] = {0};
+
+                decimator_config dc = {0, 1, 0, 0, 3, p, data, {0,0, 0, 0}};
+                par{
+                    pdm_rx16(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+
+                    decimate_to_pcm_4ch_16kHz(c_4x_pdm_mic_0, c_ds_output_0, dc);
+                    decimate_to_pcm_4ch_16kHz(c_4x_pdm_mic_1, c_ds_output_1, dc);
+                    lores_DAS_fixed(c_ds_output_0, c_ds_output_1);
+                }
+            }
+#endif
         }
     }
     return 0;

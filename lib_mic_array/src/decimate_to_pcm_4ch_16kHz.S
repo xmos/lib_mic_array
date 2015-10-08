@@ -154,24 +154,18 @@
 #define S_D_SECOND_STAGE_OUTPUT_23 1
 #define S_SECOND_STAGE_OUTPUT_2 2
 #define S_SECOND_STAGE_OUTPUT_3 3
-
-//frame
-#define S_FRAME_OFFSET (S_SECOND_STAGE_OUTPUT_OFFSET+4)
-#define S_D_AUDIO_POINTER_AND_INDEX 0
-#define S_AUDIO_POINTER 		0	//must bd double word aligned
-#define S_AUDIO_POINTER_INDEX 	1
-#define S_C_OUTPUT				2
-#define S_FRAME_SIZE_LOG2		3
-#define S_FRAME_MIN				4
-#define S_FRAME_MAX				5
-#define S_FRAME_STACK_SIZE		6
+#define SECOND_STAGE_OUTPUT_STACK_SIZE 4
 
 //fir decimator
-#define S_FIR_OFFSET (S_FRAME_OFFSET+S_FRAME_STACK_SIZE)
+#define S_FIR_OFFSET (S_SECOND_STAGE_OUTPUT_OFFSET+SECOND_STAGE_OUTPUT_STACK_SIZE)
 #define S_SUM_0 		0
+#define S_D_SUM_0 		0
 #define S_SUM_1 		2
+#define S_D_SUM_1 		1
 #define S_SUM_2 		4
+#define S_D_SUM_2 		2
 #define S_SUM_3 		6
+#define S_D_SUM_3 		3
 #define S_FIR_PHASE		8
 #define S_FIR_UNUSED	9
 #define S_COEFS			10
@@ -181,7 +175,18 @@
 #define S_DATA_3		(S_DATA_2 + MAX_DECIMATION_FACTOR)
 #define FIR_STACK_SIZE  (S_DATA_3 + MAX_DECIMATION_FACTOR)
 
-#define S_SETTINGS_OFFSET (S_FIR_OFFSET+FIR_STACK_SIZE)	//TODO finish the fir stack
+//frame
+#define S_FRAME_OFFSET (S_FIR_OFFSET+FIR_STACK_SIZE)
+#define S_D_AUDIO_POINTER_AND_INDEX 0
+#define S_AUDIO_POINTER 		0	//must bd double word aligned
+#define S_AUDIO_POINTER_INDEX 	1
+#define S_C_OUTPUT				2
+#define S_FRAME_SIZE_LOG2		3
+#define S_FRAME_MIN				4
+#define S_FRAME_MAX				5
+#define FRAME_STACK_SIZE		6
+
+#define S_SETTINGS_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)	//TODO finish the fir stack
 #define S_WINDOWING_ENABLED 			0
 #define S_INDEX_BITREVERSING_ENABLED 	1
 #define S_DC_OFFSET_REMOVAL_ENABLED 	2
@@ -205,6 +210,10 @@ decimate_to_pcm_4ch_16kHz:
 	DUALENTSP_lu6 NSTACKWORDS
 
 	mov c_input, r0
+
+	//set the integral pointer
+	ldaw p_integral, sp[S_INTEGRAL_OFFSET]
+
 
 	//store c_output off to the stack
 	ldaw t, sp[S_FRAME_OFFSET]
@@ -231,6 +240,7 @@ decimate_to_pcm_4ch_16kHz:
 	stw t, r0[S_DECIMATION_FACTOR]
 
 	//Copy the coefficient pointer over
+setup_coefs:
 	ldaw r1, sp[S_FIR_OFFSET]
 	ldaw r1, r1[S_COEFS]
 	{ldw r0, r2[5]; ldc r4, 0} //coef pointer
@@ -249,6 +259,7 @@ decimate_to_pcm_4ch_16kHz:
 
 	//TODO mic gain compensation
 
+
 	/*
 	Initialise the stack regions:
 		- 	S_INPUT
@@ -257,25 +268,24 @@ decimate_to_pcm_4ch_16kHz:
 		- 	S_DC_ELIMINATE
 		- 	S_SECOND_STAGE_OUTPUT
 	*/
-	{ldc r0, 0;ldc t, 0}
-	ldc r1, S_FRAME_OFFSET
+setup_stack_init:
+	ldc r1, ((S_FIR_OFFSET + S_COEFS)/2) - 1
+	{ldaw r3, sp[0];ldc t, 0}
 init_loop:
-	//stw t, sp[r0]
-	add r0, r0, 1
-	eq r2, r0, r1
-	bf r2, init_loop
+	std t, t, r3[r1]
+	{bt r1, init_loop ; sub r1, r1, 1}
 
-	//init fir phase to 0
+init_fir_phase:
 	ldaw t, sp[S_FIR_OFFSET]
 	ldc r1, 0
 	stw r1, t[S_FIR_PHASE]
 
-	//init frame index to 0
+init_frame_index:
 	ldaw t, sp[S_FRAME_OFFSET]
 	ldc r1, 0
 	stw r1, t[S_AUDIO_POINTER_INDEX]
 
-	//grab the first pointer
+get_frame_pointer:
 	ldaw t, sp[S_FRAME_OFFSET]
 	ldw r2, t[S_C_OUTPUT]
     in r1, res[r2]
@@ -284,36 +294,48 @@ init_loop:
 ds_loop:
 input_sample_0:
 	INPUT(S_D_INPUT_0)  //comb and dc eliminate all mics
+		comb0:
 		COMB(S_SECOND_STAGE_OUTPUT_0, 5, 0, 1, 2)	//make sure these input fields match the intergator outputs
+		comb1:
 		COMB(S_SECOND_STAGE_OUTPUT_1, 11, 3, 4, 5)
+		comb2:
 		COMB(S_SECOND_STAGE_OUTPUT_2, 17, 6, 7, 8)
+		comb3:
 		COMB(S_SECOND_STAGE_OUTPUT_3, 23, 9, 10, 11)
+		check_dc_offset_removal:
 		ldaw t, sp[S_SETTINGS_OFFSET]
 		ldw t, t[S_DC_OFFSET_REMOVAL_ENABLED]
 		bf t, skip_dc_offset_removal
+			dc_offset_removal_0:
 			DC_OFFSET_REMOVAL(S_D_PREV_XY_0, S_SECOND_STAGE_OUTPUT_0);
+			dc_offset_removal_1:
 			DC_OFFSET_REMOVAL(S_D_PREV_XY_1, S_SECOND_STAGE_OUTPUT_1);
+			dc_offset_removal_2:
 			DC_OFFSET_REMOVAL(S_D_PREV_XY_2, S_SECOND_STAGE_OUTPUT_2);
+			dc_offset_removal_3:
 			DC_OFFSET_REMOVAL(S_D_PREV_XY_3, S_SECOND_STAGE_OUTPUT_3);
 		skip_dc_offset_removal:
 
 input_sample_1:
 	INPUT(S_D_INPUT_1) //fir mic 0
+	/*
+fir0:
 	ldaw t, sp[S_FIR_OFFSET]
 	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_0}
 	ldw r7, t[r0]
-	{ldw r7, r7[r1]; ldc r0, S_COEFS}
-	ldw r6, t[r0]
+	{ldw r7, r7[r1];}
+	ldw r6, t[S_COEFS]
 	{ldw r6, r6[r1];}
 	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]}
 	ldw r5, r0[S_SECOND_STAGE_OUTPUT_0]
-	ldd r1, r0, t[S_SUM_0]
-	bl fir_impl
+	ldd r1, r0, t[S_D_SUM_0]
+	{bl fir_impl}
 	ldaw t, sp[S_FIR_OFFSET]
-	std r1, r0, t[S_SUM_0]
-
+	std r1, r0, t[S_D_SUM_0]
+	*/
 input_sample_2:
 	INPUT(S_D_INPUT_2) //fir mic 1
+	/*
 	ldaw t, sp[S_FIR_OFFSET]
 	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_1}
 	ldw r7, t[r0]
@@ -322,13 +344,15 @@ input_sample_2:
 	{ldw r6, r6[r1];}
 	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]}
 	ldw r5, r0[S_SECOND_STAGE_OUTPUT_1]
-	ldd r1, r0, t[S_SUM_1]
+	ldd r1, r0, t[S_D_SUM_1]
 	bl fir_impl
 	ldaw t, sp[S_FIR_OFFSET]
-	std r1, r0, t[S_SUM_1]
+	std r1, r0, t[S_D_SUM_1]
+	*/
 
 input_sample_3:
 	INPUT(S_D_INPUT_3) //fir mic 2
+	/*
 	ldaw t, sp[S_FIR_OFFSET]
 	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_2}
 	ldw r7, t[r0]
@@ -337,13 +361,15 @@ input_sample_3:
 	{ldw r6, r6[r1];}
 	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]}
 	ldw r5, r0[S_SECOND_STAGE_OUTPUT_2]
-	ldd r1, r0, t[S_SUM_2]
+	ldd r1, r0, t[S_D_SUM_2]
 	bl fir_impl
 	ldaw t, sp[S_FIR_OFFSET]
-	std r1, r0, t[S_SUM_2]
+	std r1, r0, t[S_D_SUM_2]
+	*/
 
 input_sample_4:
 	INPUT(S_D_INPUT_4) //fir mic 3
+	/*
 	ldaw t, sp[S_FIR_OFFSET]
 	{ldw r1, t[S_FIR_PHASE]; ldc r0, S_DATA_3}
 	ldw r7, t[r0]
@@ -352,14 +378,15 @@ input_sample_4:
 	{ldw r6, r6[r1];}
 	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]}
 	ldw r5, r0[S_SECOND_STAGE_OUTPUT_3]
-	ldd r1, r0, t[S_SUM_3]
+	ldd r1, r0, t[S_D_SUM_3]
 	bl fir_impl
 	ldaw t, sp[S_FIR_OFFSET]
-	std r1, r0, t[S_SUM_3]
+	std r1, r0, t[S_D_SUM_3]
+	*/
 
 input_sample_5:
 	INPUT(S_D_INPUT_5)
-
+/*
 	//move all the fir outputs back into the second stage outputs
 	ldaw r0, sp[S_FIR_OFFSET]
 	ldaw r1, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
@@ -371,7 +398,7 @@ input_sample_5:
 	stw r2, r1[S_SECOND_STAGE_OUTPUT_2]
 	ldw r2, r0[S_SUM_3+1]
 	stw r2, r1[S_SECOND_STAGE_OUTPUT_3]
-
+*/
 	//TODO update the min and max vals
 
 input_sample_6:
@@ -440,9 +467,13 @@ input_sample_6:
 
 input_sample_7:
 	INPUT(S_D_INPUT_7)	//162 instruction per loop
+		integrate_0:
 		INTEGRATE(0, 0,  1,  2)	//39 inst
+		integrate_1:
 		INTEGRATE(1, 3,  4,  5) //39 inst
+		integrate_2:
 		INTEGRATE(2, 6,  7,  8) //39 inst
+		integrate_3:
 		INTEGRATE(3, 9, 10, 11) //39 inst
 	bl ds_loop
 
@@ -461,12 +492,11 @@ input_sample_7:
 	.globl	decimate_to_pcm_4ch_16kHz.maxchanends
 
 
-	.cc_top fir_impl.function
+.cc_top fir_impl.function
 	.globl	fir_impl
-	.align	4
+	.align	8
 	.type	fir_impl,@function
-
-
+	.issue_mode dual
 
 #define DOUBLE_TAP(I)\
 	ldd r2, t, r6[I];\
@@ -493,9 +523,10 @@ data	7
 */
 
 
-fir_impl:
 .align 8
 .issue_mode dual
+fir_impl:
+/*
 	DOUBLE_TAP(0)
 	DOUBLE_TAP(2)
 	DOUBLE_TAP(4)
@@ -511,6 +542,7 @@ fir_impl:
 	DOUBLE_TAP(8)
 	DOUBLE_TAP(10)
 	//TODO add the most possible - try to get to 60
+	*/
 	retsp 0
 .tmp_fir_impl:
 	.size	fir_impl, .tmp_fir_impl-fir_impl
