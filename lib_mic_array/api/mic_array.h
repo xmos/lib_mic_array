@@ -61,7 +61,7 @@ typedef struct {
     unsigned fir_decimation_factor;
 
     //The coefficients for the FIR deciamtors.
-    unsigned * unsafe coefs[8]; //size 60*sizeof(int) //this need not be unsafe
+    const int *  unsafe * unsafe coefs; //size 60*sizeof(int) //this need not be unsafe
 
     //The data for the FIR deciamtors
     int * unsafe data;    //This needs to be fir_decimation_factor*4*60*sizeof(int)//this need not be unsafe
