@@ -14,6 +14,7 @@ static void pdm_interface(in port p_pdm_mics){
     unsigned zeros[8] = {0};
     unsigned count = 0;
 
+    printf("Started\n");
     int broken[8] = {0};
     int tied_to_clock[8] = {0};
 
@@ -79,7 +80,7 @@ static void pdm_interface(in port p_pdm_mics){
                 zeros[i]=0;
                 print_counter++;
                 if(!(print_counter&0xff))
-                        printf("Working\n");
+                        printf("Testing\n");
             }
         }
         p_pdm_mics:> v;
