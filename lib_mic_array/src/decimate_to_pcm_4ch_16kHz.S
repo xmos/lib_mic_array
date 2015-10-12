@@ -348,16 +348,22 @@ input_sample_5:
 
 input_sample_6:
 	INPUT(S_D_INPUT_6)
+
 	//move all the fir outputs back into the second stage outputs
+	ldc t, 0
 	ldaw r0, sp[S_FIR_OFFSET]
 	ldaw r1, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
 	ldw r2, r0[S_SUM_0+1]
+	std t, t, r0[S_D_SUM_0]
 	stw r2, r1[S_SECOND_STAGE_OUTPUT_0]
 	ldw r2, r0[S_SUM_1+1]
+	std t, t, r0[S_D_SUM_1]
 	stw r2, r1[S_SECOND_STAGE_OUTPUT_1]
 	ldw r2, r0[S_SUM_2+1]
+	std t, t, r0[S_D_SUM_2]
 	stw r2, r1[S_SECOND_STAGE_OUTPUT_2]
 	ldw r2, r0[S_SUM_3+1]
+	std t, t, r0[S_D_SUM_3]
 	stw r2, r1[S_SECOND_STAGE_OUTPUT_3]
 
 	//TODO update the min and max vals

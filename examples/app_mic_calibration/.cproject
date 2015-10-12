@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
-		<cconfiguration id="com.xmos.cdt.toolchain.1725415404">
-			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.1725415404" moduleId="org.eclipse.cdt.core.settings" name="Default">
+		<cconfiguration id="com.xmos.cdt.toolchain.1477842404">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.1477842404" moduleId="org.eclipse.cdt.core.settings" name="Default">
 				<externalSettings/>
 				<extensions>
 					<extension id="com.xmos.cdt.core.XEBinaryParser" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -12,17 +12,17 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.1725415404" name="Default" parent="org.eclipse.cdt.build.core.emptycfg">
-					<folderInfo id="com.xmos.cdt.toolchain.1725415404.429215651" name="/" resourcePath="">
-						<toolChain id="com.xmos.cdt.toolchain.937895245" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
-							<targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser;org.eclipse.cdt.core.GNU_ELF" id="com.xmos.cdt.core.platform.164252605" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform"/>
-							<builder arguments="CONFIG=Default" id="com.xmos.cdt.builder.base.786556914" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base">
+				<configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.1477842404" name="Default" parent="org.eclipse.cdt.build.core.emptycfg">
+					<folderInfo id="com.xmos.cdt.toolchain.1477842404.1545442060" name="/" resourcePath="">
+						<toolChain id="com.xmos.cdt.toolchain.44394088" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
+							<targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser;org.eclipse.cdt.core.GNU_ELF" id="com.xmos.cdt.core.platform.909081718" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform"/>
+							<builder arguments="CONFIG=Default" id="com.xmos.cdt.builder.base.226463682" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base">
 								<outputEntries>
 									<entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name="bin"/>
 								</outputEntries>
 							</builder>
-							<tool id="com.xmos.cdt.xc.compiler.2081998696" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
-								<option id="com.xmos.xc.compiler.option.defined.symbols.938459615" name="com.xmos.xc.compiler.option.defined.symbols" superClass="com.xmos.xc.compiler.option.defined.symbols" valueType="definedSymbols">
+							<tool id="com.xmos.cdt.xc.compiler.448533275" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
+								<option id="com.xmos.xc.compiler.option.defined.symbols.1555721866" name="com.xmos.xc.compiler.option.defined.symbols" superClass="com.xmos.xc.compiler.option.defined.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__XC__=1"/>
 									<listOptionValue builtIn="false" value="__llvm__=1"/>
 									<listOptionValue builtIn="false" value="__ATOMIC_RELAXED=0"/>
@@ -141,15 +141,15 @@
 									<listOptionValue builtIn="false" value="__INT8_TYPE__=signed"/>
 									<listOptionValue builtIn="false" value="__INT8_FMTd__=&quot;hhd&quot;"/>
 									<listOptionValue builtIn="false" value="__INT8_FMTi__=&quot;hhi&quot;"/>
-									<listOptionValue builtIn="false" value="__INT8_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT8_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT16_TYPE__=short"/>
 									<listOptionValue builtIn="false" value="__INT16_FMTd__=&quot;hd&quot;"/>
 									<listOptionValue builtIn="false" value="__INT16_FMTi__=&quot;hi&quot;"/>
-									<listOptionValue builtIn="false" value="__INT16_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT16_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT32_TYPE__=int"/>
 									<listOptionValue builtIn="false" value="__INT32_FMTd__=&quot;d&quot;"/>
 									<listOptionValue builtIn="false" value="__INT32_FMTi__=&quot;i&quot;"/>
-									<listOptionValue builtIn="false" value="__INT32_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT32_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT64_TYPE__=long"/>
 									<listOptionValue builtIn="false" value="__INT64_FMTd__=&quot;lld&quot;"/>
 									<listOptionValue builtIn="false" value="__INT64_FMTi__=&quot;lli&quot;"/>
@@ -169,19 +169,23 @@
 									<listOptionValue builtIn="false" value="XCC_VERSION_MAJOR=1401"/>
 									<listOptionValue builtIn="false" value="XCC_VERSION_MINOR=1"/>
 									<listOptionValue builtIn="false" value="__XCC_HAVE_FLOAT__=1"/>
-									<listOptionValue builtIn="false" value="&quot;_XSCOPE_PROBES_INCLUDE_FILE=&quot;C:\\Users\\Andrew\\AppData\\Local\\Temp\\ccYvaaaa.h&quot;"/>
+									<listOptionValue builtIn="false" value="_XSCOPE_PROBES_INCLUDE_FILE=&quot;/tmp/ccCEW0DM.h&quot;"/>
 								</option>
-								<option id="com.xmos.xc.compiler.option.include.paths.1751964839" name="com.xmos.xc.compiler.option.include.paths" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/xc&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
+								<option id="com.xmos.xc.compiler.option.include.paths.556681918" name="com.xmos.xc.compiler.option.include.paths" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/xc&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir_decimators}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc}&quot;"/>
@@ -190,14 +194,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/xc&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
 								</option>
-								<inputType id="com.xmos.cdt.xc.compiler.input.1646397905" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
+								<inputType id="com.xmos.cdt.xc.compiler.input.1374662890" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
-							<tool id="com.xmos.cdt.c.compiler.768632508" name="com.xmos.cdt.c.compiler" superClass="com.xmos.cdt.c.compiler">
-								<option id="com.xmos.c.compiler.option.defined.symbols.1865387705" name="com.xmos.c.compiler.option.defined.symbols" superClass="com.xmos.c.compiler.option.defined.symbols" valueType="definedSymbols">
+							<tool id="com.xmos.cdt.c.compiler.1533689692" name="com.xmos.cdt.c.compiler" superClass="com.xmos.cdt.c.compiler">
+								<option id="com.xmos.c.compiler.option.defined.symbols.281756208" name="com.xmos.c.compiler.option.defined.symbols" superClass="com.xmos.c.compiler.option.defined.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__llvm__=1"/>
 									<listOptionValue builtIn="false" value="__clang__=1"/>
 									<listOptionValue builtIn="false" value="__clang_major__=3"/>
@@ -336,15 +337,15 @@
 									<listOptionValue builtIn="false" value="__INT8_TYPE__=signed"/>
 									<listOptionValue builtIn="false" value="__INT8_FMTd__=&quot;hhd&quot;"/>
 									<listOptionValue builtIn="false" value="__INT8_FMTi__=&quot;hhi&quot;"/>
-									<listOptionValue builtIn="false" value="__INT8_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT8_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT16_TYPE__=short"/>
 									<listOptionValue builtIn="false" value="__INT16_FMTd__=&quot;hd&quot;"/>
 									<listOptionValue builtIn="false" value="__INT16_FMTi__=&quot;hi&quot;"/>
-									<listOptionValue builtIn="false" value="__INT16_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT16_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT32_TYPE__=int"/>
 									<listOptionValue builtIn="false" value="__INT32_FMTd__=&quot;d&quot;"/>
 									<listOptionValue builtIn="false" value="__INT32_FMTi__=&quot;i&quot;"/>
-									<listOptionValue builtIn="false" value="__INT32_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT32_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT64_TYPE__=long"/>
 									<listOptionValue builtIn="false" value="__INT64_FMTd__=&quot;lld&quot;"/>
 									<listOptionValue builtIn="false" value="__INT64_FMTi__=&quot;lli&quot;"/>
@@ -354,7 +355,7 @@
 									<listOptionValue builtIn="false" value="__UINT8_FMTu__=&quot;hhu&quot;"/>
 									<listOptionValue builtIn="false" value="__UINT8_FMTx__=&quot;hhx&quot;"/>
 									<listOptionValue builtIn="false" value="__UINT8_FMTX__=&quot;hhX&quot;"/>
-									<listOptionValue builtIn="false" value="__UINT8_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__UINT8_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__UINT8_MAX__=255"/>
 									<listOptionValue builtIn="false" value="__INT8_MAX__=127"/>
 									<listOptionValue builtIn="false" value="__UINT16_TYPE__=unsigned"/>
@@ -362,7 +363,7 @@
 									<listOptionValue builtIn="false" value="__UINT16_FMTu__=&quot;hu&quot;"/>
 									<listOptionValue builtIn="false" value="__UINT16_FMTx__=&quot;hx&quot;"/>
 									<listOptionValue builtIn="false" value="__UINT16_FMTX__=&quot;hX&quot;"/>
-									<listOptionValue builtIn="false" value="__UINT16_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__UINT16_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__UINT16_MAX__=65535"/>
 									<listOptionValue builtIn="false" value="__INT16_MAX__=32767"/>
 									<listOptionValue builtIn="false" value="__UINT32_TYPE__=unsigned"/>
@@ -491,18 +492,22 @@
 									<listOptionValue builtIn="false" value="XCC_VERSION_MAJOR=1401"/>
 									<listOptionValue builtIn="false" value="XCC_VERSION_MINOR=1"/>
 									<listOptionValue builtIn="false" value="__XCC_HAVE_FLOAT__=1"/>
-									<listOptionValue builtIn="false" value="&quot;_XSCOPE_PROBES_INCLUDE_FILE=&quot;C:\\Users\\Andrew\\AppData\\Local\\Temp\\cc2tbaaa.h&quot;"/>
+									<listOptionValue builtIn="false" value="_XSCOPE_PROBES_INCLUDE_FILE=&quot;/tmp/cceajy5Z.h&quot;"/>
 								</option>
-								<option id="com.xmos.c.compiler.option.include.paths.1282829676" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
+								<option id="com.xmos.c.compiler.option.include.paths.1918620020" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir_decimators}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc}&quot;"/>
@@ -511,13 +516,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
 								</option>
-								<inputType id="com.xmos.cdt.c.compiler.input.c.815584995" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
+								<inputType id="com.xmos.cdt.c.compiler.input.c.362514034" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
-							<tool id="com.xmos.cdt.cxx.compiler.505809090" name="com.xmos.cdt.cxx.compiler" superClass="com.xmos.cdt.cxx.compiler">
-								<option id="com.xmos.cxx.compiler.option.defined.symbols.626362855" name="com.xmos.cxx.compiler.option.defined.symbols" superClass="com.xmos.cxx.compiler.option.defined.symbols" valueType="definedSymbols">
+							<tool id="com.xmos.cdt.cxx.compiler.1230233082" name="com.xmos.cdt.cxx.compiler" superClass="com.xmos.cdt.cxx.compiler">
+								<option id="com.xmos.cxx.compiler.option.defined.symbols.1237138745" name="com.xmos.cxx.compiler.option.defined.symbols" superClass="com.xmos.cxx.compiler.option.defined.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__llvm__=1"/>
 									<listOptionValue builtIn="false" value="__clang__=1"/>
 									<listOptionValue builtIn="false" value="__clang_major__=3"/>
@@ -660,15 +663,15 @@
 									<listOptionValue builtIn="false" value="__INT8_TYPE__=signed"/>
 									<listOptionValue builtIn="false" value="__INT8_FMTd__=&quot;hhd&quot;"/>
 									<listOptionValue builtIn="false" value="__INT8_FMTi__=&quot;hhi&quot;"/>
-									<listOptionValue builtIn="false" value="__INT8_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT8_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT16_TYPE__=short"/>
 									<listOptionValue builtIn="false" value="__INT16_FMTd__=&quot;hd&quot;"/>
 									<listOptionValue builtIn="false" value="__INT16_FMTi__=&quot;hi&quot;"/>
-									<listOptionValue builtIn="false" value="__INT16_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT16_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT32_TYPE__=int"/>
 									<listOptionValue builtIn="false" value="__INT32_FMTd__=&quot;d&quot;"/>
 									<listOptionValue builtIn="false" value="__INT32_FMTi__=&quot;i&quot;"/>
-									<listOptionValue builtIn="false" value="__INT32_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__INT32_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__INT64_TYPE__=long"/>
 									<listOptionValue builtIn="false" value="__INT64_FMTd__=&quot;lld&quot;"/>
 									<listOptionValue builtIn="false" value="__INT64_FMTi__=&quot;lli&quot;"/>
@@ -678,7 +681,7 @@
 									<listOptionValue builtIn="false" value="__UINT8_FMTu__=&quot;hhu&quot;"/>
 									<listOptionValue builtIn="false" value="__UINT8_FMTx__=&quot;hhx&quot;"/>
 									<listOptionValue builtIn="false" value="__UINT8_FMTX__=&quot;hhX&quot;"/>
-									<listOptionValue builtIn="false" value="__UINT8_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__UINT8_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__UINT8_MAX__=255"/>
 									<listOptionValue builtIn="false" value="__INT8_MAX__=127"/>
 									<listOptionValue builtIn="false" value="__UINT16_TYPE__=unsigned"/>
@@ -686,7 +689,7 @@
 									<listOptionValue builtIn="false" value="__UINT16_FMTu__=&quot;hu&quot;"/>
 									<listOptionValue builtIn="false" value="__UINT16_FMTx__=&quot;hx&quot;"/>
 									<listOptionValue builtIn="false" value="__UINT16_FMTX__=&quot;hX&quot;"/>
-									<listOptionValue builtIn="false" value="__UINT16_C_SUFFIX__="/>
+									<listOptionValue builtIn="false" value="__UINT16_C_SUFFIX__"/>
 									<listOptionValue builtIn="false" value="__UINT16_MAX__=65535"/>
 									<listOptionValue builtIn="false" value="__INT16_MAX__=32767"/>
 									<listOptionValue builtIn="false" value="__UINT32_TYPE__=unsigned"/>
@@ -815,19 +818,23 @@
 									<listOptionValue builtIn="false" value="XCC_VERSION_MAJOR=1401"/>
 									<listOptionValue builtIn="false" value="XCC_VERSION_MINOR=1"/>
 									<listOptionValue builtIn="false" value="__XCC_HAVE_FLOAT__=1"/>
-									<listOptionValue builtIn="false" value="&quot;_XSCOPE_PROBES_INCLUDE_FILE=&quot;C:\\Users\\Andrew\\AppData\\Local\\Temp\\ccKsbaaa.h&quot;"/>
+									<listOptionValue builtIn="false" value="_XSCOPE_PROBES_INCLUDE_FILE=&quot;/tmp/ccxWaibb.h&quot;"/>
 								</option>
-								<option id="com.xmos.cxx.compiler.option.include.paths.547927684" name="com.xmos.cxx.compiler.option.include.paths" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/c++/v1&quot;"/>
+								<option id="com.xmos.cxx.compiler.option.include.paths.1571248404" name="com.xmos.cxx.compiler.option.include.paths" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/c++/v1&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_support}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir_decimators}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc}&quot;"/>
@@ -836,11 +843,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/c++/v1&quot;"/>
 								</option>
-								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.208888212" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
+								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.237264808" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
@@ -853,7 +857,7 @@
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-		<project id="app_hi_and_lo_res_DAS_fixed.null.676601848" name="app_hi_and_lo_res_DAS_fixed"/>
+		<project id="app_mic_calibration.null.275618775" name="app_mic_calibration"/>
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
