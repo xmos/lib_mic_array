@@ -74,12 +74,12 @@ void wait_for_mics_to_settle_down(){
 }
 
 extern void pdm_rx_asm(
-        in port p_pdm_mics,
+        in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1);
 
 void pdm_rx(
-        in port p_pdm_mics,
+        in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1){
 
@@ -91,7 +91,7 @@ void pdm_rx(
 }
 
 extern void pdm_rx_with_hires_delay_asm(
-        in port p_pdm_mics,
+        in buffered port:32 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync,
@@ -99,7 +99,7 @@ extern void pdm_rx_with_hires_delay_asm(
         streaming chanend c_4x_pdm_mic_1);
 
 void pdm_rx_with_hires_delay(
-        in port p_pdm_mics,
+        in buffered port:32 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync,
@@ -122,13 +122,13 @@ void pdm_rx_with_hires_delay(
 }
 
 extern void pdm_rx_only_hires_delay_asm(
-        in port p_pdm_mics,
+        in buffered port:32 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync);
 
 void pdm_rx_only_hires_delay(
-        in port p_pdm_mics,
+        in buffered port:32 p_pdm_mics,
         unsigned long long * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync){

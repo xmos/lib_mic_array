@@ -10,6 +10,7 @@
 #include "debug_print.h"
 #include "xassert.h"
 
+#include "fir_decimator.h"
 #include "mic_array.h"
 #include "mic_array_board_support.h"
 
@@ -20,7 +21,7 @@ on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
 
 on tile[0]: in port p_pdm_clk             = XS1_PORT_1E;
-on tile[0]: in port p_pdm_mics            = XS1_PORT_8B;
+on tile[0]: in buffered port:32 p_pdm_mics            = XS1_PORT_8B;
 on tile[0]: in port p_mclk                = XS1_PORT_1F;
 on tile[0]: clock mclk0                    = XS1_CLKBLK_1;
 on tile[0]: clock pdmclk                  = XS1_CLKBLK_2;
@@ -238,6 +239,8 @@ void i2s_handler(server i2s_callback_if i2s,
   }
 };
 
+int data_0[4*COEFS_PER_PHASE] = {0};
+int data_1[4*COEFS_PER_PHASE] = {0};
 int main(){
 
     i2s_callback_if i_i2s;
@@ -266,13 +269,18 @@ int main(){
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(mclk0);
             start_clock(pdmclk);
-            decimator_config dc = {0, 1, 0, 0};
-            par{
-                button_and_led_server(lb, leds, p_buttons);
-                pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_0, c_ds_output_0, dc);
-                decimate_to_pcm_4ch_48KHz(c_4x_pdm_mic_1, c_ds_output_1, dc);
-                demo(c_ds_output_0, c_ds_output_1, lb,c_audio);
+            unsafe {
+            const int * unsafe p[1] = {fir_1_coefs[0]};
+
+                decimator_config dc0 = {0, 1, 0, 0, 1, p, data_0, {0,0, 0, 0}};
+                decimator_config dc1 = {0, 1, 0, 0, 1, p, data_1, {0,0, 0, 0}};
+                par{
+                    button_and_led_server(lb, leds, p_buttons);
+                    pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+                    decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);
+                    decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1, dc1);
+                    lores_DAS_fixed(c_ds_output_0, c_ds_output_1, lb,c_audio);
+                }
             }
         }
     }

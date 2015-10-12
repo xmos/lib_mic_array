@@ -1,12 +1,12 @@
 # The TARGET variable determines what target system the application is
 # compiled for. It either refers to an XN file in the source directories
 # or a valid argument for the --target option when compiling
-TARGET = MIC-ARRAY-1V0
+TARGET = XCORE-200-EXPLORER
 
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to
 # the project name
-APP_NAME = app_hi_and_lo_res_DAS_fixed
+APP_NAME = new_deciamtor_bringup
 
 # The USED_MODULES variable lists other module used by the application.
 USED_MODULES = lib_mic_array
