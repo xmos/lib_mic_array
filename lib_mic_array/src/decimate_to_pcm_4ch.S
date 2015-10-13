@@ -110,8 +110,10 @@
 #define S_D_INPUT_5 5
 #define S_D_INPUT_6 6
 #define S_D_INPUT_7 7
+#define S_D_INPUT_TEMP 8
+#define INPUT_STACK_SIZE 18
 
-#define S_INTEGRAL_OFFSET (S_INPUT_OFFSET+16)
+#define S_INTEGRAL_OFFSET (S_INPUT_OFFSET+INPUT_STACK_SIZE)
 #define S_D_INT_0_01 0
 #define S_D_INT_0_23 1
 #define S_D_INT_0_45 2
@@ -124,8 +126,9 @@
 #define S_D_INT_3_01 9
 #define S_D_INT_3_23 10
 #define S_D_INT_3_45 11
+#define INTEGRAL_STACK_SIZE 24
 
-#define S_COMB_OFFSET (S_INTEGRAL_OFFSET+24)
+#define S_COMB_OFFSET (S_INTEGRAL_OFFSET+INTEGRAL_STACK_SIZE)
 #define S_D_COMB_0_01 0
 #define S_D_COMB_0_23 1
 #define S_D_COMB_0_45 2
@@ -138,14 +141,16 @@
 #define S_D_COMB_3_01 9
 #define S_D_COMB_3_23 10
 #define S_D_COMB_3_45 11
+#define COMB_STACK_SIZE 24
 
-#define S_DC_ELIMINATE_OFFSET (S_COMB_OFFSET+24)
+#define S_DC_ELIMINATE_OFFSET (S_COMB_OFFSET+COMB_STACK_SIZE)
 #define S_D_PREV_XY_0 0
 #define S_D_PREV_XY_1 1
 #define S_D_PREV_XY_2 2
 #define S_D_PREV_XY_3 3
+#define DC_ELIMINATE_STACK_SIZE 8
 
-#define S_SECOND_STAGE_OUTPUT_OFFSET (S_DC_ELIMINATE_OFFSET+8)
+#define S_SECOND_STAGE_OUTPUT_OFFSET (S_DC_ELIMINATE_OFFSET+DC_ELIMINATE_STACK_SIZE)
 #define S_D_SECOND_STAGE_OUTPUT_01 0
 #define S_SECOND_STAGE_OUTPUT_0 0
 #define S_SECOND_STAGE_OUTPUT_1 1
@@ -291,22 +296,24 @@ get_frame_pointer:
 
 ds_loop:
 input_sample_0:
-	INPUT(S_D_INPUT_0)
+	INPUT(S_D_INPUT_TEMP)	//TODO check speed requirements
 		integrate_2:
 		INTEGRATE(2, 6,  7,  8) //78 inst
 		integrate_3:
 		INTEGRATE(3, 9, 10, 11) //78 inst
-
+	ldd r1, r0, sp[S_D_INPUT_TEMP]
+	std r1, r0, sp[S_D_INPUT_0]
 input_sample_1:
 	INPUT(S_D_INPUT_1)//comb and dc eliminate all mics
 		comb0:
-		COMB(S_SECOND_STAGE_OUTPUT_0, 5, 0, 1, 2)	//make sure these input fields match the intergator outputs
+		COMB(S_SECOND_STAGE_OUTPUT_0, 5, 0, 1, 2)
 		comb1:
 		COMB(S_SECOND_STAGE_OUTPUT_1, 11, 3, 4, 5)
 		comb2:
 		COMB(S_SECOND_STAGE_OUTPUT_2, 17, 6, 7, 8)
 		comb3:
 		COMB(S_SECOND_STAGE_OUTPUT_3, 23, 9, 10, 11)
+
 		check_dc_offset_removal:
 		ldaw t, sp[S_SETTINGS_OFFSET]
 		ldw t, t[S_DC_OFFSET_REMOVAL_ENABLED]
@@ -323,7 +330,6 @@ input_sample_1:
 			DC_OFFSET_REMOVAL(S_D_PREV_XY_3, S_SECOND_STAGE_OUTPUT_3);
 		skip_dc_offset_removal:
 		//64 + 33 used = 97 -> ~ 50 spare
-
 		//TODO gain compensation
 
 input_sample_2:
@@ -348,7 +354,6 @@ input_sample_5:
 
 input_sample_6:
 	INPUT(S_D_INPUT_6)
-
 	//move all the fir outputs back into the second stage outputs
 	ldc t, 0
 	ldaw r0, sp[S_FIR_OFFSET]
