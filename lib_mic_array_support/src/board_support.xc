@@ -56,6 +56,23 @@ void button_and_led_server(server interface led_button_if lb, p_leds &leds, in p
             }
             break;
         }
+
+        case t:> unsigned now :{
+            unsigned elapsed = (now-start_of_time)&LED_MAX_COUNT;
+            elapsed>>=(20-8);
+            unsigned d=0;
+            for(unsigned i=0;i<8;i++)
+                d=(d>>1)+(0x80*(led_brightness[i]<=elapsed));
+            leds.p_led0to7 <: d;
+            leds.p_led8 <: (led_brightness[8]<=elapsed);
+            leds.p_led9 <: (led_brightness[9]<=elapsed);
+            d=0;
+            for(unsigned i=10;i<13;i++)
+                d=(d>>1)+(0x4*(led_brightness[i]<=elapsed));
+            leds.p_led10to12 <: d;
+            break;
+        }
+        /*
         default:{
             unsigned now;
             t:> now;
@@ -73,6 +90,7 @@ void button_and_led_server(server interface led_button_if lb, p_leds &leds, in p
             leds.p_led10to12 <: d;
             break;
         }
+        */
         }
     }
 }

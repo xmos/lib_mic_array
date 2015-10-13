@@ -248,12 +248,12 @@ decimate_to_pcm_4ch:
 	ldw t, r2[3] //windowing_function
 	stw t, r0[S_WINDOWING_ENABLED]
 
-	ldw t, r2[4] //deciamtion factor
-	stw t, r0[S_DECIMATION_FACTOR]
-
 	ldw t, r2[7]	//apply mic gain compensation
 	stw t, r0[S_MIC_GAIN_COMP]
 
+
+	ldw t, r2[4] //deciamtion factor
+	stw t, r0[S_DECIMATION_FACTOR]
 
 	//Copy the coefficient pointer over
 setup_coefs:
