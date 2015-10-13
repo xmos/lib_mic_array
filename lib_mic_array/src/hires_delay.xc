@@ -21,7 +21,7 @@ void hires_delay(
         streaming chanend c_4x_pdm_mic_1,
         streaming chanend c_sync,
         hires_delay_config * unsafe config,
-        unsigned long long * unsafe p_shared_memory_array){
+        int64_t * unsafe p_shared_memory_array){
 
 
     unsafe {

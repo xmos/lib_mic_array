@@ -25,7 +25,7 @@
 #define S_COMB_1 4
 #define S_COMB_2 5
 #define S_MEM_CHAN 6
-#define S_MEM_LOG2 12
+#define S_MEM_LOG2 14
 
 #define INIT_STACK() \
 	ldc a, 0;\
@@ -36,9 +36,6 @@
 	std a, a, sp[S_COMB_1];\
 	std a, a, sp[S_COMB_2]
 
-#define SAVE_PARAMS(r_pointer, r_mem_size, r_chan) \
-	std r_pointer, r_chan, sp[S_MEM_CHAN];\
-	stw r_mem_size, sp[S_MEM_LOG2];\
 
 #define INTEGRATE() \
 	ldd s, t, t[s];\
@@ -122,6 +119,7 @@ pdm_rx_loop:
 	.globl	pdm_rx_asm.maxchanends
 
 
+
 		.cc_top pdm_rx_only_hires_delay_asm.function
 	.globl	pdm_rx_only_hires_delay_asm
 	.align	4
@@ -134,7 +132,8 @@ pdm_rx_only_hires_delay_asm://{
 
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
-	SAVE_PARAMS(r1, r2, r3)
+	std r3, r1, sp[S_MEM_CHAN]
+	stw r2, sp[S_MEM_LOG2]
 	ldc index, 0
 	ldw mask, cp[cic_mask]
 	INIT_STACK()
