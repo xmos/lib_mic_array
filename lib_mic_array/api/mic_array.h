@@ -15,9 +15,9 @@ extern unsigned windowing_function[1<<FRAME_SIZE_LOG2];
  *  per channel format.
  *
  *  \param p_pdm_mics        The 8 bit wide port connected to the PDM microphones.
- *  \param c_4x_pdm_mic_0    A channel where the decimated PDM of microphones 0-3 will
+ *  \param c_4x_pdm_mic_0    The channel where the decimated PDM of microphones 0-3 will
  *                           be outputted bytewise.
- *  \param c_4x_pdm_mic_1    A channel where the decimated PDM of microphones 4-7 will
+ *  \param c_4x_pdm_mic_1    The channel where the decimated PDM of microphones 4-7 will
  *                           be outputted bytewise.
  */
 void pdm_rx(
@@ -61,9 +61,9 @@ typedef struct {
  *  at which the circular buffer is being updated. The maximum delay is given by the
  *  size of the circular buffer.
  *
- *  \param c_4x_pdm_mic_0    A channel where the decimated PDM of microphones 0-3 will
+ *  \param c_4x_pdm_mic_0    The channel where the decimated PDM of microphones 0-3 will
  *                           be outputted bytewise.
- *  \param c_4x_pdm_mic_1    A channel where the decimated PDM of microphones 4-7 will
+ *  \param c_4x_pdm_mic_1    The channel where the decimated PDM of microphones 4-7 will
  *                           be outputted bytewise.
  *  \param c_sync            The channel used for synchronizing the high resolution
  *                           delay buffer to the PDM input.
@@ -119,7 +119,20 @@ typedef struct {
 } decimator_config;
 
 
-
+/** Four Channel Decimation component.
+ *
+ *  This task decimated the four channel input down to the desired sample rate.
+ *  The deciamtion ratios are limited to 8*1, 8*2, 8*3, 8*4, 8*5, 8*6, 8*7 and 8*8.
+ *  The channel c_frame_output is used to transfer pointers to frames deciamtor
+ *  will save the output samples in the format given by the configuration.
+ *
+ *  \param c_4x_pdm_mic      The channel where the decimated PDM of microphones 0-3 will
+ *                           be inputted bytewise.
+ *  \param c_frame_output    The channel used to transfer pointers between the client of
+ *                           this task and this task.
+ *  \param config            The configuration structure describing the behaviour of the
+ *                           deciamtion component.
+ */
 
 void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,
