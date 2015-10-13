@@ -38,21 +38,21 @@ void hires_delay(
             //to limit the reloading of delays
             for(unsigned i=0;i<1;i++){
 
-                v += mic_array[zext(index-config->delays[current_set][0], config->memory_depth_log2) * 8 + 0];
+                v += mic_array[zext(index-config->delays[current_set][0], config->memory_size_log2) * 8 + 0];
                 v<<=8;
-                v += mic_array[zext(index-config->delays[current_set][1], config->memory_depth_log2) * 8 + 1];
+                v += mic_array[zext(index-config->delays[current_set][1], config->memory_size_log2) * 8 + 1];
                 v<<=8;
-                v += mic_array[zext(index-config->delays[current_set][2], config->memory_depth_log2) * 8 + 2];
+                v += mic_array[zext(index-config->delays[current_set][2], config->memory_size_log2) * 8 + 2];
                 v<<=8;
-                v += mic_array[zext(index-config->delays[current_set][3], config->memory_depth_log2) * 8 + 3];
+                v += mic_array[zext(index-config->delays[current_set][3], config->memory_size_log2) * 8 + 3];
 
-                q += mic_array[zext(index-config->delays[current_set][4], config->memory_depth_log2) * 8 + 4];
+                q += mic_array[zext(index-config->delays[current_set][4], config->memory_size_log2) * 8 + 4];
                 q<<=8;
-                q += mic_array[zext(index-config->delays[current_set][5], config->memory_depth_log2) * 8 + 5];
+                q += mic_array[zext(index-config->delays[current_set][5], config->memory_size_log2) * 8 + 5];
                 q<<=8;
-                q += mic_array[zext(index-config->delays[current_set][6], config->memory_depth_log2) * 8 + 6];
+                q += mic_array[zext(index-config->delays[current_set][6], config->memory_size_log2) * 8 + 6];
                 q<<=8;
-                q += mic_array[zext(index-config->delays[current_set][7], config->memory_depth_log2) * 8 + 7];
+                q += mic_array[zext(index-config->delays[current_set][7], config->memory_size_log2) * 8 + 7];
 
                 index++;
 

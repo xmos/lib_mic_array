@@ -88,7 +88,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
 #define MAX_DELAY 128
 
-    unsigned gain = 128;
+    unsigned gain = 4096;
     unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
     int delay_buffer[MAX_DELAY][7];
     memset(delay_buffer, sizeof(int)*8*8, 0);
@@ -169,15 +169,6 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
             output = ((uint64_t)output*gain)>>8;
             c_audio <: output;
             c_audio <: output;
-            xscope_int(0, audio[buffer].data[0][0]);
-            xscope_int(1, audio[buffer].data[1][0]);
-            xscope_int(2, audio[buffer].data[2][0]);
-            xscope_int(3, audio[buffer].data[3][0]);
-            //xscope_int(4, audio[buffer].data[4][0]);
-            //xscope_int(5, audio[buffer].data[5][0]);
-            //xscope_int(6, audio[buffer].data[6][0]);
-            //xscope_int(7, audio[buffer].data[7][0]);
-
             delay_head++;
             delay_head%=MAX_DELAY;
         }

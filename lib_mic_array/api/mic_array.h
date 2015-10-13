@@ -1,30 +1,76 @@
 #ifndef MIC_ARRAY_H_
 #define MIC_ARRAY_H_
 
+#include <stdint.h>
+
 #include "defines.h"
 #include "frame.h"
 
 extern unsigned windowing_function[1<<FRAME_SIZE_LOG2];
 
+/** PDM Microphone Interface component.
+ *
+ *  This task handels the interface to up to 8 PDM microphones whilst also decimating
+ *  the PDM data by a factor of 4. The output is sent across the channels in one byte
+ *  per channel format.
+ *
+ *  \param p_pdm_mics        The 8 bit wide port connected to the PDM microphones.
+ *  \param c_4x_pdm_mic_0    A channel where the decimated PDM of microphones 0-3 will
+ *                           be outputted bytewise.
+ *  \param c_4x_pdm_mic_1    A channel where the decimated PDM of microphones 4-7 will
+ *                           be outputted bytewise.
+ */
 void pdm_rx(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1);
 
+/** PDM Microphone Interface component for high resolution delay.
+ *
+ *  This task handels the interface to up to 8 PDM microphones whilst also decimating
+ *  the PDM data by a factor of 4. The output is saved to a shared memory cicular buffer
+ *  given by shared_memory_array. The shared memory array
+ *
+ *  \param p_pdm_mics            The 8 bit wide port connected to the PDM microphones.
+ *  \param shared_memory_array   A pointer to the location of the shared circluar buffer.
+ *  \param memory_size_log2      The number of int64_t in the shared memory log two.
+ *  \param c_sync                The channel used for synchronizing the high resolution
+ *                               delay buffer to the PDM input.
+ */
 void pdm_rx_only_hires_delay(
         in buffered port:32 p_pdm_mics,
-        unsigned long long * unsafe shared_memory_array,
-        unsigned ch_memory_depth_log2,
+        int64_t * unsafe shared_memory_array,
+        unsigned memory_size_log2,
         streaming chanend c_sync);
 
+/*
+ * High Resolution Delay config structure.
+ */
 typedef struct {
-    unsigned active_delay_set;
-    unsigned memory_depth_log2;
-    unsigned delay_set_in_use;
-    unsigned long long n;
-    unsigned delays[2][MAX_NUM_CHANNELS];
+    unsigned memory_size_log2;              //The number of int64_t in the shared memory log two.
+    unsigned active_delay_set;              //Used to select the initial delays from the delay double buffer
+    unsigned delay_set_in_use;              //Used internally
+    unsigned long long n;                   //Used internally
+    unsigned delays[2][MAX_NUM_CHANNELS];   //Holds the delays in a double buffer, selected by active_delay_set
 } hires_delay_config;
 
+/** High resolution delay component.
+ *
+ *  This task handels the application of a individual delays of up to 8 channels.
+ *  Each unit of delay represents one sample at the input sample rate, i.e. the rate
+ *  at which the circular buffer is being updated. The maximum delay is given by the
+ *  size of the circular buffer.
+ *
+ *  \param c_4x_pdm_mic_0    A channel where the decimated PDM of microphones 0-3 will
+ *                           be outputted bytewise.
+ *  \param c_4x_pdm_mic_1    A channel where the decimated PDM of microphones 4-7 will
+ *                           be outputted bytewise.
+ *  \param c_sync            The channel used for synchronizing the high resolution
+ *                           delay buffer to the PDM input.
+ *  \param config            The configuration structure describing the behaviour of the
+ *                           high resoultion delay component.
+ *  \param shared_memory_array  The pointer to the location of the shared circluar buffer.
+ */
 void hires_delay(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1,
@@ -34,10 +80,12 @@ void hires_delay(
 
 typedef struct {
 
-    //The output frame size log2.
+    //The output frame size log2, i.e. A frame will contain 2 to the power of frame_size_log2
+    //samples of each channel.
     unsigned frame_size_log2;
 
     //Remove the DC offset from the audio before the final decimation.
+    //Set to non-zero to enable.
     int apply_dc_offset_removal;
 
     //If non-zero then bit reverse the index of the elements within the frame.
@@ -49,32 +97,29 @@ typedef struct {
     unsigned * unsafe windowing_function;
 
     //FIR Decimator
-    //This sets the deciamtion factor of the 48000Hz signal.
+    //This sets the deciamtion factor to the 8 times decimated input rate, i.e. if 768kHz
+    //samples were inputted and 16kHz was the desired output then 3 would be the
+    //fir_deciamtion_factor.
     unsigned fir_decimation_factor;
 
     //The coefficients for the FIR deciamtors.
-    const int *  unsafe * unsafe coefs; //size 60*sizeof(int) //this need not be unsafe
+    const int *  unsafe * unsafe coefs;
 
     //The data for the FIR deciamtors
     int * unsafe data;    //This needs to be fir_decimation_factor*4*60*sizeof(int)//this need not be unsafe
 
+    //set to non-zero to apply microphone gain compensation.
+    int apply_mic_gain_compensation;
+
+    //An array describing the relative gain compensation to apply to the microphones.
+    //The microphone with the least gain is defined as 0xffffffff(MAX_INT), all others
+    //are given as MAX_INT*min_gain/current_mic_gain.
     unsigned mic_gain_compensation[4];
 
 } decimator_config;
 
-/*
- * Takes a channel from a integrated multi channel PDM source and
- * outputs a frame of PCM at 48KHz.
- *
- * The output is in the range of:
- * -2139095040 to 2139095040  or: 0x8080000 to 0x7f80000.
- * Which is 99.6% of full scale.
- */
-void decimate_to_pcm_4ch_48KHz(
-        streaming chanend c_4x_pdm_mic,
-        streaming chanend c_frame_output,
-        decimator_config config
-);
+
+
 
 void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,

@@ -189,12 +189,21 @@
 #define S_FRAME_MAX				5
 #define FRAME_STACK_SIZE		6
 
-#define S_SETTINGS_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)	//TODO finish the fir stack
+#define S_MIC_CALIB_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)
+#define S_MIC_CALIB_0 	0
+#define S_MIC_CALIB_1 	1
+#define S_MIC_CALIB_2 	2
+#define S_MIC_CALIB_3	3
+#define MIC_CALIB_STACK_SIZE		4
+
+#define S_SETTINGS_OFFSET (S_MIC_CALIB_OFFSET+MIC_CALIB_STACK_SIZE)
 #define S_WINDOWING_ENABLED 			0
 #define S_INDEX_BITREVERSING_ENABLED 	1
 #define S_DC_OFFSET_REMOVAL_ENABLED 	2
 #define S_DECIMATION_FACTOR 			3
-#define S_SETTINGS_SIZE					4
+#define S_MIC_GAIN_COMP		 			4
+
+#define S_SETTINGS_SIZE					6
 
 #define NSTACKWORDS (S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
 
@@ -242,6 +251,10 @@ decimate_to_pcm_4ch:
 	ldw t, r2[4] //deciamtion factor
 	stw t, r0[S_DECIMATION_FACTOR]
 
+	ldw t, r2[7]	//apply mic gain compensation
+	stw t, r0[S_MIC_GAIN_COMP]
+
+
 	//Copy the coefficient pointer over
 setup_coefs:
 	ldaw r1, sp[S_FIR_OFFSET]
@@ -260,8 +273,18 @@ setup_coefs:
 	INIT_DATA_LOOP(S_DATA_2, data_2_init_loop)
 	INIT_DATA_LOOP(S_DATA_3, data_3_init_loop)
 
-	//TODO mic gain compensation
 
+
+
+	ldaw r1, sp[S_MIC_CALIB_OFFSET]
+	ldw r0, r2[8]
+	stw r0, r1[S_MIC_CALIB_0]
+	ldw r0, r2[9]
+	stw r0, r1[S_MIC_CALIB_1]
+	ldw r0, r2[10]
+	stw r0, r1[S_MIC_CALIB_2]
+	ldw r0, r2[11]
+	stw r0, r1[S_MIC_CALIB_3]
 
 	/*
 	Initialise the stack regions:
@@ -383,6 +406,11 @@ input_sample_6:
 	stw r2, r0[S_FIR_PHASE]
 	bu input_sample_7
 	save_sample:
+
+		//if window_function != null
+
+		//TODO apply windowing function
+
 
 		ldaw r0, sp[S_FRAME_OFFSET]
 		ldw r2, r0[S_FRAME_SIZE_LOG2]

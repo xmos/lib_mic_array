@@ -66,7 +66,7 @@ int main(){
             start_clock(mclk);
             start_clock(pdmclk);
 
-            unsigned long long shared_memory[PDM_BUFFER_LENGTH] = {0};
+            int64_t shared_memory[PDM_BUFFER_LENGTH] = {0};
 
             unsafe {
 
@@ -76,7 +76,7 @@ int main(){
 
                 hires_delay_config hrd_config;
                 hrd_config.active_delay_set = 0;
-                hrd_config.memory_depth_log2 = PDM_BUFFER_LENGTH_LOG2;
+                hrd_config.memory_size_log2 = PDM_BUFFER_LENGTH_LOG2;
 
                 hires_delay_config * unsafe config = &hrd_config;
                 unsigned long long * unsafe p_shared_memory = shared_memory;
