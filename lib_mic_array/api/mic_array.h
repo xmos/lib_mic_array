@@ -95,7 +95,7 @@ typedef struct {
 
     //If non-null then this will apply a windowing fucntion to the frame
     //Used in the case of perparing for an FFT.
-    unsigned * unsafe windowing_function;
+    int * unsafe windowing_function;
 
     //FIR Decimator
     //This sets the deciamtion factor to the 8 times decimated input rate, i.e. if 768kHz

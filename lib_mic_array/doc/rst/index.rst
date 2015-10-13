@@ -120,12 +120,73 @@ resolution delay and connects an application to it::
   }
 
 
-Decimator configuration
------------------------
+Four Channel Decimator
+----------------------
+The four channel decimator tasks are highly configurable for outputting frames of 
+various sizes. They can be used to produce frames suitable for time domain applications
+or perprocess the frames ready for and FFT for frequency domain applications. The four 
+channel decimators, decimate_to_pcm_4ch(), have a number of configuration options 
+controlled by the structre decimator_config. The configuration is preformed before 
+instiantiating the task by configuring the structure decimator_config. It controls 
+the following :
+
+* frame_size_log2: This sets the frame size to a power of two. A frame will contain 
+  2 to the power of frame_size_log2 samples of each channel. 
+* apply_dc_offset_removal: This controls if the DC offset removal should be enabled
+  or not. Set to non-sero to enable.
+* index_bit_reversal: If enabled this will bit reverse the index of each sample as 
+  is typical before preforming and FFT.
+* windowing_function: A pointer to an array of integers can be provided to allow
+  a windowing function to be applied to the data prior to applying an FFT. This is 
+  preformed before any index bit reversal. 
+* fir_decimation_factor: This specifies the deciamtion factor to apply to the input
+  after a factor of 8 decimator has already been applied. The valid values are 1 to 8 
+  inclusive.
+* coefs: This is a pointer to an array of arrays containing the coefficients for the 
+  final stage of deciamtion. The array should have the same number of entries as the 
+  fir_decimation_factor.
+* data: This is the memory used to save the FIR samples. It must be 
+  4 channels x COEFS_PER_PHASE x sizeof(int) x fir_decimation_factor bytes big.
+* apply_mic_gain_compensation: Set this to non-zreo if microphone gain compensation is 
+  required. The compensation applied is controlled by mic_gain_compensation.
+* mic_gain_compensation: This is a 4 element array specifying the relative compensation
+  to apply to each microphone. Unity gain is given by the value 0xffffffff, therefore 
+  microphones need to be scaled to the microphone of the least gain.
+  
+The output of the decimator is 32bit PCM audio at the requested sample rate. 
+
+For example:
+* PDM clock of 3.072MHz, with a fir_decimation_factor of 3 would give 16kHz output rate,
+* PDM clock of 3.072MHz, with a fir_decimation_factor of 6 would give 8kHz output rate,
+* PDM clock of 2.8224MHz, with a fir_decimation_factor of 1 would give 44.1kHz output rate.
+
+The achieveable rates of a 3.072MHz input clock are:
+* 48kHz
+* 24kHz
+* 16kHz
+* 12kHz
+* 9.6kHz
+* 8kHz
+* 6.857kHz
+* 6kHz
+
+The achieveable rates of a 2.8224MHz input clock are:
+* 44.1kHz
+* 22.05kHz
+* 14.7kHz
+* 11kHz
+* 8.82kHz
+* 7.kHz
+* 6.3kHz
+* 5.51kHz
+
+High resolution delay 
+---------------------
 
 
-High resolution delay configuration
------------------------------------
+Example Applications
+--------------------
+
 
 
 API
