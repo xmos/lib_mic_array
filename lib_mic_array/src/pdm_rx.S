@@ -18,7 +18,7 @@
 //Stack
 #define STACKWORDS 32
 
-#define S_INT_0 0
+#define S_INT_0  0
 #define S_INT_1  1
 #define S_INT_2  2
 #define S_COMB_0 3
