@@ -279,7 +279,7 @@ int main(){
                     pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                     decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);
                     decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1, dc1);
-                    lores_DAS_fixed(c_ds_output_0, c_ds_output_1, lb,c_audio);
+                    demo(c_ds_output_0, c_ds_output_1, lb,c_audio);
                 }
             }
         }
