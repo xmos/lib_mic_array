@@ -82,7 +82,7 @@ int main(){
                 int64_t * unsafe p_shared_memory = shared_memory;
                 par{
                     //Input stage
-                    pdm_rx_only_hires_delay(
+                    pdm_rx_hires_delay(
                             p_pdm_mics,
                             p_shared_memory,
                             PDM_BUFFER_LENGTH_LOG2,
@@ -94,7 +94,7 @@ int main(){
                     decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);
                     decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1, dc1);
 
-                   hires_DAS_fixed(c_ds_output_0, c_ds_output_1, config);
+                    hires_DAS_fixed(c_ds_output_0, c_ds_output_1, config);
 
                 }
             }

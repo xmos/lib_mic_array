@@ -120,11 +120,11 @@ pdm_rx_loop:
 
 
 
-		.cc_top pdm_rx_only_hires_delay_asm.function
-	.globl	pdm_rx_only_hires_delay_asm
+		.cc_top pdm_rx_hires_delay_asm.function
+	.globl	pdm_rx_hires_delay_asm
 	.align	4
-	.type	pdm_rx_only_hires_delay_asm,@function
-pdm_rx_only_hires_delay_asm://{
+	.type	pdm_rx_hires_delay_asm,@function
+pdm_rx_hires_delay_asm://{
         //in buffered port:8 p_pdm_mics,
         //unsigned long long * unsafe shared_memory_array,
         //unsigned ch_memory_depth_log2,
@@ -139,7 +139,7 @@ pdm_rx_only_hires_delay_asm://{
 	INIT_STACK()
 
 	.align 8
-pdm_rx_only_hires_delay_loop:
+pdm_rx_hires_delay_loop:
 	{in buffer, res[p_pdm_mics]; nop}
 	{mov s, buffer; nop}
 	{zext s, 8; ldaw t, cp[g_expand]}
@@ -159,21 +159,21 @@ pdm_rx_only_hires_delay_loop:
 	std s, t, b[index];
 	{outct res[a], 0; add index, index, 1}
 	ldw a, sp[S_MEM_LOG2]
-	{zext index, a; bl pdm_rx_only_hires_delay_loop}
+	{zext index, a; bl pdm_rx_hires_delay_loop}
 
-.pdm_rx_only_hires_delay_asm_tmp:
-	.size	pdm_rx_only_hires_delay_asm, .pdm_rx_only_hires_delay_asm_tmp-pdm_rx_only_hires_delay_asm
+.pdm_rx_hires_delay_asm_tmp:
+	.size	pdm_rx_hires_delay_asm, .pdm_rx_hires_delay_asm_tmp-pdm_rx_hires_delay_asm
 	.align	4
-	.cc_bottom pdm_rx_only_hires_delay_asm.function
+	.cc_bottom pdm_rx_hires_delay_asm.function
 
-	.set	pdm_rx_only_hires_delay_asm.nstackwords,STACKWORDS
-	.globl	pdm_rx_only_hires_delay_asm.nstackwords
-	.set	pdm_rx_only_hires_delay_asm.maxcores,1
-	.globl	pdm_rx_only_hires_delay_asm.maxcores
-	.set	pdm_rx_only_hires_delay_asm.maxtimers,0
-	.globl	pdm_rx_only_hires_delay_asm.maxtimers
-	.set	pdm_rx_only_hires_delay_asm.maxchanends,0
-	.globl	pdm_rx_only_hires_delay_asm.maxchanends
+	.set	pdm_rx_hires_delay_asm.nstackwords,STACKWORDS
+	.globl	pdm_rx_hires_delay_asm.nstackwords
+	.set	pdm_rx_hires_delay_asm.maxcores,1
+	.globl	pdm_rx_hires_delay_asm.maxcores
+	.set	pdm_rx_hires_delay_asm.maxtimers,0
+	.globl	pdm_rx_hires_delay_asm.maxtimers
+	.set	pdm_rx_hires_delay_asm.maxchanends,0
+	.globl	pdm_rx_hires_delay_asm.maxchanends
 
 
 

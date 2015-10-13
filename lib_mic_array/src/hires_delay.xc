@@ -2,20 +2,6 @@
 
 #include "mic_array.h"
 
-/*
- * This implements a high resolution delay for 8 channels
- *
- *  TODO
- *  - double buffered tap arrays for safe changing of the taps
- *  -remove race conditions
- *  - tests
- *  - 4, 8, 12, and 16 channel versions
- *  - use of synchroniser instead of a channel
- */
-
-
-
-
 void hires_delay(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1,

@@ -36,7 +36,7 @@ void pdm_rx(
  *  \param c_sync                The channel used for synchronizing the high resolution
  *                               delay buffer to the PDM input.
  */
-void pdm_rx_only_hires_delay(
+void pdm_rx_hires_delay(
         in buffered port:32 p_pdm_mics,
         int64_t * unsafe shared_memory_array,
         unsigned memory_size_log2,
