@@ -1,10 +1,5 @@
 .. include:: ../../../README.rst
 
-Microphone array library
-------------------------
-
-
-
 Hardware characteristics
 ------------------------
 
@@ -41,9 +36,12 @@ This means that samples are outputted into frames synchronously but not necessar
 phased aligned. When not using high resolution mode the samples are produced 
 synchronsly and necessarly phase aligned in time.
 
+No high resolution
+..................
+
 The PDM microphone interface and the 4 channel deciamtors are instantiated as 
 parallel tasks that run in a ``par`` statement. The 4 channel deciamtors must 
-connect to the server via a streaming channel.
+connect to the PDM interface via streaming channels.
 
 For example, the following code instantiates a PDM microphone interface
 and connects an application to it::
@@ -70,8 +68,56 @@ and connects an application to it::
     return 0;
   }
 
-**Note**: The client and SDRAM server must be on the same tile as the 
-line buffers are transferred by moving pointers from one task to another.
+With high resolution
+....................
+
+The PDM microphone interface, the high resolution delay and the 4 channel deciamtors 
+are instantiated as parallel tasks that run in a ``par`` statement. The high
+ resolution delay task must reside on the same tile as the PDM interface task as 
+ they communicate via a shared memory. The 4 channel deciamtors must 
+connect to the high resolution delay via streaming channels.
+
+For example, the following code instantiates a PDM microphone interface with high 
+resolution delay and connects an application to it::
+
+  in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
+   
+  int main() {
+     par {
+     
+        hires_delay_config hrd_config;
+        hires_delay_config * unsafe config = &hrd_config;
+        decimator_config dc0, dc1;
+        streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
+        streaming chan c_ds_output_0, c_ds_output_1;
+        streaming chan c_sync;
+        int64_t shared_memory[PDM_BUFFER_LENGTH] = {0};
+        int64_t * unsafe p_shared_memory = shared_memory;
+    
+        //setup the p_pdm_mics clocking here
+    
+    	//setup the decimator configuration here
+    
+    	//setup high resolution delay config here
+    
+        par {
+             pdm_rx_hires_delay(
+                    p_pdm_mics,
+                    p_shared_memory,
+                    PDM_BUFFER_LENGTH_LOG2,
+                    c_sync);
+
+             hires_delay(c_4x_pdm_mic_0, c_4x_pdm_mic_1,
+                   c_sync, config, p_shared_memory);
+
+             decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);
+             decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1, dc1);
+
+             application(c_ds_output_0, c_ds_output_1, config);
+        } 
+    }
+    return 0;
+  }
 
 
 Decimator configuration
@@ -82,18 +128,8 @@ High resolution delay configuration
 -----------------------------------
 
 
-Example applications
---------------------
-
-
-
-
-
 API
 ---
-
-
-
 
 Supporting types
 ................
