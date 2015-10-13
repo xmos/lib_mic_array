@@ -8,8 +8,6 @@
 #include <xclib.h>
 #include <stdint.h>
 
-#include "debug_print.h"
-#include "xassert.h"
 
 #include "fir_decimator.h"
 #include "mic_array.h"
@@ -24,9 +22,8 @@ on tile[0]:in port p_buttons =  XS1_PORT_4A;
 on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
-on tile[0]: clock mclk                      = XS1_CLKBLK_1;
+on tile[0]: clock mclk0                     = XS1_CLKBLK_1;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_2;
-
 
 out buffered port:32 p_i2s_dout[1]  = on tile[1]: {XS1_PORT_1P};
 in port p_mclk_in1                  = on tile[1]: XS1_PORT_1O;
@@ -172,6 +169,14 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
             output = ((uint64_t)output*gain)>>8;
             c_audio <: output;
             c_audio <: output;
+            xscope_int(0, audio[buffer].data[0][0]);
+            xscope_int(1, audio[buffer].data[1][0]);
+            xscope_int(2, audio[buffer].data[2][0]);
+            xscope_int(3, audio[buffer].data[3][0]);
+            //xscope_int(4, audio[buffer].data[4][0]);
+            //xscope_int(5, audio[buffer].data[5][0]);
+            //xscope_int(6, audio[buffer].data[6][0]);
+            //xscope_int(7, audio[buffer].data[7][0]);
 
             delay_head++;
             delay_head%=MAX_DELAY;
@@ -192,7 +197,6 @@ void i2s_handler(server i2s_callback_if i2s,
   i2c_regop_res_t res;
   int i = 0x4A;
   uint8_t data = i2c.read_reg(i, 1, res);
-  debug_printf("I2C ID: %x, res: %d\n", data, res);
 
   data = i2c.read_reg(i, 0x02, res);
   data |= 1;
@@ -237,8 +241,8 @@ void i2s_handler(server i2s_callback_if i2s,
 };
 
 //TODO make these not global
-int data_0[4*COEFS_PER_PHASE] = {0};
-int data_1[4*COEFS_PER_PHASE] = {0};
+int data_0[8*COEFS_PER_PHASE] = {0};
+int data_1[8*COEFS_PER_PHASE] = {0};
 
 int main(){
 
@@ -275,10 +279,11 @@ int main(){
                 decimator_config dc1 = {0, 1, 0, 0, 1, p, data_1, {0,0, 0, 0}};
 
                 par{
+                    button_and_led_server(lb, leds, p_buttons);
                     pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                     decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);
                     decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1, dc1);
-                    lores_DAS_fixed(c_ds_output_0, c_ds_output_1);
+                    lores_DAS_fixed(c_ds_output_0, c_ds_output_1, lb,c_audio);
                 }
             }
         }
