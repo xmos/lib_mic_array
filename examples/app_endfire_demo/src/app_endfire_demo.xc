@@ -272,8 +272,8 @@ int main(){
             unsafe {
             const int * unsafe p[1] = {fir_1_coefs[0]};
 
-                decimator_config dc0 = {0, 1, 0, 0, 1, p, data_0, {0,0, 0, 0}};
-                decimator_config dc1 = {0, 1, 0, 0, 1, p, data_1, {0,0, 0, 0}};
+                decimator_config dc0 = {0, 1, 0, 0, 1, p, data_0, 0, {0,0, 0, 0}};
+                decimator_config dc1 = {0, 1, 0, 0, 1, p, data_1, 0, {0,0, 0, 0}};
                 par{
                     button_and_led_server(lb, leds, p_buttons);
                     pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);

@@ -71,15 +71,15 @@ int main(){
             unsafe {
 
                 const int * unsafe p[1] = {fir_1_coefs[0]};
-                decimator_config dc0 = {0, 1, 0, 0, 1, p, data_0, {0,0, 0, 0}};
-                decimator_config dc1 = {0, 1, 0, 0, 1, p, data_1, {0,0, 0, 0}};
+                decimator_config dc0 = {0, 1, 0, 0, 1, p, data_0, 0, {0,0, 0, 0}};
+                decimator_config dc1 = {0, 1, 0, 0, 1, p, data_1, 0, {0,0, 0, 0}};
 
                 hires_delay_config hrd_config;
                 hrd_config.active_delay_set = 0;
                 hrd_config.memory_size_log2 = PDM_BUFFER_LENGTH_LOG2;
 
                 hires_delay_config * unsafe config = &hrd_config;
-                unsigned long long * unsafe p_shared_memory = shared_memory;
+                int64_t * unsafe p_shared_memory = shared_memory;
                 par{
                     //Input stage
                     pdm_rx_only_hires_delay(

@@ -1,4 +1,5 @@
 #include <xs1.h>
+#include <stdint.h>
 
 const unsigned cic_mask = 0x7f7f7f7f;
 
@@ -92,13 +93,13 @@ void pdm_rx(
 
 extern void pdm_rx_only_hires_delay_asm(
         in buffered port:32 p_pdm_mics,
-        unsigned long long * unsafe shared_memory_array,
+        int64_t * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync);
 
 void pdm_rx_only_hires_delay(
         in buffered port:32 p_pdm_mics,
-        unsigned long long * unsafe shared_memory_array,
+        int64_t * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync){
 

@@ -110,8 +110,8 @@ int main(){
 
                 chan c;
                 const int * unsafe p[3] = {fir_3_coefs[0], fir_3_coefs[1], fir_3_coefs[2]};
-                decimator_config dc0 = {0, 0, 0, 0, 3, p, data_0, {0,0, 0, 0}};
-                decimator_config dc1 = {0, 0, 0, 0, 3, p, data_1, {0,0, 0, 0}};
+                decimator_config dc0 = {0, 0, 0, 0, 3, p, data_0, 0, {0,0, 0, 0}};
+                decimator_config dc1 = {0, 0, 0, 0, 3, p, data_1, 0, {0,0, 0, 0}};
                 par{
                     pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                     decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);

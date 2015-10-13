@@ -77,7 +77,9 @@ void hires_delay(
         streaming chanend c_sync,
         hires_delay_config * unsafe config,
         unsigned long long * unsafe p_shared_memory_array);
-
+/*
+ * Four Channel Deciamtor config structure.
+ */
 typedef struct {
 
     //The output frame size log2, i.e. A frame will contain 2 to the power of frame_size_log2
@@ -133,7 +135,6 @@ typedef struct {
  *  \param config            The configuration structure describing the behaviour of the
  *                           deciamtion component.
  */
-
 void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,
         streaming chanend c_frame_output,
