@@ -11,30 +11,25 @@ typedef struct {
     int im;
 } complex;
 
-
 /* Complex number in polar coordinates */
 typedef struct {
     int hyp;
     int theta;
 } polar;
 
+
+
 /* A frame of  */
 typedef struct {
     int data[8][1<<FRAME_SIZE_LOG2];
-    //int max_val;
-    //int min_val;
 } frame_audio;
 
 typedef struct {
     complex data[DOUBLE_CHANNELS][1<<FRAME_SIZE_LOG2];
-    //int max_val;
-    //int min_val;
 } frame_complex;
 
 typedef struct {
     polar data[DOUBLE_CHANNELS][1<<FRAME_SIZE_LOG2];
-    //int max_val;
-    //int min_val;
 } frame_polar;
 
 #endif /* PCM_FRAME_H_ */

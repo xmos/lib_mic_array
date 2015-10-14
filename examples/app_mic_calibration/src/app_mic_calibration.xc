@@ -19,13 +19,11 @@ on tile[0]: clock pdmclk                  = XS1_CLKBLK_2;
 
 void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1, chanend c){
 
-    unsigned buffer = 1;     //buffer index
+    unsigned buffer;     //buffer index
     frame_audio audio[2];    //double buffered
-    memset(audio, sizeof(frame_audio), 2);
 
     unsafe{
-        c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
-        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[4];
+        decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
         int64_t sum[7]={0};
 
@@ -33,16 +31,10 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
         for(unsigned count=0;count<1<<N;count++){
 
-            schkct(c_ds_output_0, 8);
-            schkct(c_ds_output_1, 8);
-
-            c_ds_output_0 <: (frame_audio * unsafe)audio[buffer].data[0];
-            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[4];
-
-            buffer = 1 - buffer;
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
             for(unsigned i=0;i<7;i++)
-                sum[i] += audio[buffer].data[i][0];
+                sum[i] += current->data[i][0];
         }
         int64_t dc[7];
         for(unsigned i=0;i<7;i++){
@@ -54,16 +46,10 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
         for(unsigned count=0;count<1<<N;count++){
 
-            schkct(c_ds_output_0, 8);
-            schkct(c_ds_output_1, 8);
-
-            c_ds_output_0 <: (frame_audio * unsafe)audio[buffer].data[0];
-            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[4];
-
-            buffer = 1 - buffer;
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
             for(unsigned i=0;i<7;i++){
-                int64_t v = (int64_t)audio[buffer].data[i][0];
+                int64_t v = (int64_t)current->data[i][0];
                 v= (v-dc[i]) >> (33 - ((64-N)/2));
                 rms[i] += v*v;
             }

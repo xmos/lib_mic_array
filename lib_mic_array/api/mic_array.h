@@ -139,4 +139,13 @@ void decimate_to_pcm_4ch(
         streaming chanend c_frame_output,
         decimator_config config);
 
+void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+        unsigned &buffer, frame_audio audio[]);
+frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+       unsigned &buffer, frame_audio * alias audio);
+void decimator_init_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+     unsigned &buffer, frame_complex f_audio[]);
+frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+     unsigned &buffer, frame_complex * alias f_complex);
+
 #endif /* MIC_ARRAY_H_ */

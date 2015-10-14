@@ -96,82 +96,73 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
     unsigned dir = 0;
     set_dir(lb, dir, delay);
 
-    unsafe{
-        c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
-        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[4];
+    decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
-        while(1){
+    while(1){
 
-            schkct(c_ds_output_0, 8);
-            schkct(c_ds_output_1, 8);
+        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
-            c_ds_output_0 <: (frame_audio * unsafe)audio[buffer].data[0];
-            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[4];
+        //copy the current sample to the delay buffer
+        for(unsigned i=0;i<7;i++)
+            delay_buffer[delay_head][i] = current->data[i][0];
 
-            buffer = 1 - buffer;
+        //light the LED for the current direction
 
-            //copy the current sample to the delay buffer
-            for(unsigned i=0;i<7;i++)
-                delay_buffer[delay_head][i] = audio[buffer].data[i][0];
+        int t;
 
-            //light the LED for the current direction
-
-            int t;
-
-            select {
-                case lb.button_event():{
-                    unsigned button;
-                    e_button_state pressed;
-                    lb.get_button_event(button, pressed);
-                    if(pressed == BUTTON_PRESSED){
-                        switch(button){
-                        case 0:{
-                            dir--;
-                            if(dir == -1)
-                                dir = 5;
-                            set_dir(lb, dir, delay);
-                            printf("dir %d\n", dir+1);
-                            for(unsigned i=0;i<7;i++)
-                                printf("delay[%d] = %d\n", i, delay[i]);
-                            printf("\n");
-                            break;
-                        }
-                        case 1:{
-                            gain = ((gain<<3) + gain)>>3;
-                            printf("gain: %d\n", gain);
-                            break;
-                        }
-                        case 2:{
-                            gain = ((gain<<3) - gain)>>3;
-                            printf("gain: %d\n", gain);
-                            break;
-                        }
-                        case 3:{
-                            dir++;
-                            if(dir == 6)
-                                dir = 0;
-                            set_dir(lb, dir, delay);
-                            printf("dir %d\n", dir+1);
-                            for(unsigned i=0;i<7;i++)
-                                printf("delay[%d] = %d\n", i, delay[i]);
-                            printf("\n");
-                            break;
-                        }
-                        }
+        select {
+            case lb.button_event():{
+                unsigned button;
+                e_button_state pressed;
+                lb.get_button_event(button, pressed);
+                if(pressed == BUTTON_PRESSED){
+                    switch(button){
+                    case 0:{
+                        dir--;
+                        if(dir == -1)
+                            dir = 5;
+                        set_dir(lb, dir, delay);
+                        printf("dir %d\n", dir+1);
+                        for(unsigned i=0;i<7;i++)
+                            printf("delay[%d] = %d\n", i, delay[i]);
+                        printf("\n");
+                        break;
                     }
-                    break;
+                    case 1:{
+                        gain = ((gain<<3) + gain)>>3;
+                        printf("gain: %d\n", gain);
+                        break;
+                    }
+                    case 2:{
+                        gain = ((gain<<3) - gain)>>3;
+                        printf("gain: %d\n", gain);
+                        break;
+                    }
+                    case 3:{
+                        dir++;
+                        if(dir == 6)
+                            dir = 0;
+                        set_dir(lb, dir, delay);
+                        printf("dir %d\n", dir+1);
+                        for(unsigned i=0;i<7;i++)
+                            printf("delay[%d] = %d\n", i, delay[i]);
+                        printf("\n");
+                        break;
+                    }
+                    }
                 }
-                default:break;
+                break;
             }
-            int output = 0;
-            for(unsigned i=0;i<7;i++)
-                output += delay_buffer[(delay_head - delay[i])%MAX_DELAY][i];
-            output = ((uint64_t)output*gain)>>8;
-            c_audio <: output;
-            c_audio <: output;
-            delay_head++;
-            delay_head%=MAX_DELAY;
+            default:break;
         }
+        int output = 0;
+        for(unsigned i=0;i<7;i++)
+            output += delay_buffer[(delay_head - delay[i])%MAX_DELAY][i];
+        output = ((uint64_t)output*gain)>>8;
+        c_audio <: output;
+        c_audio <: output;
+        delay_head++;
+        delay_head%=MAX_DELAY;
     }
 }
 

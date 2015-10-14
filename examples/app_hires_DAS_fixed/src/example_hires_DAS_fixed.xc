@@ -24,26 +24,16 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
 
     unsigned buffer = 1;     //buffer index
     frame_audio audio[2];    //double buffered
-    memset(audio, sizeof(frame_audio), 2);
 
-    unsafe{
-        c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
-        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[4];
+    decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
-        //set the taps
-        while(1){
+    //set the taps
+    while(1){
 
-            schkct(c_ds_output_0, 8);
-            schkct(c_ds_output_1, 8);
+        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
-            c_ds_output_0 <: (frame_audio * unsafe)audio[buffer].data[0];
-            c_ds_output_1 <: (frame_audio * unsafe)audio[buffer].data[4];
-
-            buffer = 1 - buffer;
-
-            for(unsigned i=0;i<7;i++)
-                xscope_int(i, audio[buffer].data[i][0]);
-        }
+        for(unsigned i=0;i<7;i++)
+            xscope_int(i, current->data[i][0]);
     }
 }
 
