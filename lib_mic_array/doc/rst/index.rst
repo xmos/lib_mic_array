@@ -220,6 +220,16 @@ PDM Microphone processing
 
 |newpage|
 
+PCM frame interfacing
+.....................
+
+.. doxygenfunction:: decimator_init_audio_frame
+.. doxygenfunction:: decimator_get_next_audio_frame
+.. doxygenfunction:: decimator_init_complex_frame
+.. doxygenfunction:: decimator_get_next_complex_frame
+
+|newpage|
+
 Known Issues
 ------------
 
