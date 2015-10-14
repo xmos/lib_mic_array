@@ -8,7 +8,6 @@
 #include <xclib.h>
 #include <stdint.h>
 
-
 #include "fir_decimator.h"
 #include "mic_array.h"
 #include "mic_array_board_support.h"
@@ -88,7 +87,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
 #define MAX_DELAY 128
 
-    unsigned gain = 4096;
+    unsigned gain = 8*4096;
     unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
     int delay_buffer[MAX_DELAY][7];
     memset(delay_buffer, sizeof(int)*8*8, 0);
@@ -109,7 +108,6 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
         //light the LED for the current direction
 
         int t;
-
         select {
             case lb.button_event():{
                 unsigned button;
@@ -161,12 +159,15 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
         output = ((uint64_t)output*gain)>>8;
         c_audio <: output;
         c_audio <: output;
+        xscope_int(0, output);
         delay_head++;
         delay_head%=MAX_DELAY;
     }
 }
 
-#define OUTPUT_SAMPLE_RATE 48000
+#define DF 1
+
+#define OUTPUT_SAMPLE_RATE (48000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
 
 [[distributable]]
@@ -223,8 +224,8 @@ void i2s_handler(server i2s_callback_if i2s,
 };
 
 //TODO make these not global
-int data_0[8*COEFS_PER_PHASE] = {0};
-int data_1[8*COEFS_PER_PHASE] = {0};
+int data_0[4*COEFS_PER_PHASE*DF] = {0};
+int data_1[4*COEFS_PER_PHASE*DF] = {0};
 
 int main(){
 
@@ -256,9 +257,9 @@ int main(){
             start_clock(pdmclk);
 
             unsafe {
-                const int * unsafe p[1] = {fir_1_coefs[0]};
-                decimator_config dc0 = {0, 1, 0, 0, 1, p, data_0, 0, {0,0, 0, 0}};
-                decimator_config dc1 = {0, 1, 0, 0, 1, p, data_1, 0, {0,0, 0, 0}};
+
+                decimator_config dc0 = {0, 1, 0, 0, DF, FIR_LUT(DF), data_0, 0, {0,0, 0, 0}};
+                decimator_config dc1 = {0, 1, 0, 0, DF, FIR_LUT(DF), data_1, 0, {0,0, 0, 0}};
 
                 par{
                     button_and_led_server(lb, leds, p_buttons);

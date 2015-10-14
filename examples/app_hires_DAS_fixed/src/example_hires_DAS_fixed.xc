@@ -37,9 +37,10 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0,
     }
 }
 
+#define DF 3
 //TODO make these not global
-int data_0[4*COEFS_PER_PHASE] = {0};
-int data_1[4*COEFS_PER_PHASE] = {0};
+int data_0[4*COEFS_PER_PHASE*DF] = {0};
+int data_1[4*COEFS_PER_PHASE*DF] = {0};
 
 int main(){
 
@@ -59,10 +60,8 @@ int main(){
             int64_t shared_memory[PDM_BUFFER_LENGTH] = {0};
 
             unsafe {
-
-                const int * unsafe p[1] = {fir_1_coefs[0]};
-                decimator_config dc0 = {0, 1, 0, 0, 1, p, data_0, 0, {0,0, 0, 0}};
-                decimator_config dc1 = {0, 1, 0, 0, 1, p, data_1, 0, {0,0, 0, 0}};
+                decimator_config dc0 = {0, 1, 0, 0, DF, FIR_LUT(DF), data_0, 0, {0,0, 0, 0}};
+                decimator_config dc1 = {0, 1, 0, 0, DF, FIR_LUT(DF), data_1, 0, {0,0, 0, 0}};
 
                 hires_delay_config hrd_config;
                 hrd_config.active_delay_set = 0;

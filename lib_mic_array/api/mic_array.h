@@ -104,7 +104,7 @@ typedef struct {
     unsigned fir_decimation_factor;
 
     //The coefficients for the FIR deciamtors.
-    const int *  unsafe * unsafe coefs;
+    const int *  unsafe coefs;
 
     //The data for the FIR deciamtors
     int * unsafe data;    //This needs to be fir_decimation_factor*4*60*sizeof(int)//this need not be unsafe
@@ -138,8 +138,6 @@ void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,
         streaming chanend c_frame_output,
         decimator_config config);
-
-void decimator_config(decimator_config &config);
 
 void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         unsigned &buffer, frame_audio audio[]);

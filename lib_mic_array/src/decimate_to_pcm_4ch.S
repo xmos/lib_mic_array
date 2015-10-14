@@ -261,8 +261,9 @@ setup_coefs:
 	ldaw r1, r1[S_COEFS]
 	{ldw r0, r2[5]; ldc r4, 0} //coef pointer
 	coef_init_loop:
-		ldw r3, r0[r4]
-		stw r3, r1[r4]
+		stw r0, r1[r4]
+		ldc r3, COEFS_PER_PHASE
+		ldaw r0, r0[r3]
 		add r4, r4, 1
 		eq r3, r4, t
 		bf r3, coef_init_loop
