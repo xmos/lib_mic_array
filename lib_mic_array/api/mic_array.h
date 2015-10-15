@@ -79,6 +79,19 @@ void hires_delay(
         streaming chanend c_sync,
         hires_delay_config * unsafe config,
         int64_t * unsafe shared_memory_array);
+
+/** Application side interface to high resolution delay.
+ *
+ *  This function is used by the client of the high resolution delay to set the delays.
+ *
+ *
+ *  \param config   A pointer to the hires_delay_config structure.
+ *  \param delays   An array of the delays to be set.
+ *  \returns        0 for success and 1 for buffer already contains pending delays.
+ */
+//int hires_delay_set_taps(hires_delay_config * unsafe config, unsigned delays[]);
+
+
 /*
  * Four Channel Deciamtor config structure.
  */
