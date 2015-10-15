@@ -2,36 +2,43 @@
 #define PCM_FRAME_H_
 
 #define NUM_MICS 8
-#define DOUBLE_CHANNELS ((NUM_MICS+1)/2)
 #define FRAME_SIZE_LOG2        (0)
 
-/* Complex number in cartesian coordinates */
+/*
+ * Complex number in Cartesian coordinates.
+ */
 typedef struct {
-    int re;
-    int im;
+    int re;     //The real component.
+    int im;     //The imaginary component.
 } complex;
 
-/* Complex number in polar coordinates */
+/*
+ * Complex number in Polar coordinates.
+ */
 typedef struct {
-    int hyp;
-    int theta;
+    int hyp;        //The hypotenuse component.
+    int theta;      //The angle component.
 } polar;
 
-
-
-/* A frame of raw audio*/
+/*
+ * A frame of raw audio.
+ */
 typedef struct {
-    int data[8][1<<FRAME_SIZE_LOG2];
+    int data[NUM_MICS][1<<FRAME_SIZE_LOG2];
 } frame_audio;
 
-/* A frame of frequency domain audio in cartesian coordinates*/
+/*
+ * A frame of frequency domain audio in Cartesian coordinates.
+ */
 typedef struct {
-    complex data[DOUBLE_CHANNELS][1<<FRAME_SIZE_LOG2];
+    complex data[NUM_MICS/2][1<<FRAME_SIZE_LOG2];
 } frame_complex;
 
-/* A frame of frequency domain audio in polar coordinates*/
+/*
+ * A frame of frequency domain audio in Polar coordinates.
+ */
 typedef struct {
-    polar data[DOUBLE_CHANNELS][1<<FRAME_SIZE_LOG2];
+    polar data[NUM_MICS/2][1<<FRAME_SIZE_LOG2];
 } frame_polar;
 
 #endif /* PCM_FRAME_H_ */

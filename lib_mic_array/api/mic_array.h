@@ -2,6 +2,7 @@
 #define MIC_ARRAY_H_
 
 #include <stdint.h>
+#include "fir_decimator.h"
 #include "defines.h"
 #include "frame.h"
 
@@ -81,8 +82,10 @@ void hires_delay(
  */
 typedef struct {
 
-    //The output frame size log2, i.e. A frame will contain 2 to the power of frame_size_log2
-    //samples of each channel.
+    /*
+     * The output frame size log2, i.e. A frame will contain 2 to the power of frame_size_log2
+     * samples of each channel.
+     */
     unsigned frame_size_log2;
 
     //Remove the DC offset from the audio before the final decimation.
@@ -139,13 +142,83 @@ void decimate_to_pcm_4ch(
         streaming chanend c_frame_output,
         decimator_config config);
 
-void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+
+
+/** Four Channel Decimation initializer for audio frames.
+ *
+ *  This function call sets up the four channel decimators. After this has been called there
+ *  will be a real time requirement on the task that owns c_pcm_0 and c_pcm_1 must call
+ *  decimator_get_next_audio_frame() at the output sample rate.
+ *
+ *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *                           the decimate_to_pcm_4ch() task.
+ *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *                           the decimate_to_pcm_4ch() task.
+ *  \param buffer            The buffer index. Always points to the index that is accessable to
+ *                           the application.
+ *  \param audio             An array of audio frames. Typically, of size two.
+ *
+ */
+void decimator_init_audio_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
         unsigned &buffer, frame_audio audio[]);
-frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+
+
+/** Four Channel Decimation audio frame exchange function.
+ *
+ *  This function handels the frame exchange between the decimate_to_pcm_4ch() tasks and the
+ *  application. It returns a pointer to the most recently written frame. At the point the oldest
+ *  frame is assumed out of scope of the application.
+ *
+ *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *                           the decimate_to_pcm_4ch() task.
+ *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *                           the decimate_to_pcm_4ch() task.
+ *  \param buffer            The buffer index. Always points to the index that is accessable to
+ *                           the application.
+ *  \param audio             An array of audio frames. Typically, of size two.
+ *
+ *  \returns                 A pointer to the frame now owned by the application. That is, the most
+ *                           recently written samples.
+ */
+frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
        unsigned &buffer, frame_audio * alias audio);
-void decimator_init_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+
+/** Four Channel Decimation initializer for complex frames.
+ *
+ *  This function call sets up the four channel decimators. After this has been called there
+ *  will be a real time requirement on the task that owns c_pcm_0 and c_pcm_1 must call
+ *  decimator_get_next_audio_frame() at the output sample rate.
+ *
+ *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *                           the decimate_to_pcm_4ch() task.
+ *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *                           the decimate_to_pcm_4ch() task.
+ *  \param buffer            The buffer index. Always points to the index that is accessable to
+ *                           the application.
+ *  \param audio             An array of audio frames. Typically, of size two.
+ *
+ */
+void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
      unsigned &buffer, frame_complex f_audio[]);
-frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+
+/** Four Channel Decimation complex frame exchange function.
+ *
+ *  This function handels the frame exchange between the decimate_to_pcm_4ch() tasks and the
+ *  application. It returns a pointer to the most recently written frame. At the point the oldest
+ *  frame is assumed out of scope of the application.
+ *
+ *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *                           the decimate_to_pcm_4ch() task.
+ *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *                           the decimate_to_pcm_4ch() task.
+ *  \param buffer            The buffer index. Always points to the index that is accessable to
+ *                           the application.
+ *  \param audio             An array of audio frames. Typically, of size two.
+ *
+ *  \returns                 A pointer to the frame now owned by the application. That is, the most
+ *                           recently written samples.
+ */
+frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
      unsigned &buffer, frame_complex * alias f_complex);
 
 #endif /* MIC_ARRAY_H_ */

@@ -120,6 +120,16 @@ resolution delay and connects an application to it::
   }
 
 
+Frames
+------
+The four channel deciamtors output frames of either raw audio or audio prepared for an FFT.
+
+Raw audio frames
+................
+These are frames in which the sample data is packed into eight arrays of length two to the power of
+FRAME_SIZE_LOG2. The first index of the ``data`` 
+
+
 Four Channel Decimator
 ----------------------
 The four channel decimator tasks are highly configurable for outputting frames of 
@@ -186,7 +196,7 @@ High resolution delay
 
 Example Applications
 --------------------
-
+Examples of of how to set up high resolution delay are given in the application 
 
 
 API
@@ -227,6 +237,17 @@ PCM frame interfacing
 .. doxygenfunction:: decimator_get_next_audio_frame
 .. doxygenfunction:: decimator_init_complex_frame
 .. doxygenfunction:: decimator_get_next_complex_frame
+
+|newpage|
+
+Frame types
+...........
+
+.. doxygenfunction:: frame_audio
+.. doxygenfunction:: frame_complex
+.. doxygenfunction:: frame_polar
+.. doxygenfunction:: complex
+.. doxygenfunction:: polar
 
 |newpage|
 
