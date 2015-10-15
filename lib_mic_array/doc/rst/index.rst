@@ -60,9 +60,9 @@ connect to the PDM interface via streaming channels.
 
 For example, the following code instantiates a PDM microphone interface
 and connects an application to it::
-
+  
   in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
-   
+  
   int main() {
      par {
         decimator_config dc0, dc1;
@@ -87,16 +87,15 @@ With high resolution
 ....................
 
 The PDM microphone interface, the high resolution delay and the 4 channel deciamtors 
-are instantiated as parallel tasks that run in a ``par`` statement. The high
- resolution delay task must reside on the same tile as the PDM interface task as 
- they communicate via a shared memory. The 4 channel deciamtors must 
-connect to the high resolution delay via streaming channels.
-
-For example, the following code instantiates a PDM microphone interface with high 
-resolution delay and connects an application to it::
-
+are instantiated as parallel tasks that run in a ``par`` statement. The high resolution 
+delay task must reside on the same tile as the PDM interface task as they communicate 
+via a shared memory. The 4 channel deciamtors must connect to the high resolution delay 
+via streaming channels. For example, the following 
+code instantiates a PDM microphone interface with high resolution delay and connects 
+an application to it::
+  
   in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
-   
+  
   int main() {
      par {
      
@@ -226,7 +225,7 @@ API
 Supporting types
 ................
 
-.. doxygenenum:: hires_delay_config
+.. doxygenstruct:: hires_delay_config
 
 .. doxygenstruct:: decimator_config
 
@@ -275,6 +274,6 @@ Frame types
 Known Issues
 ------------
 
-No known issues.
+Nothing is guarenteed.
 
 .. include:: ../../../CHANGELOG.rst

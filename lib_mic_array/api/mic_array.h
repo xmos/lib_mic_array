@@ -156,11 +156,11 @@ void decimate_to_pcm_4ch(
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessable to
  *                           the application.
- *  \param audio             An array of audio frames. Typically, of size two.
+ *  \param f_audio             An array of audio frames. Typically, of size two.
  *
  */
 void decimator_init_audio_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
-        unsigned &buffer, frame_audio audio[]);
+        unsigned &buffer, frame_audio f_audio[]);
 
 
 /** Four Channel Decimation audio frame exchange function.
@@ -175,13 +175,13 @@ void decimator_init_audio_frame(streaming chanend c_pcm_0, streaming chanend c_p
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessable to
  *                           the application.
- *  \param audio             An array of audio frames. Typically, of size two.
+ *  \param f_audio             An array of audio frames. Typically, of size two.
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.
  */
 frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
-       unsigned &buffer, frame_audio * alias audio);
+       unsigned &buffer, frame_audio * alias f_audio);
 
 /** Four Channel Decimation initializer for complex frames.
  *
@@ -195,11 +195,11 @@ frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_pcm_0, st
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessable to
  *                           the application.
- *  \param audio             An array of audio frames. Typically, of size two.
+ *  \param f_complex             An array of audio frames. Typically, of size two.
  *
  */
 void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
-     unsigned &buffer, frame_complex f_audio[]);
+     unsigned &buffer, frame_complex f_complex[]);
 
 /** Four Channel Decimation complex frame exchange function.
  *
@@ -213,7 +213,7 @@ void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessable to
  *                           the application.
- *  \param audio             An array of audio frames. Typically, of size two.
+ *  \param f_complex           An array of audio frames. Typically, of size two.
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.
