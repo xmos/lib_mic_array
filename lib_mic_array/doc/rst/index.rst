@@ -21,7 +21,7 @@ microphone is clocked from elsewhere (outside this library).
 
 
 Clocking PDM microphones from a master clock
---------------------------------------------
+............................................
 
 In the case of the master clock driving the audio subsystem it is desireable to drive the 
 PDM microphones from a divided version of the master clock. In such a system where a master 
@@ -34,8 +34,9 @@ clock block with a hardware divider will drive the PDM microphones with::
   start_clock(pdmclk);
   
 
-Intended use
-------------
+Usage
+-----
+
 All PDM microphone functions can be accessed via the ``mic_array.h`` header::
 
   #include <mic_array.h>
@@ -50,9 +51,8 @@ This means that samples are outputted into frames synchronously but not necessar
 phased aligned. When not using high resolution mode the samples are produced 
 synchronsly and necessarly phase aligned in time.
 
-
-No high resolution
-..................
+Phased aligned sampling
+.......................
 
 The PDM microphone interface and the 4 channel deciamtors are instantiated as 
 parallel tasks that run in a ``par`` statement. The 4 channel deciamtors must 
@@ -83,8 +83,8 @@ and connects an application to it::
     return 0;
   }
 
-With high resolution
-....................
+With high resolution delay lines
+................................
 
 The PDM microphone interface, the high resolution delay and the 4 channel deciamtors 
 are instantiated as parallel tasks that run in a ``par`` statement. The high resolution 
@@ -146,17 +146,24 @@ microphone and the second index is used for the sample number with 0 being the o
 
 Complex audio frames
 ....................
-These are frames designed for the use with FFTs
+These are frames designed for the use with FFTs. In order to get the frames from the four channel
+decimators in the complex frame format the ``index_bit_reversal`` field of the ``decimator_config``
+must be non-zero. Additionally, this will bit reverse the index address of every entry to the 
+frame as is normal for a decimate in time(DIT) FFT implementation. To increase efficiency sample data is
+packed such that two microphones are packed into a single complex array where one microphone is
+used to fill the real values and the other microphone is used to fill the complex values.
+
+A postprocess function must be applied after the DIT-FFT in order to recover the frequency bins.
 
 
 Four Channel Decimator
 ----------------------
-The four channel decimator tasks are highly configurable for outputting frames of 
-various sizes. They can be used to produce frames suitable for time domain applications
-or perprocess the frames ready for and FFT for frequency domain applications. The four 
+The four channel decimator tasks are highly configurable tasks for outputting frames of 
+various sizes and formats. They can be used to produce frames suitable for time domain applications
+or preprocess the frames ready for an FFT for frequency domain applications. The four 
 channel decimators, ``decimate_to_pcm_4ch()``, have a number of configuration options 
-controlled by the structre decimator_config. The configuration is preformed before 
-instiantiating the task by configuring the structure decimator_config. It controls 
+controlled by the structre ``decimator_config``. The configuration is preformed before 
+instiantiating the task by configuring the structure ``decimator_config``. It controls 
 the following :
 
 * frame_size_log2: This sets the frame size to a power of two. A frame will contain 
@@ -185,11 +192,13 @@ the following :
 The output of the decimator is 32bit PCM audio at the requested sample rate. 
 
 For example:
+
 * PDM clock of 3.072MHz, with a fir_decimation_factor of 3 would give 16kHz output rate,
 * PDM clock of 3.072MHz, with a fir_decimation_factor of 6 would give 8kHz output rate,
 * PDM clock of 2.8224MHz, with a fir_decimation_factor of 1 would give 44.1kHz output rate.
 
 The achieveable rates of a 3.072MHz input clock are:
+
 * 48kHz
 * 24kHz
 * 16kHz
@@ -200,6 +209,7 @@ The achieveable rates of a 3.072MHz input clock are:
 * 6kHz
 
 The achieveable rates of a 2.8224MHz input clock are:
+
 * 44.1kHz
 * 22.05kHz
 * 14.7kHz
@@ -211,13 +221,17 @@ The achieveable rates of a 2.8224MHz input clock are:
 
 High resolution delay 
 ---------------------
+The high resolution delay task, ``hires_delay()``, is capable to implementing delays 
+with a resolution of up to 1.3 microseconds. 
+
+
 
 
 Example Applications
 --------------------
 Examples of of how to set up high resolution delay are given in the application 
-``app_high_resolution_delay``.
-
+``app_high_resolution_delay_example``. Examples of of how to set up phased aligned sampling 
+are given in the application ``app_synchronous_delay_example``.
 
 API
 ---
@@ -226,7 +240,6 @@ Supporting types
 ................
 
 .. doxygenstruct:: hires_delay_config
-
 .. doxygenstruct:: decimator_config
 
 
@@ -236,7 +249,6 @@ Creating an PDM Microphone interface instance
 .............................................
 
 .. doxygenfunction:: pdm_rx
-
 .. doxygenfunction:: pdm_rx_hires_delay
 
 |newpage|
@@ -245,7 +257,6 @@ PDM Microphone processing
 .........................
 
 .. doxygenfunction:: hires_delay
-
 .. doxygenfunction:: decimate_to_pcm_4ch
 
 |newpage|
@@ -263,17 +274,17 @@ PCM frame interfacing
 Frame types
 ...........
 
+.. doxygenstruct:: complex
+.. doxygenstruct:: polar
 .. doxygenstruct:: frame_audio
 .. doxygenstruct:: frame_complex
 .. doxygenstruct:: frame_polar
-.. doxygenstruct:: complex
-.. doxygenstruct:: polar
 
 |newpage|
 
 Known Issues
 ------------
 
-Nothing is guarenteed.
+This is an early release of the library and has not been through formal release testing.  This revision is only intended for internal XMOS use. 
 
 .. include:: ../../../CHANGELOG.rst

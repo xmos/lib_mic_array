@@ -24,3 +24,4 @@ Doxyfile-e
 *.xmt
 *.prefs
 examples/app_lores_DAS_fixed/.project
+lib_mic_array/doc/pdf/index.pdf

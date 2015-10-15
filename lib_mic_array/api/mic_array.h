@@ -47,11 +47,11 @@ void pdm_rx_hires_delay(
  * High Resolution Delay config structure.
  */
 typedef struct {
-    unsigned memory_size_log2;              //The number of int64_t in the shared memory log two.
-    unsigned active_delay_set;              //Used to select the initial delays from the delay double buffer
-    unsigned delay_set_in_use;              //Used internally
-    unsigned long long n;                   //Used internally
-    unsigned delays[2][MAX_NUM_CHANNELS];   //Holds the delays in a double buffer, selected by active_delay_set
+    unsigned memory_size_log2;              /**< The number of int64_t in the shared memory log two.*/
+    unsigned active_delay_set;              /**< Used to select the initial delays from the delay double buffer*/
+    unsigned delay_set_in_use;              /**< Used internally*/
+    unsigned long long n;                   /**< Used internally*/
+    unsigned delays[2][MAX_NUM_CHANNELS];   /**< Holds the delays in a double buffer, selected by active_delay_set*/
 } hires_delay_config;
 
 /** High resolution delay component.
@@ -82,43 +82,25 @@ void hires_delay(
  */
 typedef struct {
 
-    /*
-     * The output frame size log2, i.e. A frame will contain 2 to the power of frame_size_log2
-     * samples of each channel.
-     */
-    unsigned frame_size_log2;
+    unsigned frame_size_log2;/**< The output frame size log2, i.e. A frame will contain 2 to the power of frame_size_log2 samples of each channel. */
 
-    //Remove the DC offset from the audio before the final decimation.
-    //Set to non-zero to enable.
-    int apply_dc_offset_removal;
+    int apply_dc_offset_removal; /**< Remove the DC offset from the audio before the final decimation. Set to non-zero to enable. */
 
-    //If non-zero then bit reverse the index of the elements within the frame.
-    //Used in the case of perparing for an FFT.
-    int index_bit_reversal;
+    int index_bit_reversal; /**< If non-zero then bit reverse the index of the elements within the frame. Used in the case of perparing for an FFT.*/
 
-    //If non-null then this will apply a windowing fucntion to the frame
-    //Used in the case of perparing for an FFT.
-    int * unsafe windowing_function;
+    int * unsafe windowing_function; /**< If non-null then this will apply a windowing fucntion to the frame. Used in the case of perparing for an FFT. */
 
     //FIR Decimator
-    //This sets the deciamtion factor to the 8 times decimated input rate, i.e. if 768kHz
-    //samples were inputted and 16kHz was the desired output then 3 would be the
-    //fir_deciamtion_factor.
-    unsigned fir_decimation_factor;
 
-    //The coefficients for the FIR deciamtors.
-    const int *  unsafe coefs;
+    unsigned fir_decimation_factor; /**< Final stage FIR Decimatoin factor*/
 
-    //The data for the FIR deciamtors
-    int * unsafe data;    //This needs to be fir_decimation_factor*4*60*sizeof(int)//this need not be unsafe
+    const int *  unsafe coefs; /**< The coefficients for the FIR deciamtors */
 
-    //set to non-zero to apply microphone gain compensation.
-    int apply_mic_gain_compensation;
+    int * unsafe data;    /**< The data for the FIR deciamtors */
 
-    //An array describing the relative gain compensation to apply to the microphones.
-    //The microphone with the least gain is defined as 0xffffffff(MAX_INT), all others
-    //are given as MAX_INT*min_gain/current_mic_gain.
-    unsigned mic_gain_compensation[4];
+    int apply_mic_gain_compensation; /**< Set to non-zero to apply microphone gain compensation. */
+
+    unsigned mic_gain_compensation[4]; /**< An array describing the relative gain compensation to apply to the microphones. The microphone with the least gain is defined as 0xffffffff(MAX_INT), all others are given as MAX_INT*min_gain/current_mic_gain.*/
 
 } decimator_config;
 
