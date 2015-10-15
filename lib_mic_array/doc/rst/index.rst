@@ -50,6 +50,7 @@ This means that samples are outputted into frames synchronously but not necessar
 phased aligned. When not using high resolution mode the samples are produced 
 synchronsly and necessarly phase aligned in time.
 
+
 No high resolution
 ..................
 

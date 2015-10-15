@@ -61,14 +61,14 @@ typedef struct {
  *  at which the circular buffer is being updated. The maximum delay is given by the
  *  size of the circular buffer.
  *
- *  \param c_4x_pdm_mic_0    The channel where the decimated PDM of microphones 0-3 will
- *                           be outputted bytewise.
- *  \param c_4x_pdm_mic_1    The channel where the decimated PDM of microphones 4-7 will
- *                           be outputted bytewise.
- *  \param c_sync            The channel used for synchronizing the high resolution
- *                           delay buffer to the PDM input.
- *  \param config            The configuration structure describing the behaviour of the
- *                           high resoultion delay component.
+ *  \param c_4x_pdm_mic_0       The channel where the decimated PDM of microphones 0-3 will
+ *                              be outputted bytewise.
+ *  \param c_4x_pdm_mic_1       The channel where the decimated PDM of microphones 4-7 will
+ *                              be outputted bytewise.
+ *  \param c_sync               The channel used for synchronizing the high resolution
+ *                              delay buffer to the PDM input.
+ *  \param config               The configuration structure describing the behaviour of the
+ *                              high resoultion delay component.
  *  \param shared_memory_array  The pointer to the location of the shared circluar buffer.
  */
 void hires_delay(
@@ -76,7 +76,7 @@ void hires_delay(
         streaming chanend c_4x_pdm_mic_1,
         streaming chanend c_sync,
         hires_delay_config * unsafe config,
-        int64_t * unsafe p_shared_memory_array);
+        int64_t * unsafe shared_memory_array);
 /*
  * Four Channel Deciamtor config structure.
  */
