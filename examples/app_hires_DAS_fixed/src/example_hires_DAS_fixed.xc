@@ -14,15 +14,14 @@
 on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
-on tile[0]: clock mclk                      = XS1_CLKBLK_1;
-on tile[0]: clock pdmclk                    = XS1_CLKBLK_2;
+on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 void hires_DAS_fixed(streaming chanend c_ds_output_0,
         streaming chanend c_ds_output_1,
         hires_delay_config * unsafe config
 ){
 
-    unsigned buffer = 1;     //buffer index
+    unsigned buffer;
     frame_audio audio[2];    //double buffered
 
     decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
@@ -50,11 +49,9 @@ int main(){
             streaming chan c_ds_output_0, c_ds_output_1;
             streaming chan c_sync;
 
-            configure_clock_src(mclk, p_mclk);
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
-            start_clock(mclk);
             start_clock(pdmclk);
 
             int64_t shared_memory[PDM_BUFFER_LENGTH] = {0};

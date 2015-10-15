@@ -21,8 +21,7 @@ on tile[0]:in port p_buttons =  XS1_PORT_4A;
 on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
-on tile[0]: clock mclk0                     = XS1_CLKBLK_1;
-on tile[0]: clock pdmclk                    = XS1_CLKBLK_2;
+on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 out buffered port:32 p_i2s_dout[1]  = on tile[1]: {XS1_PORT_1P};
 in port p_mclk_in1                  = on tile[1]: XS1_PORT_1O;
@@ -249,11 +248,9 @@ int main(){
 
             interface led_button_if lb;
 
-            configure_clock_src(mclk0, p_mclk);
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
-            start_clock(mclk0);
             start_clock(pdmclk);
 
             unsafe {

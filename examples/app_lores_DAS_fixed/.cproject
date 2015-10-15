@@ -214,6 +214,11 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/xc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.xc.compiler.input.505416709" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
@@ -555,6 +560,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2c}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.c.compiler.input.c.1590139567" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
@@ -902,6 +912,11 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/c++/v1&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.798953824" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>

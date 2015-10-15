@@ -17,8 +17,22 @@ The signals from the xCORE required to interface to multiple PDM microphones are
        - The data from the PDM microphones on an 8 bit port.
        
 The only port needed by the library is the data port. It is assumed that the PDM 
-microphone is clocked from elsewhere (outside this library).
+microphone is clocked from elsewhere (outside this library). 
 
+
+Clocking PDM microphones from a master clock
+--------------------------------------------
+
+In the case of the master clock driving the audio subsystem it is desireable to drive the 
+PDM microphones from a divided version of the master clock. In such a system where a master 
+clock is on a one bit port and the PDM clock is to be driven out on a one bit port then a single
+clock block with a hardware divider will drive the PDM microphones with::
+
+  configure_clock_src_divide(pdmclk, p_mclk, 4);
+  configure_port_clock_output(p_pdm_clk, pdmclk);
+  configure_in_port(p_pdm_mics, pdmclk);
+  start_clock(pdmclk);
+  
 
 Intended use
 ------------
@@ -127,7 +141,12 @@ The four channel deciamtors output frames of either raw audio or audio prepared 
 Raw audio frames
 ................
 These are frames in which the sample data is packed into eight arrays of length two to the power of
-FRAME_SIZE_LOG2. The first index of the ``data`` 
+FRAME_SIZE_LOG2. The first index of the ``data`` element of ``frame_audio`` is used to address the
+microphone and the second index is used for the sample number with 0 being the oldest.
+
+Complex audio frames
+....................
+These are frames designed for the use with FFTs
 
 
 Four Channel Decimator
@@ -135,7 +154,7 @@ Four Channel Decimator
 The four channel decimator tasks are highly configurable for outputting frames of 
 various sizes. They can be used to produce frames suitable for time domain applications
 or perprocess the frames ready for and FFT for frequency domain applications. The four 
-channel decimators, decimate_to_pcm_4ch(), have a number of configuration options 
+channel decimators, ``decimate_to_pcm_4ch()``, have a number of configuration options 
 controlled by the structre decimator_config. The configuration is preformed before 
 instiantiating the task by configuring the structure decimator_config. It controls 
 the following :
@@ -156,7 +175,7 @@ the following :
   final stage of deciamtion. The array should have the same number of entries as the 
   fir_decimation_factor.
 * data: This is the memory used to save the FIR samples. It must be 
-  4 channels x COEFS_PER_PHASE x sizeof(int) x fir_decimation_factor bytes big.
+  4 channels x COEFS_PER_PHASE x ``sizeof(int)`` x ``fir_decimation_factor`` bytes big.
 * apply_mic_gain_compensation: Set this to non-zreo if microphone gain compensation is 
   required. The compensation applied is controlled by mic_gain_compensation.
 * mic_gain_compensation: This is a 4 element array specifying the relative compensation
@@ -197,6 +216,7 @@ High resolution delay
 Example Applications
 --------------------
 Examples of of how to set up high resolution delay are given in the application 
+``app_high_resolution_delay``.
 
 
 API

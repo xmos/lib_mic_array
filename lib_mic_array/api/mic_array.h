@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 #include "fir_decimator.h"
-#include "defines.h"
 #include "frame.h"
+#include "defines.h"
 
 extern unsigned windowing_function[1<<FRAME_SIZE_LOG2];
 
