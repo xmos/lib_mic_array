@@ -78,11 +78,29 @@ static void set_dir(client interface led_button_if lb, unsigned dir, unsigned de
     }
 }
 
-void hires_delay_set_taps(hires_delay_config * unsafe config,
+int hires_delay_set_taps(hires_delay_config * unsafe config,
         unsigned delays[]){
+unsafe{
+    unsigned active_set = config->active_delay_set;
+    unsigned next = config->delay_set_head;
 
-   // config->
-
+    if(next == active_set){
+        next++;
+        next %= HIRES_DELAY_TAP_COUNT;
+        memcpy(config->delays[next], delays, sizeof(unsigned)*7);
+        config->delay_set_head = next;
+    } else {
+        next++;
+        next %= HIRES_DELAY_TAP_COUNT;
+        if(next == active_set){
+            return 1;
+        } else {
+            memcpy(config->delays[next], delays, sizeof(unsigned)*7);
+            config->delay_set_head = next;
+        }
+    }
+}
+    return 0;
 }
 
 void hires_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,

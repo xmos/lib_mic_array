@@ -43,13 +43,15 @@ void pdm_rx_hires_delay(
         unsigned memory_size_log2,
         streaming chanend c_sync);
 
+#define HIRES_DELAY_TAP_COUNT 2
+
 /*
  * High Resolution Delay config structure.
  */
 typedef struct {
     unsigned memory_size_log2;              /**< The number of int64_t in the shared memory log two.*/
-    unsigned active_delay_set;              /**< Used to select the initial delays from the delay double buffer*/
-    unsigned delay_set_in_use;              /**< Used internally*/
+    unsigned active_delay_set;              /**< Used internally*/
+    unsigned delay_set_head;                /**< Used internally*/
     unsigned long long n;                   /**< Used internally*/
     unsigned delays[2][MAX_NUM_CHANNELS];   /**< Holds the delays in a double buffer, selected by active_delay_set*/
 } hires_delay_config;
