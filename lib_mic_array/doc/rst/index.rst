@@ -264,11 +264,11 @@ PCM frame interfacing
 Frame types
 ...........
 
-.. doxygenfunction:: frame_audio
-.. doxygenfunction:: frame_complex
-.. doxygenfunction:: frame_polar
-.. doxygenfunction:: complex
-.. doxygenfunction:: polar
+.. doxygenstruct:: frame_audio
+.. doxygenstruct:: frame_complex
+.. doxygenstruct:: frame_polar
+.. doxygenstruct:: complex
+.. doxygenstruct:: polar
 
 |newpage|
 

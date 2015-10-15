@@ -152,7 +152,7 @@ void decimate_to_pcm_4ch(
  *
  *  \param c_pcm_0           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
- *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *  \param c_pcm_1           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessable to
  *                           the application.
@@ -171,7 +171,7 @@ void decimator_init_audio_frame(streaming chanend c_pcm_0, streaming chanend c_p
  *
  *  \param c_pcm_0           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
- *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *  \param c_pcm_1           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessable to
  *                           the application.
@@ -191,7 +191,7 @@ frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_pcm_0, st
  *
  *  \param c_pcm_0           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
- *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *  \param c_pcm_1           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessable to
  *                           the application.
@@ -209,7 +209,7 @@ void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c
  *
  *  \param c_pcm_0           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
- *  \param c_pcm_0           The channel used to transfer pointers between the application and
+ *  \param c_pcm_1           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessable to
  *                           the application.
