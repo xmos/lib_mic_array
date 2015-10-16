@@ -1,6 +1,10 @@
 #include "frame.h"
 #include <xs1.h>
 
+#define DEBUG_UNIT DEBUG_MIC_ARRAY
+
+#include "xassert.h"
+
 void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         unsigned &buffer, frame_audio audio[]){
     unsafe {
@@ -12,6 +16,20 @@ void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chane
 
  frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         unsigned &buffer, frame_audio * alias audio){
+#if DEBUG_MIC_ARRAY
+     #pragma ordered
+     select {
+         case c_ds_output_0:> int:{
+             fail("Timing not met: decimators not serviced in time");
+             break;
+         }
+         case c_ds_output_1:> int:{
+             fail("Timing not met: decimators not serviced in time");
+             break;
+         }
+         default:break;
+     }
+#endif
     schkct(c_ds_output_0, 8);
     schkct(c_ds_output_1, 8);
     unsafe {
@@ -33,6 +51,20 @@ void decimator_init_complex_frame(streaming chanend c_ds_output_0, streaming cha
 
 frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
      unsigned &buffer, frame_complex * alias f_complex){
+#if DEBUG_MIC_ARRAY
+     #pragma ordered
+     select {
+         case c_ds_output_0:> int:{
+             fail("Timing not met: decimators not serviced in time");
+             break;
+         }
+         case c_ds_output_1:> int:{
+             fail("Timing not met: decimators not serviced in time");
+             break;
+         }
+         default:break;
+     }
+#endif
  schkct(c_ds_output_0, 8);
  schkct(c_ds_output_1, 8);
  unsafe {
