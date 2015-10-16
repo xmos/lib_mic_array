@@ -6,7 +6,7 @@ TARGET = MIC-ARRAY-1V0
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to
 # the project name
-APP_NAME = app_synchronous_delay_example
+APP_NAME = app_phase_aligned_example
 
 # The USED_MODULES variable lists other module used by the application.
 USED_MODULES = lib_mic_array

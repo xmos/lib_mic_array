@@ -1,6 +1,7 @@
 #include <xs1.h>
 
 #include "mic_array.h"
+#include <string.h>
 
 void hires_delay(
         streaming chanend c_4x_pdm_mic_0,
@@ -48,3 +49,29 @@ void hires_delay(
         }
     }
 }
+
+int hires_delay_set_taps(hires_delay_config * unsafe config,
+        unsigned delays[], unsigned num_taps){
+    unsafe{
+        unsigned active_set = config->active_delay_set;
+        unsigned next = config->delay_set_head;
+
+        if(next == active_set){
+            next++;
+            next %= HIRES_DELAY_TAP_COUNT;
+            memcpy(config->delays[next], delays, sizeof(unsigned)*num_taps);
+            config->delay_set_head = next;
+        } else {
+            next++;
+            next %= HIRES_DELAY_TAP_COUNT;
+            if(next == active_set){
+                return 1;
+            } else {
+                memcpy(config->delays[next], delays, sizeof(unsigned)*num_taps);
+                config->delay_set_head = next;
+            }
+        }
+    }
+    return 0;
+}
+

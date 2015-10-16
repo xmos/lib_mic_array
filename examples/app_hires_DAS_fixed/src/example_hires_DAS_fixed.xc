@@ -76,33 +76,6 @@ static void set_dir(client interface led_button_if lb, unsigned dir, unsigned de
     }
 }
 
-
-
-int hires_delay_set_taps(hires_delay_config * unsafe config,
-        unsigned delays[]){
-    unsafe{
-        unsigned active_set = config->active_delay_set;
-        unsigned next = config->delay_set_head;
-
-        if(next == active_set){
-            next++;
-            next %= HIRES_DELAY_TAP_COUNT;
-            memcpy(config->delays[next], delays, sizeof(unsigned)*7);
-            config->delay_set_head = next;
-        } else {
-            next++;
-            next %= HIRES_DELAY_TAP_COUNT;
-            if(next == active_set){
-                return 1;
-            } else {
-                memcpy(config->delays[next], delays, sizeof(unsigned)*7);
-                config->delay_set_head = next;
-            }
-        }
-    }
-    return 0;
-}
-
 void hires_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         hires_delay_config * unsafe config,
         client interface led_button_if lb, chanend c_audio){
@@ -144,7 +117,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
                             printf("delay[%d] = %d\n", i, delay[i]);
                         printf("\n");
 
-                        hires_delay_set_taps(config, delay);
+                        hires_delay_set_taps(config, delay, 7);
 
                         break;
                     }
@@ -167,7 +140,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
                         for(unsigned i=0;i<7;i++)
                             printf("delay[%d] = %d\n", i, delay[i]);
                         printf("\n");
-                        hires_delay_set_taps(config, delay);
+                        hires_delay_set_taps(config, delay, 7);
                         break;
                     }
                     }
@@ -276,8 +249,8 @@ int main(){
             int64_t shared_memory[PDM_BUFFER_LENGTH] = {0};
 
             unsafe {
-                decimator_config dc0 = {0, 1, 0, 0, DF, FIR_LUT(DF), data_0, 0, {0,0, 0, 0}};
-                decimator_config dc1 = {0, 1, 0, 0, DF, FIR_LUT(DF), data_1, 0, {0,0, 0, 0}};
+                decimator_config dc0 = {FRAME_SIZE_LOG2, 1, 0, 0, DF, FIR_LUT(DF), data_0, 0, {0,0, 0, 0}};
+                decimator_config dc1 = {FRAME_SIZE_LOG2, 1, 0, 0, DF, FIR_LUT(DF), data_1, 0, {0,0, 0, 0}};
 
                 interface led_button_if lb;
 

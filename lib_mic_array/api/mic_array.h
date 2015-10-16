@@ -84,13 +84,12 @@ void hires_delay(
  *
  *  This function is used by the client of the high resolution delay to set the delays.
  *
- *
- *  \param config   A pointer to the hires_delay_config structure.
- *  \param delays   An array of the delays to be set.
- *  \returns        0 for success and 1 for buffer already contains pending delays.
+ *  \param config     A pointer to the hires_delay_config structure.
+ *  \param delays     An array of the delays to be set.
+ *  \param num_taps   The number of microphones. This is must be the same as the delays array.
+ *  \returns          0 for success and 1 for buffer already contains pending delays.
  */
-//int hires_delay_set_taps(hires_delay_config * unsafe config, unsigned delays[]);
-
+int hires_delay_set_taps(hires_delay_config * unsafe config, unsigned delays[], unsigned num_taps);
 
 /*
  * Four Channel Deciamtor config structure.

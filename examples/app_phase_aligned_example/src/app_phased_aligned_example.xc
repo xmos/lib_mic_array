@@ -45,8 +45,8 @@ int main(){
 
             unsafe {
 
-                decimator_config dc0 = {0, 1, 0, 0, DF, FIR_LUT(DF), data_0, 0, {0,0, 0, 0}};
-                decimator_config dc1 = {0, 1, 0, 0, DF, FIR_LUT(DF), data_1, 0, {0,0, 0, 0}};
+                decimator_config dc0 = {FRAME_SIZE_LOG2, 1, 0, 0, DF, FIR_LUT(DF), data_0, 0, {0,0, 0, 0}};
+                decimator_config dc1 = {FRAME_SIZE_LOG2, 1, 0, 0, DF, FIR_LUT(DF), data_1, 0, {0,0, 0, 0}};
 
                 par{
                     pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);

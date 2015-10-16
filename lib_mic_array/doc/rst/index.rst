@@ -155,7 +155,6 @@ used to fill the real values and the other microphone is used to fill the comple
 
 A postprocess function must be applied after the DIT-FFT in order to recover the frequency bins.
 
-
 Four Channel Decimator
 ----------------------
 The four channel decimator tasks are highly configurable tasks for outputting frames of 
@@ -166,26 +165,30 @@ controlled by the structre ``decimator_config``. The configuration is preformed 
 instiantiating the task by configuring the structure ``decimator_config``. It controls 
 the following :
 
-* frame_size_log2: This sets the frame size to a power of two. A frame will contain 
-  2 to the power of frame_size_log2 samples of each channel. 
-* apply_dc_offset_removal: This controls if the DC offset removal should be enabled
+* ``frame_size_log2``: This sets the frame size to a power of two. A frame will contain 
+  2 to the power of frame_size_log2 samples of each channel. Use the define FRAME_SIZE_LOG2
+  for this. 
+* ``apply_dc_offset_removal``: This controls if the DC offset removal should be enabled
   or not. Set to non-sero to enable.
-* index_bit_reversal: If enabled this will bit reverse the index of each sample as 
+* ``index_bit_reversal``: If enabled this will bit reverse the index of each sample as 
   is typical before preforming and FFT.
-* windowing_function: A pointer to an array of integers can be provided to allow
+* ``windowing_function``: A pointer to an array of integers can be provided to allow
   a windowing function to be applied to the data prior to applying an FFT. This is 
-  preformed before any index bit reversal. 
-* fir_decimation_factor: This specifies the deciamtion factor to apply to the input
+  preformed before any index bit reversal. This is not necessary when outputting of raw
+  audio frame is required.
+* ``fir_decimation_factor``: This specifies the deciamtion factor to apply to the input
   after a factor of 8 decimator has already been applied. The valid values are 1 to 8 
   inclusive.
-* coefs: This is a pointer to an array of arrays containing the coefficients for the 
+* ``coefs``: This is a pointer to an array of arrays containing the coefficients for the 
   final stage of deciamtion. The array should have the same number of entries as the 
-  fir_decimation_factor.
-* data: This is the memory used to save the FIR samples. It must be 
+  ``fir_decimation_factor``. Suitable FIR coefficients have been provided in the header
+  ``fir_decimator.h`` and can be easily accessed with the marco ``FIR_LUT(d)`` where
+  ``d`` is the ``fir_decimation_factor``.
+* ``data``: This is the memory used to save the FIR samples. It must be 
   4 channels x COEFS_PER_PHASE x ``sizeof(int)`` x ``fir_decimation_factor`` bytes big.
-* apply_mic_gain_compensation: Set this to non-zreo if microphone gain compensation is 
-  required. The compensation applied is controlled by mic_gain_compensation.
-* mic_gain_compensation: This is a 4 element array specifying the relative compensation
+* ``apply_mic_gain_compensation``: Set this to non-zreo if microphone gain compensation is 
+  required. The compensation applied is controlled by ``mic_gain_compensation``.
+* ``mic_gain_compensation``: This is a 4 element array specifying the relative compensation
   to apply to each microphone. Unity gain is given by the value 0xffffffff, therefore 
   microphones need to be scaled to the microphone of the least gain.
   
@@ -199,25 +202,25 @@ For example:
 
 The achieveable rates of a 3.072MHz input clock are:
 
-* 48kHz
-* 24kHz
-* 16kHz
-* 12kHz
-* 9.6kHz
-* 8kHz
-* 6.857kHz
-* 6kHz
+* FIR decimation factor of 1 - 48kHz
+* FIR decimation factor of 2 - 24kHz
+* FIR decimation factor of 3 - 16kHz
+* FIR decimation factor of 4 - 12kHz
+* FIR decimation factor of 5 - 9.6kHz
+* FIR decimation factor of 6 - 8kHz
+* FIR decimation factor of 7 - 6.857kHz
+* FIR decimation factor of 8- 6kHz
 
 The achieveable rates of a 2.8224MHz input clock are:
 
-* 44.1kHz
-* 22.05kHz
-* 14.7kHz
-* 11kHz
-* 8.82kHz
-* 7.kHz
-* 6.3kHz
-* 5.51kHz
+* FIR decimation factor of 1 - 44.1kHz
+* FIR decimation factor of 2 - 22.05kHz
+* FIR decimation factor of 3 - 14.7kHz
+* FIR decimation factor of 4 - 11kHz
+* FIR decimation factor of 5 - 8.82kHz
+* FIR decimation factor of 6 - 7.kHz
+* FIR decimation factor of 7 - 6.3kHz
+* FIR decimation factor of 8 - 5.51kHz
 
 High resolution delay 
 ---------------------
@@ -230,20 +233,14 @@ with a resolution of up to 1.3 microseconds.
 Example Applications
 --------------------
 Examples of of how to set up high resolution delay are given in the application 
-``app_high_resolution_delay_example``. Examples of of how to set up phased aligned sampling 
-are given in the application ``app_synchronous_delay_example``.
+``app_high_resolution_delay_example`` with a worked example of a fixed beam delay 
+and sum beamformer given in the application ``example_hires_DAS_fixed``. Examples 
+of of how to set up phased aligned sampling are given in the application 
+``app_synchronous_delay_example`` with a worked example of a fixed beam delay and 
+sum beamformer given in the application ``example_lores_DAS_fixed``.
 
 API
 ---
-
-Supporting types
-................
-
-.. doxygenstruct:: hires_delay_config
-.. doxygenstruct:: decimator_config
-
-
-|newpage|
 
 Creating an PDM Microphone interface instance
 .............................................
@@ -257,7 +254,10 @@ PDM Microphone processing
 .........................
 
 .. doxygenfunction:: hires_delay
+.. doxygenstruct:: hires_delay_config
+.. doxygenfunction:: hires_delay_set_taps
 .. doxygenfunction:: decimate_to_pcm_4ch
+.. doxygenstruct:: decimator_config
 
 |newpage|
 

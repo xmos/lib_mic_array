@@ -211,6 +211,12 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2c}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc/rst/images}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/api}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.xc.compiler.input.74055339" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
@@ -549,6 +555,12 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2c}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc/rst/images}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/api}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.c.compiler.input.c.964068649" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
@@ -893,6 +905,12 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/api}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2c}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc/rst/images}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/lib_i2s/api}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.317483397" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>
