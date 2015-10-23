@@ -10,7 +10,7 @@ extern unsigned windowing_function[1<<FRAME_SIZE_LOG2];
 
 /** PDM Microphone Interface component.
  *
- *  This task handels the interface to up to 8 PDM microphones whilst also decimating
+ *  This task handles the interface to up to 8 PDM microphones whilst also decimating
  *  the PDM data by a factor of 4. The output is sent across the channels in one byte
  *  per channel format.
  *
@@ -27,12 +27,12 @@ void pdm_rx(
 
 /** PDM Microphone Interface component for high resolution delay.
  *
- *  This task handels the interface to up to 8 PDM microphones whilst also decimating
- *  the PDM data by a factor of 4. The output is saved to a shared memory cicular buffer
+ *  This task handles the interface to up to 8 PDM microphones whilst also decimating
+ *  the PDM data by a factor of 4. The output is saved to a shared memory circular buffer
  *  given by shared_memory_array. The shared memory array
  *
  *  \param p_pdm_mics            The 8 bit wide port connected to the PDM microphones.
- *  \param shared_memory_array   A pointer to the location of the shared circluar buffer.
+ *  \param shared_memory_array   A pointer to the location of the shared circular buffer.
  *  \param memory_size_log2      The number of int64_t in the shared memory log two.
  *  \param c_sync                The channel used for synchronizing the high resolution
  *                               delay buffer to the PDM input.
@@ -58,7 +58,7 @@ typedef struct {
 
 /** High resolution delay component.
  *
- *  This task handels the application of a individual delays of up to 8 channels.
+ *  This task handles the application of a individual delays of up to 8 channels.
  *  Each unit of delay represents one sample at the input sample rate, i.e. the rate
  *  at which the circular buffer is being updated. The maximum delay is given by the
  *  size of the circular buffer.
@@ -70,8 +70,8 @@ typedef struct {
  *  \param c_sync               The channel used for synchronizing the high resolution
  *                              delay buffer to the PDM input.
  *  \param config               The configuration structure describing the behaviour of the
- *                              high resoultion delay component.
- *  \param shared_memory_array  The pointer to the location of the shared circluar buffer.
+ *                              high resolution delay component.
+ *  \param shared_memory_array  The pointer to the location of the shared circular buffer.
  */
 void hires_delay(
         streaming chanend c_4x_pdm_mic_0,
@@ -92,7 +92,7 @@ void hires_delay(
 int hires_delay_set_taps(hires_delay_config * unsafe config, unsigned delays[], unsigned num_taps);
 
 /*
- * Four Channel Deciamtor config structure.
+ * Four Channel decimator config structure.
  */
 typedef struct {
 
@@ -100,17 +100,17 @@ typedef struct {
 
     int apply_dc_offset_removal; /**< Remove the DC offset from the audio before the final decimation. Set to non-zero to enable. */
 
-    int index_bit_reversal; /**< If non-zero then bit reverse the index of the elements within the frame. Used in the case of perparing for an FFT.*/
+    int index_bit_reversal; /**< If non-zero then bit reverse the index of the elements within the frame. Used in the case of preparing for an FFT.*/
 
-    int * unsafe windowing_function; /**< If non-null then this will apply a windowing fucntion to the frame. Used in the case of perparing for an FFT. */
+    int * unsafe windowing_function; /**< If non-null then this will apply a windowing function to the frame. Used in the case of preparing for an FFT. */
 
     //FIR Decimator
 
-    unsigned fir_decimation_factor; /**< Final stage FIR Decimatoin factor*/
+    unsigned fir_decimation_factor; /**< Final stage FIR Decimation factor*/
 
-    const int *  unsafe coefs; /**< The coefficients for the FIR deciamtors */
+    const int *  unsafe coefs; /**< The coefficients for the FIR decimator */
 
-    int * unsafe data;    /**< The data for the FIR deciamtors */
+    int * unsafe data;    /**< The data for the FIR decimator */
 
     int apply_mic_gain_compensation; /**< Set to non-zero to apply microphone gain compensation. */
 
@@ -122,8 +122,8 @@ typedef struct {
 /** Four Channel Decimation component.
  *
  *  This task decimated the four channel input down to the desired sample rate.
- *  The deciamtion ratios are limited to 8*1, 8*2, 8*3, 8*4, 8*5, 8*6, 8*7 and 8*8.
- *  The channel c_frame_output is used to transfer pointers to frames deciamtor
+ *  The decimation ratios are limited to 8*1, 8*2, 8*3, 8*4, 8*5, 8*6, 8*7 and 8*8.
+ *  The channel c_frame_output is used to transfer pointers to frames decimator
  *  will save the output samples in the format given by the configuration.
  *
  *  \param c_4x_pdm_mic      The channel where the decimated PDM of microphones 0-3 will
@@ -131,7 +131,7 @@ typedef struct {
  *  \param c_frame_output    The channel used to transfer pointers between the client of
  *                           this task and this task.
  *  \param config            The configuration structure describing the behaviour of the
- *                           deciamtion component.
+ *                           decimation component.
  */
 void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,
@@ -150,7 +150,7 @@ void decimate_to_pcm_4ch(
  *                           the decimate_to_pcm_4ch() task.
  *  \param c_pcm_1           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
- *  \param buffer            The buffer index. Always points to the index that is accessable to
+ *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
  *  \param f_audio             An array of audio frames. Typically, of size two.
  *
@@ -161,7 +161,7 @@ void decimator_init_audio_frame(streaming chanend c_pcm_0, streaming chanend c_p
 
 /** Four Channel Decimation audio frame exchange function.
  *
- *  This function handels the frame exchange between the decimate_to_pcm_4ch() tasks and the
+ *  This function handles the frame exchange between the decimate_to_pcm_4ch() tasks and the
  *  application. It returns a pointer to the most recently written frame. At the point the oldest
  *  frame is assumed out of scope of the application.
  *
@@ -169,7 +169,7 @@ void decimator_init_audio_frame(streaming chanend c_pcm_0, streaming chanend c_p
  *                           the decimate_to_pcm_4ch() task.
  *  \param c_pcm_1           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
- *  \param buffer            The buffer index. Always points to the index that is accessable to
+ *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
  *  \param f_audio             An array of audio frames. Typically, of size two.
  *
@@ -189,7 +189,7 @@ frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_pcm_0, st
  *                           the decimate_to_pcm_4ch() task.
  *  \param c_pcm_1           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
- *  \param buffer            The buffer index. Always points to the index that is accessable to
+ *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
  *  \param f_complex             An array of audio frames. Typically, of size two.
  *
@@ -199,7 +199,7 @@ void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c
 
 /** Four Channel Decimation complex frame exchange function.
  *
- *  This function handels the frame exchange between the decimate_to_pcm_4ch() tasks and the
+ *  This function handles the frame exchange between the decimate_to_pcm_4ch() tasks and the
  *  application. It returns a pointer to the most recently written frame. At the point the oldest
  *  frame is assumed out of scope of the application.
  *
@@ -207,7 +207,7 @@ void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c
  *                           the decimate_to_pcm_4ch() task.
  *  \param c_pcm_1           The channel used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
- *  \param buffer            The buffer index. Always points to the index that is accessable to
+ *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
  *  \param f_complex           An array of audio frames. Typically, of size two.
  *
