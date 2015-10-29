@@ -412,6 +412,9 @@ input_sample_6:
 
 		//TODO apply windowing function
 
+		ldaw r0, sp[S_FIR_OFFSET]
+		ldc r1, 0
+		stw r1, r0[S_FIR_PHASE]
 
 		ldaw r0, sp[S_FRAME_OFFSET]
 		ldw r2, r0[S_FRAME_SIZE_LOG2]

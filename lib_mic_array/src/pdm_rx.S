@@ -82,21 +82,23 @@ pdm_rx_asm://(
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 	ldw mask, cp[cic_mask]
+	ldaw r11, cp[g_expand]
+	set cp, r11
 	INIT_STACK()
 
 	.align 8
 pdm_rx_loop:
 	{in buffer, res[p_pdm_mics]; nop}
 	{mov s, buffer; nop}
-	{zext s, 8; ldaw t, cp[g_expand]}
+	{zext s, 8; ldaw t, cp[0]}
 	INTEGRATE()
 	{shr s, buffer, 8; nop}
-	{zext s, 8; ldaw t, cp[g_expand]}
+	{zext s, 8; ldaw t, cp[0]}
 	INTEGRATE()
 	{shr s, buffer, 16; nop}
-	{zext s, 8; ldaw t, cp[g_expand]}
+	{zext s, 8; ldaw t, cp[0]}
 	INTEGRATE()
-	{shr s, buffer, 24; ldaw t, cp[g_expand]}
+	{shr s, buffer, 24; ldaw t, cp[0]}
 	INTEGRATE()
 
 	COMB()
@@ -136,21 +138,23 @@ pdm_rx_hires_delay_asm://{
 	stw r2, sp[S_MEM_LOG2]
 	ldc index, 0
 	ldw mask, cp[cic_mask]
+	ldaw r11, cp[g_expand]
+	set cp, r11
 	INIT_STACK()
 
 	.align 8
 pdm_rx_hires_delay_loop:
 	{in buffer, res[p_pdm_mics]; nop}
 	{mov s, buffer; nop}
-	{zext s, 8; ldaw t, cp[g_expand]}
+	{zext s, 8; ldaw t, cp[0]}
 	INTEGRATE()
 	{shr s, buffer, 8; nop}
-	{zext s, 8; ldaw t, cp[g_expand]}
+	{zext s, 8; ldaw t, cp[0]}
 	INTEGRATE()
 	{shr s, buffer, 16; nop}
-	{zext s, 8; ldaw t, cp[g_expand]}
+	{zext s, 8; ldaw t, cp[0]}
 	INTEGRATE()
-	{shr s, buffer, 24; ldaw t, cp[g_expand]}
+	{shr s, buffer, 24; ldaw t, cp[0]}
 	INTEGRATE()
 
 	COMB()
