@@ -91,6 +91,9 @@ void hires_delay(
  */
 int hires_delay_set_taps(hires_delay_config * unsafe config, unsigned delays[], unsigned num_taps);
 
+
+
+
 /*
  * Four Channel decimator config structure.
  */
@@ -135,8 +138,7 @@ typedef struct {
  */
 void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,
-        streaming chanend c_frame_output,
-        decimator_config config);
+        streaming chanend c_frame_output);
 
 
 
@@ -216,5 +218,11 @@ void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c
  */
 frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
      unsigned &buffer, frame_complex * alias f_complex);
+
+
+
+void decimator_configure(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
+        decimator_config &dc0, decimator_config &dc1);
+
 
 #endif /* MIC_ARRAY_H_ */

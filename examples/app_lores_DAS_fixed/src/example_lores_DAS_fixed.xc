@@ -15,6 +15,8 @@
 #include "i2c.h"
 #include "i2s.h"
 
+#define DF 1    //Decimation Factor
+
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
 
@@ -77,6 +79,9 @@ static void set_dir(client interface led_button_if lb, unsigned dir, unsigned de
     }
 }
 
+int data_0[4*COEFS_PER_PHASE*DF] = {0};
+int data_1[4*COEFS_PER_PHASE*DF] = {0};
+
 void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         client interface led_button_if lb, chanend c_audio){
 
@@ -93,6 +98,13 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
     unsigned delay_head = 0;
     unsigned dir = 0;
     set_dir(lb, dir, delay);
+
+    unsigned decimation_factor=DF;
+    unsafe{
+        decimator_config dc0 = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], data_0, 0, {0,0, 0, 0}};
+        decimator_config dc1 = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], data_1, 0, {0,0, 0, 0}};
+        decimator_configure(c_ds_output_0, c_ds_output_1, dc0, dc1);
+    }
 
     decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
@@ -222,9 +234,6 @@ void i2s_handler(server i2s_callback_if i2s,
   }
 };
 
-//TODO make these not global
-int data_0[4*COEFS_PER_PHASE*DF] = {0};
-int data_1[4*COEFS_PER_PHASE*DF] = {0};
 
 int main(){
 
@@ -253,18 +262,12 @@ int main(){
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
 
-            unsafe {
-
-                decimator_config dc0 = {FRAME_SIZE_LOG2, 1, 0, 0, DF, FIR_LUT(DF), data_0, 0, {0,0, 0, 0}};
-                decimator_config dc1 = {FRAME_SIZE_LOG2, 1, 0, 0, DF, FIR_LUT(DF), data_1, 0, {0,0, 0, 0}};
-
-                par{
-                    button_and_led_server(lb, leds, p_buttons);
-                    pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                    decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);
-                    decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1, dc1);
-                    lores_DAS_fixed(c_ds_output_0, c_ds_output_1, lb,c_audio);
-                }
+            par{
+                button_and_led_server(lb, leds, p_buttons);
+                pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0);
+                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1);
+                lores_DAS_fixed(c_ds_output_0, c_ds_output_1, lb,c_audio);
             }
         }
     }

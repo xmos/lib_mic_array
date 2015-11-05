@@ -7,6 +7,9 @@
 
 #include "defines.h"
 
+#define EXCHANGE_BUFFERS 0
+#define CONFIGURE_DECIMATOR 1
+
 //r0 to r7 are general purpose
 
 #define c_input			      r8
@@ -210,8 +213,7 @@
 /*
 void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,		//r0
-        streaming chanend c_frame_output,	//r1
-        decimator_config config); 			//r2
+        streaming chanend c_frame_output); 	//r1
 */
 
 decimate_to_pcm_4ch:
@@ -226,14 +228,23 @@ decimate_to_pcm_4ch:
 	//set the integral pointer
 	ldaw p_integral, sp[S_INTEGRAL_OFFSET]
 
-
 	//store c_output off to the stack
 	ldaw t, sp[S_FRAME_OFFSET]
 	stw r1, t[S_C_OUTPUT]
 
+	ldaw r0, sp[S_FRAME_OFFSET]
+	ldw r1, r0[S_C_OUTPUT]
+	//wait for the decimator_configure to send us the configuration
+
+	outct res[r1], 8		//we say we are ready
+	inct r2, res[r1]		//they say CONFIGURE_DECIMATOR
+	//cry if r2 != CONFIGURE_DECIMATOR
+
+configure:	//This is the entry point if comming from a reconfigure
+	in r2, res[r1]		//get the pointer to the decimator_config
+
 	//copy the setting out of the struct
 	ldaw r0, sp[S_FRAME_OFFSET]
-
 	ldw t, r2[0] //frame_size_log2
 	stw t, r0[S_FRAME_SIZE_LOG2]
 
@@ -250,7 +261,6 @@ decimate_to_pcm_4ch:
 
 	ldw t, r2[7]	//apply mic gain compensation
 	stw t, r0[S_MIC_GAIN_COMP]
-
 
 	ldw t, r2[4] //deciamtion factor
 	stw t, r0[S_DECIMATION_FACTOR]
@@ -273,9 +283,6 @@ setup_coefs:
 	INIT_DATA_LOOP(S_DATA_1, data_1_init_loop)
 	INIT_DATA_LOOP(S_DATA_2, data_2_init_loop)
 	INIT_DATA_LOOP(S_DATA_3, data_3_init_loop)
-
-
-
 
 	ldaw r1, sp[S_MIC_CALIB_OFFSET]
 	ldw r0, r2[8]
@@ -461,6 +468,21 @@ input_sample_6:
 	exchange_buffers:
 		ldw r1, r0[S_C_OUTPUT]
 		outct res[r1], 8 //WARNING: do not change this
+
+
+		inct r2, res[r1]
+
+
+		//if the incomming token is EXCHANGE_BUFFERS then do that
+		//if the incomming token is CONFIGURE_DECIMATOR then do that
+
+
+		eq r3, r2, CONFIGURE_DECIMATOR
+		bt r3, configure
+		eq r3, r2, EXCHANGE_BUFFERS
+		bt r3, do_the_exchange
+
+		do_the_exchange:
 		in r1, res[r1]
 		{stw r1, r0[S_AUDIO_POINTER]}
 		//reset the min and max vals for the frame

@@ -1,4 +1,7 @@
 #include "defines.h"
+
+
+
 const int fir_1_coefs[1][COEFS_PER_PHASE] = {
 {
     160138,    -128149,      81277,          0,    -136026,     340394,    -612126,     929314, 
@@ -338,4 +341,16 @@ const int fir_8_coefs[8][COEFS_PER_PHASE] = {
          0,          0,          0,          0,          0,          0,          0,          0, 
 
 },
+};
+
+const int * fir_coefs[9] = {
+        0,
+        fir_1_coefs[0],
+        fir_2_coefs[0],
+        fir_3_coefs[0],
+        fir_4_coefs[0],
+        fir_5_coefs[0],
+        fir_6_coefs[0],
+        fir_7_coefs[0],
+        fir_8_coefs[0]
 };
