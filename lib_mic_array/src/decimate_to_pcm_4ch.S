@@ -243,42 +243,44 @@ decimate_to_pcm_4ch:
 configure:	//This is the entry point if comming from a reconfigure
 	in r2, res[r1]		//get the pointer to the decimator_config
 
+	ldw r3, r2[0];		//r3 is the pointer to the decimator_config_common
+
 	//copy the setting out of the struct
 	ldaw r0, sp[S_FRAME_OFFSET]
-	ldw t, r2[0] //frame_size_log2
+	ldw t, r3[0] //frame_size_log2
 	stw t, r0[S_FRAME_SIZE_LOG2]
 
 	ldaw r0, sp[S_SETTINGS_OFFSET]
 
-	ldw t, r2[1] //apply_dc_offset
+	ldw t, r3[1] //apply_dc_offset
 	stw t, r0[S_DC_OFFSET_REMOVAL_ENABLED]
 
-	ldw t, r2[2] //index_bit_reversal
+	ldw t, r3[2] //index_bit_reversal
 	stw t, r0[S_INDEX_BITREVERSING_ENABLED]
 
-	ldw t, r2[3] //windowing_function
+	ldw t, r3[3] //windowing_function
 	stw t, r0[S_WINDOWING_ENABLED]
 
-	ldw t, r2[7]	//apply mic gain compensation
+	ldw t, r3[6]	//apply mic gain compensation
 	stw t, r0[S_MIC_GAIN_COMP]
 
-	ldw t, r2[4] //deciamtion factor
+	ldw t, r3[4] //deciamtion factor
 	stw t, r0[S_DECIMATION_FACTOR]
 
 	//Copy the coefficient pointer over
 setup_coefs:
 	ldaw r1, sp[S_FIR_OFFSET]
 	ldaw r1, r1[S_COEFS]
-	{ldw r0, r2[5]; ldc r4, 0} //coef pointer
+	{ldw r0, r3[5]; ldc r4, 0} //coef pointer
 	coef_init_loop:
 		stw r0, r1[r4]
-		ldc r3, COEFS_PER_PHASE
-		ldaw r0, r0[r3]
+		ldc r5, COEFS_PER_PHASE
+		ldaw r0, r0[r5]
 		add r4, r4, 1
-		eq r3, r4, t
-		bf r3, coef_init_loop
+		eq r5, r4, t
+		bf r5, coef_init_loop
 
-	ldw r0, r2[6] //data pointer
+	ldw r0, r2[1] //data pointer
 	INIT_DATA_LOOP(S_DATA_0, data_0_init_loop)
 	INIT_DATA_LOOP(S_DATA_1, data_1_init_loop)
 	INIT_DATA_LOOP(S_DATA_2, data_2_init_loop)

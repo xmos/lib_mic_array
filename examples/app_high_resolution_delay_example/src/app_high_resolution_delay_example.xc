@@ -25,8 +25,9 @@ void example(streaming chanend c_pcm_0,
     unsigned decimation_factor=DF;
 
     unsafe{
-        decimator_config dc0 = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], data_0, 0, {0,0, 0, 0}};
-        decimator_config dc1 = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], data_1, 0, {0,0, 0, 0}};
+        decimator_config_common dcc = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], 0};
+        decimator_config dc0 = {&dcc, data_0, {0, 0, 0, 0}};
+        decimator_config dc1 = {&dcc, data_1, {0, 0, 0, 0}};
         decimator_configure(c_pcm_0, c_pcm_1, dc0, dc1);
     }
 
