@@ -478,11 +478,27 @@ input_sample_6:
 		add r1, r1, r2
 		stw r1, r0[S_FRAME_MAX]
 
-
-		//if window_function != null
-
-		//TODO apply windowing function
-
+		//TODO write the window generator
+		ldaw r0, sp[S_SETTINGS_OFFSET]
+		ldw r1, r0[S_WINDOWING_ENABLED]
+		bf r1, no_windowing
+			ldaw r0, sp[S_FRAME_OFFSET]
+			ldw r2, r0[S_AUDIO_POINTER_INDEX]
+			ldw r1, r1[r2]	//r1 is now the windowing coefficient
+			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
+			ldd r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_01]
+			{ldc r4, 0; ldc r5, 0}
+			maccs r4, r5, r1, r2
+			{ldc r2, 0; ldc r5, 0}
+			maccs r5, r3, r1, r3
+			std r4, r5, r0[S_D_SECOND_STAGE_OUTPUT_01]
+			ldd r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
+			{ldc r4, 0; ldc r5, 0}
+			maccs r4, r5, r1, r2
+			{ldc r2, 0; ldc r5, 0}
+			maccs r5, r3, r1, r3
+			std r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
+		no_windowing:
 
 		ldaw r0, sp[S_FIR_OFFSET]
 		ldc r1, 0
