@@ -14,7 +14,7 @@ int main(){
     configure_port_clock_output(p_pdm_clk, pdmclk);
     configure_in_port(p_pdm_mics, pdmclk);
     start_clock(pdmclk);
-
+#if 0
     while(1){
         unsigned d;
         for(unsigned i=0;i<32;i++){
@@ -26,5 +26,13 @@ int main(){
         }
         xscope_int(0, bitrev(d));
     }
+#else
+    unsigned d=0;
+    while(1){
+        for(unsigned i=0;i<32;i++)
+            p_pdm_mics :> int;
+        xscope_int(0, d++);
+    }
+#endif
     return 0;
 }

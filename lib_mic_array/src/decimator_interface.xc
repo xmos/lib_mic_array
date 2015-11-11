@@ -1,16 +1,22 @@
 #include "frame.h"
 #include "mic_array.h"
 #include <xs1.h>
+#include <string.h>
 
 #define DEBUG_UNIT DEBUG_MIC_ARRAY
 
+#if DEBUG_MIC_ARRAY
 #include "xassert.h"
+#endif
 
 void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         unsigned &buffer, frame_audio audio[]){
+    memset(audio[0].metadata, 0, 2*sizeof(s_metadata));
     unsafe {
         c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
         c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[4];
+        c_ds_output_0 <: (frame_audio * unsafe)&audio[0].metadata[0];
+        c_ds_output_1 <: (frame_audio * unsafe)&audio[0].metadata[1];
     }
     buffer = 1;
 }
@@ -42,6 +48,8 @@ void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chane
     unsafe {
         c_ds_output_0 <: (int * unsafe)audio[buffer].data[0];
         c_ds_output_1 <: (int * unsafe)audio[buffer].data[4];
+        c_ds_output_0 <: (int * unsafe)&audio[buffer].metadata[0];
+        c_ds_output_1 <: (int * unsafe)&audio[buffer].metadata[1];
     }
     buffer = 1-buffer;
     return &audio[buffer];
@@ -49,9 +57,12 @@ void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chane
 
 void decimator_init_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
      unsigned &buffer, frame_complex f_audio[]){
+     memset(f_audio[0].metadata, 0, 2*sizeof(s_metadata));
  unsafe {
      c_ds_output_0 <: (frame_complex * unsafe)f_audio[0].data[0];
      c_ds_output_1 <: (frame_complex * unsafe)f_audio[0].data[2];
+     c_ds_output_0 <: (frame_complex * unsafe)&f_audio[0].metadata[0];
+     c_ds_output_1 <: (frame_complex * unsafe)&f_audio[0].metadata[1];
  }
  buffer = 1;
 }
@@ -79,6 +90,8 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_ds_ou
      unsafe {
          c_ds_output_0 <: (int * unsafe)f_complex[buffer].data[0];
          c_ds_output_1 <: (int * unsafe)f_complex[buffer].data[2];
+         c_ds_output_0 <: (int * unsafe)&f_complex[buffer].metadata[0];
+         c_ds_output_1 <: (int * unsafe)&f_complex[buffer].metadata[1];
      }
      buffer = 1-buffer;
      return &f_complex[buffer];
