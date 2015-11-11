@@ -2,7 +2,7 @@
 #define PCM_FRAME_H_
 
 #define NUM_MICS 8
-#define FRAME_SIZE_LOG2        (0)
+#define FRAME_SIZE_LOG2        (9)
 
 /** Complex number in Cartesian coordinates.*/
 typedef struct {
