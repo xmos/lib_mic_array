@@ -429,32 +429,29 @@ input_sample_6:
 	bu input_sample_7
 	save_sample:
 
-		//apply gain compensation here
+		//apply gain compensation
+		/*
+		ldaw r0, sp[S_SETTINGS_OFFSET]
+		ldw r1, r0[S_MIC_GAIN_COMP]
+		ldaw r2, sp[S_MIC_CALIB_OFFSET]
 
-/*
 		ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-		ldd r1, r2, r0[S_D_SECOND_STAGE_OUTPUT_01]
-		{lss r3, r1, r2; lss r4, r2, r1}
-		mul r1, r1, r3
-		mul r2, r2, r4
-		add r1, r1, r2
+		ldd r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_01]
+		{ldc r4, 0; ldc r5, 0}
+		maccs r4, r5, r1, r2
+		{ldc r2, 0; ldc r5, 0}
+		maccs r5, r3, r1, r3
+		std r4, r5, r0[S_D_SECOND_STAGE_OUTPUT_01]
 		ldd r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
-		{lss r4, r2, r3; lss r5, r3, r2}
-		mul r2, r2, r4
-		mul r3, r3, r5
-		add r2, r2, r3
-		{lss r3, r1, r2; lss r4, r2, r1}
-		mul r1, r1, r3
-		mul r2, r2, r4
-		add r1, r1, r2
-		ldaw r0, sp[S_FRAME_OFFSET]
-		ldw r2, r0[S_FRAME_MAX]
-		{lss r3, r1, r2; lss r4, r2, r1}
-		mul r1, r1, r3
-		mul r2, r2, r4
-		add r1, r1, r2
-		stw r1, r0[S_FRAME_MAX]
+		{ldc r4, 0; ldc r5, 0}
+		maccs r4, r5, r1, r2
+		{ldc r2, 0; ldc r5, 0}
+		maccs r5, r3, r1, r3
+		std r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
 */
+
+
+		//find the max
 		ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
 		ldd r1, r2, r0[S_D_SECOND_STAGE_OUTPUT_01]
 		{lss r3, r1, r2; lss r4, r2, r1}
@@ -478,12 +475,17 @@ input_sample_6:
 		add r1, r1, r2
 		stw r1, r0[S_FRAME_MAX]
 
-		//TODO write the window generator
+		//multiply the data values by the window function
 		ldaw r0, sp[S_SETTINGS_OFFSET]
 		ldw r1, r0[S_WINDOWING_ENABLED]
 		bf r1, no_windowing
 			ldaw r0, sp[S_FRAME_OFFSET]
-			ldw r2, r0[S_AUDIO_POINTER_INDEX]
+			ldw r3, r0[S_FRAME_SIZE_LOG2]
+			{mkmsk r4, r3; sub r3, r3, 1}
+			{shr r3, r2, r3;ldw r2, r0[S_AUDIO_POINTER_INDEX]}
+			bf r3, load_window_coef
+			sub r2, r4, r2
+			load_window_coef:
 			ldw r1, r1[r2]	//r1 is now the windowing coefficient
 			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
 			ldd r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_01]
@@ -651,6 +653,10 @@ fir_impl:
 	DOUBLE_TAP(6)
 	DOUBLE_TAP(8)
 	DOUBLE_TAP(10)
+	//ldc t, 24*4
+	//{add r7, r7, t; add r6, r6, t}
+	//DOUBLE_TAP(0)
+	//DOUBLE_TAP(2)
 	//TODO add the most possible - try to get to 60
 	retsp 0
 .tmp_fir_impl:

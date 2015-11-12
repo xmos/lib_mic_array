@@ -5,8 +5,9 @@
 #define FRAME_SIZE_LOG2        (11)
 
 typedef struct {
-    int min;
-    int max;
+    int min;                /**<The minimum data value in this frame. UNUSED*/
+    int max;                /**<The maximum data value in this frame. */
+    //unsigned frame_number;  /**<The frame_number. UNUSED*/
 } s_metadata;
 
 /** Complex number in Cartesian coordinates.*/

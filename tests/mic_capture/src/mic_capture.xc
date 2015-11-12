@@ -2,11 +2,113 @@
 #include <xscope.h>
 #include <xs1.h>
 #include <xclib.h>
+#include "mic_array_board_support.h"
+#include "lib_dsp_transforms.h"
+#include <print.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+on tile[0]:p_leds leds = DEFAULT_INIT;
+on tile[0]:in port p_buttons =  XS1_PORT_4A;
 
 on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
 on tile[0]: in buffered port:8  p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
+
+#define N 13
+
+#if 0
+int main(){
+
+    configure_clock_src_divide(pdmclk, p_mclk, 4);
+    configure_port_clock_output(p_pdm_clk, pdmclk);
+    configure_in_port(p_pdm_mics, pdmclk);
+    start_clock(pdmclk);
+
+    lib_dsp_fft_complex_t pts[1<<N];
+
+    uint64_t mag_max[1<<(N-1)]= {0};
+    unsigned samples = 0;
+
+    while(1){
+        for(unsigned i=0;i<(1<<N);i++){
+            unsigned v;
+            p_pdm_mics :> v;
+            v&=2;
+            pts[i].re = 0x7fffffff * (v!=0);//TODO change this to a window function lookup
+            pts[i].im = 0;
+        }
+
+        lib_dsp_fft_bit_reverse(pts, 1<<N);
+        lib_dsp_fft_forward_complex(pts, (1<<N), lib_dsp_sine_8192);
+
+        samples++;
+
+        for(unsigned i=0;i<1<<(N-1);i++){
+            uint64_t mag = (int64_t)pts[i].re*(int64_t)pts[i].re +  (int64_t)pts[i].im*(int64_t)pts[i].im;
+            if (mag_max[i] < mag)
+                mag_max[i] = mag;
+        }
+
+        if(samples==1024){
+            for(unsigned i=1;i<1<<(N-1);i++){
+                printf("%llu\n", mag_max[i]);
+                delay_milliseconds(2);
+            }
+            delay_milliseconds(2);
+           _Exit(1);
+        }
+    }
+    return 0;
+}
+#else
+
+extern const int window[1<<(N-1)];
+#include <stdio.h>
+
+void maxer(streaming chanend c_a, streaming chanend  c_c,
+        client interface led_button_if lb){
+    unsafe {
+    long long x[2];
+    lib_dsp_fft_complex_t pts[3][1<<N];
+    lib_dsp_fft_complex_t * unsafe pt[3] = {pts[0], pts[1], pts[2]};
+
+    c_a <: pt[0];
+    c_a <: pt[1];
+    c_a <: pt[2];
+
+    uint64_t mag_max[1<<(N-1)]= {0};
+
+    lib_dsp_fft_complex_t * unsafe p;
+    while(1){
+        c_c :> p;
+        for(unsigned i=1;i<1<<(N-1);i++){
+            uint64_t mag = (int64_t)p[i].re*(int64_t)p[i].re +  (int64_t)p[i].im*(int64_t)p[i].im;
+            if (mag_max[i] < mag)
+                mag_max[i] = mag;
+        }
+
+        select {
+            case lb.button_event():{
+                unsigned button;
+                e_button_state pressed;
+                lb.get_button_event(button, pressed);
+                if(pressed == 1){
+                    for(unsigned i=1;i<1<<(N-1);i++){
+                        printullongln(mag_max[i]);
+                        delay_milliseconds(4);
+                    }
+                }
+                break;
+            }
+            default: break;
+        }
+        c_a <: p;
+    }
+}
+}
+
 
 int main(){
 
@@ -14,25 +116,54 @@ int main(){
     configure_port_clock_output(p_pdm_clk, pdmclk);
     configure_in_port(p_pdm_mics, pdmclk);
     start_clock(pdmclk);
+
+    streaming chan c_a, c_b, c_c;
+
+    interface led_button_if lb;
+    par {
+        //input-er
+        unsafe {
+            lib_dsp_fft_complex_t * unsafe p;
+
+           while(1){
+               c_a :> p;
+               for(unsigned i=0;i<(1<<N);i++){
+                   unsigned v;
+                   p_pdm_mics :> v;
+                   v&=2;
 #if 0
-    while(1){
-        unsigned d;
-        for(unsigned i=0;i<32;i++){
-            unsigned v;
-            p_pdm_mics :> v;
-            v=v&1;
-            d=d<<1;
-            d|=v;
-        }
-        xscope_int(0, bitrev(d));
-    }
+                   if(v!=0) p[i].re = 0x7fffffff;//TODO change this to a window function lookup
+                   else p[i].re = 0x80000000;//TODO change this to a window function lookup
 #else
-    unsigned d=0;
-    while(1){
-        for(unsigned i=0;i<32;i++)
-            p_pdm_mics :> int;
-        xscope_int(0, d++);
-    }
+                   unsigned j=i;
+                   if ( i>>(N-1))
+                       j = ((1<<N)-1)-j;
+                   int w = window[j];
+                   if(v!=0)
+                       p[i].re =  w;
+                   else
+                       p[i].re = -w;
 #endif
+                   p[i].im = 0;
+               }
+               c_b <: p;
+           }
+        }
+        //fft-er
+        unsafe {
+            lib_dsp_fft_complex_t * unsafe p;
+            while(1){
+                c_b :> p;
+                lib_dsp_fft_bit_reverse((lib_dsp_fft_complex_t *)p, 1<<N);
+                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t *)p, (1<<N), lib_dsp_sine_8192);
+                c_c <: p;
+            }
+        }
+        button_and_led_server(lb, leds, p_buttons);
+        //max-er
+        maxer(c_a, c_c, lb);
+    }
     return 0;
 }
+
+#endif
