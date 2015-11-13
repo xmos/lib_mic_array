@@ -2,7 +2,7 @@
 #define PCM_FRAME_H_
 
 #define NUM_MICS 8
-#define FRAME_SIZE_LOG2        (11)
+#define FRAME_SIZE_LOG2        (0)
 
 typedef struct {
     int min;                /**<The minimum data value in this frame. UNUSED*/

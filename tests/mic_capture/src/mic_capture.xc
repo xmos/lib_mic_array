@@ -18,52 +18,6 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 #define N 13
 
-#if 0
-int main(){
-
-    configure_clock_src_divide(pdmclk, p_mclk, 4);
-    configure_port_clock_output(p_pdm_clk, pdmclk);
-    configure_in_port(p_pdm_mics, pdmclk);
-    start_clock(pdmclk);
-
-    lib_dsp_fft_complex_t pts[1<<N];
-
-    uint64_t mag_max[1<<(N-1)]= {0};
-    unsigned samples = 0;
-
-    while(1){
-        for(unsigned i=0;i<(1<<N);i++){
-            unsigned v;
-            p_pdm_mics :> v;
-            v&=2;
-            pts[i].re = 0x7fffffff * (v!=0);//TODO change this to a window function lookup
-            pts[i].im = 0;
-        }
-
-        lib_dsp_fft_bit_reverse(pts, 1<<N);
-        lib_dsp_fft_forward_complex(pts, (1<<N), lib_dsp_sine_8192);
-
-        samples++;
-
-        for(unsigned i=0;i<1<<(N-1);i++){
-            uint64_t mag = (int64_t)pts[i].re*(int64_t)pts[i].re +  (int64_t)pts[i].im*(int64_t)pts[i].im;
-            if (mag_max[i] < mag)
-                mag_max[i] = mag;
-        }
-
-        if(samples==1024){
-            for(unsigned i=1;i<1<<(N-1);i++){
-                printf("%llu\n", mag_max[i]);
-                delay_milliseconds(2);
-            }
-            delay_milliseconds(2);
-           _Exit(1);
-        }
-    }
-    return 0;
-}
-#else
-
 extern const int window[1<<(N-1)];
 #include <stdio.h>
 
@@ -131,10 +85,6 @@ int main(){
                    unsigned v;
                    p_pdm_mics :> v;
                    v&=2;
-#if 0
-                   if(v!=0) p[i].re = 0x7fffffff;//TODO change this to a window function lookup
-                   else p[i].re = 0x80000000;//TODO change this to a window function lookup
-#else
                    unsigned j=i;
                    if ( i>>(N-1))
                        j = ((1<<N)-1)-j;
@@ -143,7 +93,6 @@ int main(){
                        p[i].re =  w;
                    else
                        p[i].re = -w;
-#endif
                    p[i].im = 0;
                }
                c_b <: p;
@@ -165,5 +114,3 @@ int main(){
     }
     return 0;
 }
-
-#endif

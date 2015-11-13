@@ -12,12 +12,12 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 int data_0[4*COEFS_PER_PHASE*DF] = {0};
 int data_1[4*COEFS_PER_PHASE*DF] = {0};
+frame_audio audio[2];
 
 void example(streaming chanend c_pcm_0,
         streaming chanend c_pcm_1){
 
     unsigned buffer;
-    frame_audio audio[2];    //double buffered
     unsigned decimation_factor=DF;
     unsafe{
         decimator_config_common dcc = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], 0};
@@ -33,6 +33,7 @@ void example(streaming chanend c_pcm_0,
         frame_audio *  current = decimator_get_next_audio_frame(c_pcm_0, c_pcm_1, buffer, audio);
 
         // code goes here
+
     }
 }
 

@@ -81,12 +81,12 @@ static void set_dir(client interface led_button_if lb, unsigned dir, unsigned de
 
 int data_0[4*COEFS_PER_PHASE*DF] = {0};
 int data_1[4*COEFS_PER_PHASE*DF] = {0};
+frame_audio audio[2];
 
 void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         client interface led_button_if lb, chanend c_audio){
 
     unsigned buffer = 1;     //buffer index
-    frame_audio audio[2];    //double buffered
     memset(audio, sizeof(frame_audio), 0);
 
 #define MAX_DELAY 128

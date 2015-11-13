@@ -36,6 +36,7 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 #pragma xta command "analyse endpoints input_sample_7 input_sample_0"
 #pragma xta command "set required - 2604 ns"
 #pragma xta command "print summary"
+
 void example(streaming chanend c_pcm_0,
         streaming chanend c_pcm_1,
         client interface led_button_if lb){
@@ -45,9 +46,9 @@ void example(streaming chanend c_pcm_0,
     unsigned buffer;
     unsigned decimation_factor=DF;
     unsafe{
-        decimator_config_common dcc = {FRAME_SIZE_LOG2, 1,1, 0, decimation_factor, fir_coefs[decimation_factor], 0};
-        decimator_config dc0 = {&dcc, data_0, {0, 0, 0, 0}};
-        decimator_config dc1 = {&dcc, data_1, {0, 0, 0, 0}};
+        decimator_config_common dcc = {FRAME_SIZE_LOG2, 1,1, 0, decimation_factor, fir_coefs[decimation_factor], 1};
+        decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
+        decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
         decimator_configure(c_pcm_0, c_pcm_1, dc0, dc1);
     }
     decimator_init_complex_frame(c_pcm_0, c_pcm_1, buffer, audio);

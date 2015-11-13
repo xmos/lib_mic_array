@@ -2,6 +2,7 @@
 #define MIC_ARRAY_H_
 
 #include <stdint.h>
+#include <limits.h>
 #include "fir_decimator.h"
 #include "frame.h"
 #include "defines.h"
@@ -123,7 +124,7 @@ typedef struct {
 
     int * unsafe data;    /**< The data for the FIR decimator */
 
-    unsigned mic_gain_compensation[4]; /**< An array describing the relative gain compensation to apply to the microphones. The microphone with the least gain is defined as 0xffffffff(MAX_INT), all others are given as MAX_INT*min_gain/current_mic_gain.*/
+    int mic_gain_compensation[4]; /**< An array describing the relative gain compensation to apply to the microphones. The microphone with the least gain is defined as 0xffffffff(MAX_INT), all others are given as MAX_INT*min_gain/current_mic_gain.*/
 
 } decimator_config;
 

@@ -17,14 +17,17 @@
 #define s			          r10
 #define t                     r11
 
-#define DC_OFFSET_REMOVAL(PREV_XY, COMB_OUTPUT) \
-	ldd r1, r0, r3[PREV_XY];\
-	ashr r2, r1, 8;\
-	{sub r1, r1, r2; nop};\
-	{sub r1, r1, r0; ldw r2, r4[COMB_OUTPUT]};\
-	{add r1, r1, r2; nop};\
+#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, COMB_OUTPUT) \
+	ldd r1, r0, r3[PREV_Y];\
+	{shl r2, r1, 24; ldc r5, 0};\
+	lsub r2, r0, r0, r2, r5;\
+	ashr r5, r1, 8;\
+	lsub r2, r1, r1, r5, r2;\
+	{ldw r2, r4[COMB_OUTPUT]; nop};\
+	{add r1, r1, r2; ldw r5, r3[PREV_X]};\
+	{sub r1, r1, r5; stw r2, r3[PREV_X]};\
 	{stw r1, r4[COMB_OUTPUT]};\
-	std r1, r2, r3[PREV_XY];
+	std r1, r0, r3[PREV_Y];
 
 #define INPUT(S) \
 	in r0, res[c_input];\
@@ -48,7 +51,6 @@
 	std r2, r3, r0[OFF_2];\
 	ldaw r2, sp[S_SECOND_STAGE_OUTPUT_OFFSET];\
 	stw r1, r2[OUTPUT]
-
 
 #define INTEGRATE_ITT() \
 	{ld8u t, r7[r6]; add r6, r6, 4};\
@@ -103,14 +105,6 @@
 	ldaw t, sp[S_FIR_OFFSET];\
 	std r1, r0, t[SUM];\
 
-#define UPDATE_MAX(A, LBL) \
-		ldaw r0, sp[S_FRAME_OFFSET];\
-		ldw r1, r0[S_FRAME_MAX];\
-		lss r1, A, r1;\
-		bt r1, LBL;\
-		stw A, r0[S_FRAME_MAX]
-
-
 #define S_INPUT_OFFSET 0 //this one needs to be first
 #define S_D_INPUT_0	0
 #define S_D_INPUT_1 1
@@ -154,11 +148,15 @@
 #define COMB_STACK_SIZE 24
 
 #define S_DC_ELIMINATE_OFFSET (S_COMB_OFFSET+COMB_STACK_SIZE)
-#define S_D_PREV_XY_0 0
-#define S_D_PREV_XY_1 1
-#define S_D_PREV_XY_2 2
-#define S_D_PREV_XY_3 3
-#define DC_ELIMINATE_STACK_SIZE 8
+#define S_D_PREV_Y_0 0
+#define S_D_PREV_Y_1 1
+#define S_D_PREV_Y_2 2
+#define S_D_PREV_Y_3 3
+#define S_PREV_X_0   8
+#define S_PREV_X_1   9
+#define S_PREV_X_2   10
+#define S_PREV_X_3   11
+#define DC_ELIMINATE_STACK_SIZE 12
 
 #define S_SECOND_STAGE_OUTPUT_OFFSET (S_DC_ELIMINATE_OFFSET+DC_ELIMINATE_STACK_SIZE)
 #define S_D_SECOND_STAGE_OUTPUT_01 0
@@ -204,8 +202,10 @@
 #define S_MIC_CALIB_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)
 #define S_MIC_CALIB_0 	0
 #define S_MIC_CALIB_1 	1
+#define S_D_MIC_CALIB_01 	0
 #define S_MIC_CALIB_2 	2
 #define S_MIC_CALIB_3	3
+#define S_D_MIC_CALIB_23 	1
 #define MIC_CALIB_STACK_SIZE		4
 
 #define S_SETTINGS_OFFSET (S_MIC_CALIB_OFFSET+MIC_CALIB_STACK_SIZE)
@@ -295,14 +295,15 @@ setup_coefs:
 	INIT_DATA_LOOP(S_DATA_2, data_2_init_loop)
 	INIT_DATA_LOOP(S_DATA_3, data_3_init_loop)
 
+load_mic_gain_calib:
 	ldaw r1, sp[S_MIC_CALIB_OFFSET]
-	ldw r0, r2[8]
+	ldw r0, r2[2]
 	stw r0, r1[S_MIC_CALIB_0]
-	ldw r0, r2[9]
+	ldw r0, r2[3]
 	stw r0, r1[S_MIC_CALIB_1]
-	ldw r0, r2[10]
+	ldw r0, r2[4]
 	stw r0, r1[S_MIC_CALIB_2]
-	ldw r0, r2[11]
+	ldw r0, r2[5]
 	stw r0, r1[S_MIC_CALIB_3]
 
 	/*
@@ -367,13 +368,13 @@ input_sample_1:
 			ldaw r3, sp[S_DC_ELIMINATE_OFFSET]
 			ldaw r4, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
 			dc_offset_removal_0:
-			DC_OFFSET_REMOVAL(S_D_PREV_XY_0, S_SECOND_STAGE_OUTPUT_0);
+			DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, S_SECOND_STAGE_OUTPUT_0);
 			dc_offset_removal_1:
-			DC_OFFSET_REMOVAL(S_D_PREV_XY_1, S_SECOND_STAGE_OUTPUT_1);
+			DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, S_SECOND_STAGE_OUTPUT_1);
 			dc_offset_removal_2:
-			DC_OFFSET_REMOVAL(S_D_PREV_XY_2, S_SECOND_STAGE_OUTPUT_2);
+			DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, S_SECOND_STAGE_OUTPUT_2);
 			dc_offset_removal_3:
-			DC_OFFSET_REMOVAL(S_D_PREV_XY_3, S_SECOND_STAGE_OUTPUT_3);
+			DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, S_SECOND_STAGE_OUTPUT_3);
 		skip_dc_offset_removal:
 		//64 + 33 used = 97 -> ~ 50 spare
 		//TODO gain compensation
@@ -430,50 +431,56 @@ input_sample_6:
 	save_sample:
 
 		//apply gain compensation
-		/*
 		ldaw r0, sp[S_SETTINGS_OFFSET]
 		ldw r1, r0[S_MIC_GAIN_COMP]
-		ldaw r2, sp[S_MIC_CALIB_OFFSET]
+		bf r1, update_min_max
+		apply_mic_gain_compensation:
+			ldaw r0, sp[S_MIC_CALIB_OFFSET]
+			ldd r2, r1, r0[S_D_MIC_CALIB_01]
+			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
+			ldd r4, r3, r0[S_D_SECOND_STAGE_OUTPUT_01]
+			{ldc r5, 0; ldc r6, 0}
+			maccs r5, r6, r1, r3
+			{ldc r6, 0; ldc r1, 0}
+			maccs r6, r1, r2, r4
+			std r6, r5, r0[S_D_SECOND_STAGE_OUTPUT_01]
+			ldaw r0, sp[S_MIC_CALIB_OFFSET]
+			ldd r2, r1, r0[S_D_MIC_CALIB_23]
+			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
+			ldd r4, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
+			{ldc r5, 0; ldc r6, 0}
+			maccs r5, r6, r1, r3
+			{ldc r6, 0; ldc r1, 0}
+			maccs r6, r1, r2, r4
+			std r6, r5, r0[S_D_SECOND_STAGE_OUTPUT_23]
 
-		ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-		ldd r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_01]
-		{ldc r4, 0; ldc r5, 0}
-		maccs r4, r5, r1, r2
-		{ldc r2, 0; ldc r5, 0}
-		maccs r5, r3, r1, r3
-		std r4, r5, r0[S_D_SECOND_STAGE_OUTPUT_01]
-		ldd r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
-		{ldc r4, 0; ldc r5, 0}
-		maccs r4, r5, r1, r2
-		{ldc r2, 0; ldc r5, 0}
-		maccs r5, r3, r1, r3
-		std r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
-*/
-
-
-		//find the max
+		update_min_max:
 		ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
 		ldd r1, r2, r0[S_D_SECOND_STAGE_OUTPUT_01]
-		{lss r3, r1, r2; lss r4, r2, r1}
-		mul r1, r1, r4
-		mul r2, r2, r3
-		add r1, r1, r2
-		ldd r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
-		{lss r4, r2, r3; lss r5, r3, r2}
-		mul r2, r2, r5
-		mul r3, r3, r4
-		add r2, r2, r3
-		{lss r3, r1, r2; lss r4, r2, r1}
-		mul r1, r1, r4
-		mul r2, r2, r3
-		add r1, r1, r2
+		ldd r3, r4, r0[S_D_SECOND_STAGE_OUTPUT_23]
 		ldaw r0, sp[S_FRAME_OFFSET]
-		ldw r2, r0[S_FRAME_MAX]
-		{lss r3, r1, r2; lss r4, r2, r1}
-		mul r1, r1, r4
-		mul r2, r2, r3
-		add r1, r1, r2
-		stw r1, r0[S_FRAME_MAX]
+		ldw r5, r0[S_FRAME_MAX]
+		lss r6, r5, r1
+		{bf r6, max_skip0; lss r6, r5, r2}
+		{mov r5, r1; lss r6, r1, r2}
+		max_skip0: {bf r6, max_skip1; lss r6, r5, r3}
+		{mov r5, r2; lss r6, r2, r3}
+		max_skip1: {bf r6, max_skip2; lss r6, r5, r4}
+		{mov r5, r3; lss r6, r3, r4}
+		max_skip2: {bf r6, max_skip3; nop}
+		{mov r5, r4; nop}
+		max_skip3: stw r5, r0[S_FRAME_MAX]
+		ldw r5, r0[S_FRAME_MIN]
+		lss r6, r5, r1
+		{bt r6, min_skip0; lss r6, r5, r2}
+		{mov r5, r1; lss r6, r1, r2}
+		min_skip0: {bt r6, min_skip1; lss r6, r5, r3}
+		{mov r5, r2; lss r6, r2, r3}
+		min_skip1: {bt r6, min_skip2; lss r6, r5, r4}
+		{mov r5, r3; lss r6, r3, r4}
+		min_skip2: {bt r6, min_skip3; nop}
+		{mov r5, r4; nop}
+		min_skip3: stw r5, r0[S_FRAME_MIN]
 
 		//multiply the data values by the window function
 		ldaw r0, sp[S_SETTINGS_OFFSET]
