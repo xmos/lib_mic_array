@@ -8,6 +8,8 @@
 #include <xclib.h>
 #include <stdint.h>
 
+
+#include "sine_lut.h"
 #include "fir_decimator.h"
 #include "mic_array.h"
 #include "mic_array_board_support.h"
@@ -35,69 +37,56 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-static const one_meter_thirty_degrees[6] = {0, 3, 8, 11, 8, 3};
 
-static void set_dir(client interface led_button_if lb, unsigned dir, unsigned delay[]){
-
-    for(unsigned i=0;i<13;i++)
-        lb.set_led_brightness(i, 0);
-    delay[0] = 5;
-    for(unsigned i=0;i<6;i++)
-        delay[i+1] = one_meter_thirty_degrees[(i - dir + 3 +6)%6];
-
-    switch(dir){
-    case 0:{
-        lb.set_led_brightness(0, 255);
-        lb.set_led_brightness(1, 255);
-        break;
-    }
-    case 1:{
-        lb.set_led_brightness(2, 255);
-        lb.set_led_brightness(3, 255);
-        break;
-    }
-    case 2:{
-        lb.set_led_brightness(4, 255);
-        lb.set_led_brightness(5, 255);
-        break;
-    }
-    case 3:{
-        lb.set_led_brightness(6, 255);
-        lb.set_led_brightness(7, 255);
-        break;
-    }
-    case 4:{
-        lb.set_led_brightness(8, 255);
-        lb.set_led_brightness(9, 255);
-        break;
-    }
-    case 5:{
-        lb.set_led_brightness(10, 255);
-        lb.set_led_brightness(11, 255);
-        break;
-    }
-    }
-}
 
 int data_0[4*COEFS_PER_PHASE*DF] = {0};
 int data_1[4*COEFS_PER_PHASE*DF] = {0};
 frame_audio audio[2];
 
-void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
-        client interface led_button_if lb, chanend c_audio){
+typedef struct {
+    int x;
+    int y;
+    int z;
+    int c;
+} xyzc;
+
+
+void calc_taps(chanend c_calc){
+
+    int x;
+    int y;
+    int z;
+    unsigned tap[7] = {0};
+
+    while(1){
+        //input
+        c_calc :> x;
+        c_calc :> y;
+        c_calc :> z;
+
+        //get busy
+
+
+
+        //output
+        for(unsigned i=0;i<7;i++)
+            c_calc <: tap[i];
+    }
+
+
+}
+
+
+void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+        client interface led_button_if lb, chanend c_audio, chanend c_calc){
 
     unsigned buffer = 1;     //buffer index
     memset(audio, sizeof(frame_audio), 0);
 
-#define MAX_DELAY 128
 
-    unsigned gain = 8*4096;
-    unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
+#define MAX_DELAY 128
     int delay_buffer[MAX_DELAY][7];
-    memset(delay_buffer, sizeof(int)*8*8, 0);
     unsigned delay_head = 0;
-    unsigned dir = 0;
-    set_dir(lb, dir, delay);
 
     unsigned decimation_factor=DF;
     unsafe{
@@ -109,19 +98,56 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
     decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
+
+    unsigned taps[7] = {0};
+    int x=0, y=0, z=0;
     while(1){
 
-        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+        int done = 0;
 
-        int output = 0;
-        for(unsigned i=0;i<7;i++)
-            output += delay_buffer[(delay_head - delay[i])%MAX_DELAY][i];
-        output = ((uint64_t)output*gain)>>8;
-        c_audio <: output;
-        c_audio <: output;
-        xscope_int(0, output);
-        delay_head++;
-        delay_head%=MAX_DELAY;
+        int rms = 0;
+
+        memset(delay_buffer, 0, sizeof(int)*8*8);
+
+        while(!done){
+
+            unsigned N = 1000;
+            for(unsigned sample = 0;sample < N; sample ++){
+                frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+                for(unsigned i=0;i<7;i++)
+                   delay_buffer[delay_head][i] = current->data[i][0];
+
+                int output = 0;
+                for(unsigned i=0;i<7;i++)
+                    output += delay_buffer[(delay_head - taps[i])%MAX_DELAY][i];
+
+                rms += output;
+            }
+        }
+
+
+        //send the request to the
+        c_calc <: x;
+        c_calc <: y;
+        c_calc <: z;
+        while(1){
+            select {
+                case c_calc :> taps[0]:{
+                    for(unsigned i=1;i<7;i++)
+                        c_calc :> taps[i];
+                        //set the taps
+                    break;
+                }
+                default:
+                    decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+                    break;
+            }
+
+        }
+
+
+
+
     }
 }
 
@@ -184,8 +210,18 @@ void i2s_handler(server i2s_callback_if i2s,
 };
 
 void sine_generator(chanend c_audio, chanend c_sine_command){
+    unsigned theta = 0;
+    unsigned freq = 1000;
     while(1){
-
+        int v=sine_lut_sin_xc(theta)<<16;
+        c_audio <: v;
+        c_audio <: v;
+        theta += ((freq<<16) / OUTPUT_SAMPLE_RATE);
+        theta &= SINE_LUT_INPUT_MASK;
+        select {
+            case c_sine_command :> freq : break;
+            default:break;
+        }
     }
 }
 
@@ -194,6 +230,7 @@ int main(){
     i2s_callback_if i_i2s;
     i2c_master_if i_i2c[1];
     chan c_audio;
+    chan c_calc;
     chan c_sine_command;
     par{
 
@@ -206,6 +243,7 @@ int main(){
         on tile[1]:  [[distribute]]i2c_master_single_port(i_i2c, 1, p_i2c, 100, 0, 1, 0);
         on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], c_audio);
         on tile[1]:  sine_generator(c_audio, c_sine_command);
+        on tile[1]:  calc_taps(c_calc);
 
         on tile[0]: {
             streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
@@ -223,7 +261,7 @@ int main(){
                 pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                 decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0);
                 decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1);
-                lores_DAS_fixed(c_ds_output_0, c_ds_output_1, lb, c_sine_command);
+                delay_tester(c_ds_output_0, c_ds_output_1, lb, c_sine_command, c_calc);
             }
         }
     }
