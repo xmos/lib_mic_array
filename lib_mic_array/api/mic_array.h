@@ -7,8 +7,6 @@
 #include "frame.h"
 #include "defines.h"
 
-extern unsigned windowing_function[1<<FRAME_SIZE_LOG2];
-
 /** PDM Microphone Interface component.
  *
  *  This task handles the interface to up to 8 PDM microphones whilst also decimating
