@@ -3,11 +3,7 @@
 
 #define NUM_MICS 8
 
-#ifdef __mic_array_conf_h_exists__
 #include "mic_array_conf.h"
-#else
-#error "mic_array_config.h missing"
-#endif
 
 typedef struct {
     int min;                /**<The minimum data value in this frame. UNUSED*/
