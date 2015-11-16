@@ -65,7 +65,6 @@ and connects an application to it::
   
   int main() {
      par {
-        decimator_config dc0, dc1;
         streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
         streaming chan c_ds_output_0, c_ds_output_1;
     
@@ -75,8 +74,8 @@ and connects an application to it::
     
         par {
             pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-            decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);
-            decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1, dc1);
+            decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0);
+            decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1);
             application(c_ds_output_0, c_ds_output_1,);
         }
     }
@@ -101,7 +100,6 @@ an application to it::
      
         hires_delay_config hrd_config;
         hires_delay_config * unsafe config = &hrd_config;
-        decimator_config dc0, dc1;
         streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
         streaming chan c_ds_output_0, c_ds_output_1;
         streaming chan c_sync;
@@ -124,8 +122,8 @@ an application to it::
              hires_delay(c_4x_pdm_mic_0, c_4x_pdm_mic_1,
                    c_sync, config, p_shared_memory);
 
-             decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0, dc0);
-             decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1, dc1);
+             decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0);
+             decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1);
 
              application(c_ds_output_0, c_ds_output_1, config);
         } 
@@ -161,9 +159,11 @@ The four channel decimator tasks are highly configurable tasks for outputting fr
 various sizes and formats. They can be used to produce frames suitable for time domain applications
 or preprocess the frames ready for an FFT for frequency domain applications. The four 
 channel decimators, ``decimate_to_pcm_4ch()``, have a number of configuration options 
-controlled by the structre ``decimator_config``. The configuration is preformed before 
-instiantiating the task by configuring the structure ``decimator_config``. It controls 
-the following :
+controlled by the structre ``decimator_config`` through the function ``decimator_configure``. 
+The decimators are controlled by two structures: ``decimator_config_common`` and ``decimator_config``, 
+where the former config is common to all microphones and the later is specific to the batch of 4
+microphones it interfaces to. The application can the option to control the following settings,
+decimator_config_common::
 
 * ``frame_size_log2``: This sets the frame size to a power of two. A frame will contain 
   2 to the power of frame_size_log2 samples of each channel. Use the define FRAME_SIZE_LOG2
@@ -184,12 +184,16 @@ the following :
   ``fir_decimation_factor``. Suitable FIR coefficients have been provided in the header
   ``fir_decimator.h`` and can be easily accessed with the marco ``FIR_LUT(d)`` where
   ``d`` is the ``fir_decimation_factor``.
-* ``data``: This is the memory used to save the FIR samples. It must be 
-  4 channels x COEFS_PER_PHASE x ``sizeof(int)`` x ``fir_decimation_factor`` bytes big.
 * ``apply_mic_gain_compensation``: Set this to non-zreo if microphone gain compensation is 
-  required. The compensation applied is controlled by ``mic_gain_compensation``.
+  required. The compensation applied is controlled by ``mic_gain_compensation``.  
+
+decimator_config::
+
+* ``decimator_config_common``: This is a pointer to the common configuration.
+* ``data``: This is the memory used to save the FIR samples. It must be 
+  4 channels x ``COEFS_PER_PHASE`` x ``sizeof(int)`` x ``fir_decimation_factor`` bytes big.
 * ``mic_gain_compensation``: This is a 4 element array specifying the relative compensation
-  to apply to each microphone. Unity gain is given by the value 0xffffffff, therefore 
+  to apply to each microphone. Unity gain is given by the value ``INT_MAX``, therefore 
   microphones need to be scaled to the microphone of the least gain.
   
 The output of the decimator is 32bit PCM audio at the requested sample rate. 
@@ -209,7 +213,7 @@ The achieveable rates of a 3.072MHz input clock are:
 * FIR decimation factor of 5 - 9.6kHz
 * FIR decimation factor of 6 - 8kHz
 * FIR decimation factor of 7 - 6.857kHz
-* FIR decimation factor of 8- 6kHz
+* FIR decimation factor of 8 - 6kHz
 
 The achieveable rates of a 2.8224MHz input clock are:
 
@@ -257,6 +261,7 @@ PDM Microphone processing
 .. doxygenstruct:: hires_delay_config
 .. doxygenfunction:: hires_delay_set_taps
 .. doxygenfunction:: decimate_to_pcm_4ch
+.. doxygenstruct:: decimator_config_common
 .. doxygenstruct:: decimator_config
 
 |newpage|
