@@ -29,8 +29,8 @@ void mic_calib(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
     unsafe{
 
         decimator_config_common dcc = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], 0};
-        decimator_config dc0 = {&dcc, data_0, {0, 0, 0, 0}};
-        decimator_config dc1 = {&dcc, data_1, {0, 0, 0, 0}};
+        decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
+        decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
         decimator_configure(c_ds_output_0, c_ds_output_1, dc0, dc1);
 
         decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);

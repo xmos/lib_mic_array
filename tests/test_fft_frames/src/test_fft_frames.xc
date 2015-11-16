@@ -18,25 +18,6 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 //This sets the FIR decimation factor.
 #define DF 3
 
-#pragma xta command "add exclusion configure"
-#pragma xta command "analyse endpoints input_sample_0 input_sample_1"
-#pragma xta command "set required - 2604 ns"
-#pragma xta command "analyse endpoints input_sample_1 input_sample_2"
-#pragma xta command "set required - 2604 ns"
-#pragma xta command "analyse endpoints input_sample_2 input_sample_3"
-#pragma xta command "set required - 2604 ns"
-#pragma xta command "analyse endpoints input_sample_3 input_sample_4"
-#pragma xta command "set required - 2604 ns"
-#pragma xta command "analyse endpoints input_sample_4 input_sample_5"
-#pragma xta command "set required - 2604 ns"
-#pragma xta command "analyse endpoints input_sample_5 input_sample_6"
-#pragma xta command "set required - 2604 ns"
-#pragma xta command "analyse endpoints input_sample_6 input_sample_7"
-#pragma xta command "set required - 2604 ns"
-#pragma xta command "analyse endpoints input_sample_7 input_sample_0"
-#pragma xta command "set required - 2604 ns"
-#pragma xta command "print summary"
-
 void example(streaming chanend c_pcm_0,
         streaming chanend c_pcm_1,
         client interface led_button_if lb){
@@ -103,7 +84,6 @@ void example(streaming chanend c_pcm_0,
                     }
                 }
                 printf("%d\n", (best * 48000/DF)>>FRAME_SIZE_LOG2);
-
                 break;
             }
         }

@@ -5,6 +5,28 @@
 	.align	4
 	.type	decimate_to_pcm_4ch,@function
 
+
+
+.xtacommand "add exclusion configure","" , "", 0
+.xtacommand "analyse endpoints input_sample_0 input_sample_1","" , "", 0
+.xtacommand "set required - 2604 ns","" , "", 0
+.xtacommand "analyse endpoints input_sample_1 input_sample_2","" , "", 0
+.xtacommand "set required - 2604 ns","" , "", 0
+.xtacommand "analyse endpoints input_sample_2 input_sample_3","" , "", 0
+.xtacommand "set required - 2604 ns","" , "", 0
+.xtacommand "analyse endpoints input_sample_3 input_sample_4","" , "", 0
+.xtacommand "set required - 2604 ns","" , "", 0
+.xtacommand "analyse endpoints input_sample_4 input_sample_5","" , "", 0
+.xtacommand "set required - 2604 ns","" , "", 0
+.xtacommand "analyse endpoints input_sample_5 input_sample_6","" , "", 0
+.xtacommand "set required - 2604 ns","" , "", 0
+.xtacommand "analyse endpoints input_sample_6 input_sample_7","" , "", 0
+.xtacommand "set required - 2604 ns","" , "", 0
+.xtacommand "analyse endpoints input_sample_7 input_sample_0","" , "", 0
+.xtacommand "set required - 2604 ns","" , "", 0
+.xtacommand "print summary","" , "", 0
+
+
 #include "defines.h"
 
 #define EXCHANGE_BUFFERS 0
