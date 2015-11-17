@@ -58,13 +58,13 @@ typedef struct {
 } polar3d;
 
 static const polar3d mic_coords[NUM_MICS] = {
-        {R, 0.0*THETA, PI/2.0},
-        {R, 1.0*THETA, PI/2.0},
-        {R, 2.0*THETA, PI/2.0},
-        {R, 3.0*THETA, PI/2.0},
-        {R, 4.0*THETA, PI/2.0},
-        {R, 5.0*THETA, PI/2.0},
-        {0.0, 0.0, 0.0}
+        {0.0, 0.0, 0.0},    //mic 0
+        {R, 0.0*THETA + THETA/2.0, PI/2.0},
+        {R, 1.0*THETA + THETA/2.0, PI/2.0},
+        {R, 2.0*THETA + THETA/2.0, PI/2.0},
+        {R, 3.0*THETA + THETA/2.0, PI/2.0},
+        {R, 4.0*THETA + THETA/2.0, PI/2.0},
+        {R, 5.0*THETA + THETA/2.0, PI/2.0},
 };
 
 
@@ -169,10 +169,19 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
 #define MAX_DELAY 128
     int delay_buffer[MAX_DELAY][7];
     unsigned delay_head = 0;
+/*
+    for(double theta = 0.0; theta < 2.0*PI; theta += (2.0*PI/16.0)){
 
-    for(double theta = 0.0; theta < 2.0*PI; theta += (2.0*PI/6)){
+        polar3d p = {0.04, theta, PI/2.0};
+        for(unsigned i=0;i<7;i++)
+            printf("%.5f ", get_dist(mic_coords[i], p));
+        printf("\n");
+    }
 
-        polar3d p = {5.0, theta, PI/3};
+
+    for(double theta = 0.0; theta < 2.0*PI; theta += (2.0*PI/16.0)){
+
+        polar3d p = {0.04, theta, PI/2.0};
         c_calc <: p;
 
         unsigned taps[7] = {0};
@@ -184,7 +193,7 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
     }
 
     _Exit(1);
-
+*/
 
     unsigned decimation_factor=DF;
     unsafe{
@@ -196,44 +205,24 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
 
     decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
+    double theta = 0.0;
+
+    for(unsigned i=0;i<192000;i++)
+        decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
 
     unsigned taps[7] = {0};
-    int x=0, y=0, z=0;
     while(1){
 
-        int done = 0;
-
-        int rms = 0;
-
-        memset(delay_buffer, 0, sizeof(int)*8*8);
-
-        while(!done){
-
-            unsigned N = 1000;
-            for(unsigned sample = 0;sample < N; sample ++){
-                frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
-                for(unsigned i=0;i<7;i++)
-                   delay_buffer[delay_head][i] = current->data[i][0];
-
-                int output = 0;
-                for(unsigned i=0;i<7;i++)
-                    output += delay_buffer[(delay_head - taps[i])%MAX_DELAY][i];
-
-                rms += output;
-            }
-        }
-
-
-        //send the request to the
-        c_calc <: x;
-        c_calc <: y;
-        c_calc <: z;
-        while(1){
+        //send the request to the calculator
+        polar3d p = {1.0, theta, PI/4.0};
+        c_calc <: p;
+        int calc_done = 0;
+        while(!calc_done){
             select {
                 case c_calc :> taps[0]:{
                     for(unsigned i=1;i<7;i++)
                         c_calc :> taps[i];
-                        //set the taps
+                        calc_done = 1;
                     break;
                 }
                 default:
@@ -242,6 +231,34 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
             }
 
         }
+        unsigned long long rms = 0;
+
+        memset(delay_buffer, 0, sizeof(int)*8*8);
+
+
+
+        unsigned N = 48000;
+        for(unsigned sample = 0;sample < N; sample ++){
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+            for(unsigned i=0;i<7;i++)
+               delay_buffer[delay_head][i] = current->data[i][0];
+
+            int output = 0;
+            for(unsigned i=0;i<7;i++)
+                output += delay_buffer[(delay_head - taps[i])%MAX_DELAY][i];
+
+            if(output < 0)
+                output = -output;
+            rms += output;
+
+            delay_head++;
+            delay_head%=MAX_DELAY;
+        }
+
+        printf("%f %llu\n", theta, rms);
+        theta += (PI/63.0);
+
+
 
 
 
