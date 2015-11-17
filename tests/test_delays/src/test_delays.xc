@@ -44,36 +44,57 @@ int data_0[4*COEFS_PER_PHASE*DF] = {0};
 int data_1[4*COEFS_PER_PHASE*DF] = {0};
 frame_audio audio[2];
 
+#define SAMPLE_RATE 768000.0
+#define SPEED_OF_SOUND (342.0)
 #define PI (3.14159265358979323846264338327950288419716939937510582097494459230781)
 #define NUM_MICS 7
-#define R 0.025
-#define THETA (2.0*PI/6)
-static const double mic_theta_coords[NUM_MICS] = {0.0*THETA, 1.0*THETA, 2.0*THETA, 3.0*THETA, 4.0*THETA, 5.0*THETA, 0.0};
-static const double mic_phi_coords[NUM_MICS]   = {PI/2.0, PI/2.0, PI/2.0, PI/2.0, PI/2.0, PI/2.0, 0.0};
-static const double mic_r_coords[NUM_MICS]     = {R, R, R, R, R, R, 0.0};
+#define R (0.04)
+#define THETA (2.0*PI/6.0)
+
+typedef struct {
+    double r;
+    double theta;
+    double phi;
+} polar3d;
+
+static const polar3d mic_coords[NUM_MICS] = {
+        {R, 0.0*THETA, PI/2.0},
+        {R, 1.0*THETA, PI/2.0},
+        {R, 2.0*THETA, PI/2.0},
+        {R, 3.0*THETA, PI/2.0},
+        {R, 4.0*THETA, PI/2.0},
+        {R, 5.0*THETA, PI/2.0},
+        {0.0, 0.0, 0.0}
+};
+
+
+
+typedef struct {
+    int x;
+    int y;
+    int z;
+} cart;
 
 //This represents 1m or 2pi
 #define SCALE_FACTOR (1<<24)
 
- {int, int, int} static polar_to_cart(double r, double theta, double phi){
-    double X = r*sin(phi)*cos(theta)*SCALE_FACTOR;
-    double Y = r*sin(phi)*sin(theta)*SCALE_FACTOR;
-    double Z = r*cos(phi)*SCALE_FACTOR;
+cart static polar3d_to_cart(polar3d p){
+    double X = p.r*sin(p.phi)*cos(p.theta)*SCALE_FACTOR;
+    double Y = p.r*sin(p.phi)*sin(p.theta)*SCALE_FACTOR;
+    double Z = p.r*cos(p.phi)*SCALE_FACTOR;
 
     int x = (int)X;
-    int y = (int)Y;
-    int z = (int)Z;
+    int y = ((int)Y)%SCALE_FACTOR;
+    int z = ((int)Z)%SCALE_FACTOR;
 
-    y=y%SCALE_FACTOR;
-    z=z%SCALE_FACTOR;
-
-    return {x, y, z};
+    cart c = {x, y, z};
+    return c;
 }
 
- {double, double, double} static cart_to_polar(int x, int y, int z){
-    double X = (double)x;
-    double Y = (double)y;
-    double Z = (double)z;
+polar3d static cart_to_polar3d(cart c){
+    double X = (double)c.x;
+    double Y = (double)c.y;
+    double Z = (double)c.z;
 
     X /= (double)SCALE_FACTOR;
     Y /= (double)SCALE_FACTOR;
@@ -86,34 +107,56 @@ static const double mic_r_coords[NUM_MICS]     = {R, R, R, R, R, R, 0.0};
     //if(theta < 2.0*PI) theta += 2.0*PI;
     //if(phi < 2.0*PI) phi += 2.0*PI;
 
-    return {r, theta, phi};
+    polar3d p = {r, theta, phi};
+    return p;
 }
 
-void calc_taps(chanend c_calc){
+double get_dist(polar3d a, polar3d b){
 
-    int theta;
-    int phi;
-    int r;
-    unsigned tap[7] = {0};
+    double x0 = a.r*sin(a.phi)*cos(a.theta);
+    double x1 = b.r*sin(b.phi)*cos(b.theta);
+    double y0 = a.r*sin(a.phi)*sin(a.theta);
+    double y1 = b.r*sin(b.phi)*sin(b.theta);
+    double z0 = a.r*cos(a.phi);
+    double z1 = b.r*cos(b.phi);
 
-    while(1){
-        //input
-        c_calc :> theta;
-        c_calc :> phi;
-        c_calc :> r;
+    double x = x0-x1;
+    double y = y0-y1;
+    double z = z0-z1;
 
-        //get busy
+    return sqrt(x*x + y*y + z*z);
+}
 
+void get_taps(unsigned taps[], polar3d p){
 
-
-
-
-        //output
-        for(unsigned i=0;i<7;i++)
-            c_calc <: tap[i];
+    unsigned time_of_flight_samples[NUM_MICS];
+    int min = 0x7fffffff;
+    for(unsigned m=0;m<NUM_MICS;m++){
+        time_of_flight_samples[m] = (int)(get_dist(mic_coords[m], p) * SAMPLE_RATE / SPEED_OF_SOUND );
+        if(min > time_of_flight_samples[m])
+            min = time_of_flight_samples[m];
     }
 
+    for(unsigned m=0;m<NUM_MICS;m++)
+        taps[m]= time_of_flight_samples[m] - min;
+}
 
+
+void calc_taps(chanend c_calc){
+    while(1){
+        unsigned taps[7];
+        polar3d p;
+
+        //input
+        c_calc :> p;
+
+         //get busy
+        get_taps(taps, p);
+
+        //output
+        for(unsigned m=0;m<NUM_MICS;m++)
+            c_calc <: taps[m];
+    }
 }
 
 
@@ -123,23 +166,25 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
     unsigned buffer = 1;     //buffer index
     memset(audio, sizeof(frame_audio), 0);
 
-
-    for(int i=0;i<NUM_MICS;i++){
-
-        printf("%.5f %.5f %.5f -> ", mic_r_coords[i], mic_theta_coords[i], mic_phi_coords[i]);
-        int x, y, z;
-        {x, y, z} = polar_to_cart(mic_r_coords[i], mic_theta_coords[i], mic_phi_coords[i]);
-
-        printf("%11d %11d %11d -> ", x, y, z);
-        double r, theta, phi;
-        {r, theta, phi} = cart_to_polar(x, y, z);
-        printf("%.5f %.5f %.5f\n", r, theta, phi);
-
-    }
-    _Exit(1);
 #define MAX_DELAY 128
     int delay_buffer[MAX_DELAY][7];
     unsigned delay_head = 0;
+
+    for(double theta = 0.0; theta < 2.0*PI; theta += (2.0*PI/6)){
+
+        polar3d p = {5.0, theta, PI/3};
+        c_calc <: p;
+
+        unsigned taps[7] = {0};
+        for(unsigned i=0;i<7;i++){
+             c_calc :> taps[i];
+             printf("%d ", taps[i]);
+        }
+        printf("\n");
+    }
+
+    _Exit(1);
+
 
     unsigned decimation_factor=DF;
     unsafe{
