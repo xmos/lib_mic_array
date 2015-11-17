@@ -7,7 +7,8 @@
 #include <string.h>
 #include <xclib.h>
 #include <stdint.h>
-
+#include <stdlib.h>
+#include <math.h>
 
 #include "sine_lut.h"
 #include "fir_decimator.h"
@@ -43,28 +44,67 @@ int data_0[4*COEFS_PER_PHASE*DF] = {0};
 int data_1[4*COEFS_PER_PHASE*DF] = {0};
 frame_audio audio[2];
 
-typedef struct {
-    int x;
-    int y;
-    int z;
-    int c;
-} xyzc;
+#define PI (3.14159265358979323846264338327950288419716939937510582097494459230781)
+#define NUM_MICS 7
+#define R 0.025
+#define THETA (2.0*PI/6)
+static const double mic_theta_coords[NUM_MICS] = {0.0*THETA, 1.0*THETA, 2.0*THETA, 3.0*THETA, 4.0*THETA, 5.0*THETA, 0.0};
+static const double mic_phi_coords[NUM_MICS]   = {PI/2.0, PI/2.0, PI/2.0, PI/2.0, PI/2.0, PI/2.0, 0.0};
+static const double mic_r_coords[NUM_MICS]     = {R, R, R, R, R, R, 0.0};
 
+//This represents 1m or 2pi
+#define SCALE_FACTOR (1<<24)
+
+ {int, int, int} static polar_to_cart(double r, double theta, double phi){
+    double X = r*sin(phi)*cos(theta)*SCALE_FACTOR;
+    double Y = r*sin(phi)*sin(theta)*SCALE_FACTOR;
+    double Z = r*cos(phi)*SCALE_FACTOR;
+
+    int x = (int)X;
+    int y = (int)Y;
+    int z = (int)Z;
+
+    y=y%SCALE_FACTOR;
+    z=z%SCALE_FACTOR;
+
+    return {x, y, z};
+}
+
+ {double, double, double} static cart_to_polar(int x, int y, int z){
+    double X = (double)x;
+    double Y = (double)y;
+    double Z = (double)z;
+
+    X /= (double)SCALE_FACTOR;
+    Y /= (double)SCALE_FACTOR;
+    Z /= (double)SCALE_FACTOR;
+
+    double r = sqrt(X*X + Y*Y + Z*Z);
+    double theta = atan2(Y, X);
+    double phi = atan2(sqrt(X*X + Y*Y), Z);
+
+    //if(theta < 2.0*PI) theta += 2.0*PI;
+    //if(phi < 2.0*PI) phi += 2.0*PI;
+
+    return {r, theta, phi};
+}
 
 void calc_taps(chanend c_calc){
 
-    int x;
-    int y;
-    int z;
+    int theta;
+    int phi;
+    int r;
     unsigned tap[7] = {0};
 
     while(1){
         //input
-        c_calc :> x;
-        c_calc :> y;
-        c_calc :> z;
+        c_calc :> theta;
+        c_calc :> phi;
+        c_calc :> r;
 
         //get busy
+
+
 
 
 
@@ -84,6 +124,19 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
     memset(audio, sizeof(frame_audio), 0);
 
 
+    for(int i=0;i<NUM_MICS;i++){
+
+        printf("%.5f %.5f %.5f -> ", mic_r_coords[i], mic_theta_coords[i], mic_phi_coords[i]);
+        int x, y, z;
+        {x, y, z} = polar_to_cart(mic_r_coords[i], mic_theta_coords[i], mic_phi_coords[i]);
+
+        printf("%11d %11d %11d -> ", x, y, z);
+        double r, theta, phi;
+        {r, theta, phi} = cart_to_polar(x, y, z);
+        printf("%.5f %.5f %.5f\n", r, theta, phi);
+
+    }
+    _Exit(1);
 #define MAX_DELAY 128
     int delay_buffer[MAX_DELAY][7];
     unsigned delay_head = 0;
