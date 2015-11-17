@@ -18,12 +18,13 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 //This sets the FIR decimation factor.
 #define DF 3
 
+int data_0[4*COEFS_PER_PHASE*DF] = {0};
+int data_1[4*COEFS_PER_PHASE*DF] = {0};
+frame_complex audio[2];
+
 void example(streaming chanend c_pcm_0,
         streaming chanend c_pcm_1,
         client interface led_button_if lb){
-    int data_0[4*COEFS_PER_PHASE*DF] = {0};
-    int data_1[4*COEFS_PER_PHASE*DF] = {0};
-    frame_complex audio[2];    //double buffered
     unsigned buffer;
     unsigned decimation_factor=DF;
     unsafe{

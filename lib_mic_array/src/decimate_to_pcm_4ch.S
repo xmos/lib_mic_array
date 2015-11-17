@@ -222,11 +222,11 @@
 #define FRAME_STACK_SIZE		8
 
 #define S_MIC_CALIB_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)
-#define S_MIC_CALIB_0 	0
-#define S_MIC_CALIB_1 	1
+#define S_MIC_CALIB_0 		0
+#define S_MIC_CALIB_1 		1
 #define S_D_MIC_CALIB_01 	0
-#define S_MIC_CALIB_2 	2
-#define S_MIC_CALIB_3	3
+#define S_MIC_CALIB_2 		2
+#define S_MIC_CALIB_3		3
 #define S_D_MIC_CALIB_23 	1
 #define MIC_CALIB_STACK_SIZE		4
 
@@ -342,6 +342,7 @@ setup_stack_init:
 init_loop:
 	std t, t, r3[r1]
 	{bt r1, init_loop ; sub r1, r1, 1}
+
 
 init_fir_phase:
 	ldaw t, sp[S_FIR_OFFSET]
