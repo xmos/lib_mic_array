@@ -5,10 +5,12 @@
 
 #include "mic_array_conf.h"
 
+//This must have an even number of words
 typedef struct {
     int min;                /**<The minimum data value in this frame. UNUSED*/
     int max;                /**<The maximum data value in this frame. */
-    //unsigned frame_number;  /**<The frame_number. UNUSED*/
+    unsigned frame_number;  /**<The frame_number. UNUSED*/
+    unsigned x;  /**<The frame_number. UNUSED*/
 } s_metadata;
 
 /** Complex number in Cartesian coordinates.*/

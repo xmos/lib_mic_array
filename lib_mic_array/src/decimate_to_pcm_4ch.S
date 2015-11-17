@@ -169,18 +169,7 @@
 #define S_D_COMB_3_45 11
 #define COMB_STACK_SIZE 24
 
-#define S_DC_ELIMINATE_OFFSET (S_COMB_OFFSET+COMB_STACK_SIZE)
-#define S_D_PREV_Y_0 0
-#define S_D_PREV_Y_1 1
-#define S_D_PREV_Y_2 2
-#define S_D_PREV_Y_3 3
-#define S_PREV_X_0   8
-#define S_PREV_X_1   9
-#define S_PREV_X_2   10
-#define S_PREV_X_3   11
-#define DC_ELIMINATE_STACK_SIZE 12
-
-#define S_SECOND_STAGE_OUTPUT_OFFSET (S_DC_ELIMINATE_OFFSET+DC_ELIMINATE_STACK_SIZE)
+#define S_SECOND_STAGE_OUTPUT_OFFSET (S_COMB_OFFSET+COMB_STACK_SIZE)
 #define S_D_SECOND_STAGE_OUTPUT_01 0
 #define S_SECOND_STAGE_OUTPUT_0 0
 #define S_SECOND_STAGE_OUTPUT_1 1
@@ -208,17 +197,29 @@
 #define S_DATA_3		(S_DATA_2 + MAX_DECIMATION_FACTOR)
 #define FIR_STACK_SIZE  (S_DATA_3 + MAX_DECIMATION_FACTOR)
 
+#define S_DC_ELIMINATE_OFFSET (S_FIR_OFFSET+FIR_STACK_SIZE)
+#define S_D_PREV_Y_0 0
+#define S_D_PREV_Y_1 1
+#define S_D_PREV_Y_2 2
+#define S_D_PREV_Y_3 3
+#define S_PREV_X_0   8
+#define S_PREV_X_1   9
+#define S_PREV_X_2   10
+#define S_PREV_X_3   11
+#define DC_ELIMINATE_STACK_SIZE 12
+
 //frame
-#define S_FRAME_OFFSET (S_FIR_OFFSET+FIR_STACK_SIZE)
+#define S_FRAME_OFFSET (S_DC_ELIMINATE_OFFSET+DC_ELIMINATE_STACK_SIZE)
 #define S_D_AUDIO_POINTER_AND_INDEX 0
-#define S_AUDIO_POINTER 		0	//must bd double word aligned
+#define S_AUDIO_POINTER 		0	//must be double word aligned
 #define S_AUDIO_POINTER_INDEX 	1
 #define S_C_OUTPUT				2
 #define S_FRAME_SIZE_LOG2		3
 #define S_D_FRAME_MIN_MAX       2
 #define S_FRAME_MIN				4
 #define S_FRAME_MAX				5
-#define S_METADATA_POINTER      6
+#define S_FRAME_NUMBER			6	//should this be presistant between configs?
+#define S_METADATA_POINTER      7
 #define FRAME_STACK_SIZE		8
 
 #define S_MIC_CALIB_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)
@@ -447,11 +448,15 @@ input_sample_6:
 	ldaw r1, sp[S_SETTINGS_OFFSET]
 	ldw r1, r1[S_DECIMATION_FACTOR]
 	eq r1, r1, r2
-	bt r1, save_sample
+	{bt r1, save_sample;ldc r1, 0}
 	next_phase:
 	stw r2, r0[S_FIR_PHASE]
 	bu input_sample_7
 	save_sample:
+
+
+
+		stw r1, r0[S_FIR_PHASE]	//reset the FIR phase
 
 		//apply gain compensation
 		ldaw r0, sp[S_SETTINGS_OFFSET]
@@ -532,9 +537,6 @@ input_sample_6:
 			std r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
 		no_windowing:
 
-		ldaw r0, sp[S_FIR_OFFSET]
-		ldc r1, 0
-		stw r1, r0[S_FIR_PHASE]
 
 		ldaw r0, sp[S_FRAME_OFFSET]
 		ldw r2, r0[S_FRAME_SIZE_LOG2]
@@ -600,6 +602,9 @@ input_sample_6:
 		{ldd r3, r4, r0[S_D_FRAME_MIN_MAX]}
 		ldw r5, r0[S_METADATA_POINTER]
 		std r3, r4, r5[0];
+		ldw r3, r0[S_FRAME_NUMBER]
+		{stw r3, r5[2]; add r3, r3, 1}
+		stw r3, r0[S_FRAME_NUMBER]		//and save the new frame number back
 
 		get_the_new_data_pointer:
 		in r2, res[r1]
@@ -610,7 +615,6 @@ input_sample_6:
 		//reset the min and max vals for the frame
 		{stw r1, r0[S_FRAME_MAX]}
 		{stw r1, r0[S_FRAME_MIN]}
-
 
 input_sample_7:
 	INPUT(S_D_INPUT_7)	//162 instruction per loop
