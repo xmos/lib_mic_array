@@ -38,26 +38,20 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-
-
 int data_0[4*COEFS_PER_PHASE*DF] = {0};
 int data_1[4*COEFS_PER_PHASE*DF] = {0};
 frame_audio audio[2];
 
-#define SAMPLE_RATE 768000.0
+#define SAMPLE_RATE 48000.0
 #define SPEED_OF_SOUND (342.0)
 #define PI (3.14159265358979323846264338327950288419716939937510582097494459230781)
 #define NUM_MICS 7
-#define R (0.04)
+#define R (0.043)
 #define THETA (2.0*PI/6.0)
 
-typedef struct {
-    double r;
-    double theta;
-    double phi;
-} polar3d;
 
-static const polar3d mic_coords[NUM_MICS] = {
+
+static const polar_f mic_coords[NUM_MICS] = {
         {0.0, 0.0, 0.0},    //mic 0
         {R, 0.0*THETA + THETA/2.0, PI/2.0},
         {R, 1.0*THETA + THETA/2.0, PI/2.0},
@@ -69,65 +63,7 @@ static const polar3d mic_coords[NUM_MICS] = {
 
 
 
-typedef struct {
-    int x;
-    int y;
-    int z;
-} cart;
-
-//This represents 1m or 2pi
-#define SCALE_FACTOR (1<<24)
-
-cart static polar3d_to_cart(polar3d p){
-    double X = p.r*sin(p.phi)*cos(p.theta)*SCALE_FACTOR;
-    double Y = p.r*sin(p.phi)*sin(p.theta)*SCALE_FACTOR;
-    double Z = p.r*cos(p.phi)*SCALE_FACTOR;
-
-    int x = (int)X;
-    int y = ((int)Y)%SCALE_FACTOR;
-    int z = ((int)Z)%SCALE_FACTOR;
-
-    cart c = {x, y, z};
-    return c;
-}
-
-polar3d static cart_to_polar3d(cart c){
-    double X = (double)c.x;
-    double Y = (double)c.y;
-    double Z = (double)c.z;
-
-    X /= (double)SCALE_FACTOR;
-    Y /= (double)SCALE_FACTOR;
-    Z /= (double)SCALE_FACTOR;
-
-    double r = sqrt(X*X + Y*Y + Z*Z);
-    double theta = atan2(Y, X);
-    double phi = atan2(sqrt(X*X + Y*Y), Z);
-
-    //if(theta < 2.0*PI) theta += 2.0*PI;
-    //if(phi < 2.0*PI) phi += 2.0*PI;
-
-    polar3d p = {r, theta, phi};
-    return p;
-}
-
-double get_dist(polar3d a, polar3d b){
-
-    double x0 = a.r*sin(a.phi)*cos(a.theta);
-    double x1 = b.r*sin(b.phi)*cos(b.theta);
-    double y0 = a.r*sin(a.phi)*sin(a.theta);
-    double y1 = b.r*sin(b.phi)*sin(b.theta);
-    double z0 = a.r*cos(a.phi);
-    double z1 = b.r*cos(b.phi);
-
-    double x = x0-x1;
-    double y = y0-y1;
-    double z = z0-z1;
-
-    return sqrt(x*x + y*y + z*z);
-}
-
-void get_taps(unsigned taps[], polar3d p){
+void get_taps(unsigned taps[], polar_f p){
 
     unsigned time_of_flight_samples[NUM_MICS];
     int min = 0x7fffffff;
@@ -145,7 +81,7 @@ void get_taps(unsigned taps[], polar3d p){
 void calc_taps(chanend c_calc){
     while(1){
         unsigned taps[7];
-        polar3d p;
+        polar_f p;
 
         //input
         c_calc :> p;
@@ -169,29 +105,18 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
 #define MAX_DELAY 128
     int delay_buffer[MAX_DELAY][7];
     unsigned delay_head = 0;
+
 /*
-    for(double theta = 0.0; theta < 2.0*PI; theta += (2.0*PI/16.0)){
-
-        polar3d p = {0.04, theta, PI/2.0};
-        for(unsigned i=0;i<7;i++)
-            printf("%.5f ", get_dist(mic_coords[i], p));
-        printf("\n");
-    }
-
-
-    for(double theta = 0.0; theta < 2.0*PI; theta += (2.0*PI/16.0)){
-
-        polar3d p = {0.04, theta, PI/2.0};
-        c_calc <: p;
-
-        unsigned taps[7] = {0};
-        for(unsigned i=0;i<7;i++){
-             c_calc :> taps[i];
-             printf("%d ", taps[i]);
+    for(double theta = 0.0; theta < 2.0*PI; theta += (2.0*PI/32.0)){
+        polar_f p = {R, theta, PI/4.0};
+        for(unsigned i=0;i<NUM_MICS;i++){
+            printf("mic %d to p -> dist: %f\n", i, get_dist(p, mic_coords[i]));
+            delay_milliseconds(1);
         }
         printf("\n");
+        delay_milliseconds(1);
     }
-
+     delay_milliseconds(100);
     _Exit(1);
 */
 
@@ -214,7 +139,7 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
     while(1){
 
         //send the request to the calculator
-        polar3d p = {1.0, theta, PI/4.0};
+        polar_f p = {1.0, theta, PI/4.0};
         c_calc <: p;
         int calc_done = 0;
         while(!calc_done){
@@ -234,8 +159,6 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
         unsigned long long rms = 0;
 
         memset(delay_buffer, 0, sizeof(int)*8*8);
-
-
 
         unsigned N = 48000;
         for(unsigned sample = 0;sample < N; sample ++){
@@ -257,11 +180,6 @@ void delay_tester(streaming chanend c_ds_output_0, streaming chanend c_ds_output
 
         printf("%f %llu\n", theta, rms);
         theta += (PI/63.0);
-
-
-
-
-
 
     }
 }
@@ -329,8 +247,8 @@ void sine_generator(chanend c_audio, chanend c_sine_command){
     unsigned freq = 1000;
     while(1){
         int v=sine_lut_sin_xc(theta)<<16;
-        c_audio <: v;
-        c_audio <: v;
+        c_audio <: v>>2;
+        c_audio <: v>>2;
         theta += ((freq<<16) / OUTPUT_SAMPLE_RATE);
         theta &= SINE_LUT_INPUT_MASK;
         select {
