@@ -5,27 +5,23 @@
 	.align	4
 	.type	decimate_to_pcm_4ch,@function
 
-
-
-.xtacommand "add exclusion configure","" , "", 0
-.xtacommand "analyse endpoints input_sample_0 input_sample_1","" , "", 0
-.xtacommand "set required - 2604 ns","" , "", 0
-.xtacommand "analyse endpoints input_sample_1 input_sample_2","" , "", 0
-.xtacommand "set required - 2604 ns","" , "", 0
-.xtacommand "analyse endpoints input_sample_2 input_sample_3","" , "", 0
-.xtacommand "set required - 2604 ns","" , "", 0
-.xtacommand "analyse endpoints input_sample_3 input_sample_4","" , "", 0
-.xtacommand "set required - 2604 ns","" , "", 0
-.xtacommand "analyse endpoints input_sample_4 input_sample_5","" , "", 0
-.xtacommand "set required - 2604 ns","" , "", 0
-.xtacommand "analyse endpoints input_sample_5 input_sample_6","" , "", 0
-.xtacommand "set required - 2604 ns","" , "", 0
-.xtacommand "analyse endpoints input_sample_6 input_sample_7","" , "", 0
-.xtacommand "set required - 2604 ns","" , "", 0
-.xtacommand "analyse endpoints input_sample_7 input_sample_0","" , "", 0
-.xtacommand "set required - 2604 ns","" , "", 0
-.xtacommand "print summary","" , "", 0
-
+.xtacommand "add exclusion configure_ep","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_sample_0_ep input_sample_1_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_sample_1_ep input_sample_2_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_sample_2_ep input_sample_3_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_sample_3_ep input_sample_4_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_sample_4_ep input_sample_5_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_sample_5_ep input_sample_6_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_sample_6_ep input_sample_7_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_sample_7_ep input_sample_0_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
 #include "defines.h"
 
@@ -706,3 +702,79 @@ fir_impl:
 	.globl	fir_impl.maxtimers
 	.set	fir_impl.maxchanends,0
 	.globl	fir_impl.maxchanends
+
+//endpoint section
+#define STRINGIZE(S) #S
+
+#define EP_MARCO(ID) \
+	.ascii	STRINGIZE( input_sample_ ## ID ## _ep ) ;\
+	.byte	0 ;\
+	.ascii	"../src/test_lib_include.xc" ;\
+	.byte	0 ;\
+	.long	124 ;\
+	.long	.Laddr_end ## ID -.Laddr_start ## ID ;\
+	.Laddr_start ## ID : ;\
+	.cc_top cc_ ## ID,input_sample_ ## ID;\
+	.long	input_sample_ ## ID ;\
+	.byte	0 ;\
+	.cc_bottom cc_ ## ID ;\
+	.Laddr_end ## ID :
+
+#define EPT_MARCO(ID) \
+.cc_top cc_a ## ID,input_sample_ ## ID ;\
+	.ascii	"";\
+	.byte	0;\
+	.long	0;\
+	.long	input_sample_ ## ID ;\
+.cc_bottom cc_a ## ID
+
+	.section	.xtaendpoint,"",@progbits
+.Lentries_start0:
+	.long	.Lentries_end0-.Lentries_start0
+	.long	1
+	.ascii	"/home/andrew/lib_mic_array/tests/test_lib_include/.build"
+    .byte	0
+	EP_MARCO(0)
+	EP_MARCO(1)
+	EP_MARCO(2)
+	EP_MARCO(3)
+	EP_MARCO(4)
+	EP_MARCO(5)
+	EP_MARCO(6)
+	EP_MARCO(7)
+	.ascii	"configure_ep"
+	.byte	0
+	.ascii	"../src/test_lib_include.xc"
+	.byte	0
+	.long	123
+	.long	.Laddr_end8-.Laddr_start8
+.Laddr_start8:
+.cc_top cc_8,configure
+	.long	configure
+	.byte	0
+.cc_bottom cc_8
+.Laddr_end8:
+
+.Lentries_end0:
+	.section	.xtaendpointtable,"",@progbits
+.Lentries_start1:
+	.long	.Lentries_end1-.Lentries_start1
+	.long	0
+	.ascii	""
+	.byte	0
+	EPT_MARCO(0)
+	EPT_MARCO(1)
+	EPT_MARCO(2)
+	EPT_MARCO(3)
+	EPT_MARCO(4)
+	EPT_MARCO(5)
+	EPT_MARCO(6)
+	EPT_MARCO(7)
+.cc_top cc_18,configure
+	.ascii	""
+	.byte	0
+	.long	10
+	.long	configure
+.cc_bottom cc_18
+.Lentries_end1:
+
