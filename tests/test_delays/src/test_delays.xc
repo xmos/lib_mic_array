@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "sine_lut.h"
+#include "beamforming.h"
+
 #include "fir_decimator.h"
 #include "mic_array.h"
 #include "mic_array_board_support.h"
@@ -44,12 +45,9 @@ frame_audio audio[2];
 
 #define SAMPLE_RATE 48000.0
 #define SPEED_OF_SOUND (342.0)
-#define PI (3.14159265358979323846264338327950288419716939937510582097494459230781)
 #define NUM_MICS 7
 #define R (0.043)
 #define THETA (2.0*PI/6.0)
-
-
 
 static const polar_f mic_coords[NUM_MICS] = {
         {0.0, 0.0, 0.0},    //mic 0
@@ -61,14 +59,12 @@ static const polar_f mic_coords[NUM_MICS] = {
         {R, 5.0*THETA + THETA/2.0, PI/2.0},
 };
 
-
-
 void get_taps(unsigned taps[], polar_f p){
 
     unsigned time_of_flight_samples[NUM_MICS];
     int min = 0x7fffffff;
     for(unsigned m=0;m<NUM_MICS;m++){
-        time_of_flight_samples[m] = (int)(get_dist(mic_coords[m], p) * SAMPLE_RATE / SPEED_OF_SOUND );
+        time_of_flight_samples[m] = (int)(get_dist_polar_f(mic_coords[m], p) * SAMPLE_RATE / SPEED_OF_SOUND );
         if(min > time_of_flight_samples[m])
             min = time_of_flight_samples[m];
     }
