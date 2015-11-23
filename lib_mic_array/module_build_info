@@ -13,6 +13,8 @@ MODULE_XCC_XC_FLAGS = $(XCC_XC_FLAGS)
 
 DEPENDENT_MODULES = lib_xassert(>=2.0.0) lib_logging(>=2.0.0)
 
+USED_MODULES = lib_xassert(>=2.0.0) lib_logging(>=2.0.0)
+
 VERSION = 0.0.1
 
 # The following specifies the dependencies of the module. When an application
