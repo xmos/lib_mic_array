@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #ifndef FIR_DECIMATE_H_
 #define FIR_DECIMATE_H_
 #include "defines.h"
