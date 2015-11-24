@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #ifndef PCM_FRAME_H_
 #define PCM_FRAME_H_
 

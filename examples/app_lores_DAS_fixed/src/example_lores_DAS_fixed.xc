@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #include <xscope.h>
 #include <platform.h>
 #include <xs1.h>

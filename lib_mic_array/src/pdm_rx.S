@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 	.section	.dp.data,"awd",@progbits
 	.text
 #define p_pdm_mics 			 r0
