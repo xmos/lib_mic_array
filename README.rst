@@ -16,7 +16,7 @@ each of the individual PDM microphones allowing for individual time shifts.
 Features
 ........
 
-The Microphone array library has the following features:
+The microphone array library has the following features:
 
   * Configurability of:
   
@@ -45,3 +45,5 @@ Software version and dependencies
 
 Related application notes
 .........................
+
+None

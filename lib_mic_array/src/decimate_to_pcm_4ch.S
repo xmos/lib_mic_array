@@ -260,6 +260,8 @@ decimate_to_pcm_4ch:
 	//store c_output off to the stack
 	ldaw t, sp[S_FRAME_OFFSET]
 	stw r1, t[S_C_OUTPUT]
+	ldc r1, 0
+	stw r1, t[S_FRAME_NUMBER]
 
 	ldaw r0, sp[S_FRAME_OFFSET]
 	ldw r1, r0[S_C_OUTPUT]
