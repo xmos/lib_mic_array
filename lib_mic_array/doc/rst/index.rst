@@ -51,6 +51,11 @@ This means that samples are outputted into frames synchronously but not necessar
 phased aligned. When not using high resolution mode the samples are produced 
 synchronsly and necessarly phase aligned in time.
 
+An application must also include an extra header ``mic_array_conf.h`` which is used 
+to describe the unique configuration of the ``FRAME_SIZE_LOG2`` described later in 
+this document.
+
+
 Phased aligned sampling
 .......................
 
@@ -135,11 +140,18 @@ an application to it::
 Frames
 ------
 The four channel deciamtors output frames of either raw audio or audio prepared for an FFT.
+The define ``FRAME_SIZE_LOG2`` (found in ``mic_array_conf.h``) is a uniquely defined integer 
+used to allocate the memory for the frames. This means that all frames structures will allocate 
+enough memory to allow for a frame size of two to the power of ``FRAME_SIZE_LOG2`` regardless 
+of the size used in the ``decimator_config_common``. It is recommended that the 
+``frame_size_log2`` field of ``decimator_config_common`` is always set to ``FRAME_SIZE_LOG2``. 
 
 Raw audio frames
 ................
 These are frames in which the sample data is packed into eight arrays of length two to the power of
-FRAME_SIZE_LOG2. The first index of the ``data`` element of ``frame_audio`` is used to address the
+``FRAME_SIZE_LOG2``. 
+
+The first index of the ``data`` element of ``frame_audio`` is used to address the
 microphone and the second index is used for the sample number with 0 being the oldest.
 
 Complex audio frames
@@ -163,7 +175,7 @@ controlled by the structre ``decimator_config`` through the function ``decimator
 The decimators are controlled by two structures: ``decimator_config_common`` and ``decimator_config``, 
 where the former config is common to all microphones and the later is specific to the batch of 4
 microphones it interfaces to. The application can the option to control the following settings,
-decimator_config_common::
+decimator_config_common:
 
 * ``frame_size_log2``: This sets the frame size to a power of two. A frame will contain 
   2 to the power of frame_size_log2 samples of each channel. Use the define FRAME_SIZE_LOG2
@@ -187,7 +199,7 @@ decimator_config_common::
 * ``apply_mic_gain_compensation``: Set this to non-zreo if microphone gain compensation is 
   required. The compensation applied is controlled by ``mic_gain_compensation``.  
 
-decimator_config::
+decimator_config:
 
 * ``decimator_config_common``: This is a pointer to the common configuration.
 * ``data``: This is the memory used to save the FIR samples. It must be 

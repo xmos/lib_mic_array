@@ -138,8 +138,6 @@ typedef struct {
  *                           be inputted bytewise.
  *  \param c_frame_output    The channel used to transfer pointers between the client of
  *                           this task and this task.
- *  \param config            The configuration structure describing the behaviour of the
- *                           decimation component.
  */
 void decimate_to_pcm_4ch(
         streaming chanend c_4x_pdm_mic,
