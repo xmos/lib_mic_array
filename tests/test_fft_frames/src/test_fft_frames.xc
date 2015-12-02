@@ -34,7 +34,7 @@ void example(streaming chanend c_pcm_0,
         decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
         decimator_configure(c_pcm_0, c_pcm_1, dc0, dc1);
     }
-    decimator_init_complex_frame(c_pcm_0, c_pcm_1, buffer, audio);
+    decimator_init_complex_frame(c_pcm_0, c_pcm_1, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
 
     timer t;
     unsigned time;

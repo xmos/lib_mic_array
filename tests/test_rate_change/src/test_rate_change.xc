@@ -33,7 +33,7 @@ void example(streaming chanend c_pcm_0,
             decimator_configure(c_pcm_0, c_pcm_1, dc0, dc1);
         }
 
-        decimator_init_audio_frame(c_pcm_0, c_pcm_1, buffer, audio);
+        decimator_init_audio_frame(c_pcm_0, c_pcm_1, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
 
         timer t;
         unsigned now, then;

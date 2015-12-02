@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <limits.h>
 #include "fir_decimator.h"
-#include "frame.h"
-#include "defines.h"
+#include "mic_array_frame.h"
+#include "mic_array_defines.h"
 
 /** PDM Microphone Interface component.
  *
@@ -91,7 +91,20 @@ void hires_delay(
  */
 int hires_delay_set_taps(hires_delay_config * unsafe config, unsigned delays[], unsigned num_taps);
 
+/** Four Channel decimator buffering type.
+ *
+ *  This type is used to describe the buffering mode.
+ */
+typedef enum {
+    DECIMATOR_NO_FRAME_OVERLAP,   ///<  The frames have no overlap.
+    DECIMATOR_HALF_FRAME_OVERLAP  ///<  The frames have a 50% overlap betweeen sequential frames.
+} e_decimator_buffering_type;
 
+/*
+ * Note: to use a windowing function the COLA property must be obeyed, i.e. Coef[n] = 1-Coef[N-n]
+ * where N is the array length. Only half the array need be specified as the windowing function
+ * is assumed symmetric.
+ */
 
 
 /*
@@ -158,10 +171,12 @@ void decimate_to_pcm_4ch(
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
  *  \param f_audio             An array of audio frames. Typically, of size two.
+ *  \param buffering_type    Sets the decimator to double buffer(no overlap) or triple buffer (50% overlap)
+ *                           the output frames.
  *
  */
 void decimator_init_audio_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
-        unsigned &buffer, frame_audio f_audio[]);
+        unsigned &buffer, frame_audio f_audio[], e_decimator_buffering_type buffering_type);
 
 
 /** Four Channel Decimation audio frame exchange function.
@@ -176,7 +191,7 @@ void decimator_init_audio_frame(streaming chanend c_pcm_0, streaming chanend c_p
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
- *  \param f_audio             An array of audio frames. Typically, of size two.
+ *  \param f_audio           An array of audio frames. Typically, of size two.
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.
@@ -197,10 +212,12 @@ frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_pcm_0, st
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
  *  \param f_complex             An array of audio frames. Typically, of size two.
+ *  \param buffering_type    Sets the decimator to double buffer(no overlap) or triple buffer (50% overlap)
+ *                           the output frames.
  *
  */
 void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c_pcm_1,
-     unsigned &buffer, frame_complex f_complex[]);
+     unsigned &buffer, frame_complex f_complex[], e_decimator_buffering_type buffering_type);
 
 /** Four Channel Decimation complex frame exchange function.
  *
@@ -214,7 +231,7 @@ void decimator_init_complex_frame(streaming chanend c_pcm_0, streaming chanend c
  *                           the decimate_to_pcm_4ch() task.
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
- *  \param f_complex           An array of audio frames. Typically, of size two.
+ *  \param f_complex         An array of audio frames. Typically, of size two.
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.

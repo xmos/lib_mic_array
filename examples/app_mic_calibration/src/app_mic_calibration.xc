@@ -34,7 +34,7 @@ void mic_calib(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
         decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
         decimator_configure(c_ds_output_0, c_ds_output_1, dc0, dc1);
 
-        decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+        decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
 
         int64_t sum[7]={0};
 

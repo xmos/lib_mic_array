@@ -281,6 +281,7 @@ PDM Microphone processing
 PCM frame interfacing
 .....................
 
+.. doxygenenum:: e_decimator_buffering_type
 .. doxygenfunction:: decimator_init_audio_frame
 .. doxygenfunction:: decimator_get_next_audio_frame
 .. doxygenfunction:: decimator_init_complex_frame

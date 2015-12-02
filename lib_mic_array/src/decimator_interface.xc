@@ -1,25 +1,44 @@
 // Copyright (c) 2015, XMOS Ltd, All rights reserved
-#include "frame.h"
 #include "mic_array.h"
 #include <xs1.h>
 #include <string.h>
 
 #define DEBUG_UNIT DEBUG_MIC_ARRAY
 
+unsigned g_cic_max = (4294734279/4);
+
 #if DEBUG_MIC_ARRAY
 #include "xassert.h"
 #endif
 
 void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
-        unsigned &buffer, frame_audio audio[]){
+        unsigned &buffer, frame_audio audio[], e_decimator_buffering_type buffering_type){
     memset(audio[0].metadata, 0, 2*sizeof(s_metadata));
-    unsafe {
-        c_ds_output_0 <: (frame_audio * unsafe)audio[0].data[0];
-        c_ds_output_1 <: (frame_audio * unsafe)audio[0].data[4];
-        c_ds_output_0 <: (frame_audio * unsafe)&audio[0].metadata[0];
-        c_ds_output_1 <: (frame_audio * unsafe)&audio[0].metadata[1];
+    unsigned frames=1;
+
+    if (buffering_type == DECIMATOR_NO_FRAME_OVERLAP){
+        frames = 1;
+    } else if (buffering_type == DECIMATOR_HALF_FRAME_OVERLAP){
+        frames = 2;
+    } else {
+        //fail
+#if DEBUG_MIC_ARRAY
+        fail("Invalid buffering selected for: buffering_type");
+#else
+         __builtin_unreachable();
+#endif
+     }
+    c_ds_output_0 <: frames;
+    c_ds_output_1 <: frames;
+    for(unsigned i=0;i<frames;i++){
+        unsafe {
+            c_ds_output_0 <: (frame_audio * unsafe)audio[i].data[0];
+            c_ds_output_1 <: (frame_audio * unsafe)audio[i].data[4];
+            c_ds_output_0 <: (frame_audio * unsafe)&audio[i].metadata[0];
+            c_ds_output_1 <: (frame_audio * unsafe)&audio[i].metadata[1];
+        }
     }
-    buffer = 1;
+    buffer = frames;
 }
 
 #define EXCHANGE_BUFFERS 0
@@ -57,15 +76,34 @@ void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chane
 }
 
 void decimator_init_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
-     unsigned &buffer, frame_complex f_audio[]){
+     unsigned &buffer, frame_complex f_audio[], e_decimator_buffering_type buffering_type){
      memset(f_audio[0].metadata, 0, 2*sizeof(s_metadata));
- unsafe {
-     c_ds_output_0 <: (frame_complex * unsafe)f_audio[0].data[0];
-     c_ds_output_1 <: (frame_complex * unsafe)f_audio[0].data[2];
-     c_ds_output_0 <: (frame_complex * unsafe)&f_audio[0].metadata[0];
-     c_ds_output_1 <: (frame_complex * unsafe)&f_audio[0].metadata[1];
- }
- buffer = 1;
+     unsigned frames;
+
+     if (buffering_type == DECIMATOR_NO_FRAME_OVERLAP){
+         frames = 1;
+     } else if (buffering_type == DECIMATOR_HALF_FRAME_OVERLAP){
+         frames = 2;
+     } else {
+         //fail
+#if DEBUG_MIC_ARRAY
+         fail("Invalid buffering selected for: buffering_type");
+#else
+         __builtin_unreachable();
+#endif
+     }
+
+     c_ds_output_0 <: frames;
+     c_ds_output_1 <: frames;
+     for(unsigned i=0;i<frames;i++){
+         unsafe {
+             c_ds_output_0 <: (frame_complex * unsafe)f_audio[i].data[0];
+             c_ds_output_1 <: (frame_complex * unsafe)f_audio[i].data[2];
+             c_ds_output_0 <: (frame_complex * unsafe)&f_audio[i].metadata[0];
+             c_ds_output_1 <: (frame_complex * unsafe)&f_audio[i].metadata[1];
+         }
+     }
+     buffer = frames;
 }
 
 frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,

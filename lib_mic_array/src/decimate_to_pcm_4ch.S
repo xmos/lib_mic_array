@@ -24,7 +24,7 @@
 .xtacommand "analyse endpoints input_sample_7_ep input_sample_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-#include "defines.h"
+#include "mic_array_defines.h"
 
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
@@ -35,6 +35,36 @@
 #define p_integral		      r9
 #define s			          r10
 #define t                     r11
+
+#define MIN_MAX(MIN, MAX, P) \
+	ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET];\
+	ldd r1, r2, r0[S_D_SECOND_STAGE_OUTPUT_01];\
+	ldd r3, r4, r0[S_D_SECOND_STAGE_OUTPUT_23];\
+	ldaw r0, sp[S_FRAME_OFFSET];\
+	ldw r5, r0[MAX];\
+	lss r6, r5, r1;\
+	{bf r6, max_skip0 ## P; lss r6, r5, r2};\
+	{mov r5, r1; lss r6, r1, r2};\
+	max_skip0 ## P: {bf r6, max_skip1 ## P; lss r6, r5, r3};\
+	{mov r5, r2; lss r6, r2, r3};\
+	max_skip1 ## P: {bf r6, max_skip2 ## P; lss r6, r5, r4};\
+	{mov r5, r3; lss r6, r3, r4};\
+	max_skip2 ## P: {bf r6, max_skip3 ## P; nop};\
+	{mov r5, r4; nop};\
+	max_skip3 ## P: stw r5, r0[MAX];\
+	ldw r5, r0[MIN];\
+	lss r6, r5, r1;\
+	{bt r6, min_skip0 ## P; lss r6, r5, r2};\
+	{mov r5, r1; lss r6, r1, r2};\
+	min_skip0 ## P: {bt r6, min_skip1 ## P; lss r6, r5, r3};\
+	{mov r5, r2; lss r6, r2, r3};\
+	min_skip1 ## P: {bt r6, min_skip2 ## P; lss r6, r5, r4};\
+	{mov r5, r3; lss r6, r3, r4};\
+	min_skip2 ## P: {bt r6, min_skip3 ## P; nop};\
+	{mov r5, r4; nop};\
+	min_skip3 ## P: stw r5, r0[MIN]
+
+
 
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, COMB_OUTPUT) \
 	ldd r1, r0, r3[PREV_Y];\
@@ -207,17 +237,25 @@
 
 //frame
 #define S_FRAME_OFFSET (S_DC_ELIMINATE_OFFSET+DC_ELIMINATE_STACK_SIZE)
-#define S_D_AUDIO_POINTER_AND_INDEX 0
-#define S_AUDIO_POINTER 		0	//must be double word aligned
-#define S_AUDIO_POINTER_INDEX 	1
-#define S_C_OUTPUT				2
-#define S_FRAME_SIZE_LOG2		3
-#define S_D_FRAME_MIN_MAX       2
-#define S_FRAME_MIN				4
-#define S_FRAME_MAX				5
-#define S_FRAME_NUMBER			6	//should this be presistant between configs?
-#define S_METADATA_POINTER      7
-#define FRAME_STACK_SIZE		8
+#define S_D_AUDIO_POINTER_AND_INDEX_0 3
+#define S_D_AUDIO_POINTER_AND_INDEX_1 4
+#define S_D_FRAME_MIN_MAX_0       	  5
+#define S_D_FRAME_MIN_MAX_1       	  6
+#define S_C_OUTPUT				0
+#define S_FRAME_SIZE_LOG2		1
+#define S_FRAME_NUMBER			2	//should this be presistant between configs?
+#define S_BUFFER_COUNT          3
+#define S_METADATA_POINTER_0    4
+#define S_METADATA_POINTER_1    5
+#define S_AUDIO_POINTER_0 		    6	//must be double word aligned
+#define S_AUDIO_POINTER_0_INDEX     7
+#define S_AUDIO_POINTER_1 		    8	//must be double word aligned
+#define S_AUDIO_POINTER_1_INDEX     9
+#define S_FRAME_MIN_0				10   //must be double word aligned
+#define S_FRAME_MAX_0				11
+#define S_FRAME_MIN_1				12   //must be double word aligned
+#define S_FRAME_MAX_1				13
+#define FRAME_STACK_SIZE		14
 
 #define S_MIC_CALIB_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)
 #define S_MIC_CALIB_0 		0
@@ -272,8 +310,8 @@ decimate_to_pcm_4ch:
 	//cry if r2 != CONFIGURE_DECIMATOR
 
 configure:	//This is the entry point if comming from a reconfigure
-	in r2, res[r1]		//get the pointer to the decimator_config
 
+	in r2, res[r1]		//get the pointer to the decimator_config
 	ldw r3, r2[0];		//r3 is the pointer to the decimator_config_common
 
 	//copy the setting out of the struct
@@ -352,17 +390,31 @@ init_fir_phase:
 init_frame_index:
 	ldaw t, sp[S_FRAME_OFFSET]
 	ldc r1, 0
-	stw r1, t[S_AUDIO_POINTER_INDEX]
-	stw r1, t[S_FRAME_MIN]
-	stw r1, t[S_FRAME_MAX]
+	stw r1, t[S_AUDIO_POINTER_0_INDEX]
+	std r1, r1, t[S_D_FRAME_MIN_MAX_0]
+	std r1, r1, t[S_D_FRAME_MIN_MAX_1]
 
 get_frame_pointer:
 	ldaw t, sp[S_FRAME_OFFSET]
 	ldw r2, t[S_C_OUTPUT]
+
+	rx_buffer_count:
+	in r5, res[r2]
+
+	stw r5, t[S_BUFFER_COUNT]
+    first_buffer:
     in r1, res[r2]
-	stw r1, t[S_AUDIO_POINTER]
+	stw r1, t[S_AUDIO_POINTER_0]
     in r1, res[r2]
-	stw r1, t[S_METADATA_POINTER]
+	stw r1, t[S_METADATA_POINTER_0]
+
+	sub r5, r5, 1
+	bf r5, ds_loop
+	second_buffer:
+    in r1, res[r2]
+	stw r1, t[S_AUDIO_POINTER_1]
+    in r1, res[r2]
+	stw r1, t[S_METADATA_POINTER_1]
 
 ds_loop:
 input_sample_0:
@@ -398,9 +450,42 @@ input_sample_1:
 			DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, S_SECOND_STAGE_OUTPUT_2);
 			dc_offset_removal_3:
 			DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, S_SECOND_STAGE_OUTPUT_3);
+			bu gain_compensation
 		skip_dc_offset_removal:
-		//64 + 33 used = 97 -> ~ 50 spare
-		//TODO gain compensation
+		/*
+			ldw r1, cp[g_cic_max]
+			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
+			ldd r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_01]
+			{sub r2, r2, r1; sub r3, r3, r1}
+			std r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_01]
+			ldd r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_23]
+			{sub r2, r2, r1; sub r3, r3, r1}
+			std r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_23]
+*/
+		gain_compensation:
+		//apply gain compensation
+		ldaw r0, sp[S_SETTINGS_OFFSET]
+		ldw r1, r0[S_MIC_GAIN_COMP]
+		bf r1, input_sample_2
+		apply_mic_gain_compensation:
+			ldaw r0, sp[S_MIC_CALIB_OFFSET]
+			ldd r2, r1, r0[S_D_MIC_CALIB_01]
+			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
+			ldd r4, r3, r0[S_D_SECOND_STAGE_OUTPUT_01]
+			{ldc r5, 0; ldc r6, 0}
+			maccs r5, r6, r1, r3
+			{ldc r6, 0; ldc r1, 0}
+			maccs r6, r1, r2, r4
+			std r6, r5, r0[S_D_SECOND_STAGE_OUTPUT_01]
+			ldaw r0, sp[S_MIC_CALIB_OFFSET]
+			ldd r2, r1, r0[S_D_MIC_CALIB_23]
+			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
+			ldd r4, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
+			{ldc r5, 0; ldc r6, 0}
+			maccs r5, r6, r1, r3
+			{ldc r6, 0; ldc r1, 0}
+			maccs r6, r1, r2, r4
+			std r6, r5, r0[S_D_SECOND_STAGE_OUTPUT_23]
 
 input_sample_2:
 	INPUT(S_D_INPUT_2)
@@ -424,22 +509,6 @@ input_sample_5:
 
 input_sample_6:
 	INPUT(S_D_INPUT_6)
-	//move all the fir outputs back into the second stage outputs
-	ldc t, 0
-	ldaw r0, sp[S_FIR_OFFSET]
-	ldaw r1, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-	ldw r2, r0[S_SUM_0+1]
-	std t, t, r0[S_D_SUM_0]
-	stw r2, r1[S_SECOND_STAGE_OUTPUT_0]
-	ldw r2, r0[S_SUM_1+1]
-	std t, t, r0[S_D_SUM_1]
-	stw r2, r1[S_SECOND_STAGE_OUTPUT_1]
-	ldw r2, r0[S_SUM_2+1]
-	std t, t, r0[S_D_SUM_2]
-	stw r2, r1[S_SECOND_STAGE_OUTPUT_2]
-	ldw r2, r0[S_SUM_3+1]
-	std t, t, r0[S_D_SUM_3]
-	stw r2, r1[S_SECOND_STAGE_OUTPUT_3]
 
 	ldaw r0, sp[S_FIR_OFFSET]
 	ldw r2, r0[S_FIR_PHASE]
@@ -453,61 +522,26 @@ input_sample_6:
 	bu input_sample_7
 	save_sample:
 
+		//move all the fir outputs back into the second stage outputs
+		ldc t, 0
+		ldaw r1, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
+		ldw r2, r0[S_SUM_0+1]
+		std t, t, r0[S_D_SUM_0]
+		stw r2, r1[S_SECOND_STAGE_OUTPUT_0]
+		ldw r2, r0[S_SUM_1+1]
+		std t, t, r0[S_D_SUM_1]
+		stw r2, r1[S_SECOND_STAGE_OUTPUT_1]
+		ldw r2, r0[S_SUM_2+1]
+		std t, t, r0[S_D_SUM_2]
+		stw r2, r1[S_SECOND_STAGE_OUTPUT_2]
+		ldw r2, r0[S_SUM_3+1]
+		std t, t, r0[S_D_SUM_3]
+		stw r2, r1[S_SECOND_STAGE_OUTPUT_3]
 
-
-		stw r1, r0[S_FIR_PHASE]	//reset the FIR phase
-
-		//apply gain compensation
-		ldaw r0, sp[S_SETTINGS_OFFSET]
-		ldw r1, r0[S_MIC_GAIN_COMP]
-		bf r1, update_min_max
-		apply_mic_gain_compensation:
-			ldaw r0, sp[S_MIC_CALIB_OFFSET]
-			ldd r2, r1, r0[S_D_MIC_CALIB_01]
-			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-			ldd r4, r3, r0[S_D_SECOND_STAGE_OUTPUT_01]
-			{ldc r5, 0; ldc r6, 0}
-			maccs r5, r6, r1, r3
-			{ldc r6, 0; ldc r1, 0}
-			maccs r6, r1, r2, r4
-			std r6, r5, r0[S_D_SECOND_STAGE_OUTPUT_01]
-			ldaw r0, sp[S_MIC_CALIB_OFFSET]
-			ldd r2, r1, r0[S_D_MIC_CALIB_23]
-			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-			ldd r4, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
-			{ldc r5, 0; ldc r6, 0}
-			maccs r5, r6, r1, r3
-			{ldc r6, 0; ldc r1, 0}
-			maccs r6, r1, r2, r4
-			std r6, r5, r0[S_D_SECOND_STAGE_OUTPUT_23]
+		stw t, r0[S_FIR_PHASE]	//reset the FIR phase
 
 		update_min_max:
-		ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-		ldd r1, r2, r0[S_D_SECOND_STAGE_OUTPUT_01]
-		ldd r3, r4, r0[S_D_SECOND_STAGE_OUTPUT_23]
-		ldaw r0, sp[S_FRAME_OFFSET]
-		ldw r5, r0[S_FRAME_MAX]
-		lss r6, r5, r1
-		{bf r6, max_skip0; lss r6, r5, r2}
-		{mov r5, r1; lss r6, r1, r2}
-		max_skip0: {bf r6, max_skip1; lss r6, r5, r3}
-		{mov r5, r2; lss r6, r2, r3}
-		max_skip1: {bf r6, max_skip2; lss r6, r5, r4}
-		{mov r5, r3; lss r6, r3, r4}
-		max_skip2: {bf r6, max_skip3; nop}
-		{mov r5, r4; nop}
-		max_skip3: stw r5, r0[S_FRAME_MAX]
-		ldw r5, r0[S_FRAME_MIN]
-		lss r6, r5, r1
-		{bt r6, min_skip0; lss r6, r5, r2}
-		{mov r5, r1; lss r6, r1, r2}
-		min_skip0: {bt r6, min_skip1; lss r6, r5, r3}
-		{mov r5, r2; lss r6, r2, r3}
-		min_skip1: {bt r6, min_skip2; lss r6, r5, r4}
-		{mov r5, r3; lss r6, r3, r4}
-		min_skip2: {bt r6, min_skip3; nop}
-		{mov r5, r4; nop}
-		min_skip3: stw r5, r0[S_FRAME_MIN]
+		MIN_MAX(S_FRAME_MIN_0, S_FRAME_MAX_0, 0)
 
 		//multiply the data values by the window function
 		ldaw r0, sp[S_SETTINGS_OFFSET]
@@ -516,7 +550,7 @@ input_sample_6:
 			ldaw r0, sp[S_FRAME_OFFSET]
 			ldw r3, r0[S_FRAME_SIZE_LOG2]
 			{mkmsk r4, r3; sub r3, r3, 1}
-			{shr r3, r2, r3;ldw r2, r0[S_AUDIO_POINTER_INDEX]}
+			{shr r3, r2, r3;ldw r2, r0[S_AUDIO_POINTER_0_INDEX]}
 			bf r3, load_window_coef
 			sub r2, r4, r2
 			load_window_coef:
@@ -536,7 +570,6 @@ input_sample_6:
 			std r2, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
 		no_windowing:
 
-
 		ldaw r0, sp[S_FRAME_OFFSET]
 		ldw r2, r0[S_FRAME_SIZE_LOG2]
 		ldaw r1, sp[S_SETTINGS_OFFSET]
@@ -544,9 +577,9 @@ input_sample_6:
 		bf r1, write_out_audio_frames
 		write_out_fft_frames:
 			ldaw r5, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-			{ldw r1, r0[S_AUDIO_POINTER_INDEX]; ldc r3, 32}
+			{ldw r1, r0[S_AUDIO_POINTER_0_INDEX]; ldc r3, 32}
 			{bitrev r1, r1; sub r3, r3, r2}
-			{shr r1, r1, r3;ldw r4, r0[S_AUDIO_POINTER]}
+			{shr r1, r1, r3;ldw r4, r0[S_AUDIO_POINTER_0]}
 			ldd r3, t, r5[S_D_SECOND_STAGE_OUTPUT_01]
 			std r3, t, r4[r1]
 			{ldc r3, 1;nop}
@@ -558,18 +591,15 @@ input_sample_6:
 
 		write_out_audio_frames:
 			ldaw r5, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-			ldd r3, r4, r0[S_D_AUDIO_POINTER_AND_INDEX]
+			ldd r3, r4, r0[S_D_AUDIO_POINTER_AND_INDEX_0]
 			ldd r1, t, r5[S_D_SECOND_STAGE_OUTPUT_01]
 			ldaw r4, r4[r3]
 			{ldc r3, 1; stw t, r4[0]}
-			audio_max0:
 			{shl r3, r3, r2; nop}
 			stw r1, r4[r3]
-			audio_max1:
 			add r3, r3, r3
 			ldd r1, t, r5[S_D_SECOND_STAGE_OUTPUT_23]
 			stw t, r4[r3]
-			audio_max2:
 			{ldc r3, 3; nop}
 			shl r3, r3, r2
 			stw r1, r4[r3]
@@ -577,10 +607,10 @@ input_sample_6:
 	inc_audio_index:
 	    bf r2, exchange_buffers
 			//reset the index if we have completed a frame
-			ldw r1, r0[S_AUDIO_POINTER_INDEX]
+			ldw r1, r0[S_AUDIO_POINTER_0_INDEX]
 			{add r1, r1, 1;}
 			zext r1, r2
-			stw r1, r0[S_AUDIO_POINTER_INDEX];
+			stw r1, r0[S_AUDIO_POINTER_0_INDEX];
 			bt r1, input_sample_7
 	exchange_buffers:
 		ldw r1, r0[S_C_OUTPUT]
@@ -598,8 +628,8 @@ input_sample_6:
 		do_the_exchange:
 
 		save_the_metadata:
-		{ldd r3, r4, r0[S_D_FRAME_MIN_MAX]}
-		ldw r5, r0[S_METADATA_POINTER]
+		{ldd r3, r4, r0[S_D_FRAME_MIN_MAX_0]}
+		ldw r5, r0[S_METADATA_POINTER_0]
 		std r3, r4, r5[0];
 		ldw r3, r0[S_FRAME_NUMBER]
 		{stw r3, r5[2]; add r3, r3, 1}
@@ -607,13 +637,13 @@ input_sample_6:
 
 		get_the_new_data_pointer:
 		in r2, res[r1]
-		{stw r2, r0[S_AUDIO_POINTER]}
+		{stw r2, r0[S_AUDIO_POINTER_0]}
 		get_the_new_metadata_pointer:
 	    in r1, res[r1]
-		{ldc r1, 0; stw r1, r0[S_METADATA_POINTER]}
+		{ldc r1, 0; stw r1, r0[S_METADATA_POINTER_0]}
 		//reset the min and max vals for the frame
-		{stw r1, r0[S_FRAME_MAX]}
-		{stw r1, r0[S_FRAME_MIN]}
+		{stw r1, r0[S_FRAME_MAX_0]}
+		{stw r1, r0[S_FRAME_MIN_0]}
 
 input_sample_7:
 	INPUT(S_D_INPUT_7)	//162 instruction per loop

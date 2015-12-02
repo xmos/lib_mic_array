@@ -1,7 +1,7 @@
 // Copyright (c) 2015, XMOS Ltd, All rights reserved
 #ifndef FIR_DECIMATE_H_
 #define FIR_DECIMATE_H_
-#include "defines.h"
+#include "mic_array_defines.h"
 
 extern const int fir_1_coefs[1][COEFS_PER_PHASE];
 extern const int fir_2_coefs[2][COEFS_PER_PHASE];

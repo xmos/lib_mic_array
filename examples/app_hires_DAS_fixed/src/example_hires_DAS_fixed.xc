@@ -105,7 +105,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
         decimator_configure(c_ds_output_0, c_ds_output_1, dc0, dc1);
     }
 
-    decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+    decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
 
     while(1){
 
