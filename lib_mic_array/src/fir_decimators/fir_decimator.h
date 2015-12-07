@@ -12,7 +12,7 @@ extern const int fir_6_coefs[6][COEFS_PER_PHASE];
 extern const int fir_7_coefs[7][COEFS_PER_PHASE];
 extern const int fir_8_coefs[8][COEFS_PER_PHASE];
 
-extern const int * fir_coefs[9];
+extern const int * unsafe fir_coefs[9];
 
 #define GLUE0(x,y,z) x ## y ## z
 #define GLUE(x,y,z) GLUE0(x,y,z)

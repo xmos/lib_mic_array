@@ -5,7 +5,7 @@
 
 #define DEBUG_UNIT DEBUG_MIC_ARRAY
 
-unsigned g_cic_max = (4294734279/4);
+unsigned g_cic_max = (1<<30);
 
 #if DEBUG_MIC_ARRAY
 #include "xassert.h"

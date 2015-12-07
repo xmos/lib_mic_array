@@ -14,12 +14,13 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 int data_0[4*COEFS_PER_PHASE*MAX_DECIMATION_FACTOR] = {0};
 int data_1[4*COEFS_PER_PHASE*MAX_DECIMATION_FACTOR] = {0};
 
+frame_audio audio[2];    //double buffered
+
 void example(streaming chanend c_pcm_0,
         streaming chanend c_pcm_1){
 
     unsigned buffer;
 
-    frame_audio audio[2];    //double buffered
 
 #define TEST_SECONDS 16  //don't exceed 20
 #define TPS 100000000
@@ -28,8 +29,8 @@ void example(streaming chanend c_pcm_0,
 
         unsafe{
             decimator_config_common dcc = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], 0};
-            decimator_config dc0 = {&dcc, data_0, {0, 0, 0, 0}};
-            decimator_config dc1 = {&dcc, data_1, {0, 0, 0, 0}};
+            decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
+            decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
             decimator_configure(c_pcm_0, c_pcm_1, dc0, dc1);
         }
 
