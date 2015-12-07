@@ -1,0 +1,55 @@
+.. include:: ../../../../README.rst
+
+|newpage|
+
+Overview
+--------
+
+This demo application shows how to interface to the microphone array in high resolution mode.
+
+
+|appendix|
+|newpage|
+
+Demo Hardware Setup
+------------------- 
+
+Ensure that an XTAG is connected along with the microphone array via USB.
+
+|newpage|
+
+Launching the demo application
+------------------------------
+
+Build the application then run using ``xrun --xscope app_phase_aligned_example.xe``.
+
+
+|newpage|
+
+References
+----------
+  
+.. nopoints::
+
+  * XMOS Tools User Guide
+
+    http://www.xmos.com/published/xtimecomposer-user-guide
+
+  * XMOS xCORE Programming Guide
+
+    http://www.xmos.com/published/xmos-programming-guide
+  
+
+|newpage|
+
+Full source code listing
+------------------------
+
+Source code for main.xc
+.......................
+
+.. literalinclude:: app_phase_aligned_example.xc
+  :largelisting:
+
+|newpage|
+

@@ -1,0 +1,58 @@
+.. include:: ../../../../README.rst
+
+|newpage|
+
+Overview
+--------
+
+Overview
+--------
+
+This demo application shows a simple DAS bemformer.
+
+
+|appendix|
+|newpage|
+
+Demo Hardware Setup
+------------------- 
+
+Ensure that an XTAG is connected along with the microphone array via USB. Headphones hsould be connected to the audio jack for listening to the beamformed output.
+
+|newpage|
+
+Launching the demo application
+------------------------------
+
+Build the application then run using ``xrun --xscope example_lores_DAS_fixed.xe``. Buttons ``A`` and ``D`` rotate the direction of the beam which is indicated by the LEDs.
+
+
+|newpage|
+
+References
+----------
+  
+.. nopoints::
+
+  * XMOS Tools User Guide
+
+    http://www.xmos.com/published/xtimecomposer-user-guide
+
+  * XMOS xCORE Programming Guide
+
+    http://www.xmos.com/published/xmos-programming-guide
+  
+
+|newpage|
+
+Full source code listing
+------------------------
+
+Source code for main.xc
+.......................
+
+.. literalinclude:: example_lores_DAS_fixed.xc
+  :largelisting:
+
+|newpage|
+
