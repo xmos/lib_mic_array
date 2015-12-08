@@ -232,7 +232,7 @@ The achieveable rates of a 2.8224MHz input clock are:
 * FIR decimation factor of 1 - 44.1kHz
 * FIR decimation factor of 2 - 22.05kHz
 * FIR decimation factor of 3 - 14.7kHz
-* FIR decimation factor of 4 - 11kHz
+* FIR decimation factor of 4 - 11.025kHz
 * FIR decimation factor of 5 - 8.82kHz
 * FIR decimation factor of 6 - 7.kHz
 * FIR decimation factor of 7 - 6.3kHz
