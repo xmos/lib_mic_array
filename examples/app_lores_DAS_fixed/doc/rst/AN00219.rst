@@ -5,7 +5,7 @@
 Overview
 --------
 
-This demo application shows a simple (Delay and Sum) DAS beam-former.
+This demo application shows a simple Delay and Sum (DAS) beam-former.
 
 
 |appendix|
