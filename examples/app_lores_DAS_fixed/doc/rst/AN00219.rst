@@ -5,10 +5,7 @@
 Overview
 --------
 
-Overview
---------
-
-This demo application shows a simple DAS bemformer.
+This demo application shows a simple (Delay and Sum) DAS beam-former.
 
 
 |appendix|
@@ -17,7 +14,7 @@ This demo application shows a simple DAS bemformer.
 Demo Hardware Setup
 ------------------- 
 
-Ensure that an XTAG is connected along with the microphone array via USB. Headphones hsould be connected to the audio jack for listening to the beamformed output.
+Ensure that an XTAG is connected along with the microphone array via USB. Headphones should be connected to the audio jack for listening to the beamformed output.
 
 |newpage|
 
