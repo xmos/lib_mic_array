@@ -42,7 +42,7 @@ void mic_calib(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
 
         for(unsigned count=0;count<1<<N;count++){
 
-            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio, 2);
 
             for(unsigned i=0;i<7;i++)
                 sum[i] += current->data[i][0];
@@ -57,7 +57,7 @@ void mic_calib(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
 
         for(unsigned count=0;count<1<<N;count++){
 
-            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio, 2);
 
             for(unsigned i=0;i<7;i++){
                 int64_t v = (int64_t)current->data[i][0];
