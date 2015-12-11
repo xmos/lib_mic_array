@@ -109,7 +109,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
 
     while(1){
 
-        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio);
+        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio, 2);
 
         //light the LED for the current direction
 

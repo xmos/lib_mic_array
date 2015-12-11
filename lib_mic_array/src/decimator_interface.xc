@@ -38,6 +38,10 @@ void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chane
             c_ds_output_1 <: (frame_audio * unsafe)&audio[i].metadata[1];
         }
     }
+
+    schkct(c_ds_output_0, 8);
+    schkct(c_ds_output_1, 8);
+
     buffer = frames;
 }
 
@@ -46,7 +50,7 @@ void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chane
 
 
  frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
-        unsigned &buffer, frame_audio * alias audio){
+        unsigned &buffer, frame_audio * alias audio, unsigned buffer_count){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -71,7 +75,14 @@ void decimator_init_audio_frame(streaming chanend c_ds_output_0, streaming chane
         c_ds_output_0 <: (int * unsafe)&audio[buffer].metadata[0];
         c_ds_output_1 <: (int * unsafe)&audio[buffer].metadata[1];
     }
-    buffer = 1-buffer;
+
+    schkct(c_ds_output_0, 8);
+    schkct(c_ds_output_1, 8);
+
+    buffer++;
+    if(buffer == buffer_count)
+        buffer = 0;
+
     return &audio[buffer];
 }
 
@@ -103,11 +114,15 @@ void decimator_init_complex_frame(streaming chanend c_ds_output_0, streaming cha
              c_ds_output_1 <: (frame_complex * unsafe)&f_audio[i].metadata[1];
          }
      }
+
+     schkct(c_ds_output_0, 8);
+     schkct(c_ds_output_1, 8);
+
      buffer = frames;
 }
 
 frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
-     unsigned &buffer, frame_complex * alias f_complex){
+     unsigned &buffer, frame_complex * alias f_complex, unsigned buffer_count){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -132,7 +147,15 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_ds_ou
          c_ds_output_0 <: (int * unsafe)&f_complex[buffer].metadata[0];
          c_ds_output_1 <: (int * unsafe)&f_complex[buffer].metadata[1];
      }
-     buffer = 1-buffer;
+
+
+     schkct(c_ds_output_0, 8);
+     schkct(c_ds_output_1, 8);
+
+     buffer++;
+     if(buffer == buffer_count)
+         buffer = 0;
+
      return &f_complex[buffer];
 }
 

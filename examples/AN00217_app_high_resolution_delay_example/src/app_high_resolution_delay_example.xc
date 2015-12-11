@@ -36,7 +36,7 @@ void example(streaming chanend c_pcm_0,
 
     while(1){
 
-        frame_audio *  current = decimator_get_next_audio_frame(c_pcm_0, c_pcm_1, buffer, audio);
+        frame_audio *  current = decimator_get_next_audio_frame(c_pcm_0, c_pcm_1, buffer, audio, 2);
 
         // code goes here
 

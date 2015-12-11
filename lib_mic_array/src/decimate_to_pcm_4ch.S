@@ -25,6 +25,7 @@
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
 #include "mic_array_defines.h"
+#include "mic_array_conf.h"
 
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
@@ -153,81 +154,35 @@
 	ldaw t, sp[S_FIR_OFFSET];\
 	std r1, r0, t[SUM];\
 
-#if 0
-
 //r3 is the AUDIO_POINTER_INDEX
 #define APPLY_WINDOW_FN(P)\
-	ldaw r7, sp[S_SETTINGS_OFFSET];\
-	ldw r7, r7[S_WINDOWING_ENABLED];\
+	ldw r7, r0[S_WINDOWING_ENABLED];\
 	bf r7, no_windowing ## P;\
 	apply_windowing ## P:;\
 		ldw r4, r1[S_FRAME_SIZE_LOG2];\
-		{shl r6, r3, 1; mkmsk r4, r4};\
-		{bt r6, thing ## P ; mov r4, r3};\
-			sub r4, r4, r3;\
-		thing ## P:;\
-		{lss r6, r4, r6; ldc t, 31};\
-		{ldw r4, r7[r4]; ldc r7, 0};\
-		{ldw r5, r1[S_SUM_0+1];ldc r6, 0};\
-		maccs r7, r6, r5, r4;\
-		lextract s, r7, r6, t, 32;\
-		{ldc r7, 0};\
-		{ldw r5, r1[S_SUM_0+1];ldc r6, 0};\
-		maccs r7, r6, r5, r4;\
-		lextract t, r7, r6, t, 32;\
-		std t, s, r2[S_D_SECOND_STAGE_OUTPUT_01];\
-		{ldc r7, 0; ldc t, 31};\
-		{ldw r5, r1[S_SUM_1+1];ldc r6, 0};\
-		maccs r7, r6, r5, r4;\
-		lextract s, r7, r6, t, 32;\
-		{ldc r7, 0};\
-		{ldw r5, r1[S_SUM_2+1];ldc r6, 0};\
-		maccs r7, r6, r5, r4;\
-		lextract t, r7, r6, t, 32;\
-		std t, s, r2[S_D_SECOND_STAGE_OUTPUT_23];\
-		bu done_windowing ## P;\
-	no_windowing ## P:;\
-		ldaw r5, sp[S_FIR_OFFSET];\
-		ldw r6, r5[S_SUM_0+1];\
-		ldw r4, r5[S_SUM_1+1];\
-		std r4, r6, r2[S_D_SECOND_STAGE_OUTPUT_01];\
-		ldw r6, r5[S_SUM_2+1];\
-		ldw r4, r5[S_SUM_3+1];\
-		std r4, r6, r2[S_D_SECOND_STAGE_OUTPUT_23];\
-	done_windowing ## P:
-
-#else
-
-//r3 is the AUDIO_POINTER_INDEX
-#define APPLY_WINDOW_FN(P)\
-	ldaw r7, sp[S_SETTINGS_OFFSET];\
-	ldw r7, r7[S_WINDOWING_ENABLED];\
-	bf r7, no_windowing ## P;\
-	apply_windowing ## P:;\
-		ldw r4, r1[S_FRAME_SIZE_LOG2];\
-		{shl r6, r3, 1; mkmsk r4, r4};\
-		{bt r6, thing ## P ; mov r4, r3};\
-			sub r4, r4, r3;\
-		thing ## P:;\
-		{lss r6, r4, r6; ldc t, 31};\
-		{ldw r4, r7[r4]; ldc r7, 0};\
-		{ldw r5, r1[S_SUM_0+1];ldc r6, 0};\
-		maccs r7, r6, r5, r4;\
-		lextract s, r7, r6, t, 32;\
-		{ldc r7, 0};\
-		{ldw r5, r1[S_SUM_0+1];ldc r6, 0};\
-		maccs r7, r6, r5, r4;\
-		lextract t, r7, r6, t, 32;\
-		std t, s, r2[S_D_SECOND_STAGE_OUTPUT_01];\
-		{ldc r7, 0; ldc t, 31};\
-		{ldw r5, r1[S_SUM_1+1];ldc r6, 0};\
-		maccs r7, r6, r5, r4;\
-		lextract s, r7, r6, t, 32;\
-		{ldc r7, 0};\
-		{ldw r5, r1[S_SUM_2+1];ldc r6, 0};\
-		maccs r7, r6, r5, r4;\
-		lextract t, r7, r6, t, 32;\
-		std t, s, r2[S_D_SECOND_STAGE_OUTPUT_23];\
+		{shl r5, r3, 1; mkmsk t, r4};\
+		{lss r5, t, r5; ldc r6, 29};\
+		{bf r5, skip ## P ; mov r4, r3};\
+			sub r4, t, r3;\
+		skip ## P:;\
+		{ldw r4, r7[r4]; ldc s, 0};\
+		ldaw r7, sp[S_FIR_OFFSET];\
+		{ldw r5, r7[S_SUM_0+1];ldc t, 0};\
+		maccs s, t, r4, r5;\
+		lextract s, s, t, r6, 32;\
+		{stw s, r2[S_SECOND_STAGE_OUTPUT_0];ldc s, 0};\
+		{ldw r5, r7[S_SUM_1+1];ldc t, 0};\
+		maccs s, t, r4, r5;\
+		lextract s, s, t, r6, 32;\
+		{stw s, r2[S_SECOND_STAGE_OUTPUT_1];ldc s, 0};\
+		{ldw r5, r7[S_SUM_2+1];ldc t, 0};\
+		maccs s, t, r4, r5;\
+		lextract s, s, t, r6, 32;\
+		{stw s, r2[S_SECOND_STAGE_OUTPUT_2];ldc s, 0};\
+		{ldw r5, r7[S_SUM_3+1];ldc t, 0};\
+		maccs s, t, r4, r5;\
+		lextract s, s, t, r6, 32;\
+		{stw s, r2[S_SECOND_STAGE_OUTPUT_3];ldc s, 0};\
 		bu done_windowing ## P;\
 	no_windowing ## P:;\
 		ldaw r4, sp[S_FIR_OFFSET];\
@@ -245,33 +200,42 @@
 		std t, s, r2[S_D_SECOND_STAGE_OUTPUT_23];\
 	done_windowing ## P:
 
-#endif
 
 //r3 is the AUDIO_POINTER_INDEX
 #define UPDATE_MIN_MAX()\
 	nop
 
 //r3 is the AUDIO_POINTER_INDEX
-#define APPLY_BITREV_INDEX(P)\
-    apply_index_bitrev_ ## P:\
-	ldw r5, r1[S_INDEX_BITREVERSING_ENABLED];\
-	bt r5, index_update_complete ## P;\
-		{ldw r5, r1[S_FRAME_SIZE_LOG2]; ldc r4, 32};\
-		{bitrev r3, r3; sub r4, r4, r5};\
-		{shr r3, r3, r5};\
-	index_update_complete ## P:
+#define BITREV_INDEX()\
+	{ldw r5, r1[S_FRAME_SIZE_LOG2]; ldc r4, 32};\
+	{bitrev r3, r3; sub r4, r4, r5};\
+	{shr r3, r3, r4}
 
 //r3 is the AUDIO_POINTER_INDEX
-#define SAVE_SAMPLES(POINTER, P)\
-    	save_samples_to_frame_ ## P:\
+#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
 		ldw r4, r1[POINTER];\
 		ldd r6, r5, r2[S_D_SECOND_STAGE_OUTPUT_01];\
 		std r6, r5, r4[r3];\
-		{ldw r6, r1[S_FRAME_SIZE_LOG2]; ldc r5, 1};\
-		shr r6, r5, r6;\
+		{ldc r6, FRAME_SIZE_LOG2; ldc r5, 1};\
+		shl r6, r5, r6;\
 		add r3, r3, r6;\
 		ldd r6, r5, r2[S_D_SECOND_STAGE_OUTPUT_23];\
-		std r6, r5, r4[r3];\
+		std r6, r5, r4[r3]
+
+//r3 is the AUDIO_POINTER_INDEX
+#define SAVE_SAMPLES_NORMAL(POINTER)\
+    	{ldc r6, FRAME_SIZE_LOG2; ldc r5, 1};\
+    	{ldw r4, r1[POINTER];shl r5, r5, r6};\
+		ldd s, t, r2[S_D_SECOND_STAGE_OUTPUT_01];\
+		stw t, r4[r3];\
+		add r3, r3, r5;\
+		stw s, r4[r3]; \
+		add r3, r3, r5;\
+		ldd s, t, r2[S_D_SECOND_STAGE_OUTPUT_23];\
+		stw t, r4[r3]; \
+		add r3, r3, r5;\
+		stw s, r4[r3]
+
 
 //r3 is the AUDIO_POINTER_INDEX
 #define CLEAR_FIR_ACCUMULATORS() \
@@ -443,6 +407,21 @@ configure:	//This is the entry point if comming from a reconfigure
 	in r2, res[r4]		//get the pointer to the decimator_config
 	ldw r3, r2[0];		//r3 is the pointer to the decimator_config_common
 
+	/*
+	Initialise the stack regions:
+		- 	S_INPUT
+		- 	S_INTEGRAL
+		- 	S_COMB
+		- 	S_SECOND_STAGE_OUTPUT
+		- 	S_FIR_OFFSET
+	*/
+setup_stack_init:
+	ldc r6, (S_DC_ELIMINATE_OFFSET/2)-1
+	{ldaw r7, sp[0];ldc t, 0}
+init_loop:
+	std t, t, r7[r6]
+	{bt r6, init_loop ; sub r6, r6, 1}
+
 	//copy the setting out of the struct
 	ldaw r0, sp[S_FRAME_OFFSET]
 	ldw t, r3[0] //frame_size_log2
@@ -495,22 +474,6 @@ load_mic_gain_calib:
 	ldw r0, r2[5]
 	stw r0, r1[S_MIC_CALIB_3]
 
-	/*
-	Initialise the stack regions:
-		- 	S_INPUT
-		- 	S_INTEGRAL
-		- 	S_COMB
-		- 	S_DC_ELIMINATE
-		- 	S_SECOND_STAGE_OUTPUT
-	*/
-setup_stack_init:
-	ldc r1, ((S_FIR_OFFSET + S_COEFS)/2) - 1
-	{ldaw r3, sp[0];ldc t, 0}
-init_loop:
-	std t, t, r3[r1]
-	{bt r1, init_loop ; sub r1, r1, 1}
-
-
 init_fir_phase:
 	ldaw t, sp[S_FIR_OFFSET]
 	ldc r1, 0
@@ -520,6 +483,11 @@ init_frame_index:
 	ldaw t, sp[S_FRAME_OFFSET]
 	ldc r1, 0
 	stw r1, t[S_AUDIO_POINTER_0_INDEX]
+
+	ldw r1, t[S_FRAME_SIZE_LOG2]
+	{sub r1, r1, 1; ldc s, 1}
+	shl r1, s, r1
+	stw r1, t[S_AUDIO_POINTER_1_INDEX]
 	std r1, r1, t[S_D_FRAME_MIN_MAX_0]
 	std r1, r1, t[S_D_FRAME_MIN_MAX_1]
 
@@ -531,16 +499,24 @@ get_frame_pointer:
 	in r5, res[r2]
 	sub r5, r5, 1
 
-    rx_first_buffer:
+	bt r5, overlapping
+	non_overlapping:
+	    {in r1, res[r2];stw r5, t[S_OVERLAPPING_FRAMES]}
+	    {in r1, res[r2];stw r1, t[S_AUDIO_POINTER_0]}
+		stw r1, t[S_METADATA_POINTER_0]
+		bu confirm_init_complete
+	overlapping:
+	    {in r1, res[r2];}
+	    {in r1, res[r2];stw r1, t[S_AUDIO_POINTER_1]}
+		stw r1, t[S_METADATA_POINTER_1]
 	    {in r1, res[r2];stw r5, t[S_OVERLAPPING_FRAMES]}
 	    {in r1, res[r2];stw r1, t[S_AUDIO_POINTER_0]}
 		stw r1, t[S_METADATA_POINTER_0]
 
-	bf r5, ds_loop
-	rx_second_buffer:
-	    in r1, res[r2]
-	    {in r1, res[r2];stw r1, t[S_AUDIO_POINTER_1]}
-		stw r1, t[S_METADATA_POINTER_1]
+confirm_init_complete:
+	ldaw r1, sp[S_FRAME_OFFSET]
+	ldw r4, r1[S_C_OUTPUT]
+	outct res[r4], 8 //WARNING: do not change this
 
 ds_loop:
 input_sample_0:
@@ -576,6 +552,7 @@ input_sample_1:
 			DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, S_SECOND_STAGE_OUTPUT_2);
 			dc_offset_removal_3:
 			DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, S_SECOND_STAGE_OUTPUT_3);
+			//ecallt c_input
 			bu gain_compensation
 		skip_dc_offset_removal:
 			ldw r1, cp[g_cic_max]	//this should be 1<<(6+6*log(16)) = 1<<30
@@ -587,7 +564,6 @@ input_sample_1:
 			ldd r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_23]
 			{sub r2, r2, r1; sub r3, r3, r1}
 			std r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_23]
-
 		gain_compensation:
 		//apply gain compensation
 		ldaw r0, sp[S_SETTINGS_OFFSET]
@@ -661,32 +637,40 @@ input_sample_6:
 
 		APPLY_WINDOW_FN(0)
         //MIN_MAX(S_FRAME_MIN_0, S_FRAME_MAX_0, 0)
-		APPLY_BITREV_INDEX(0)
-		SAVE_SAMPLES(S_AUDIO_POINTER_0, 0);
+		ldw r5, r0[S_INDEX_BITREVERSING_ENABLED]
+		bt r5, index_bitrev_order_0
+			index_normal_order_0:
+				SAVE_SAMPLES_NORMAL(S_AUDIO_POINTER_0);
+				bu save_to_frame_complete_0
+			index_bitrev_order_0:
+				BITREV_INDEX();
+				SAVE_SAMPLES_BIT_REVERSED(S_AUDIO_POINTER_0);
+		save_to_frame_complete_0:
 
-		ldw r3, r1[S_OVERLAPPING_FRAMES]
-		bt r3, overlapping_frames
+		ldw r3, r1[S_AUDIO_POINTER_0_INDEX]
+		add r3, r3, 1
+		stw r3, r1[S_AUDIO_POINTER_0_INDEX]
+
+		ldw r4, r1[S_OVERLAPPING_FRAMES]
+		bt r4, overlapping_frames
 		no_overlapping_frames:
 
 			CLEAR_FIR_ACCUMULATORS()
 
 			//reset the S_D_AUDIO_POINTER_INDEX_0
-			ldw r3, r1[S_AUDIO_POINTER_0_INDEX]
-			add r3, r3, 1
+
 			ldw r4, r1[S_FRAME_SIZE_LOG2]
-			{shr r4, r3, r4;stw r3, r1[S_AUDIO_POINTER_0_INDEX]}
+			shr r4, r3, r4;
 			bf r4, input_sample_7
 
 				do_the_meta_data_stuff:
 				//set the metadata
-				/*
 				{ldd r3, r4, r1[S_D_FRAME_MIN_MAX_0]}
 		        ldw r5, r1[S_METADATA_POINTER_0]
 		        std r3, r4, r5[0];
 		        ldw r3, r1[S_FRAME_NUMBER]
 		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
 		        stw r3, r1[S_FRAME_NUMBER]      //and save the new frame number back
-*/
 
 				exchange_buffers:
 				//exchange_buffers
@@ -711,29 +695,37 @@ input_sample_6:
 		        //reset the frame min and max to 0
 				{std r4, r4, r1[S_D_FRAME_MIN_MAX_0]}
 
+				ldw r4, r1[S_C_OUTPUT]
+				outct res[r4], 8 //WARNING: do not change this
 
 				bu input_sample_7
 
 		overlapping_frames:
-			//audio_index = (1<<frame_size_log2)/2 + audio_index;
-			{ldw r4, r1[S_FRAME_SIZE_LOG2]; ldc r5, 1}
-			{ldw r3, r1[S_AUDIO_POINTER_0_INDEX]; sub r4, r4, 1}
-			shl r4, r5, r4
-			add r5, r3, r4
-			stw r5, r1[S_AUDIO_POINTER_1_INDEX]
 			//make sure index1 is in r3
+			ldw r3, r1[S_AUDIO_POINTER_1_INDEX]
 
 			APPLY_WINDOW_FN(1)
-       		//MIN_MAX(S_FRAME_MIN_0, S_FRAME_MAX_0, 1)
-			APPLY_BITREV_INDEX(1)
-			SAVE_SAMPLES(S_AUDIO_POINTER_1, 1);
+       		//MIN_MAX(S_FRAME_MIN_1, S_FRAME_MAX_1, 1)
+
+			ldw r5, r0[S_INDEX_BITREVERSING_ENABLED]
+			bt r5, index_bitrev_order_1
+				index_normal_order_1:
+					SAVE_SAMPLES_NORMAL(S_AUDIO_POINTER_1);
+					bu save_to_frame_complete_1
+				index_bitrev_order_1:
+					BITREV_INDEX();
+					SAVE_SAMPLES_BIT_REVERSED(S_AUDIO_POINTER_1);
+			save_to_frame_complete_1:
 
 			CLEAR_FIR_ACCUMULATORS()
 
-			ldw r3, r1[S_AUDIO_POINTER_0]
+			ldw r3, r1[S_AUDIO_POINTER_1_INDEX]
+			add r3, r3, 1
+			stw r3, r1[S_AUDIO_POINTER_1_INDEX]
+
 			ldw r4, r1[S_FRAME_SIZE_LOG2]
-			{add r3, r3, 1; sub r4, r4, 1}
 			shr r3, r3, r4
+			stop_again:
 			bf r3, input_sample_7
 			at_the_end_of_the_overlapping_half_frame:
 
@@ -761,16 +753,20 @@ input_sample_6:
 				ldd r3, r5, r1[S_D_AUDIO_POINTER_AND_INDEX_0]
 				std r3, r5, r1[S_D_AUDIO_POINTER_AND_INDEX_1]
 
-				ldd r3, r4, r1[S_D_FRAME_MIN_MAX_0]
-				std r3, r4, r1[S_D_FRAME_MIN_MAX_1]
+				ldd r3, r5, r1[S_D_FRAME_MIN_MAX_0]
+				std r3, r5, r1[S_D_FRAME_MIN_MAX_1]
 
-		        {in r3, res[r4];ldc r4, 0}
-		        {std r3, r4, r1[S_D_AUDIO_POINTER_AND_INDEX_0]}
+		        {in r3, res[r4];ldc r5, 0}
+		        {std r5, r3, r1[S_D_AUDIO_POINTER_AND_INDEX_0]}
 		        get_the_new_metadata_pointer2:
-		        in r3, res[r1]
+		        in r3, res[r4]
 		        {stw r3, r1[S_METADATA_POINTER_0]}
 		        //reset the frame min and max to 0
-				{std r4, r4, r1[S_D_FRAME_MIN_MAX_0]}
+				{std r5, r5, r1[S_D_FRAME_MIN_MAX_0]}
+
+
+				ldw r4, r1[S_C_OUTPUT]
+				outct res[r4], 8 //WARNING: do not change this
 
 
 input_sample_7:
