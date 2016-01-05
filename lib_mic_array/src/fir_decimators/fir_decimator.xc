@@ -1,4 +1,4 @@
-// Copyright (c) 2015, XMOS Ltd, All rights reserved
+// Copyright (c) 2016, XMOS Ltd, All rights reserved
 #include "mic_array_defines.h"
 const int fir_1_coefs[1][COEFS_PER_PHASE] = {
 {

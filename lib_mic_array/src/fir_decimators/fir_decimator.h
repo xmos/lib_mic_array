@@ -1,4 +1,4 @@
-// Copyright (c) 2015, XMOS Ltd, All rights reserved
+// Copyright (c) 2016, XMOS Ltd, All rights reserved
 #ifndef FIR_DECIMATE_H_
 #define FIR_DECIMATE_H_
 #include "mic_array_defines.h"
