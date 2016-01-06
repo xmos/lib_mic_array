@@ -1,4 +1,4 @@
-// Copyright (c) 2015, XMOS Ltd, All rights reserved
+// Copyright (c) 2016, XMOS Ltd, All rights reserved
 #ifndef MIC_ARRAY_H_
 #define MIC_ARRAY_H_
 
@@ -42,6 +42,7 @@ void pdm_rx_hires_delay(
         int64_t * unsafe shared_memory_array,
         unsigned memory_size_log2,
         streaming chanend c_sync);
+
 
 #define HIRES_DELAY_TAP_COUNT 2
 
@@ -128,6 +129,8 @@ typedef struct {
 
     int apply_mic_gain_compensation; /**< Set to non-zero to apply microphone gain compensation. */
 
+    int fir_gain_compensation; /**< 1.4.27 format for the gain compensation for the three satges of FIR. */
+
 } decimator_config_common;
 
 typedef struct {
@@ -137,6 +140,8 @@ typedef struct {
     int * unsafe data;    /**< The data for the FIR decimator */
 
     int mic_gain_compensation[4]; /**< An array describing the relative gain compensation to apply to the microphones. The microphone with the least gain is defined as 0xffffffff(MAX_INT), all others are given as MAX_INT*min_gain/current_mic_gain.*/
+
+    unsigned channel_count; /**< The count of enabled channels (0->4).  */
 
 } decimator_config;
 
