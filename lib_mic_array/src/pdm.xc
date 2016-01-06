@@ -1,4 +1,6 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #include <xs1.h>
+#include <stdint.h>
 
 const unsigned cic_mask = 0x7f7f7f7f;
 
@@ -74,12 +76,12 @@ void wait_for_mics_to_settle_down(){
 }
 
 extern void pdm_rx_asm(
-        in port p_pdm_mics,
+        in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1);
 
 void pdm_rx(
-        in port p_pdm_mics,
+        in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1){
 
@@ -90,46 +92,15 @@ void pdm_rx(
             c_4x_pdm_mic_0,c_4x_pdm_mic_1);
 }
 
-extern void pdm_rx_with_hires_delay_asm(
-        in port p_pdm_mics,
-        unsigned long long * unsafe shared_memory_array,
-        unsigned ch_memory_depth_log2,
-        streaming chanend c_sync,
-        streaming chanend c_4x_pdm_mic_0,
-        streaming chanend c_4x_pdm_mic_1);
-
-void pdm_rx_with_hires_delay(
-        in port p_pdm_mics,
-        unsigned long long * unsafe shared_memory_array,
-        unsigned ch_memory_depth_log2,
-        streaming chanend c_sync,
-        streaming chanend c_4x_pdm_mic_0,
-        streaming chanend c_4x_pdm_mic_1){
-
-    unsafe {
-        //assert(shared_memory_array);
-        for(unsigned i=0;i<(1<<ch_memory_depth_log2);i++)
-            shared_memory_array[i] = g_expand[0xff*(i&1)];
-    }
-
-    wait_for_mics_to_settle_down();
-
-    //This will never return
-    pdm_rx_with_hires_delay_asm(
-            p_pdm_mics, shared_memory_array,
-            ch_memory_depth_log2, c_sync,
-            c_4x_pdm_mic_0,c_4x_pdm_mic_1);
-}
-
-extern void pdm_rx_only_hires_delay_asm(
-        in port p_pdm_mics,
-        unsigned long long * unsafe shared_memory_array,
+extern void pdm_rx_hires_delay_asm(
+        in buffered port:32 p_pdm_mics,
+        int64_t * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync);
 
-void pdm_rx_only_hires_delay(
-        in port p_pdm_mics,
-        unsigned long long * unsafe shared_memory_array,
+void pdm_rx_hires_delay(
+        in buffered port:32 p_pdm_mics,
+        int64_t * unsafe shared_memory_array,
         unsigned ch_memory_depth_log2,
         streaming chanend c_sync){
 
@@ -142,7 +113,7 @@ void pdm_rx_only_hires_delay(
     wait_for_mics_to_settle_down();
 
     //This will never return
-    pdm_rx_only_hires_delay_asm(
+    pdm_rx_hires_delay_asm(
             p_pdm_mics, shared_memory_array,
             ch_memory_depth_log2, c_sync);
 }
