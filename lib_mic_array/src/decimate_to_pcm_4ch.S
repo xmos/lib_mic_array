@@ -560,7 +560,7 @@ post_process:
 		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, r3, SHIFT);
 		sub r3, r3, r6
 	dc_offset_removal_complete:
-/*
+
 #define COMP(REG)\
 	{ldc r5, 0; ldc r6, 0};\
 	maccs r5, r6, REG, r4;\
@@ -570,6 +570,7 @@ post_process:
 	//FIR gain compensation
 	fir_compensation:	// This normally turns the volume up to compensate for the FIR
 	ldw r4, sp[S_FIR_GAIN_COMP]  //load the fir gain comp, it is in 1.4.27 format
+	bf r4, gain_compensation
 	{ldc r7, 27}
 	COMP(r0)
 	COMP(r1)
@@ -602,7 +603,8 @@ post_process:
 		maccs r8, r9, r3, r6
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
-*/
+
+
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
@@ -626,9 +628,11 @@ post_process:
 		ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
 		bt r5, index_bitrev_order_0
 			index_normal_order_0:
+				//TODO only save active channels
 				SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0);
 				bu save_to_frame_complete_0
 			index_bitrev_order_0:
+				//TODO only save active channels
 				BITREV_INDEX();
 				SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0);
 		save_to_frame_complete_0:
@@ -818,11 +822,11 @@ divide_by_four:
 	{dualentsp 1; eq r9, r8, 4}
 	ldaw r11, cp[g_second_fir]
 
-	//{bt r9, decimate_to_pcm_4ch_0; eq r9, r8, 3}
-	//{bt r9, decimate_to_pcm_4ch_1; eq r9, r8, 2}
-	//{bt r9, decimate_to_pcm_4ch_2; eq r9, r8, 1}
-	//{bt r9, decimate_to_pcm_4ch_3;}
-	//bu divide_by_four_complete
+	{bt r9, decimate_to_pcm_4ch_0; eq r9, r8, 3}
+	{bt r9, decimate_to_pcm_4ch_1; eq r9, r8, 2}
+	{bt r9, decimate_to_pcm_4ch_2; eq r9, r8, 1}
+	{bt r9, decimate_to_pcm_4ch_3;}
+	bu divide_by_four_complete
 
 	//r11 = coefs, r10 = pointer to where to put result, r7 = data, r6 = THIRD_STAGE_COEFS_PER_STAGE*sizeof(int)
 decimate_to_pcm_4ch_0:
