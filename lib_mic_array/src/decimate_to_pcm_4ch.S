@@ -560,7 +560,7 @@ post_process:
 		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, r3, SHIFT);
 		sub r3, r3, r6
 	dc_offset_removal_complete:
-
+/*
 #define COMP(REG)\
 	{ldc r5, 0; ldc r6, 0};\
 	maccs r5, r6, REG, r4;\
@@ -602,7 +602,7 @@ post_process:
 		maccs r8, r9, r3, r6
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
-
+*/
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
