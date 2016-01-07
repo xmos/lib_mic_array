@@ -8,7 +8,7 @@
 #define fir0                 r5
 #define fir1                 r6
 #define fir2                 r7
-#define temp_two              r8
+#define temp_two             r8
 #define c			     	 r9
 #define p                 	 r10
 #define t                 	 r11
@@ -33,8 +33,6 @@
 #define OUTPUT(I, C)\
 	{out res[C], a; ldc c, I}
 
-#define NOUTPUT(I, C)\
-	{nop; ldc c, I}
 
 .cc_top pdm_rx_asm.function
 .globl	pdm_rx_asm
@@ -70,6 +68,8 @@ pdm_rx_asm://(
 //2604ns per loop
 	.align 8
 pdm_rx_loop:
+//about 6 inst spare without optimisation
+
 	ldw a, sp[15]
 	in b, res[a]
 	in a, res[a]
@@ -97,8 +97,6 @@ pdm_rx_loop:
 	FIR();
 	{out res[c_two], temp_two}
 	OUTPUT(0, c_two)
-
-//about 100 inst spare
 
 	ldd a, b, p[4]
 	std a, b, p[5]
