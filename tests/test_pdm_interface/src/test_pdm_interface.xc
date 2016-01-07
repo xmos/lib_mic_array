@@ -18,9 +18,10 @@ int main(){
     par {
         pdm_rx_debug(c_port, c, d);
         {
+            //for(unsigned i=0;i<12;i++) c_port <: 0x00000000;
 
-            c_port <: 0x000000ff;   //TODO check that this is representitive of the port and that this is
-            c_port <: 0x00000000;   //     not backwards.
+            c_port <: 0x000000ff;
+            c_port <: 0x00000000;
             for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
 
             c_port <: 0x0000ff00;
@@ -50,7 +51,6 @@ int main(){
             c_port <: 0x00000000;
             c_port <: 0xff000000;
             for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
-
         }
         {
            for(unsigned o=0;o<8;o++){
@@ -70,12 +70,10 @@ int main(){
                             printf("Error: not all channels are the same\n");
                     }
 
-                    unsigned index = (o + s*8);
-
-                    printf("%d %d \n", t + 1968382578 , 2*fir1_debug[index]);
-
-                   // if(v != fir1_debug[index])
-                     //   printf("Error: coef incorrect, delta: %d\n", v - fir1_debug[index]);
+                    unsigned index = (7-o + s*8);
+                    int d =  (t + 1968382570)/2 - fir1_debug[index];
+                    if(d*d>1)
+                        printf("Error: coef incorrect, delta: %d\n", v - fir1_debug[index]);
                }
             }
             printf("Success!\n");

@@ -9,10 +9,10 @@ on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 //This sets the FIR decimation factor.
-#define DF 3
+#define DF 6
 
-int data_0[4*COEFS_PER_PHASE*DF] = {0};
-int data_1[4*COEFS_PER_PHASE*DF] = {0};
+int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 
 void example(streaming chanend c_pcm_0,
@@ -21,9 +21,9 @@ void example(streaming chanend c_pcm_0,
     unsigned buffer;
     unsigned decimation_factor=DF;
     unsafe{
-        decimator_config_common dcc = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], 0};
-        decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
-        decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
+        decimator_config_common dcc = {FRAME_SIZE_LOG2, 1, 0, 0, DF, g_third_16kHz_fir, 0, 0};
+        decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4};
+        decimator_config dc1 = {&dcc, data_1,{INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4};
         decimator_configure(c_pcm_0, c_pcm_1, dc0, dc1);
     }
 

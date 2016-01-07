@@ -85,7 +85,7 @@ void test_output(streaming chanend c_ds_output_0, streaming chanend c_ds_output_
             }
             default:break;
         }
-        int output = current -> data[1][0];
+        int output = current -> data[0][0];
         output *= gain;
         c_audio <: output;
         c_audio <: output;
@@ -145,7 +145,7 @@ int main(){
     i2c_master_if i_i2c[1];
     chan c_audio;
     par{
-
+#if 1
         on tile[1]: {
           configure_clock_src(mclk, p_mclk_in1);
           start_clock(mclk);
@@ -154,7 +154,7 @@ int main(){
 
         on tile[1]:  [[distribute]]i2c_master_single_port(i_i2c, 1, p_i2c, 100, 0, 1, 0);
         on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], c_audio);
-#if 0
+
         on tile[0]: {
             streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
             streaming chan c_ds_output_0, c_ds_output_1;
@@ -189,15 +189,15 @@ int main(){
                 while(1){
                     int i;
                     c_4x_pdm_mic_0 :> i;
-                    c_4x_pdm_mic_0 :> i;
                     xscope_int(0, i);
+                    c_4x_pdm_mic_0 :> i;
                     c_4x_pdm_mic_0 :> i;
                     c_4x_pdm_mic_0 :> i;
 
                 }
                 while(1)
                     c_4x_pdm_mic_1 :> int;
-                par(int i=0;i<5;i++)while(1);
+               // par(int i=0;i<5;i++)while(1);
             }
         }
 #endif

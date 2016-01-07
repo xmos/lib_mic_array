@@ -531,7 +531,6 @@ post_process:
 
 	bt r8, output_phase
 	bf r10, process_phase
-
 	retsp 0
 
 	process_phase:
@@ -581,9 +580,7 @@ post_process:
 
 	gain_compensation:	// This always turns the volume down
 	ldaw r4, sp[S_SETTINGS_OFFSET]
-	ldw r4, r4[S_MIC_GAIN_COMP]		//TODO if 0 then don't do this
-									//	   if 1 then manual gain comp
-									//     if 2 then auto gain comp
+	ldw r4, r4[S_MIC_GAIN_COMP]
 	bf r4, gain_comp_complete
 	apply_mic_gain_compensation:
 		ldaw r4, sp[S_MIC_CALIB_OFFSET]
@@ -603,7 +600,6 @@ post_process:
 		maccs r8, r9, r3, r6
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
-
 
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
@@ -767,7 +763,6 @@ post_process:
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
-
 
 	ldc r10, 0
 	//set S_THIRD_STAGE_PHASE to 0

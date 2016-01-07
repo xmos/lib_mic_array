@@ -1,35 +1,10 @@
-
 #include "mic_array.h"
-#include <limits.h>
 #include <stdio.h>
 #include <xs1.h>
 #include <xclib.h>
 #include <math.h>
 #include <stdlib.h>
 #include <print.h>
-
-static int pseudo_random(unsigned &x){
-    crc32(x, -1, 0xEB31D82E);
-    return (int)x;
-}
-
-#define TEST_SEQUENCE_LENGTH 4096
-
-
-static int filter2(int coefs[], int data[], const unsigned length, const int val, unsigned &n){
-    long long y = 0;
-    data[n] = val;
-    for (unsigned i=0; i<length; i++)
-        y += (long long)coefs[i] * (long long)data[((length - i) + n) % length];
-    //n = (n + 1) % length;
-    if((n+1) == length){
-        n=0;
-    } else {
-        n++;
-    }
-    return y>>31;
-}
-
 
 static int filter(int coefs[], int data[], const unsigned length, const int val, unsigned &n){
     long long y = 0;
@@ -181,15 +156,15 @@ void verifier(streaming chanend c_model,
 
         if(a > max){
             max = a;
-            printf("%12d %12d %12d\n", min, max, diff);
+            printf("%12d %12d %12d\n", min, max, max_diff);
         }
         if(a < min){
             min = a;
-            printf("%12d %12d %12d\n", min, max, diff);
+            printf("%12d %12d %12d\n", min, max, max_diff);
         }
         if(diff > max_diff){
             max_diff = diff;
-            printf("%12d %12d %12d\n", min, max, diff);
+            printf("%12d %12d %12d\n", min, max, max_diff);
         }
     }
 #endif

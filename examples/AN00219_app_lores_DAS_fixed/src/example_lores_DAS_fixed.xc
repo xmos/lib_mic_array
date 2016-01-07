@@ -16,7 +16,7 @@
 #include "i2c.h"
 #include "i2s.h"
 
-#define DF 1    //Decimation Factor
+#define DF 2    //Decimation Factor
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
@@ -80,8 +80,8 @@ static void set_dir(client interface led_button_if lb, unsigned dir, unsigned de
     }
 }
 
-int data_0[4*COEFS_PER_PHASE*DF] = {0};
-int data_1[4*COEFS_PER_PHASE*DF] = {0};
+int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 
 void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
@@ -100,11 +100,10 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
     unsigned dir = 0;
     set_dir(lb, dir, delay);
 
-    unsigned decimation_factor=DF;
     unsafe{
-        decimator_config_common dcc = {FRAME_SIZE_LOG2, 1, 0, 0, decimation_factor, fir_coefs[decimation_factor], 0};
-        decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
-        decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
+        decimator_config_common dcc = {FRAME_SIZE_LOG2, 1, 0, 0, DF, g_third_48kHz_fir, 0, 0};
+        decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4};
+        decimator_config dc1 = {&dcc, data_1,{INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4};
         decimator_configure(c_ds_output_0, c_ds_output_1, dc0, dc1);
     }
 
@@ -178,9 +177,8 @@ void lores_DAS_fixed(streaming chanend c_ds_output_0, streaming chanend c_ds_out
     }
 }
 
-#define DF 1
 
-#define OUTPUT_SAMPLE_RATE (48000/DF)
+#define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
 
 [[distributable]]
