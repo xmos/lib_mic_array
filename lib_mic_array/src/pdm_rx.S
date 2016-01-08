@@ -1,3 +1,4 @@
+// Copyright (c) 2016, XMOS Ltd, All rights reserved
 	.section	.dp.data,"awd",@progbits
 	.text
 #define temp_one 			 r0
@@ -130,3 +131,29 @@ pdm_rx_loop:
 	.globl	pdm_rx_asm.maxtimers
 	.set	pdm_rx_asm.maxchanends,0
 	.globl	pdm_rx_asm.maxchanends
+
+
+	.cc_top pdm_rx_hires_delay.function
+.globl	pdm_rx_hires_delay
+.align	4
+.type	pdm_rx_hires_delay,@function
+pdm_rx_hires_delay:
+.issue_mode dual
+	DUALENTSP_lu6 STACKWORDS
+	{ecallf r0;ecallt r0}
+	retsp 0
+.pdm_rx_hires_delay_tmp:
+	.size	pdm_rx_hires_delay, .pdm_rx_hires_delay_tmp-pdm_rx_hires_delay
+	.align	4
+	.cc_bottom pdm_rx_hires_delay.function
+
+	.set	pdm_rx_hires_delay.nstackwords, 0
+	.globl	pdm_rx_hires_delay.nstackwords
+	.set	pdm_rx_hires_delay.maxcores,1
+	.globl	pdm_rx_hires_delay.maxcores
+	.set	pdm_rx_hires_delay.maxtimers,0
+	.globl	pdm_rx_hires_delay.maxtimers
+	.set	pdm_rx_hires_delay.maxchanends,0
+	.globl	pdm_rx_hires_delay.maxchanends
+
+
