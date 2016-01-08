@@ -194,6 +194,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.xc.compiler.input.1903522320" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
@@ -516,6 +517,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.c.compiler.input.c.520656089" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
@@ -843,6 +845,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.1099448823" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>

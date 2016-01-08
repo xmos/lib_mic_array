@@ -95,7 +95,7 @@ pdm_rx_loop:
 	{out res[c_one], temp_one}
 	OUTPUT(7, c_one)	//output unused0 then this to c_one
 	FIR();
-	{out res[c_two], temp_two}
+	{out res[c_two], temp_two}	//TODO move the output of channel one to here to synchronise the threads
 	OUTPUT(0, c_two)
 
 	ldd a, b, p[4]
@@ -105,8 +105,8 @@ pdm_rx_loop:
 	std a, b, p[4]
 
 	ldd a, b, p[2]
-	{bitrev b, a; bitrev a, b}
-	{byterev b, a; byterev a, b}
+	{bitrev a, a; bitrev b, b}
+	{byterev a, a; byterev b, b}
 	std a, b, p[3]
 
 	ldd a, b, p[1]
