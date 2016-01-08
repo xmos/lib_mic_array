@@ -70,18 +70,16 @@ and connects an application to it::
   
   int main() {
      par {
-        streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
+        streaming chan c_pdm_to_pcm0, c_pdm_to_pcm1;
         streaming chan c_ds_output_0, c_ds_output_1;
     
         //setup the p_pdm_mics clocking here
     
-    	//setup the decimator configuration here
-    
         par {
-            pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-            decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0);
-            decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1);
-            application(c_ds_output_0, c_ds_output_1,);
+            pdm_rx(p_pdm_mics, c_pdm_to_pcm0, c_pdm_to_pcm1);
+            decimate_to_pcm_4ch(c_pdm_to_pcm0, c_ds_output_0);
+            decimate_to_pcm_4ch(c_pdm_to_pcm1, c_ds_output_1);
+            application(c_ds_output_0, c_ds_output_1);
         }
     }
     return 0;
@@ -105,15 +103,13 @@ an application to it::
      
         hires_delay_config hrd_config;
         hires_delay_config * unsafe config = &hrd_config;
-        streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
+        streaming chan c_pdm_to_pcm0, c_pdm_to_pcm1;
         streaming chan c_ds_output_0, c_ds_output_1;
         streaming chan c_sync;
         int64_t shared_memory[PDM_BUFFER_LENGTH] = {0};
         int64_t * unsafe p_shared_memory = shared_memory;
     
         //setup the p_pdm_mics clocking here
-    
-    	//setup the decimator configuration here
     
     	//setup high resolution delay config here
     
@@ -136,11 +132,20 @@ an application to it::
     return 0;
   }
 
+``mic_array_conf.h``
+--------------------
+An application if ``lib_mic_array`` must contain the header ``mic_array_conf.h``. This header must define:
+   * MAX_FRAME_SIZE_LOG2 - This defines the maximum frame size log 2 that the application could request to use.
+                           The application may request frame sizes from 0 to ``MAX_FRAME_SIZE_LOG2``. 
+                           This should be kept to the minimum requried as it governs the memory required for 
+                           a frame.
+Optionally `mic_array_conf.h`` may define
+   * DC_OFFSET_DIVIDER_LOG2 - 
 
 Frames
 ------
-The four channel deciamtors output frames of either raw audio or audio prepared for an FFT.
-The define ``FRAME_SIZE_LOG2`` (found in ``mic_array_conf.h``) is a uniquely defined integer 
+The four channel deciamtors output frames of either raw audio or audio prepared for an FFT (or otherwise).
+The define ``MAX_FRAME_SIZE_LOG2`` (found in ``mic_array_conf.h``) is a uniquely defined integer 
 used to allocate the memory for the frames. This means that all frames structures will allocate 
 enough memory to allow for a frame size of two to the power of ``FRAME_SIZE_LOG2`` regardless 
 of the size used in the ``decimator_config_common``. It is recommended that the 

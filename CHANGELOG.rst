@@ -1,6 +1,12 @@
 Microphone array library change log
 ===================================
 
+
+0.0.3
+-----
+
+  * Complete rewrite
+
 0.0.2
 -----
 

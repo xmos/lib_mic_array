@@ -7,9 +7,9 @@
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
 
-.xtacommand "add exclusion configure","", __FILE__, __LINE__
 .xtacommand "analyse endpoints input_0_0 input_1_0","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+
 .xtacommand "analyse endpoints input_1_0 input_2_0","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 .xtacommand "analyse endpoints input_2_0 input_3_0","", __FILE__, __LINE__
@@ -146,7 +146,7 @@
 #define S_MIC_GAIN_COMP		 			4
 #define S_SETTINGS_SIZE					6
 
-//This must be
+//This must be an even number
 #define STACKWORDS 						(S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
 
 
@@ -220,14 +220,18 @@
 	std r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
 	std r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]
 
+
+#ifndef DC_OFFSET_DIVIDER_LOG2
+	#define DC_OFFSET_DIVIDER_LOG2 13
+#endif
 // r4 is used as a zero for the first lsub as the
 // lower bit is always a zero
-#define DC_OFFSET_REMOVAL(PREV_Y, REGISTER, DC_SHIFT) \
+#define DC_OFFSET_REMOVAL(PREV_Y, REGISTER) \
 	ldd r6, r5, r4[PREV_Y];\
 	ashr r7, r6, 1;\
 	ashr r8, REGISTER, 1;\
-	{sub r7, r7, r8; ldc r9, 32 - DC_SHIFT};\
-	{shl r8, r7, r9; ldc r9, DC_SHIFT};\
+	{sub r7, r7, r8; ldc r9, 32 - DC_OFFSET_DIVIDER_LOG2};\
+	{shl r8, r7, r9; ldc r9, DC_OFFSET_DIVIDER_LOG2};\
 	ashr r7, r7, r9;\
 	lsub r8, r5, r5, r8, r4;\
 	lsub r8, r6, r6, r7, r8;\
@@ -272,7 +276,7 @@
 #define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
 		ldw r7, r4[POINTER];\
 		std r1, r0, r7[r6];\
-		{ldc r0, FRAME_SIZE_LOG2; ldc r1, 1};\
+		{ldc r0, MAX_FRAME_SIZE_LOG2; ldc r1, 1};\
 		shl r1, r1, r0;\
 		add r0, r0, r1;\
 		std r3, r2, r7[r0]
@@ -280,7 +284,7 @@
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #define SAVE_SAMPLES_NORMAL(POINTER)\
-    	{ldc r5, 4<<FRAME_SIZE_LOG2};\
+    	{ldc r5, 4<<MAX_FRAME_SIZE_LOG2};\
     	{ldw r7, r4[POINTER]};\
     	{ldaw r7, r7[r6]};\
 		{stw r0, r7[0];add r7, r7, r5};\
@@ -304,14 +308,10 @@ decimate_to_pcm_4ch:
 	//Set the dp to point to the data area for the second stage FIR
 	ldaw dp, sp[S_SECOND_STAGE_DATA]
 
-	//TODO remove this when the stack of definatly aligned
-	//ldaw r1, sp[S_SECOND_STAGE_DATA]
-	//zext r1, 3
-	//ecallt r1
-
 	outct res[r1], 8		//we say we are ready
 	inct r2, res[r1]		//they say CONFIGURE_DECIMATOR
 
+	//TODO initialise the DC offset removal
 
 configure:
 	//Initialise the stack -- TODO optimise this
@@ -544,19 +544,18 @@ post_process:
 	ldaw r4, sp[S_SETTINGS_OFFSET]
 	ldw r4, r4[S_DC_OFFSET_REMOVAL_ENABLED]
 	bf r4, dc_offset_removal_complete
-		#define SHIFT 13
 		ldaw r4, sp[S_DC_ELIMINATE]
 		dc_offset_removal_ch0:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, r0, SHIFT);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, r0);
 		sub r0, r0, r6
 		dc_offset_removal_ch1:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, r1, SHIFT);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, r1);
 		sub r1, r1, r6
 		dc_offset_removal_ch2:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, r2, SHIFT);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, r2);
 		sub r2, r2, r6
 		dc_offset_removal_ch3:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, r3, SHIFT);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, r3);
 		sub r3, r3, r6
 	dc_offset_removal_complete:
 
@@ -967,6 +966,85 @@ decimate_to_pcm_4ch_fir_impl:
 	.size	decimate_to_pcm_4ch_fir_impl, .Ldecimate_to_pcm_4ch_fir_impl_tmp-decimate_to_pcm_4ch_fir_impl
 	.cfi_endproc
 
+
+//endpoint section
+#define STRINGIZE(S) #S
+
+#define EP_MARCO(ID0, ID1) \
+	.ascii	STRINGIZE( input_ ## ID0 ## _ ## ID1 ## _ep ) ;\
+	.byte	0 ;\
+	.ascii	__FILE__ ;\
+	.byte	0 ;\
+	.long	__LINE__ ;\
+	.long	.Laddr_end ## ID0 ## _ ## ID1 -.Laddr_start ## ID0 ## _ ## ID1 ;\
+	.Laddr_start ## ID0 ## _ ## ID1 : ;\
+	.cc_top cc_ ## ID0 ## _ ## ID1,input_ ## ID0 ## _ ## ID1;\
+	.long	input_ ## ID0 ## _ ## ID1 ;\
+	.byte	0 ;\
+	.cc_bottom cc_ ## ID0 ## _ ## ID1 ;\
+	.Laddr_end ## ID0 ## _ ## ID1 :
+
+#define EPT_MARCO(ID0, ID1) \
+.cc_top cc_a ## ID0 ## _ ## ID1,input_ ## ID0 ## _ ## ID1;\
+	.ascii	"";\
+	.byte	0;\
+	.long	0;\
+	.long	input_ ## ID0 ## _ ## ID1;\
+.cc_bottom cc_a ## ID0 ## _ ## ID1
+
+ /*
+	.section	.xtaendpoint,"",@progbits
+.Lentries_start0:
+	.long	.Lentries_end0-.Lentries_start0
+	.long	1
+	.ascii	".build"
+    .byte	0
+
+	EP_MARCO(0, 0)
+	EP_MARCO(1, 0)
+	EP_MARCO(2, 0)
+	EP_MARCO(3, 0)
+	EP_MARCO(4, 0)
+	EP_MARCO(5, 0)
+	EP_MARCO(6, 0)
+	EP_MARCO(7, 0)
+	EP_MARCO(0, 1)
+	EP_MARCO(1, 1)
+	EP_MARCO(2, 1)
+	EP_MARCO(3, 1)
+	EP_MARCO(4, 1)
+	EP_MARCO(5, 1)
+	EP_MARCO(6, 1)
+	EP_MARCO(7, 1)
+.Lentries_end0:
+
+	.section	.xtaendpointtable,"",@progbits
+.Lentries_start1:
+	.long	.Lentries_end1-.Lentries_start1
+	.long	0
+	.ascii	""
+	.byte	0
+	EPT_MARCO(0, 0)
+	EPT_MARCO(1, 0)
+	EPT_MARCO(2, 0)
+	EPT_MARCO(3, 0)
+	EPT_MARCO(4, 0)
+	EPT_MARCO(5, 0)
+	EPT_MARCO(6, 0)
+	EPT_MARCO(7, 0)
+	EPT_MARCO(0, 1)
+	EPT_MARCO(1, 1)
+	EPT_MARCO(2, 1)
+	EPT_MARCO(3, 1)
+	EPT_MARCO(4, 1)
+	EPT_MARCO(5, 1)
+	EPT_MARCO(6, 1)
+	EPT_MARCO(7, 1)
+.Lentries_end1:
+*/
+
+
+
 //This is for testing the DC offset elimination
 //int dc_eliminate_tester(int x, long long y)
 .globl	dc_eliminate_tester
@@ -985,7 +1063,7 @@ dc_eliminate_tester:
 	std r8, r9, sp[4]
 	std r10, r11, sp[5]
 
-	DC_OFFSET_REMOVAL(0, r0, 13);
+	DC_OFFSET_REMOVAL(0, r0);
 	retsp 12
 	.cc_bottom dc_eliminate_tester.function
 	.set	dc_eliminate_tester.nstackwords, 12

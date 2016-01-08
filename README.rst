@@ -17,16 +17,15 @@ Features
 ........
 
 The microphone array library has the following features:
-
-  * Configurability of:
-  
-     - Output sample rate,
-     - Frame size.
-
-  * Supports:
-  
-     - up to 3.072MHz input sample rate,
-	 - High resolution microphone specific delay lines.
+  - 48kHz, 24kHz, 16kHz, 12kHz and 8kHz output sample rate by default, 
+  - 1-16 PDM interfaces per tile,
+  - Minimum of 100dBs of signal to noise for all output sample frequencies,
+  - Framing,
+  - Windowing and sample index bit reversal within a frame,
+  - Individual microphone gain compensation,
+  - DC bias removal,
+  - Up to 3.072MHz input sample rate,
+  - High resolution microphone specific delay lines.
 
 Components
 ...........

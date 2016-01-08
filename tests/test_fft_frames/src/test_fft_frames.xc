@@ -17,31 +17,32 @@ on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 //This sets the FIR decimation factor.
-#define DF 3
+#define DF 6
 
-int data_0[4*COEFS_PER_PHASE*DF] = {0};
-int data_1[4*COEFS_PER_PHASE*DF] = {0};
+int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_complex audio[2];
 
-void example(streaming chanend c_pcm_0,
-        streaming chanend c_pcm_1,
+void example(streaming chanend c_ds_output[2],
         client interface led_button_if lb){
     unsigned buffer;
-    unsigned decimation_factor=DF;
+
     unsafe{
-        decimator_config_common dcc = {FRAME_SIZE_LOG2, 1,1, 0, decimation_factor, fir_coefs[decimation_factor], 1};
-        decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
-        decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}};
-        decimator_configure(c_pcm_0, c_pcm_1, dc0, dc1);
+        decimator_config_common dcc = {MAX_FRAME_SIZE_LOG2, 1, 0, 0, DF, g_third_16kHz_fir, 0, 0};
+        decimator_config dc[2] = {
+                {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
+                {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+        };
+        decimator_configure(c_ds_output, 2, dc);
     }
-    decimator_init_complex_frame(c_pcm_0, c_pcm_1, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
+    decimator_init_complex_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
 
     timer t;
     unsigned time;
     t:> time;
     while(1){
 
-        frame_complex *  current = decimator_get_next_complex_frame(c_pcm_0, c_pcm_1, buffer, audio);
+        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, audio, 2);
 
         int max = current->metadata[0].max;
         if( current->metadata[1].max > current->metadata[0].max) max= current->metadata[1].max;
@@ -50,13 +51,13 @@ void example(streaming chanend c_pcm_0,
         unsigned shift = clz(max) - 1;
         for(unsigned i=0;i<4;i++){
 
-            for(unsigned j=0;j<(1<<FRAME_SIZE_LOG2);j++){
+            for(unsigned j=0;j<(1<<MAX_FRAME_SIZE_LOG2);j++){
                 current->data[i][j].re <<=shift;
                 current->data[i][j].im <<=shift;
             }
 
-            lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], (1<<FRAME_SIZE_LOG2), lib_dsp_sine_2048);
-            lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FRAME_SIZE_LOG2);
+            lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], (1<<MAX_FRAME_SIZE_LOG2), lib_dsp_sine_2048);
+            lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], MAX_FRAME_SIZE_LOG2);
         }
 
         select {
@@ -76,7 +77,7 @@ void example(streaming chanend c_pcm_0,
                 uint32_t max =0;
                 unsigned best =0;
 
-                for(unsigned i=0;i<(1<<(FRAME_SIZE_LOG2-1));i++){
+                for(unsigned i=0;i<(1<<(MAX_FRAME_SIZE_LOG2-1));i++){
                     int re = current->data[0][i].re>>17;
                     int im = current->data[0][i].im>>17;
                     int mag = re*re + im*im;
@@ -85,7 +86,7 @@ void example(streaming chanend c_pcm_0,
                         best = i;
                     }
                 }
-                printf("%d\n", (best * 48000/DF)>>FRAME_SIZE_LOG2);
+                printf("%d\n", (best * 48000/DF)>>MAX_FRAME_SIZE_LOG2);
                 break;
             }
         }
@@ -96,7 +97,7 @@ int main(){
     par{
         on tile[0]:{
             streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
-            streaming chan c_ds_output_0, c_ds_output_1;
+            streaming chan c_ds_output[2];
 
             interface led_button_if lb;
 
@@ -108,9 +109,9 @@ int main(){
             par{
                 button_and_led_server(lb, leds, p_buttons);
                 pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1);
-                example(c_ds_output_0, c_ds_output_1, lb);
+                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+                example(c_ds_output,lb);
                 while(1);
                 while(1);
                 while(1);
