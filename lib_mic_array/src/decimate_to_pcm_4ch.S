@@ -331,6 +331,7 @@ take_config_from_application:
 //copy the setting out of the struct
 	ldaw r0, sp[S_FRAME_OFFSET]
 	ldw r11, r3[0] //frame_size_log2
+	here_is_frame_size_log2:
 	stw r11, r0[S_FRAME_SIZE_LOG2]
 
 	ldaw r0, sp[S_SETTINGS_OFFSET]
