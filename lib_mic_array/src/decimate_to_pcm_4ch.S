@@ -315,8 +315,9 @@ decimate_to_pcm_4ch:
 	//TODO initialise the DC offset removal
 
 configure:
+	DUALENTSP_lu6 0
 	//Initialise the stack -- TODO optimise this
-	ldc r0, (S_DC_ELIMINATE - S_SECOND_STAGE_DATA)/2
+	ldc r0, (S_SETTINGS_OFFSET - S_SECOND_STAGE_DATA)/2
 	{ldaw r1, sp[S_SECOND_STAGE_DATA];ldc r2, 0}
 stack_init_loop:
 	std r2, r2, r1[r0]
@@ -404,6 +405,7 @@ get_frame_pointer:
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
 		stw r1, r11[S_METADATA_POINTER_0]
 		bu setup_phase_counters
+
 	overlapping:
 	    {in r1, res[r2];}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
