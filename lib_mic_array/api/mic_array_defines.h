@@ -7,6 +7,5 @@
 #define PDM_BUFFER_LENGTH_LOG2  (10)
 #define PDM_BUFFER_LENGTH  ((1<<PDM_BUFFER_LENGTH_LOG2)*MAX_NUM_CHANNELS) / sizeof(unsigned long long)
 
-//#define MAX_DECIMATION_FACTOR 12
 
 #endif /* DEFINES_H_ */

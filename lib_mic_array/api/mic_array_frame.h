@@ -30,19 +30,19 @@ typedef struct {
 /** A frame of raw audio.*/
 typedef struct {
     int32_t data[MAX_NUM_MICS][1<<MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
-    s_metadata metadata[2];
+    s_metadata metadata[2]; /**< Frame metadata*/
 } frame_audio;
 
 /** A frame of frequency domain audio in Cartesian coordinates.*/
 typedef struct {
-    complex data[MAX_NUM_MICS/2][1<<MAX_FRAME_SIZE_LOG2];
-    s_metadata metadata[2];
+    complex data[MAX_NUM_MICS/2][1<<MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Cartesian)*/
+    s_metadata metadata[2]; /**< Frame metadata*/
 } frame_complex;
 
 /** A frame of frequency domain audio in Polar coordinates.*/
 typedef struct {
-    polar data[MAX_NUM_MICS/2][1<<MAX_FRAME_SIZE_LOG2];
-    s_metadata metadata[2];
+    polar data[MAX_NUM_MICS/2][1<<MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Polar)*/
+    s_metadata metadata[2]; /**< Frame metadata*/
 } frame_polar;
 
 #endif /* PCM_FRAME_H_ */

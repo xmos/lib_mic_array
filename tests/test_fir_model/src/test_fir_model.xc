@@ -21,7 +21,7 @@ static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned l
         data[i] = data[i-1];
     return y>>31;
 }
-#define DF 24    //12 is the maximum I want to support
+#define DF 12    //12 is the maximum I want to support
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
@@ -29,7 +29,7 @@ int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 frame_complex f_complex[2];
 
-#define COUNT 128
+#define COUNT 16
 
 int generate_tail_output_counter(unsigned fsl2, unsigned df){
     if(fsl2==0)
