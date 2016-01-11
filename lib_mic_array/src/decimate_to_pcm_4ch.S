@@ -268,9 +268,9 @@
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #define BITREV_INDEX()\
-	{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r4, 32};\
-	{bitrev r3, r3; sub r4, r4, r5};\
-	{shr r3, r3, r4}
+	{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r6, 32};\
+	{bitrev r3, r3; sub r6, r6, r5};\
+	{shr r3, r3, r6}
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
@@ -341,7 +341,6 @@ take_config_from_application:
 	stw r11, r0[S_DC_OFFSET_REMOVAL_ENABLED]
 
 	ldw r11, r3[2] //index_bit_reversal
-	ecallt r11
 	stw r11, r0[S_INDEX_BITREVERSING_ENABLED]
 
 	ldw r11, r3[3] //windowing_function

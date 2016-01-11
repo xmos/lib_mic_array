@@ -12,7 +12,9 @@ static int pseudo_random(unsigned &x){
     return (int)x;
 }
 
-static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length, const int val, unsigned &n){
+#define OUTPUT_SAMPLES 32
+
+static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length, const int val){
     long long y = 0;
     data[0] = val;
     for (unsigned i=0; i<length; i++)
@@ -21,20 +23,46 @@ static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned l
         data[i] = data[i-1];
     return y>>31;
 }
-#define DF 12    //12 is the maximum I want to support
+#define DF 24    //12 is the maximum I want to support
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 
-#define PI (3.141592653589793)
-#define COUNT 8
+#define COUNT 32
+
+int generate_tail_output_counter(unsigned fsl2, unsigned df){
+    if(fsl2==0)
+        return 0;
+    unsigned v=df*4;
+    for(unsigned i=1;i<fsl2;i++)
+        v = v*2+df*4;
+    return v;
+}
+
+int apply_fir_comp(int val, int fir_comp){
+    long long v;
+    if(fir_comp){
+        v = (long long)val;
+        v = v * (long long)fir_comp;
+        v=v>>27;
+    } else {
+        v = (long long)val;
+    }
+    return (int)v;
+}
+
+int apply_gain_comp(int val, int gain){
+    long long v = (long long)val;
+    v = v * (long long)gain;
+    v=v>>31;
+    return (int)v;
+}
+
 void model(streaming chanend c_4x_pdm_mic_0,
   streaming chanend c_4x_pdm_mic_1, chanend c_model){
-    unsigned second_stage_n=0;
-    unsigned third_stage_n=0;
-    int second_stage_data[16]={0};
-    int third_stage_data[32*DF]={0};
+    int second_stage_data[8][16];
+    int third_stage_data[8][32*DF];
     unsigned x=0x1234;
     unsafe {
         while(1){
@@ -45,113 +73,130 @@ void model(streaming chanend c_4x_pdm_mic_0,
             int fir_comp;
             unsigned frame_size_log2;
             unsigned index_bit_reversal;
+            unsigned gain_comp[8];
             c_model :> fir;
             c_model :> debug_fir;
             c_model :> df;
             c_model :> fir_comp;
             c_model :> frame_size_log2;
             c_model :> index_bit_reversal;
+            for(unsigned i=0;i<8;i++)
+                c_model:> gain_comp[i];
 
-            int output[8][16];
-            memset(second_stage_data, 0, sizeof(int)*16);
-            memset(third_stage_data, 0, sizeof(int)*32*df);
-            int val;
-                for(unsigned c=0;c<COUNT+2;c++){
-                    for(unsigned r=0;r<df;r++){
-                        for(unsigned p=0;p<4;p++){
-                            int input_sample = pseudo_random(x);
-                            for(unsigned i=0;i<4;i++){
-                                c_4x_pdm_mic_0 <: input_sample;
-                                c_4x_pdm_mic_1 <: input_sample;
-                            }
-                            val = filter(fir2_debug, second_stage_data, 16, input_sample, second_stage_n);
+            int output[8][COUNT<<MAX_FRAME_SIZE_LOG2];
+            memset(second_stage_data, 0, sizeof(int)*16*8);
+            memset(third_stage_data, 0, sizeof(int)*32*DF*8);//?
+            memset(output, 0, sizeof(int)*(COUNT<<MAX_FRAME_SIZE_LOG2)*8);
+            int val[8];
+
+
+            for(unsigned c=0;c<(COUNT<<frame_size_log2);c++){
+                for(unsigned r=0;r<df;r++){
+                    for(unsigned p=0;p<4;p++){
+
+                        int data[8];
+                        for(unsigned i=0;i<8;i++){
+                            data[i] = pseudo_random(x);
+                            val[i] = filter(fir2_debug, second_stage_data[i], 16, data[i]);
                         }
-                        val = filter(debug_fir, third_stage_data, 32*df, val, third_stage_n);
+                        for(unsigned i=0;i<4;i++){
+                            c_4x_pdm_mic_0 <: data[i*2];
+                            c_4x_pdm_mic_1 <: data[i*2+1];
+                        }
                     }
-
-                    printf("\tmodel: %3d:%12d\n", c, val);
-                    //c_model <: val;
-                   // output[m][c] = val;
+                    for(unsigned i=0;i<8;i++)
+                        val[i] = filter(debug_fir, third_stage_data[i], 32*df, val[i]);
                 }
 
-                for(unsigned i=0;i<4*3;i++){
-                    c_4x_pdm_mic_0 <: 0;
-                    c_4x_pdm_mic_1 <: 0;
+                //this is to accomotate for the channel interleaving
+                unsigned reorder_channels[8] = {0, 2, 4, 6, 1, 3, 5, 7};
+
+                if (c<(COUNT<<frame_size_log2)-2) {
+                    for(unsigned m=0;m<8;m++){
+
+                        int v = apply_fir_comp(val[reorder_channels[m]], fir_comp);
+                        v = apply_gain_comp(v, gain_comp[m]);
+
+                        output[m][c+2] = v;
+                    }
                 }
-
-
-                c_model <: 0;
-
-        }
-    }
-
-}
-
-#define EXPECTED_FRAMES 1
-
-void output(streaming chanend c_ds_output[2], chanend c_actual){
-
-    unsafe {
-
-
-        while(1){
-        //get the settings from the verifier
-
-        int * unsafe fir;
-        int * unsafe debug_fir;
-        unsigned df;
-        int fir_comp;
-        unsigned frame_size_log2;
-        unsigned index_bit_reversal;
-
-        c_actual :> fir;
-        c_actual :> debug_fir;
-        c_actual :> df;
-        c_actual :> fir_comp;
-        c_actual :> frame_size_log2;
-        c_actual :> index_bit_reversal;
-
-        unsigned buffer;
-
-        int output[8][16];
-
-        memset(data_0, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
-        memset(data_1, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
-
-            unsafe {
-               decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir, 0, fir_comp};
-               decimator_config dc[2] = {
-                       {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                       {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
-               };
-               decimator_configure(c_ds_output, 2, dc);
             }
 
+            for(unsigned i=0;i<4*(3+generate_tail_output_counter(frame_size_log2, df));i++){
+                c_4x_pdm_mic_0 <: 0;
+                c_4x_pdm_mic_1 <: 0;
+            }
+
+            for(unsigned m=0;m<8;m++){
+                for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
+                    c_model <: output[m][c];
+                }
+            }
+            c_model <: 0;
+        }
+    }
+}
+
+void output(streaming chanend c_ds_output[2], chanend c_actual){
+    unsafe {
+        while(1){
+            //get the settings from the verifier
+
+            int * unsafe fir;
+            int * unsafe debug_fir;
+            unsigned df;
+            int fir_comp;
+            unsigned frame_size_log2;
+            unsigned index_bit_reversal;
+            unsigned gain_comp[8];
+            c_actual :> fir;
+            c_actual :> debug_fir;
+            c_actual :> df;
+            c_actual :> fir_comp;
+            c_actual :> frame_size_log2;
+            c_actual :> index_bit_reversal;
+            for(unsigned i=0;i<8;i++)
+                c_actual:> gain_comp[i];
+
+            unsigned buffer;
+
+            int output[8][COUNT<<MAX_FRAME_SIZE_LOG2];
+
+            memset(data_0, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
+            memset(data_1, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
+
+            unsafe {
+                decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir, 0, fir_comp};
+                decimator_config dc[2] = {
+                       {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
+                       {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4}
+                };
+                decimator_configure(c_ds_output, 2, dc);
+            }
            decimator_init_audio_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
 
-           decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
-           decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
-
            for(unsigned c=0;c<COUNT;c++){
-
                 frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
-
                 for(unsigned f=0;f<(1<<frame_size_log2);f++){
                     for(unsigned m=0;m<8;m++){
-                        output[m][c] = current->data[m][f];
+                        output[m][(c<<frame_size_log2) + f] = current->data[m][f];
                     }
-                    printf("\t\tactual: %3d:%12d\n", c, current->data[0][f]);
                 }
+           }
 
+           for(unsigned m=0;m<8;m++){
+               for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
+                   c_actual <: output[m][c];
+               }
            }
            c_actual <: 0;
-    }
+        }
     }
 }
 
 void send_settings(chanend  c_chan,
         int * unsafe fir, int * unsafe debug_fir, unsigned df, int fir_comp,
-        unsigned frame_size_log2, unsigned index_bit_reversal){
+        unsigned frame_size_log2, unsigned index_bit_reversal, unsigned gain[8]){
     unsafe{
         c_chan <: fir;
         c_chan <: debug_fir;
@@ -159,13 +204,16 @@ void send_settings(chanend  c_chan,
         c_chan <: fir_comp;
         c_chan <: frame_size_log2;
         c_chan <: index_bit_reversal;
+        for(unsigned i=0;i<8;i++)
+            c_chan <: gain[i];
+
     }
 }
+
 
 void verifier(chanend c_model,
         chanend c_actual){
     unsafe{
-
         unsigned decimation_factor_lut[5] = {1*2, 2*2, 3*2, 4*2, 6*2};
         int * unsafe decimation_fir_lut[5] = {
                 g_third_48kHz_fir,
@@ -183,37 +231,57 @@ void verifier(chanend c_model,
         };
 
         unsigned fir_comp_lut[4] = {0, INT_MAX>>4, INT_MAX<<4, INT_MAX>>8};
-        //TODO manual gain comp
+
+        unsigned gain_comp[2][8] = {
+                {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
+                {INT_MAX, INT_MAX/2, INT_MAX/3, INT_MAX/4, INT_MAX/5, INT_MAX/6, INT_MAX/7, INT_MAX/8}
+        };
+
         //TODO dc offset elim
         //TODO channel count
         //TODO windowing function
 
-
-        for(unsigned decimation_index = 0; decimation_index < 5;decimation_index){
+        while(1)
+        for(unsigned frame_size_log2 = 0;frame_size_log2<=MAX_FRAME_SIZE_LOG2;frame_size_log2++){
+        for(unsigned decimation_index = 0; decimation_index < 5;decimation_index++){
             int * unsafe fir = decimation_fir_lut[decimation_index];
             int * unsafe debug_fir = decimation_fir_debug_lut[decimation_index];
             unsigned df = decimation_factor_lut[decimation_index];
 
+            for(unsigned fir_comp_index=0; fir_comp_index<4;fir_comp_index++){
+                int fir_comp = fir_comp_lut[fir_comp_index];
 
-            int fir_comp = INT_MAX>>4;;
+                    for(unsigned index_bit_reversal=0;index_bit_reversal<1;index_bit_reversal++){//TODO enable this
 
-            unsigned frame_size_log2=0;
+                        for(unsigned gain_index=0;gain_index<2;gain_index++){
 
-            unsigned index_bit_reversal=0;
+                            send_settings(c_model, fir, debug_fir, df, fir_comp,
+                                    frame_size_log2, index_bit_reversal, gain_comp[gain_index]);
+                            send_settings(c_actual, fir, debug_fir, df, fir_comp,
+                                    frame_size_log2, index_bit_reversal, gain_comp[gain_index]);
 
-            send_settings(c_model, fir, debug_fir, df, fir_comp,
-                    frame_size_log2, index_bit_reversal);
-            send_settings(c_actual, fir, debug_fir, df, fir_comp,
-                    frame_size_log2, index_bit_reversal);
+                            int max_diff = 0;
 
-            for(unsigned i=0;i<COUNT;i++){
-                int a, m;
-                //c_actual:> a;
-               // c_model :> m;
-               // printf("%12d %12d\n", a, m);
+                            for(unsigned m=0;m<8;m++){
+
+                                for(unsigned i=0;i<COUNT<<frame_size_log2;i++){
+                                    int a, b;
+                                    c_actual:> a;
+                                    c_model :> b;
+
+                                    int diff = a-b;
+                                    if (diff<0) diff = -diff;
+                                    if(diff>max_diff)
+                                        max_diff = diff;
+                                }
+                            }
+                            printf("DF: %2d, FIR comp: %08x, Frame size log2: %d, index reverse: %d -> %d\n", df, fir_comp, 1<<frame_size_log2, index_bit_reversal, max_diff);
+                            c_actual:> int;
+                            c_model :> int;
+                        }
+                    }
+                }
             }
-            c_actual:> int;
-            c_model :> int;
         }
     }
 }
