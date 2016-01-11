@@ -195,6 +195,7 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
  *  \param f_audio           An array of audio frames. Typically, of size two.
+ *  \param buffer_count      The size of the f_audio buffer(i.e. double buffering, etc)
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.
@@ -233,6 +234,7 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application.
  *  \param f_complex         An array of audio frames. Typically, of size two.
+ *  \param buffer_count      The size of the f_audio buffer(i.e. double buffering, etc)
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.
@@ -249,9 +251,9 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
  *  \param c_from_decimator  The channels used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
  *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
- *  \param decimator_config  The configuration for each decimator.
+ *  \param dc                The configuration for each decimator.
  */
 void decimator_configure(streaming chanend c_from_decimator[], unsigned decimator_count,
-        decimator_config dc0[]);
+        decimator_config dc[]);
 
 #endif /* MIC_ARRAY_H_ */
