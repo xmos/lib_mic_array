@@ -31,7 +31,7 @@ int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 frame_complex f_complex[2];
 
-#define COUNT 32
+#define COUNT 128
 
 int generate_tail_output_counter(unsigned fsl2, unsigned df){
     if(fsl2==0)
@@ -65,6 +65,14 @@ void model(streaming chanend c_4x_pdm_mic_0,
   streaming chanend c_4x_pdm_mic_1, chanend c_model){
     int second_stage_data[8][16];
     int third_stage_data[8][32*DF];
+
+    unsigned window[1<<(MAX_FRAME_SIZE_LOG2-1)];
+    {
+        unsigned x=0x9876543;
+        for(unsigned i=0;i<(1<<(MAX_FRAME_SIZE_LOG2-1)); i++)
+            window[i] = pseudo_random(x);
+    }
+
     unsigned x=0x1234;
     unsafe {
         while(1){
@@ -77,6 +85,7 @@ void model(streaming chanend c_4x_pdm_mic_0,
             unsigned index_bit_reversal;
             unsigned gain_comp_enabled;
             unsigned gain_comp[8];
+            unsigned windowing_enabled;
             c_model :> fir;
             c_model :> debug_fir;
             c_model :> df;
@@ -86,6 +95,7 @@ void model(streaming chanend c_4x_pdm_mic_0,
             c_model :> gain_comp_enabled;
             for(unsigned i=0;i<8;i++)
                 c_model:> gain_comp[i];
+            c_model :> windowing_enabled;
 
             int output[8][COUNT<<MAX_FRAME_SIZE_LOG2];
             memset(second_stage_data, 0, sizeof(int)*16*8);
@@ -141,7 +151,20 @@ void model(streaming chanend c_4x_pdm_mic_0,
     }
 }
 
+unsigned bitreverse(unsigned i, unsigned bits){
+    return (bitrev(i) >> (32-bits));
+}
+
 void output(streaming chanend c_ds_output[2], chanend c_actual){
+
+    unsigned window[1<<(MAX_FRAME_SIZE_LOG2-1)];
+    {
+        unsigned x=0x9876543;
+        for(unsigned i=0;i<(1<<(MAX_FRAME_SIZE_LOG2-1)); i++)
+            window[i] = pseudo_random(x);
+    }
+
+
     unsafe {
         while(1){
             //get the settings from the verifier
@@ -154,6 +177,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
             unsigned index_bit_reversal;
             unsigned gain_comp_enabled;
             unsigned gain_comp[8];
+            unsigned windowing_enabled;
             c_actual :> fir;
             c_actual :> debug_fir;
             c_actual :> df;
@@ -163,6 +187,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
             c_actual :> gain_comp_enabled;
             for(unsigned i=0;i<8;i++)
                 c_actual:> gain_comp[i];
+            c_actual :> windowing_enabled;
 
             unsigned buffer;
 
@@ -185,8 +210,10 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                for(unsigned c=0;c<COUNT;c++){
                     frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, 2);
                     for(unsigned f=0;f<(1<<frame_size_log2);f++){
-                        for(unsigned m=0;m<8;m++){
-                            //output[m][(c<<frame_size_log2) + f] = current->data[m][f];
+                        unsigned index = (c<<frame_size_log2) + bitreverse(f, frame_size_log2);
+                        for(unsigned m=0;m<4;m++){
+                            output[2*m  ][index] = current->data[m][f].re;
+                            output[2*m+1][index] = current->data[m][f].im;
                         }
                     }
                }
@@ -222,7 +249,8 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
 
 void send_settings(chanend  c_chan,
         int * unsafe fir, int * unsafe debug_fir, unsigned df, int fir_comp,
-        unsigned frame_size_log2, unsigned index_bit_reversal, unsigned  gain_comp_enabled, unsigned gain[8]){
+        unsigned frame_size_log2, unsigned index_bit_reversal, unsigned  gain_comp_enabled,
+        unsigned gain[8], unsigned windowing_enabled){
     unsafe{
         c_chan <: fir;
         c_chan <: debug_fir;
@@ -233,6 +261,7 @@ void send_settings(chanend  c_chan,
         c_chan <: gain_comp_enabled;
         for(unsigned i=0;i<8;i++)
             c_chan <: gain[i];
+        c_chan <: windowing_enabled;
 
     }
 }
@@ -264,12 +293,6 @@ void verifier(chanend c_model,
                 {INT_MAX/2, INT_MAX/3, INT_MAX/4, INT_MAX/6, INT_MAX/7, INT_MAX/8, INT_MAX/9, INT_MAX/11}
         };
 
-        //TODO windowing function
-        unsigned window[1<<(MAX_FRAME_SIZE_LOG2-1)];
-
-        unsigned x=0x9876543;
-        for(unsigned i=0;i<(1<<(MAX_FRAME_SIZE_LOG2-1)); i++)
-            window[i] = pseudo_random(x);
 
         //TODO dc offset elim
         //TODO channel count
@@ -285,35 +308,37 @@ void verifier(chanend c_model,
                 for(unsigned fir_comp_index=0; fir_comp_index<4;fir_comp_index++){
                     int fir_comp = fir_comp_lut[fir_comp_index];
 
-                    for(unsigned index_bit_reversal=0;index_bit_reversal<1;index_bit_reversal++){//TODO enable this
+                    for(unsigned index_bit_reversal=0;index_bit_reversal<2;index_bit_reversal++){
 
                         for(unsigned gain_comp_enabled = 0; gain_comp_enabled<2;gain_comp_enabled++){
 
                             for(unsigned gain_index=0;gain_index<2;gain_index++){
 
-                                send_settings(c_model, fir, debug_fir, df, fir_comp,
-                                        frame_size_log2, index_bit_reversal, gain_comp_enabled, gain_comp[gain_index]);
-                                send_settings(c_actual, fir, debug_fir, df, fir_comp,
-                                        frame_size_log2, index_bit_reversal, gain_comp_enabled, gain_comp[gain_index]);
+                                for(unsigned windowing_enabled=0;windowing_enabled<2; windowing_enabled++){
 
-                                int max_diff = 0;
+                                    send_settings(c_model, fir, debug_fir, df, fir_comp,
+                                            frame_size_log2, index_bit_reversal, gain_comp_enabled, gain_comp[gain_index], windowing_enabled);
+                                    send_settings(c_actual, fir, debug_fir, df, fir_comp,
+                                            frame_size_log2, index_bit_reversal, gain_comp_enabled, gain_comp[gain_index], windowing_enabled);
 
-                                for(unsigned m=0;m<8;m++){
+                                    int max_diff = 0;
 
-                                    for(unsigned i=0;i<COUNT<<frame_size_log2;i++){
-                                        int a, b;
-                                        c_actual:> a;
-                                        c_model :> b;
+                                    for(unsigned m=0;m<8;m++){
 
-                                        int diff = a-b;
-                                        if (diff<0) diff = -diff;
-                                        if(diff>max_diff)
-                                            max_diff = diff;
+                                        for(unsigned i=0;i<COUNT<<frame_size_log2;i++){
+                                            int a, b;
+                                            c_actual:> a;
+                                            c_model :> b;
+                                            int diff = a-b;
+                                            if (diff<0) diff = -diff;
+                                            if(diff>max_diff)
+                                                max_diff = diff;
+                                        }
                                     }
+                                    printf("DF: %2d, FIR comp: %08x, Frame size log2: %d, index reverse: %d -> %d\n", df, fir_comp, 1<<frame_size_log2, index_bit_reversal, max_diff);
+                                    c_actual:> int;
+                                    c_model :> int;
                                 }
-                                printf("DF: %2d, FIR comp: %08x, Frame size log2: %d, index reverse: %d -> %d\n", df, fir_comp, 1<<frame_size_log2, index_bit_reversal, max_diff);
-                                c_actual:> int;
-                                c_model :> int;
                             }
                         }
                     }

@@ -268,19 +268,19 @@
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #define BITREV_INDEX()\
-	{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r6, 32};\
-	{bitrev r3, r3; sub r6, r6, r5};\
-	{shr r3, r3, r6}
+	{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
+	{bitrev r6, r6; sub r7, r7, r5};\
+	{shr r6, r6, r7}
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
 		ldw r7, r4[POINTER];\
 		std r1, r0, r7[r6];\
-		{ldc r0, MAX_FRAME_SIZE_LOG2; ldc r1, 1};\
-		shl r1, r1, r0;\
-		add r0, r0, r1;\
-		std r3, r2, r7[r0]
+		{ldc r0, 2<<MAX_FRAME_SIZE_LOG2};\
+		ldaw r7, r7[r0];\
+		std r3, r2, r7[r6]
+
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
