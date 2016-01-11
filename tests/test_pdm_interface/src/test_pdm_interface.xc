@@ -19,7 +19,6 @@ int main(){
     par {
         pdm_rx_debug(c_port, c, d);
         {
-            //for(unsigned i=0;i<12;i++) c_port <: 0x00000000;
 
             c_port <: 0x000000ff;
             c_port <: 0x00000000;

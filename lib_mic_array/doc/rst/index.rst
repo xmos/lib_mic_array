@@ -11,7 +11,7 @@ interface. The interface requires three logical cores as shown below:
                     
             High channel count PDM interface
 
-The left most task samples 8 microphones, and filters the data to provide
+The left most task samples 8 microphones, and filters the data to provide up to
 eight 384 KHz data streams, split in two bundles of four channels. Two
 processing threads each process four channels. The processing thread
 decimates the signal to a user chosen sample rate (one of 48, 24, 16, 12,
@@ -20,22 +20,22 @@ or 8 KHz). After this a sequence of eight steps takes place:
 * A number of channels are selected. The user selects between 0 and 4
   channels. The other channels are muted.
 
-* Any DC offset is optionally eliminated on the channels.
+* Optionally, DC offset is eliminated on the each channel.
 
 * The gain is corrected so that a maximum signal on the PDM microphone
-  corresponds to a maximum signal on the PCM signal
+  corresponds to a maximum signal on the PCM signal.
 
 * Optionally, the individual gain of each microphone can be compensated.
-  This can be used to, at manufacture time, iron out any differences in
-  gains between the microphones in a system
+  This can be used to, at manufacture time, compensate any differences in
+  gains between the microphones in a system.
 
-* Frames of data are generated (with a frame size of between X and Y).
+* Frames of data are generated (with a frame size of between 1 and 2048 samples).
   Optionally, frames can be set to overlap by half a frame.
 
 * An optional windowing function is applied to each frame.
 
-* The data can be stored in a bit-reversed manner, so that it can be passed
-  into an FFT without having to do any bit-twiddling.
+* The data can be stored in an index bit-reversed manner, so that it can be passed
+  into an FFT without having to do any preprocessing.
 
 
 Hardware characteristics
@@ -70,7 +70,7 @@ port is clocked from the PDM clock::
 The input clock for the microphones can be generated in a multitude of
 ways. For example one can generate a 3.072 MHz clock on the board, or one
 can use the XCORE to divide down 12.288 MHz master clock. Or, if clock
-accuracy is not important, the 100 MHz can be divided down to provide an
+accuracy is not important, the internal 100 MHz reference can be divided down to provide an
 approximate clock.
 
 If an external master clock is input to the xcore on a 1-bit port
@@ -165,6 +165,7 @@ Optionally `mic_array_conf.h`` may define
 	 Yn+1 = Yn * alpha + X where Y is the output sample and X is the input sample.
 	 The constant alpha is 1 - 2^(-DC_OFFSET_DIVIDER_LOG2), therefore DC_OFFSET_DIVIDER_LOG2 
 	 can be used to control the responsiveness of the filter vs the cut off frequency.
+	 The default is 13, but setting this will override it. The value must not exceed 31.
 
 	 
 Four Channel Decimator
@@ -231,8 +232,7 @@ following settings through ``decimator_config_common``:
   required. The compensation applied is controlled through the
   ``mic_gain_compensation`` field in ``decimator_config`` below.
   
-* A windowing
-  function can be passed in through ``windowing_function``. It is a pointer
+* A windowing function can be passed in through ``windowing_function``. It is a pointer
   to an array of integers that defines the windowing operator. Each sample
   in the frame is multiplied by its associated window value and shifted
   right by 31 places. This is performed before any index bit reversal (see
@@ -241,7 +241,7 @@ following settings through ``decimator_config_common``:
 * If the data is going to be post processed using an FFT, then
   ``index_bit_reversal`` can be set to 1. This will store the data elements
   reordered according to a reversed bit pattern, suitable for an FFT
-  without "index twiddling". As a side effect, it stores the data as
+  without "index bit reversing". As a side effect, it stores the data as
   complex numbers, in such a way that a single complex FFT operates on two
   microphones in parallel.
 
@@ -384,6 +384,28 @@ subsequent audio frames.
   decimators at all times.
 
 * ``buffer_count``: The number of frames in the ``f_complex`` array.
+
+
+Signal Characteristics
+----------------------
+
+The output signal has been decimated from the original PDM in such a way to achieve at 
+least 100dBs of signal to noise for all output sample rates.
+
+  ======================== ===================== =============
+  fir_decimation_factor    Passband Cut Off      Sample rate
+  ======================== ===================== =============
+  2                        19kHz                 48 KHz
+  4                        10.4kHz               24 KHz
+  6                        7.1kHz                16 KHz
+  8                        5kHz                  12 KHz
+  12                       3.5kHz                8 KHz
+  2                        17.5kHz               44.1 KHz
+  4                        9.6kHz                22.05 KHz
+  ======================== ===================== =============
+
+The decimation is achieved by applying three polyphase FIR filters sequentially. 
+The design of these filters can be view in the matlab script ``fir_design.m``. 
 
 Example Applications
 --------------------
