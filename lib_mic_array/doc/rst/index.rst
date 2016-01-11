@@ -104,8 +104,8 @@ You also have to add ``lib_mic_array`` to the
 ``USED_MODULES`` field of your application Makefile.
 
 An application must also define and include an extra header
-``mic_array_conf.h`` which is used to describe the configuration of
-``FRAME_SIZE_LOG2`` described later in this document.
+``mic_array_conf.h`` which is used to describe the mandatory configuration
+described later in this document.
 
 The PDM microphone interface and two 4-channel decimators are instantiated as 
 parallel tasks that run in a ``par`` statement. The two 4-channel decimators must 
@@ -122,7 +122,7 @@ connect to the PDM interface via streaming channels::
   int main() {
      par {
         streaming chan c_pdm_to_pcm0, c_pdm_to_pcm1;
-        streaming chan c_ds_output_0, c_ds_output_1;
+        streaming chan c_ds_output[2];
     
         configure_clock_src_divide(pdmclk, p_mclk, 4);
         configure_port_clock_output(p_pdm_clk, pdmclk);
@@ -131,14 +131,18 @@ connect to the PDM interface via streaming channels::
     
         par {
             pdm_rx(p_pdm_mics, c_pdm_to_pcm0, c_pdm_to_pcm1);
-            decimate_to_pcm_4ch(c_pdm_to_pcm0, c_ds_output_0);
-            decimate_to_pcm_4ch(c_pdm_to_pcm1, c_ds_output_1);
-            application(c_ds_output_0, c_ds_output_1);
+            decimate_to_pcm_4ch(c_pdm_to_pcm0, c_ds_output[0]);
+            decimate_to_pcm_4ch(c_pdm_to_pcm1, c_ds_output[1]);
+            application(c_ds_output);
         }
     }
     return 0;
   }
 
+There is a further requirement that any application of a ``decimate_to_pcm_4ch`` 
+task must be on the same tile as the ``decimate_to_pcm_4ch`` task due to the sharaed
+frame memory.
+  
 
 ``mic_array_conf.h``
 --------------------
@@ -157,23 +161,27 @@ Optionally `mic_array_conf.h`` may define
 
    * DC_OFFSET_DIVIDER_LOG2
 
-     ????
+     The DC offset is removed with a high pass filter obeying the relation
+	 Yn+1 = Yn * alpha + X where Y is the output sample and X is the input sample.
+	 The constant alpha is 1 - 2^(-DC_OFFSET_DIVIDER_LOG2), therefore DC_OFFSET_DIVIDER_LOG2 
+	 can be used to control the responsiveness of the filter vs the cut off frequency.
 
+	 
 Four Channel Decimator
 ----------------------
 
 The four channel decimator tasks are highly configurable tasks for outputting frames of 
 various sizes and formats. They can be used to produce frames suitable for time domain applications
-or preprocess the frames ready for an FFT for frequency domain applications. The four 
+or pre-process the frames ready for an FFT for frequency domain applications. The four 
 channel decimators, ``decimate_to_pcm_4ch()``, have a number of configuration options 
 controlled by the structure ``decimator_config`` through the function ``decimator_configure``. 
 The decimators are controlled by two structures: ``decimator_config_common`` and ``decimator_config``, 
-where the former config is common to all microphones and the later is specific to the batch of 4
+where the former configuration is common to all microphones and the later is specific to the batch of 4
 microphones it interfaces to. The application has the option to control the
 following settings through ``decimator_config_common``:
 
 * ``frame_size_log2``: This sets the frame size to a power of two. A frame will contain 
-  2 to the power of frame_size_log2 samples of each channel. Set this to ``FRAME_SIZE_LOG2``.
+  2 to the power of frame_size_log2 samples of each channel. Set this to a maximum of ``MAX_FRAME_SIZE_LOG2``.
   
 * ``apply_dc_offset_removal``: This controls if the DC offset removal should be enabled
   or not. Set to ``1`` to enable, or ``0`` to not apply DC offset removal.
@@ -217,13 +225,13 @@ following settings through ``decimator_config_common``:
   ======================== ======================
   
   If you wish to supply your own, this is a fixed
-  point number in 5.27 format.
+  point number in 1.4.27 format.
   
 * ``apply_mic_gain_compensation``: Set this to ``1`` if microphone gain compensation is 
   required. The compensation applied is controlled through the
   ``mic_gain_compensation`` field in ``decimator_config`` below.
   
-* If the data is going to be post processed by an FFT, then a windowing
+* A windowing
   function can be passed in through ``windowing_function``. It is a pointer
   to an array of integers that defines the windowing operator. Each sample
   in the frame is multiplied by its associated window value and shifted
@@ -242,7 +250,7 @@ following settings through ``decimator_config_common``:
 * ``dcc``: This is a pointer to the common decimator configuration.
   
 * ``data``: This is the memory used to save the FIR samples. It must be an
-  array of size (4 x ``COEFS_PER_PHASE`` x ``sizeof(int)`` x
+  array of size (4 channels x ``THIRD_STAGE_COEFS_PER_STAGE`` x ``sizeof(int)`` x
   ``fir_decimation_factor`` bytes).
   
 * ``mic_gain_compensation``: This is an array with four elements specifying
@@ -255,7 +263,7 @@ following settings through ``decimator_config_common``:
   this to 4 to enable all channels. If set to a value less than 4, only the
   first ``channel_count`` channels are enabled.
 
-The decimator configuration is applied by, from the application, calling
+The decimator configuration is applied, from the application, by calling
 the function ``decimator_configure`` with an array of chanends referring to
 the decimators, a count of the number of decimators, and an array of
 decimator configurations.
@@ -270,9 +278,9 @@ The four channel decimators output frames of either *simple audio* or
 (found in ``mic_array_conf.h``) should be used to allocate the arrays to
 store the frames. This means that all frames structures will allocate
 enough memory to allow for a frame size of two to the power of
-``FRAME_SIZE_LOG2`` regardless of the size used in the
+``MAX_FRAME_SIZE_LOG2`` regardless of the size used in the
 ``decimator_config_common``. It is recommended that the ``frame_size_log2``
-field of ``decimator_config_common`` is always set to ``FRAME_SIZE_LOG2``.
+field of ``decimator_config_common`` is always set to ``MAX_FRAME_SIZE_LOG2``.
 
 
 Simple audio
@@ -280,7 +288,8 @@ Simple audio
 
 If *simple audio* output is used (``index_bit_reversal`` is set to 0), then
 data is stored into eight arrays of length two to the power of
-``FRAME_SIZE_LOG2``. The first index of the ``data`` element of
+``MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log_2`` 
+entries contain valid data. The first index of the ``data`` element of
 ``frame_audio`` is used to address the microphone and the second index is
 used for the sample number with 0 being the oldest sample.
 
@@ -292,9 +301,11 @@ Frames are initialised by the application by a call to
 * ``decimator_count``: A count of the number of decimators (the number of
   elements in the above array)
 
-* ``buffer``???
+* ``buffer``: used internally to maintain ownership of the shared memory between  
+  the application and the decimators.
 
-* ``f_audio``: an array of audio frames ??
+* ``f_audio``: the array of audio frames, one (or two) of which will be owned by the 
+  decimators at all times.
 
 * ``buffering_type``: one of ``DECIMATOR_NO_FRAME_OVERLAP`` and
   ``DECIMATOR_HALF_FRAME_OVERLAP``. The former creates normal frames, where
@@ -313,11 +324,13 @@ subsequent audio frames.
 * ``decimator_count``: A count of the number of decimators (the number of
   elements in the above array)
 
-* ``buffer``???
+* ``buffer``: used internally to share the frames between the application and 
+  deciamtors in a round robin fashion.
 
-* ``f_audio``: an array of audio frames ??
+* ``f_audio``: the array of audio frames, one (or two) of which will be owned by the 
+  decimators at all times.
 
-* ``buffer_count``: ???
+* ``buffer_count``: The number of frames in the ``f_audio`` array.
 
 Complex audio
 .............
@@ -325,7 +338,8 @@ Complex audio
 If *complex audio* output is used (``index_bit_reversal`` is set to 1),
 then the data is stored in frames that are designed to be processed with an
 FFT. The data is stored in four arrays of length two to the power of
-``FRAME_SIZE_LOG2`` elements, each element storing a real and an imaginary
+``MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log_2`` 
+entries contain valid data, each element storing a real and an imaginary
 part. The data is stored in a bit reversed order (ie, the oldest element is
 at index 0b0000....0000, the next oldest is at element 0b1000...0000, the
 next one at element 0b0100...0000, etc up to element 0b1111...1111), and
@@ -341,9 +355,11 @@ Frames are initialised by the application by a call to
 * ``decimator_count``: A count of the number of decimators (the number of
   elements in the above array)
 
-* ``buffer``???
+* ``buffer``: used internally to maintain ownership of the shared memory between  
+  the application and the decimators.
 
-* ``f_audio``: an array of audio frames ??
+* ``f_complex``: the array of complex frames, one (or two) of which will be owned by the 
+  decimators at all times.
 
 * ``buffering_type``: one of ``DECIMATOR_NO_FRAME_OVERLAP`` and
   ``DECIMATOR_HALF_FRAME_OVERLAP``. The former creates normal frames, where
@@ -361,11 +377,13 @@ subsequent audio frames.
 * ``decimator_count``: A count of the number of decimators (the number of
   elements in the above array)
 
-* ``buffer``???
+* ``buffer``: used internally to share the frames between the application and 
+  deciamtors in a round robin fashion.
 
-* ``f_audio``: an array of audio frames ??
+* ``f_complex``: the array of audio frames, one (or two) of which will be owned by the 
+  decimators at all times.
 
-* ``buffer_count``: ???
+* ``buffer_count``: The number of frames in the ``f_complex`` array.
 
 Example Applications
 --------------------
