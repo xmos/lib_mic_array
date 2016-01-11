@@ -197,10 +197,27 @@ following settings through ``decimator_config_common``:
   
 * ``coefs``: This is a pointer to an array of arrays containing the
   coefficients for the final stage of decimation. Set this to
-  ``FIR_LUT(d)`` where ``d`` is the ``fir_decimation_factor``; ``FIR_LUT``
+  ``FIR_LUT(d)`` where ``d`` is the ``fir_decimation_factor``; ``FIR_LUT()``
   is defined in ``fir_decimator.h``.
   If you wish to supply your own FIR coefficients; the array
-  should have the same number of entries as the ``fir_decimation_factor``.
+  should have the same number of entries as ``fir_decimation_factor``.
+  
+* ``fir_gain_compensation`` single value to compensate the gain of all the
+  previous decimators. This must be set to a value that depends on the
+  ``fir_decimation_factor`` as follows:
+  
+  ======================== ======================
+  fir_decimation_factor    fir_gain_compression
+  ======================== ======================
+  2                         FIR_COMPENSATOR_48KHZ
+  4                         FIR_COMPENSATOR_24KHZ
+  6                         FIR_COMPENSATOR_16KHZ
+  8                         FIR_COMPENSATOR_12KHZ
+  12                        FIR_COMPENSATOR_8KHZ
+  ======================== ======================
+  
+  If you wish to supply your own, this is a fixed
+  point number in 5.27 format.
   
 * ``apply_mic_gain_compensation``: Set this to ``1`` if microphone gain compensation is 
   required. The compensation applied is controlled through the
@@ -222,19 +239,29 @@ following settings through ``decimator_config_common``:
 
 ``decimator_config`` configures the per-channel information:
 
-* ``decimator_config_common``: This is a pointer to the common
-  configuration.
+* ``dcc``: This is a pointer to the common decimator configuration.
   
 * ``data``: This is the memory used to save the FIR samples. It must be an
   array of size (4 x ``COEFS_PER_PHASE`` x ``sizeof(int)`` x
   ``fir_decimation_factor`` bytes).
   
-* ``mic_gain_compensation``: This is a 4 element array specifying the relative compensation
-  to apply to each microphone. Unity gain is given by the value ``INT_MAX``, therefore 
-  microphones need to be scaled to the microphone of the least gain.
-  
+* ``mic_gain_compensation``: This is an array with four elements specifying
+  the relative compensation to apply to each microphone. Unity gain is
+  given by the value ``INT_MAX``. To equalise the gain of all microphones,
+  the quietest microphone should be given unity gain, and the gain of all
+  other microphones should be set proportionally lower.
+
+* ``channel_count``: this is the number of channels that is enabled. Set
+  this to 4 to enable all channels. If set to a value less than 4, only the
+  first ``channel_count`` channels are enabled.
+
+The decimator configuration is applied by, from the application, calling
+the function ``decimator_configure`` with an array of chanends referring to
+the decimators, a count of the number of decimators, and an array of
+decimator configurations.
+
 The output of the decimator is 32bit PCM audio at the requested sample rate. 
-     
+ 
 Frames
 ------
 
@@ -247,11 +274,53 @@ enough memory to allow for a frame size of two to the power of
 ``decimator_config_common``. It is recommended that the ``frame_size_log2``
 field of ``decimator_config_common`` is always set to ``FRAME_SIZE_LOG2``.
 
+
+Simple audio
+............
+
 If *simple audio* output is used (``index_bit_reversal`` is set to 0), then
 data is stored into eight arrays of length two to the power of
 ``FRAME_SIZE_LOG2``. The first index of the ``data`` element of
 ``frame_audio`` is used to address the microphone and the second index is
 used for the sample number with 0 being the oldest sample.
+
+Frames are initialised by the application by a call to
+``decimator_init_audio_frame``. Pass it:
+
+* ``c_from_decimator``: An array of channels to the decimators
+
+* ``decimator_count``: A count of the number of decimators (the number of
+  elements in the above array)
+
+* ``buffer``???
+
+* ``f_audio``: an array of audio frames ??
+
+* ``buffering_type``: one of ``DECIMATOR_NO_FRAME_OVERLAP`` and
+  ``DECIMATOR_HALF_FRAME_OVERLAP``. The former creates normal frames, where
+  the last audio sample of the first frame is the sample just prior to the
+  first audio sample of the second frame. The latter makes sure that
+  subsequent frames have a 50% overlap; that is, the last audio sample of
+  the first frame is the sample just prior to the middle sample of the
+  second frame.
+
+
+Calls to ``decimator_get_next_audio_frame()`` should be made to retrieve
+subsequent audio frames.
+
+* ``c_from_decimator``: An array of channels to the decimators
+
+* ``decimator_count``: A count of the number of decimators (the number of
+  elements in the above array)
+
+* ``buffer``???
+
+* ``f_audio``: an array of audio frames ??
+
+* ``buffer_count``: ???
+
+Complex audio
+.............
 
 If *complex audio* output is used (``index_bit_reversal`` is set to 1),
 then the data is stored in frames that are designed to be processed with an
@@ -264,6 +333,39 @@ the real elements store the even channels, whereas the imaginary elements
 store the odd channels. A postprocess function must be applied after the
 DIT-FFT in order to recover the frequency bins.
 
+Frames are initialised by the application by a call to
+``decimator_init_complex_frame``. Pass it:
+
+* ``c_from_decimator``: An array of channels to the decimators
+
+* ``decimator_count``: A count of the number of decimators (the number of
+  elements in the above array)
+
+* ``buffer``???
+
+* ``f_audio``: an array of audio frames ??
+
+* ``buffering_type``: one of ``DECIMATOR_NO_FRAME_OVERLAP`` and
+  ``DECIMATOR_HALF_FRAME_OVERLAP``. The former creates normal frames, where
+  the last audio sample of the first frame is the sample just prior to the
+  first audio sample of the second frame. The latter makes sure that
+  subsequent frames have a 50% overlap; that is, the last audio sample of
+  the first frame is the sample just prior to the middle sample of the
+  second frame.
+
+Calls to ``decimator_get_next_complex_frame()`` should be made to retrieve
+subsequent audio frames.
+
+* ``c_from_decimator``: An array of channels to the decimators
+
+* ``decimator_count``: A count of the number of decimators (the number of
+  elements in the above array)
+
+* ``buffer``???
+
+* ``f_audio``: an array of audio frames ??
+
+* ``buffer_count``: ???
 
 Example Applications
 --------------------
@@ -280,16 +382,12 @@ Creating an PDM Microphone interface instance
 .............................................
 
 .. doxygenfunction:: pdm_rx
-.. doxygenfunction:: pdm_rx_hires_delay
 
 |newpage|
 
 PDM Microphone processing
 .........................
 
-.. doxygenfunction:: hires_delay
-.. doxygenstruct:: hires_delay_config
-.. doxygenfunction:: hires_delay_set_taps
 .. doxygenfunction:: decimate_to_pcm_4ch
 .. doxygenfunction:: decimate_configure
 .. doxygenstruct:: decimator_config_common
@@ -312,10 +410,8 @@ Frame types
 ...........
 
 .. doxygenstruct:: complex
-.. doxygenstruct:: polar
 .. doxygenstruct:: frame_audio
 .. doxygenstruct:: frame_complex
-.. doxygenstruct:: frame_polar
 
 |newpage|
 
