@@ -240,14 +240,15 @@
 
 //r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
 #define APPLY_WINDOW_FN(P)\
-	ldw r9, r0[S_WINDOWING_ENABLED];\
+	ldaw r9, sp[S_SETTINGS_OFFSET];\
+	ldw r9, r9[S_WINDOWING_ENABLED];\
 	bf r9, done_windowing ## P;\
 	apply_windowing ## P:;\
 		ldw r5, r4[S_FRAME_SIZE_LOG2];\
 		{shl r5, r6, 1; mkmsk r8, r5};\
-		{lss r5, r8, r5; ldc r7, 30};\
-		{bf r5, skip ## P ; mov r4, r3};\
-			sub r4, r8, r3;\
+		{lss r5, r8, r5; ldc r7, 31};\
+		{bf r5, skip ## P ; mov r4, r6};\
+			sub r4, r8, r6;\
 		skip ## P:;\
 		{ldw r4, r9[r4]};\
 		{ldc r10, 0; ldc r11, 0};\
@@ -268,19 +269,19 @@
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #define BITREV_INDEX()\
-	{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r6, 32};\
-	{bitrev r3, r3; sub r6, r6, r5};\
-	{shr r3, r3, r6}
+	{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
+	{bitrev r6, r6; sub r7, r7, r5};\
+	{shr r6, r6, r7}
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
 		ldw r7, r4[POINTER];\
 		std r1, r0, r7[r6];\
-		{ldc r0, MAX_FRAME_SIZE_LOG2; ldc r1, 1};\
-		shl r1, r1, r0;\
-		add r0, r0, r1;\
-		std r3, r2, r7[r0]
+		{ldc r0, 2<<MAX_FRAME_SIZE_LOG2};\
+		ldaw r7, r7[r0];\
+		std r3, r2, r7[r6]
+
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
@@ -619,7 +620,8 @@ post_process:
 
 		ldw r6, r4[S_FRAME_0_INDEX]
 
-		//APPLY_WINDOW_FN(0)
+		APPLY_WINDOW_FN(0)
+		ldaw r4, sp[S_FRAME_OFFSET]
 		//MIN_MAX(S_FRAME_MIN_0, S_FRAME_MAX_0, 0)
 
 		ldaw r5, sp[S_SETTINGS_OFFSET]
