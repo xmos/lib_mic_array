@@ -12,8 +12,6 @@ static int pseudo_random(unsigned &x){
     return (int)x;
 }
 
-#define OUTPUT_SAMPLES 32
-
 static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length, const int val){
     long long y = 0;
     data[0] = val;
@@ -31,7 +29,7 @@ int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 frame_complex f_complex[2];
 
-#define COUNT 128
+#define COUNT 32
 
 int generate_tail_output_counter(unsigned fsl2, unsigned df){
     if(fsl2==0)
@@ -61,12 +59,16 @@ int apply_gain_comp(int val, int gain){
     return (int)v;
 }
 
+unsigned bitreverse(unsigned i, unsigned bits){
+    return (bitrev(i) >> (32-bits));
+}
+
 void model(streaming chanend c_4x_pdm_mic_0,
   streaming chanend c_4x_pdm_mic_1, chanend c_model){
     int second_stage_data[8][16];
     int third_stage_data[8][32*DF];
 
-    unsigned window[1<<(MAX_FRAME_SIZE_LOG2-1)];
+    int window[1<<(MAX_FRAME_SIZE_LOG2-1)];
     {
         unsigned x=0x9876543;
         for(unsigned i=0;i<(1<<(MAX_FRAME_SIZE_LOG2-1)); i++)
@@ -131,6 +133,19 @@ void model(streaming chanend c_4x_pdm_mic_0,
                         int v = apply_fir_comp(val[reorder_channels[m]], fir_comp);
                         if(gain_comp_enabled)
                             v = apply_gain_comp(v, gain_comp[m]);
+
+                        unsigned index = 0;
+                        if(frame_size_log2)
+                            index = zext(c+2, frame_size_log2);
+
+
+                        if(windowing_enabled){
+                            if(index > (1<<(frame_size_log2-2)))
+                                index = (1<<frame_size_log2) -1- index;
+                            int w = window[index];
+                            v = apply_gain_comp(v, w);
+                        }
+
                         output[m][c+2] = v;
                     }
                 }
@@ -151,13 +166,10 @@ void model(streaming chanend c_4x_pdm_mic_0,
     }
 }
 
-unsigned bitreverse(unsigned i, unsigned bits){
-    return (bitrev(i) >> (32-bits));
-}
 
 void output(streaming chanend c_ds_output[2], chanend c_actual){
 
-    unsigned window[1<<(MAX_FRAME_SIZE_LOG2-1)];
+    int window[1<<(MAX_FRAME_SIZE_LOG2-1)];
     {
         unsigned x=0x9876543;
         for(unsigned i=0;i<(1<<(MAX_FRAME_SIZE_LOG2-1)); i++)
@@ -199,6 +211,10 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
             if(index_bit_reversal){
                 unsafe {
                     decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir, gain_comp_enabled, fir_comp};
+
+                    if(windowing_enabled)
+                        dcc.windowing_function = window;
+
                     decimator_config dc[2] = {
                            {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
                            {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4}
@@ -220,6 +236,10 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
             } else {
                 unsafe {
                     decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir, gain_comp_enabled, fir_comp};
+
+                    if(windowing_enabled)
+                        dcc.windowing_function = window;
+
                     decimator_config dc[2] = {
                            {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
                            {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4}
@@ -297,7 +317,6 @@ void verifier(chanend c_model,
         //TODO dc offset elim
         //TODO channel count
 
-        while(1)
         for(unsigned frame_size_log2 = 0;frame_size_log2<=MAX_FRAME_SIZE_LOG2;frame_size_log2++){
 
             for(unsigned decimation_index = 0; decimation_index < 5;decimation_index++){
@@ -335,7 +354,14 @@ void verifier(chanend c_model,
                                                 max_diff = diff;
                                         }
                                     }
-                                    printf("DF: %2d, FIR comp: %08x, Frame size log2: %d, index reverse: %d -> %d\n", df, fir_comp, 1<<frame_size_log2, index_bit_reversal, max_diff);
+                                    printf("df: %2d ", df);
+                                    printf("fir_comp: 0x%08x ", fir_comp);
+                                    printf("frame_size_log2: %d ", frame_size_log2);
+                                    printf("index_bit_reversal: %d ", index_bit_reversal);
+                                    printf("windowing_enabled: %d ", windowing_enabled);
+                                    printf("gain_comp_enabled: %d ", gain_comp_enabled);
+                                    printf(" -> %d\n", max_diff);
+
                                     c_actual:> int;
                                     c_model :> int;
                                 }

@@ -240,14 +240,15 @@
 
 //r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
 #define APPLY_WINDOW_FN(P)\
-	ldw r9, r0[S_WINDOWING_ENABLED];\
+	ldaw r9, sp[S_SETTINGS_OFFSET];\
+	ldw r9, r9[S_WINDOWING_ENABLED];\
 	bf r9, done_windowing ## P;\
 	apply_windowing ## P:;\
 		ldw r5, r4[S_FRAME_SIZE_LOG2];\
 		{shl r5, r6, 1; mkmsk r8, r5};\
-		{lss r5, r8, r5; ldc r7, 30};\
-		{bf r5, skip ## P ; mov r4, r3};\
-			sub r4, r8, r3;\
+		{lss r5, r8, r5; ldc r7, 31};\
+		{bf r5, skip ## P ; mov r4, r6};\
+			sub r4, r8, r6;\
 		skip ## P:;\
 		{ldw r4, r9[r4]};\
 		{ldc r10, 0; ldc r11, 0};\
@@ -619,7 +620,8 @@ post_process:
 
 		ldw r6, r4[S_FRAME_0_INDEX]
 
-		//APPLY_WINDOW_FN(0)
+		APPLY_WINDOW_FN(0)
+		ldaw r4, sp[S_FRAME_OFFSET]
 		//MIN_MAX(S_FRAME_MIN_0, S_FRAME_MAX_0, 0)
 
 		ldaw r5, sp[S_SETTINGS_OFFSET]
