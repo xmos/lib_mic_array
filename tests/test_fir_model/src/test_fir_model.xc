@@ -29,7 +29,7 @@ int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 frame_complex f_complex[2];
 
-#define COUNT 32
+#define COUNT 128
 
 int generate_tail_output_counter(unsigned fsl2, unsigned df){
     if(fsl2==0)
@@ -140,7 +140,7 @@ void model(streaming chanend c_4x_pdm_mic_0,
 
 
                         if(windowing_enabled){
-                            if(index > (1<<(frame_size_log2-2)))
+                            if(index>>(frame_size_log2-1))
                                 index = (1<<frame_size_log2) -1- index;
                             int w = window[index];
                             v = apply_gain_comp(v, w);
@@ -317,6 +317,7 @@ void verifier(chanend c_model,
         //TODO dc offset elim
         //TODO channel count
 
+        unsigned test = 0;
         for(unsigned frame_size_log2 = 0;frame_size_log2<=MAX_FRAME_SIZE_LOG2;frame_size_log2++){
 
             for(unsigned decimation_index = 0; decimation_index < 5;decimation_index++){
@@ -354,13 +355,20 @@ void verifier(chanend c_model,
                                                 max_diff = diff;
                                         }
                                     }
+                                    printf("%4d ", test++);
                                     printf("df: %2d ", df);
                                     printf("fir_comp: 0x%08x ", fir_comp);
                                     printf("frame_size_log2: %d ", frame_size_log2);
                                     printf("index_bit_reversal: %d ", index_bit_reversal);
                                     printf("windowing_enabled: %d ", windowing_enabled);
                                     printf("gain_comp_enabled: %d ", gain_comp_enabled);
-                                    printf(" -> %d\n", max_diff);
+
+                                    if(max_diff < 16)
+                                        printf(" PASS\n");
+                                    else{
+                                        printf(" FAIL\n");
+                                        _Exit(1);
+                                    }
 
                                     c_actual:> int;
                                     c_model :> int;
