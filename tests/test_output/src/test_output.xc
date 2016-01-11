@@ -39,7 +39,7 @@ int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 
-void test_output(streaming chanend c_ds_output_0, streaming chanend c_ds_output_1,
+void test_output(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
 
     unsigned buffer;     //buffer index
@@ -49,16 +49,18 @@ void test_output(streaming chanend c_ds_output_0, streaming chanend c_ds_output_
 
     unsafe{
         decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_48kHz_fir, 0, 0};
-        decimator_config dc0 = {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4};
-        decimator_config dc1 = {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4};
-        decimator_configure(c_ds_output_0, c_ds_output_1, dc0, dc1);
+        decimator_config dc[2] = {
+                {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
+                {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+        };
+        decimator_configure(c_ds_output, 2, dc);
     }
 
-    decimator_init_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
+    decimator_init_audio_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
 
     while(1){
 
-        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output_0, c_ds_output_1, buffer, audio, 2);
+        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
 
         select {
             case lb.button_event():{
@@ -145,7 +147,6 @@ int main(){
     i2c_master_if i_i2c[1];
     chan c_audio;
     par{
-#if 1
         on tile[1]: {
           configure_clock_src(mclk, p_mclk_in1);
           start_clock(mclk);
@@ -157,7 +158,7 @@ int main(){
 
         on tile[0]: {
             streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
-            streaming chan c_ds_output_0, c_ds_output_1;
+            streaming chan c_ds_output[2];
 
             interface led_button_if lb;
 
@@ -169,40 +170,11 @@ int main(){
             par{
                 button_and_led_server(lb, leds, p_buttons);
                 pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output_0);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output_1);
-                test_output(c_ds_output_0, c_ds_output_1, lb,c_audio);
+                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+                test_output(c_ds_output, lb,c_audio);
             }
         }
-#else
-        on tile[0]:{
-            streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
-
-            configure_clock_src_divide(pdmclk, p_mclk, 4);
-            configure_port_clock_output(p_pdm_clk, pdmclk);
-            configure_in_port(p_pdm_mics, pdmclk);
-            start_clock(pdmclk);
-
-
-            par {
-                pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                while(1){
-                    int i;
-                    c_4x_pdm_mic_0 :> i;
-                    xscope_int(0, i);
-                    c_4x_pdm_mic_0 :> i;
-                    c_4x_pdm_mic_0 :> i;
-                    c_4x_pdm_mic_0 :> i;
-
-                }
-                while(1)
-                    c_4x_pdm_mic_1 :> int;
-               // par(int i=0;i<5;i++)while(1);
-            }
-        }
-#endif
-
-
     }
     return 0;
 }
