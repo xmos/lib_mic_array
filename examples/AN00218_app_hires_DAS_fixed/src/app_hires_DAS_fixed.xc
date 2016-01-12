@@ -261,7 +261,7 @@ int main(){
 
             unsafe {
 
-                interface led_button_if lb;
+                interface led_button_if lb[1];
 
                 hires_delay_config hrd_config;
                 hrd_config.active_delay_set = 0;
@@ -270,7 +270,7 @@ int main(){
                 hires_delay_config * unsafe config = &hrd_config;
                 int64_t * unsafe p_shared_memory = shared_memory;
                 par{
-                    button_and_led_server(lb, leds, p_buttons);
+                    button_and_led_server(lb, 1, leds, p_buttons);
 
                     pdm_rx_hires_delay(
                             p_pdm_mics,
@@ -284,7 +284,7 @@ int main(){
                     decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
                     decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
 
-                    hires_DAS_fixed(c_ds_output, config, lb, c_audio);
+                    hires_DAS_fixed(c_ds_output, config, lb[0], c_audio);
 
                 }
             }
