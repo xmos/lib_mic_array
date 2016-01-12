@@ -11,6 +11,7 @@ void hires_delay(
         hires_delay_config * unsafe config,
         int64_t * unsafe p_shared_memory_array){
 
+#define HIRES_DELAY_TAP_COUNT 8
 
     unsafe {
 

@@ -203,6 +203,7 @@
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include/xc"/>
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include"/>
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include/clang"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.xc.compiler.input.693729911" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
@@ -532,6 +533,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/rst}&quot;"/>
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include"/>
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include/clang"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.c.compiler.input.c.215645692" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
@@ -868,6 +870,7 @@
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include"/>
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include/clang"/>
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include/c++/v1"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.1227847050" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>

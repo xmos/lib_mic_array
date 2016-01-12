@@ -1,349 +1,129 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
 	.section	.dp.data,"awd",@progbits
 	.text
-	.cc_top decimate_to_pcm_4ch.function
-	.globl	decimate_to_pcm_4ch
-	.align	4
-	.type	decimate_to_pcm_4ch,@function
 
-.xtacommand "add exclusion configure_ep","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_sample_0_ep input_sample_1_ep","", __FILE__, __LINE__
-.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_sample_1_ep input_sample_2_ep","", __FILE__, __LINE__
-.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_sample_2_ep input_sample_3_ep","", __FILE__, __LINE__
-.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_sample_3_ep input_sample_4_ep","", __FILE__, __LINE__
-.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_sample_4_ep input_sample_5_ep","", __FILE__, __LINE__
-.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_sample_5_ep input_sample_6_ep","", __FILE__, __LINE__
-.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_sample_6_ep input_sample_7_ep","", __FILE__, __LINE__
-.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_sample_7_ep input_sample_0_ep","", __FILE__, __LINE__
-.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-
-#include "mic_array_defines.h"
+//#include "mic_array_defines.h"
 #include "mic_array_conf.h"
 
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
 
-//r0 to r7 are general purpose
+.xtacommand "analyse endpoints input_0_0 input_1_0","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-#define c_input			      r8
-#define p_integral		      r9
-#define s			          r10
-#define t                     r11
+.xtacommand "analyse endpoints input_1_0 input_2_0","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_2_0 input_3_0","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_3_0 input_4_0","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_4_0 input_5_0","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_5_0 input_6_0","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_6_0 input_7_0","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_7_0 input_0_1","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_0_1 input_1_1","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_1_1 input_2_1","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_2_1 input_3_1","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_3_1 input_4_1","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_4_1 input_5_1","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_5_1 input_6_1","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_6_1 input_7_1","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_7_1 input_0_0","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-#define MIN_MAX(MIN, MAX, P) \
-	ldd r1, r2, r1[S_D_SECOND_STAGE_OUTPUT_01];\
-	ldd r3, r4, r1[S_D_SECOND_STAGE_OUTPUT_23];\
-	ldaw r0, sp[S_FRAME_OFFSET];\
-	ldw r5, r0[MAX];\
-	lss r6, r5, r1;\
-	{bf r6, max_skip0 ## P; lss r6, r5, r2};\
-	{mov r5, r1; lss r6, r1, r2};\
-	max_skip0 ## P: {bf r6, max_skip1 ## P; lss r6, r5, r3};\
-	{mov r5, r2; lss r6, r2, r3};\
-	max_skip1 ## P: {bf r6, max_skip2 ## P; lss r6, r5, r4};\
-	{mov r5, r3; lss r6, r3, r4};\
-	max_skip2 ## P: {bf r6, max_skip3 ## P; nop};\
-	{mov r5, r4; nop};\
-	max_skip3 ## P: stw r5, r0[MAX];\
-	ldw r5, r0[MIN];\
-	lss r6, r5, r1;\
-	{bt r6, min_skip0 ## P; lss r6, r5, r2};\
-	{mov r5, r1; lss r6, r1, r2};\
-	min_skip0 ## P: {bt r6, min_skip1 ## P; lss r6, r5, r3};\
-	{mov r5, r2; lss r6, r2, r3};\
-	min_skip1 ## P: {bt r6, min_skip2 ## P; lss r6, r5, r4};\
-	{mov r5, r3; lss r6, r3, r4};\
-	min_skip2 ## P: {bt r6, min_skip3 ## P; nop};\
-	{mov r5, r4; nop};\
-	min_skip3 ## P: stw r5, r0[MIN]
+#define SECOND_STAGE_COEF_COUNT 		16		//This must reflect the implementation in decimate_to_pcm_4ch_fir_impl
+#define THIRD_STAGE_COEFS_PER_STAGE 	32		//This must reflect the implementation in third_stage_fir_impl
+#define THIRD_STAGE_COEFS_PER_ROW 		63		//This must reflect the implementation in third_stage_fir_impl
+#define MAX_DECIMATION_FACTOR      		12
 
+//derived defines
+#define SECOND_STAGE_BUFFER_SIZE		(SECOND_STAGE_COEF_COUNT*2)
+//#define SECOND_STAGE_BUFFER_SIZE		(SECOND_STAGE_COEF_COUNT*2 - 4)		//TODO
 
+//////////////////////////////////////////////////////////////////////////////////////
 
-#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, COMB_OUTPUT) \
-	ldd r1, r0, r3[PREV_Y];\
-	{shl r2, r1, 24; ldc r5, 0};\
-	lsub r2, r0, r0, r2, r5;\
-	ashr r5, r1, 8;\
-	lsub r2, r1, r1, r5, r2;\
-	{ldw r2, r4[COMB_OUTPUT]; nop};\
-	{add r1, r1, r2; ldw r5, r3[PREV_X]};\
-	{sub r1, r1, r5; stw r2, r3[PREV_X]};\
-	{stw r1, r4[COMB_OUTPUT]};\
-	std r1, r0, r3[PREV_Y];
+#define S_STORAGE 			0
+#define S_UNUSED			0
+#define S_C_INPUT 			1
+#define S_C_OUTPUT 			2
+#define S_CHAN_COUNT 	 	3
+#define S_FIR_GAIN_COMP     4
+#define S_STORAGE_SIZE 		6
 
-#define INPUT(S) \
-	in r0, res[c_input];\
-	in r1, res[c_input];\
-	std r1, r0, sp[S];
+//////////////////////////////////////////////////////////////////////////////////////
+//this address must be double word aligned
+#define S_SECOND_STAGE_DATA 		(S_STORAGE + S_STORAGE_SIZE)
+#define S_SECOND_STAGE_DATA_SIZE 	(16*2*4)		//16 words by 2 blocks by 4 channels
 
-#define COMB(OUTPUT, INPUT, OFF_0, OFF_1, OFF_2) \
-	{ldc r1, INPUT;ldaw r0, sp[S_COMB_OFFSET]};\
-	{ldw r1, p_integral[r1]};\
-    ldd r2, r3, r0[OFF_0];\
-	{sub r1, r1, r2 ; mov r2, r1};\
-	{sub r1, r1, r3 ; mov r3, r1};\
-	std r2, r3, r0[OFF_0];\
-    ldd r2, r3, r0[OFF_1];\
-	{sub r1, r1, r2 ; mov r2, r1};\
-	{sub r1, r1, r3 ; mov r3, r1};\
-	std r2, r3, r0[OFF_1];\
-    ldd r2, r3, r0[OFF_2];\
-	{sub r1, r1, r2 ; mov r2, r1};\
-	{sub r1, r1, r3 ; mov r3, r1};\
-	std r2, r3, r0[OFF_2];\
-	ldaw r2, sp[S_SECOND_STAGE_OUTPUT_OFFSET];\
-	stw r1, r2[OUTPUT]
+//////////////////////////////////////////////////////////////////////////////////////
 
-#define INTEGRATE_ITT() \
-	{ld8u t, r7[r6]; add r6, r6, 4};\
-	{ld8u t, r7[r6]; add r0, r0, t};\
-	{add r1, r1, r0; add r0, r0, t};\
-	{add r2, r2, r1; add r1, r1, r0};\
-	{add r3, r3, r2; add r2, r2, r1};\
-	{add r4, r4, r3; add r3, r3, r2};\
-	{add r5, r5, r4; add r4, r4, r3};\
-	{add r6, r6, 4;  add r5, r5, r4};\
+#define S_THIRD_STAGE 					(S_SECOND_STAGE_DATA + S_SECOND_STAGE_DATA_SIZE)
 
-#define INTEGRATE(MICROPHONE, OFF_0, OFF_1, OFF_2)\
-	ldd r1, r0, p_integral[OFF_0];\
-	ldd r3, r2, p_integral[OFF_1];\
-	{ldc r6, MICROPHONE; ldaw r7, sp[S_INPUT_OFFSET]};\
-	ldd r5, r4, p_integral[OFF_2];\
-	INTEGRATE_ITT();\
-	INTEGRATE_ITT();\
-	INTEGRATE_ITT();\
-	INTEGRATE_ITT();\
-	INTEGRATE_ITT();\
-	INTEGRATE_ITT();\
-	INTEGRATE_ITT();\
-	INTEGRATE_ITT();\
-	std r1, r0, p_integral[OFF_0];\
-	std r3, r2, p_integral[OFF_1];\
-	std r5, r4, p_integral[OFF_2]
+#define S_D_THIRD_STAGE_PHASE_AND_COUNT 0	//0 1
+											//2 3
+#define S_D_THIRD_STAGE_POINTERS        1	//4 5
+#define S_D_THIRD_STAGE_CH0_ACC 		3	//6 7
+#define S_D_THIRD_STAGE_CH1_ACC 		4	//8 9
+#define S_D_THIRD_STAGE_CH2_ACC 		5	//10 11
+#define S_D_THIRD_STAGE_CH3_ACC 		6	//12 13
 
-#define INIT_DATA_LOOP(DATA, label) \
-	ldaw r1, sp[S_FIR_OFFSET];\
-	ldc r4, DATA;\
-	ldaw r1, r1[r4];\
-	ldc r4, 0;\
-	label:stw r0, r1[r4];\
-	ldc r3, COEFS_PER_PHASE;\
-	ldaw r0, r0[r3];\
-	add r4, r4, 1;\
-	eq r3, r4, t;\
-	bf r3, label
+#define S_THIRD_STAGE_PHASE 			0		//need to be 0-11 for divide_by_four
+#define S_THIRD_STAGE_PHASE_COUNT 		1
+#define S_THIRD_STAGE_DATA_POINTER      2
+#define S_THIRD_STAGE_COEFS_POINER		3
+#define S_THIRD_STAGE_COEFS_PHASE		4
+#define S_THIRD_STAGE_UNUSED			5
+#define S_THIRD_STAGE_SIZE				(16)
 
-#define FIR(DATA, SECOND_STAGE_OUTPUT, SUM)\
-	ldaw t, sp[S_FIR_OFFSET];\
-	{ldw r1, t[S_FIR_PHASE]; ldc r0, DATA};\
-	ldaw r7, t[r0];\
-	ldw r7, r7[r1];\
-	ldaw r6, t[S_COEFS];\
-	ldw r6, r6[r1];\
-	{ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]};\
-	ldw r5, r0[SECOND_STAGE_OUTPUT];\
-	ldd r1, r0, t[SUM];\
-	{bl fir_impl};\
-	ldaw t, sp[S_FIR_OFFSET];\
-	std r1, r0, t[SUM];\
-
-//r3 is the AUDIO_POINTER_INDEX
-#define APPLY_WINDOW_FN(P)\
-	ldw r7, r0[S_WINDOWING_ENABLED];\
-	bf r7, no_windowing ## P;\
-	apply_windowing ## P:;\
-		ldw r4, r1[S_FRAME_SIZE_LOG2];\
-		{shl r5, r3, 1; mkmsk t, r4};\
-		{lss r5, t, r5; ldc r6, 29};\
-		{bf r5, skip ## P ; mov r4, r3};\
-			sub r4, t, r3;\
-		skip ## P:;\
-		{ldw r4, r7[r4]; ldc s, 0};\
-		ldaw r7, sp[S_FIR_OFFSET];\
-		{ldw r5, r7[S_SUM_0+1];ldc t, 0};\
-		maccs s, t, r4, r5;\
-		lextract s, s, t, r6, 32;\
-		{stw s, r2[S_SECOND_STAGE_OUTPUT_0];ldc s, 0};\
-		{ldw r5, r7[S_SUM_1+1];ldc t, 0};\
-		maccs s, t, r4, r5;\
-		lextract s, s, t, r6, 32;\
-		{stw s, r2[S_SECOND_STAGE_OUTPUT_1];ldc s, 0};\
-		{ldw r5, r7[S_SUM_2+1];ldc t, 0};\
-		maccs s, t, r4, r5;\
-		lextract s, s, t, r6, 32;\
-		{stw s, r2[S_SECOND_STAGE_OUTPUT_2];ldc s, 0};\
-		{ldw r5, r7[S_SUM_3+1];ldc t, 0};\
-		maccs s, t, r4, r5;\
-		lextract s, s, t, r6, 32;\
-		{stw s, r2[S_SECOND_STAGE_OUTPUT_3];ldc s, 0};\
-		bu done_windowing ## P;\
-	no_windowing ## P:;\
-		ldaw r4, sp[S_FIR_OFFSET];\
-		ldc t, 30;\
-		ldd r6, r5, r4[S_D_SUM_0];\
-		lextract s, r6, r5, t, 32;\
-		ldd r6, r5, r4[S_D_SUM_1];\
-		lextract t, r6, r5, t, 32;\
-		std t, s, r2[S_D_SECOND_STAGE_OUTPUT_01];\
-		ldc t, 30;\
-		ldd r6, r5, r4[S_D_SUM_2];\
-		lextract s, r6, r5, t, 32;\
-		ldd r6, r5, r4[S_D_SUM_3];\
-		lextract t, r6, r5, t, 32;\
-		std t, s, r2[S_D_SECOND_STAGE_OUTPUT_23];\
-	done_windowing ## P:
+//////////////////////////////////////////////////////////////////////////////////////
 
 
-//r3 is the AUDIO_POINTER_INDEX
-#define UPDATE_MIN_MAX()\
-	nop
+#define S_OUTPUT_STORAGE (S_THIRD_STAGE+S_THIRD_STAGE_SIZE)
+#define S_D_OUTPUT_STORAGE_01 0
+#define S_D_OUTPUT_STORAGE_23 1
+#define S_OUTPUT_STORAGE_SIZE 4
 
-//r3 is the AUDIO_POINTER_INDEX
-#define BITREV_INDEX()\
-	{ldw r5, r1[S_FRAME_SIZE_LOG2]; ldc r4, 32};\
-	{bitrev r3, r3; sub r4, r4, r5};\
-	{shr r3, r3, r4}
+//////////////////////////////////////////////////////////////////////////////////////
 
-//r3 is the AUDIO_POINTER_INDEX
-#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
-		ldw r4, r1[POINTER];\
-		ldd r6, r5, r2[S_D_SECOND_STAGE_OUTPUT_01];\
-		std r6, r5, r4[r3];\
-		{ldc r6, FRAME_SIZE_LOG2; ldc r5, 1};\
-		shl r6, r5, r6;\
-		add r3, r3, r6;\
-		ldd r6, r5, r2[S_D_SECOND_STAGE_OUTPUT_23];\
-		std r6, r5, r4[r3]
-
-//r3 is the AUDIO_POINTER_INDEX
-#define SAVE_SAMPLES_NORMAL(POINTER)\
-    	{ldc r6, FRAME_SIZE_LOG2; ldc r5, 1};\
-    	{ldw r4, r1[POINTER];shl r5, r5, r6};\
-		ldd s, t, r2[S_D_SECOND_STAGE_OUTPUT_01];\
-		stw t, r4[r3];\
-		add r3, r3, r5;\
-		stw s, r4[r3]; \
-		add r3, r3, r5;\
-		ldd s, t, r2[S_D_SECOND_STAGE_OUTPUT_23];\
-		stw t, r4[r3]; \
-		add r3, r3, r5;\
-		stw s, r4[r3]
-
-
-//r3 is the AUDIO_POINTER_INDEX
-#define CLEAR_FIR_ACCUMULATORS() \
-	ldaw r5, sp[S_FIR_OFFSET];\
-	ldc r4, 0;\
-    std r4, r4, r5[S_D_SUM_0];\
-    std r4, r4, r5[S_D_SUM_1];\
-    std r4, r4, r5[S_D_SUM_2];\
-    std r4, r4, r5[S_D_SUM_3]
-
-#define S_INPUT_OFFSET 0 //this one needs to be first
-#define S_D_INPUT_0	0
-#define S_D_INPUT_1 1
-#define S_D_INPUT_2 2
-#define S_D_INPUT_3 3
-#define S_D_INPUT_4 4
-#define S_D_INPUT_5 5
-#define S_D_INPUT_6 6
-#define S_D_INPUT_7 7
-#define S_D_INPUT_TEMP 8
-#define INPUT_STACK_SIZE 18
-
-#define S_INTEGRAL_OFFSET (S_INPUT_OFFSET+INPUT_STACK_SIZE)
-#define S_D_INT_0_01 0
-#define S_D_INT_0_23 1
-#define S_D_INT_0_45 2
-#define S_D_INT_1_01 3
-#define S_D_INT_1_23 4
-#define S_D_INT_1_45 5
-#define S_D_INT_2_01 6
-#define S_D_INT_2_23 7
-#define S_D_INT_2_45 8
-#define S_D_INT_3_01 9
-#define S_D_INT_3_23 10
-#define S_D_INT_3_45 11
-#define INTEGRAL_STACK_SIZE 24
-
-#define S_COMB_OFFSET (S_INTEGRAL_OFFSET+INTEGRAL_STACK_SIZE)
-#define S_D_COMB_0_01 0
-#define S_D_COMB_0_23 1
-#define S_D_COMB_0_45 2
-#define S_D_COMB_1_01 3
-#define S_D_COMB_1_23 4
-#define S_D_COMB_1_45 5
-#define S_D_COMB_2_01 6
-#define S_D_COMB_2_23 7
-#define S_D_COMB_2_45 8
-#define S_D_COMB_3_01 9
-#define S_D_COMB_3_23 10
-#define S_D_COMB_3_45 11
-#define COMB_STACK_SIZE 24
-
-#define S_SECOND_STAGE_OUTPUT_OFFSET (S_COMB_OFFSET+COMB_STACK_SIZE)
-#define S_D_SECOND_STAGE_OUTPUT_01 0
-#define S_SECOND_STAGE_OUTPUT_0 0
-#define S_SECOND_STAGE_OUTPUT_1 1
-#define S_D_SECOND_STAGE_OUTPUT_23 1
-#define S_SECOND_STAGE_OUTPUT_2 2
-#define S_SECOND_STAGE_OUTPUT_3 3
-#define SECOND_STAGE_OUTPUT_STACK_SIZE 4
-
-//fir decimator
-#define S_FIR_OFFSET (S_SECOND_STAGE_OUTPUT_OFFSET+SECOND_STAGE_OUTPUT_STACK_SIZE)
-#define S_SUM_0 		0
-#define S_D_SUM_0 		0
-#define S_SUM_1 		2
-#define S_D_SUM_1 		1
-#define S_SUM_2 		4
-#define S_D_SUM_2 		2
-#define S_SUM_3 		6
-#define S_D_SUM_3 		3
-#define S_D_PHASE_DEC_FACTOR 		4
-#define S_FIR_PHASE		8
-#define S_FIR_UNUSED	9
-#define S_COEFS			10
-#define S_DATA_0		(S_COEFS  + MAX_DECIMATION_FACTOR)
-#define S_DATA_1		(S_DATA_0 + MAX_DECIMATION_FACTOR)
-#define S_DATA_2		(S_DATA_1 + MAX_DECIMATION_FACTOR)
-#define S_DATA_3		(S_DATA_2 + MAX_DECIMATION_FACTOR)
-#define FIR_STACK_SIZE  (S_DATA_3 + MAX_DECIMATION_FACTOR)
-
-#define S_DC_ELIMINATE_OFFSET (S_FIR_OFFSET+FIR_STACK_SIZE)
-#define S_D_PREV_Y_0 0
-#define S_D_PREV_Y_1 1
-#define S_D_PREV_Y_2 2
-#define S_D_PREV_Y_3 3
-#define S_PREV_X_0   8
-#define S_PREV_X_1   9
-#define S_PREV_X_2   10
-#define S_PREV_X_3   11
-#define DC_ELIMINATE_STACK_SIZE 12
+//Note: this will survive a reconfig
+#define S_DC_ELIMINATE 					(S_OUTPUT_STORAGE+S_OUTPUT_STORAGE_SIZE)
+#define S_D_PREV_Y_0 					0
+#define S_D_PREV_Y_1 					1
+#define S_D_PREV_Y_2 					2
+#define S_D_PREV_Y_3 					3
+#define S_D_LONG_TERM_PREV_Y_0 			4
+#define S_D_LONG_TERM_PREV_Y_1 			5
+#define S_D_LONG_TERM_PREV_Y_2 			6
+#define S_D_LONG_TERM_PREV_Y_3 			7
+#define DC_ELIMINATE_STACK_SIZE 		16
 
 //frame
-#define S_FRAME_OFFSET (S_DC_ELIMINATE_OFFSET+DC_ELIMINATE_STACK_SIZE)
-#define S_D_AUDIO_POINTER_AND_INDEX_0 3
-#define S_D_AUDIO_POINTER_AND_INDEX_1 4
+#define S_FRAME_OFFSET (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
+#define S_D_FRAME_POINTER_AND_INDEX_0 3
+#define S_D_FRAME_POINTER_AND_INDEX_1 4
 #define S_D_FRAME_MIN_MAX_0       	  5
 #define S_D_FRAME_MIN_MAX_1       	  6
-#define S_C_OUTPUT				0
-#define S_FRAME_SIZE_LOG2		1
+#define S_C_UNUSED				0
+#define S_FRAME_SIZE_LOG2		1	//this is the current frame size log2
 #define S_FRAME_NUMBER			2	//should this be presistant between configs?
 #define S_OVERLAPPING_FRAMES    3	//0 for on overlap, 1 for overlapping
 #define S_METADATA_POINTER_0    4
 #define S_METADATA_POINTER_1    5
-#define S_AUDIO_POINTER_0 		    6	//must be double word aligned
-#define S_AUDIO_POINTER_0_INDEX     7
-#define S_AUDIO_POINTER_1 		    8	//must be double word aligned
-#define S_AUDIO_POINTER_1_INDEX     9
+#define S_FRAME_POINTER_0 		6	//pointer to the current frame
+#define S_FRAME_0_INDEX     	7	//index to write to the current frame
+#define S_FRAME_POINTER_1 		8	//pointer to the next frame
+#define S_FRAME_1_INDEX     	9	//index to write to the next frame
 #define S_FRAME_MIN_0				10   //must be double word aligned
 #define S_FRAME_MAX_0				11
 #define S_FRAME_MIN_1				12   //must be double word aligned
@@ -363,105 +143,232 @@
 #define S_WINDOWING_ENABLED 			0	//0 for disabled, pointer for enabled
 #define S_INDEX_BITREVERSING_ENABLED 	1
 #define S_DC_OFFSET_REMOVAL_ENABLED 	2
-#define S_DECIMATION_FACTOR 			3
+#define S_DECIMATION_FACTOR_is_now_S_THIRD_STAGE_PHASE_COUNT 			3
 #define S_MIC_GAIN_COMP		 			4
-
 #define S_SETTINGS_SIZE					6
 
-#define NSTACKWORDS (S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
+//This must be an even number
+#define STACKWORDS 						(S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
 
-/*
-void decimate_to_pcm_4ch(
-        streaming chanend c_4x_pdm_mic,		//r0
-        streaming chanend c_frame_output); 	//r1
-*/
 
+//TODO - use this when everything works
+//TODO then reduce the memory usage
+//Note: there could be two implementations of this where one never writes to
+//memory 28-32 as they are never used
+#define INPUT_TO_OFFSET_12_15(OFFSET) \
+	ldw r1, sp[S_C_INPUT]; \
+	in r0, res[r1];\
+	{stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]};\
+	{stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]};\
+	stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
+	in r0, res[r1];\
+	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]}
+
+//This inputs from the channel to the pdm interface and saves it twice in the
+//second stage FIR at offset OFFSET and OFFSET + 16
+#define INPUT_TO_OFFSET(OFFSET) \
+	ldw r1, sp[S_C_INPUT]; \
+	in r0, res[r1];\
+	{stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
+	{stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
+	{stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
+	{stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
+	{stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
+	{stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]};\
+	in r0, res[r1];\
+	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
+	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]}
+
+
+//setup divider by N registers (coefs, data, accumulators)
+//must avoid r0 and r1 for persistant state as they will be clobbered by INPUT_TO_OFFSET
+	//coef = coef[THIRD_STAGE_COEFS_PER_STAGE-1] ---this is done offline
+	//coef = coef[THIRD_STAGE_COEFS_PER_ROW*S_THIRD_STAGE_PHASE - S_THIRD_STAGE_COEFS_PHASE]
+	//data0 = data[THIRD_STAGE_COEFS_PER_STAGE*S_THIRD_STAGE_PHASE*4]
+	//data1 = data0[THIRD_STAGE_COEFS_PER_STAGE]
+#define DIVIDE_BY_N_0()\
+	ldaw r0, sp[S_THIRD_STAGE];\
+	{ldw r7, r0[S_THIRD_STAGE_PHASE]; ldc r6, THIRD_STAGE_COEFS_PER_ROW};\
+	mul r6, r6, r7;\
+	{ldw r5, r0[S_THIRD_STAGE_COEFS_PHASE]; ldc r8, THIRD_STAGE_COEFS_PER_STAGE};\
+	{sub r6, r6, r5; ldw r9, r0[S_THIRD_STAGE_COEFS_POINER]};\
+	ldaw r9, r9[r6];\
+	mul r7, r7, r8;\
+	ldw r6, sp[S_CHAN_COUNT];\
+	mul r7, r7, r6;\
+	ldw r10, r0[S_THIRD_STAGE_DATA_POINTER];\
+	ldaw r10, r10[r7];\
+	ldaw r11, r10[r8];\
+	ldd r8, r7, r0[S_D_THIRD_STAGE_CH0_ACC];\
+	ldd r6, r5, r0[S_D_THIRD_STAGE_CH1_ACC];\
+	bl third_stage_fir_impl;\
+	ldaw r0, sp[S_THIRD_STAGE];\
+	std r8, r7, r0[S_D_THIRD_STAGE_CH0_ACC];\
+	std r6, r5, r0[S_D_THIRD_STAGE_CH1_ACC]
+
+#define N_DIVIDE_BY_N_1()\
+	{ldc r0, THIRD_STAGE_COEFS_PER_STAGE};\
+	ldaw r9, r9[-r0];\
+	ldc r0, THIRD_STAGE_COEFS_PER_STAGE-24;\
+	ldaw r10, r11[r0];\
+	{ldc r0, THIRD_STAGE_COEFS_PER_STAGE};\
+	ldaw r11, r10[r0];\
+	ldaw r0, sp[S_THIRD_STAGE];\
+	ldd r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
+	ldd r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC];\
+	bl third_stage_fir_impl;\
+	ldaw r0, sp[S_THIRD_STAGE];\
+	std r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
+	std r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]
+
+
+#ifndef DC_OFFSET_DIVIDER_LOG2
+	#define DC_OFFSET_DIVIDER_LOG2 13
+#endif
+// r4 is used as a zero for the first lsub as the
+// lower bit is always a zero
+#define DC_OFFSET_REMOVAL(PREV_Y, REGISTER) \
+	ldd r6, r5, r4[PREV_Y];\
+	ashr r7, r6, 1;\
+	ashr r8, REGISTER, 1;\
+	{sub r7, r7, r8; ldc r9, 32 - DC_OFFSET_DIVIDER_LOG2};\
+	{shl r8, r7, r9; ldc r9, DC_OFFSET_DIVIDER_LOG2};\
+	ashr r7, r7, r9;\
+	lsub r8, r5, r5, r8, r4;\
+	lsub r8, r6, r6, r7, r8;\
+	std r6, r5, r4[PREV_Y]
+
+//r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
+#define APPLY_WINDOW_FN(P)\
+	ldaw r9, sp[S_SETTINGS_OFFSET];\
+	ldw r9, r9[S_WINDOWING_ENABLED];\
+	bf r9, done_windowing ## P;\
+	apply_windowing ## P:;\
+		ldw r5, r4[S_FRAME_SIZE_LOG2];\
+		{shl r5, r6, 1; mkmsk r8, r5};\
+		{lss r5, r8, r5; ldc r7, 31};\
+		{bf r5, skip ## P ; mov r4, r6};\
+			sub r4, r8, r6;\
+		skip ## P:;\
+		{ldw r4, r9[r4]};\
+		{ldc r10, 0; ldc r11, 0};\
+		maccs r10, r11, r4, r0;\
+		lextract r0, r10, r11, r7, 32;\
+		{ldc r10, 0; ldc r11, 0};\
+		maccs r10, r11, r4, r1;\
+		lextract r1, r10, r11, r7, 32;\
+		{ldc r10, 0; ldc r11, 0};\
+		maccs r10, r11, r4, r2;\
+		lextract r2, r10, r11, r7, 32;\
+		{ldc r10, 0; ldc r11, 0};\
+		maccs r10, r11, r4, r3;\
+		lextract r3, r10, r11, r7, 32;\
+		bu done_windowing ## P;\
+	done_windowing ## P:
+
+//r4 is the address of the S_FRAME_OFFSET_SECTION
+//r6 is the AUDIO_POINTER_INDEX
+#define BITREV_INDEX()\
+	{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
+	{bitrev r6, r6; sub r7, r7, r5};\
+	{shr r6, r6, r7}
+
+//r4 is the address of the S_FRAME_OFFSET_SECTION
+//r6 is the AUDIO_POINTER_INDEX
+#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
+		ldw r7, r4[POINTER];\
+		std r1, r0, r7[r6];\
+		{ldc r0, 2<<MAX_FRAME_SIZE_LOG2};\
+		ldaw r7, r7[r0];\
+		std r3, r2, r7[r6]
+
+
+//r4 is the address of the S_FRAME_OFFSET_SECTION
+//r6 is the AUDIO_POINTER_INDEX
+#define SAVE_SAMPLES_NORMAL(POINTER)\
+    	{ldc r5, 4<<MAX_FRAME_SIZE_LOG2};\
+    	{ldw r7, r4[POINTER]};\
+    	{ldaw r7, r7[r6]};\
+		{stw r0, r7[0];add r7, r7, r5};\
+		{stw r1, r7[0];add r7, r7, r5};\
+		{stw r2, r7[0];add r7, r7, r5};\
+		{stw r3, r7[0]}
+
+.globl	decimate_to_pcm_4ch
+.align	8
+.type	decimate_to_pcm_4ch,@function
+.cc_top decimate_to_pcm_4ch.function
 decimate_to_pcm_4ch:
-.align 8
+.cfi_startproc
 .issue_mode dual
+	DUALENTSP_lu6 STACKWORDS
 
-	//extend the stack
-	DUALENTSP_lu6 NSTACKWORDS
+	ldaw r2, sp[S_STORAGE]
+	stw r0, r2[S_C_INPUT]
+	stw r1, r2[S_C_OUTPUT]
 
-	mov c_input, r0
-
-	//set the integral pointer
-	ldaw p_integral, sp[S_INTEGRAL_OFFSET]
-
-	//store c_output off to the stack
-	ldaw t, sp[S_FRAME_OFFSET]
-	stw r1, t[S_C_OUTPUT]
-	ldc r1, 0
-	stw r1, t[S_FRAME_NUMBER]
-
-	ldaw r0, sp[S_FRAME_OFFSET]
-	ldw r1, r0[S_C_OUTPUT]
-	//wait for the decimator_configure to send us the configuration
+	//Set the dp to point to the data area for the second stage FIR
+	ldaw dp, sp[S_SECOND_STAGE_DATA]
 
 	outct res[r1], 8		//we say we are ready
 	inct r2, res[r1]		//they say CONFIGURE_DECIMATOR
-	mov r4, r1
-	//cry if r2 != CONFIGURE_DECIMATOR
 
-configure:	//This is the entry point if comming from a reconfigure
-	in r2, res[r4]		//get the pointer to the decimator_config
+	//TODO initialise the DC offset removal
+
+configure:
+	DUALENTSP_lu6 0
+	//Initialise the stack -- TODO optimise this
+	ldc r0, (S_SETTINGS_OFFSET - S_SECOND_STAGE_DATA)/2
+	{ldaw r1, sp[S_SECOND_STAGE_DATA];ldc r2, 0}
+stack_init_loop:
+	std r2, r2, r1[r0]
+	{bt r0, stack_init_loop; sub r0, r0, 1}
+
+take_config_from_application:
+	//get the pointer for the config over the output channel
+	ldw r0, sp[S_C_OUTPUT]
+	in r2, res[r0]		//deciamtor_config
 	ldw r3, r2[0];		//r3 is the pointer to the decimator_config_common
 
-	/*
-	Initialise the stack regions:
-		- 	S_INPUT
-		- 	S_INTEGRAL
-		- 	S_COMB
-		- 	S_SECOND_STAGE_OUTPUT
-		- 	S_FIR_OFFSET
-	*/
-setup_stack_init:
-	ldc r6, (S_DC_ELIMINATE_OFFSET/2)-1
-	{ldaw r7, sp[0];ldc t, 0}
-init_loop:
-	std t, t, r7[r6]
-	{bt r6, init_loop ; sub r6, r6, 1}
-
-	//copy the setting out of the struct
+//copy the setting out of the struct
 	ldaw r0, sp[S_FRAME_OFFSET]
-	ldw t, r3[0] //frame_size_log2
-	stw t, r0[S_FRAME_SIZE_LOG2]
+	ldw r11, r3[0] //frame_size_log2
+	here_is_frame_size_log2:
+	stw r11, r0[S_FRAME_SIZE_LOG2]
 
 	ldaw r0, sp[S_SETTINGS_OFFSET]
 
-	ldw t, r3[1] //apply_dc_offset
-	stw t, r0[S_DC_OFFSET_REMOVAL_ENABLED]
+	ldw r11, r3[1] //apply_dc_offset
+	stw r11, r0[S_DC_OFFSET_REMOVAL_ENABLED]
 
-	ldw t, r3[2] //index_bit_reversal
-	stw t, r0[S_INDEX_BITREVERSING_ENABLED]
+	ldw r11, r3[2] //index_bit_reversal
+	stw r11, r0[S_INDEX_BITREVERSING_ENABLED]
 
-	ldw t, r3[3] //windowing_function
-	stw t, r0[S_WINDOWING_ENABLED]
+	ldw r11, r3[3] //windowing_function
+	stw r11, r0[S_WINDOWING_ENABLED]
 
-	ldw t, r3[6]	//apply mic gain compensation
-	stw t, r0[S_MIC_GAIN_COMP]
+	ldw r11, r3[6]	//apply mic gain compensation
+	stw r11, r0[S_MIC_GAIN_COMP]
 
-	ldw t, r3[4] //deciamtion factor
-	stw t, r0[S_DECIMATION_FACTOR]
+	ldw r11, r3[7]	//fir_gain_comp
+	stw r11, sp[S_FIR_GAIN_COMP]
 
-	//Copy the coefficient pointer over
-setup_coefs:
-	ldaw r1, sp[S_FIR_OFFSET]
-	ldaw r1, r1[S_COEFS]
-	{ldw r0, r3[5]; ldc r4, 0} //coef pointer
-	coef_init_loop:
-		stw r0, r1[r4]
-		ldc r5, COEFS_PER_PHASE
-		ldaw r0, r0[r5]
-		add r4, r4, 1
-		eq r5, r4, t
-		bf r5, coef_init_loop
+	ldw r11, r3[4] 	//decimation factor
+	ldaw r10, sp[S_THIRD_STAGE]
+	stw r11, r10[S_THIRD_STAGE_PHASE_COUNT]
 
-	ldw r0, r2[1] //data pointer
-	INIT_DATA_LOOP(S_DATA_0, data_0_init_loop)
-	INIT_DATA_LOOP(S_DATA_1, data_1_init_loop)
-	INIT_DATA_LOOP(S_DATA_2, data_2_init_loop)
-	INIT_DATA_LOOP(S_DATA_3, data_3_init_loop)
+	here_is_the_coef_pointer:
+	{ldw r11, r3[5];} //coef pointer
+	ldc r9, (THIRD_STAGE_COEFS_PER_STAGE-1)			//move the coef pointer along by (THIRD_STAGE_COEFS_PER_STAGE-1)
+	ldaw r11, r11[r9]
+	stw r11, r10[S_THIRD_STAGE_COEFS_POINER]
+
+	here_is_the_data_pointer:
+	{ldw r11, r2[1];} //data pointer
+	stw r11, r10[S_THIRD_STAGE_DATA_POINTER]
+
+	{ldw r11, r2[6];} //channel count
+	stw r11, sp[S_CHAN_COUNT]
 
 load_mic_gain_calib:
 	ldaw r1, sp[S_MIC_CALIB_OFFSET]
@@ -474,315 +381,131 @@ load_mic_gain_calib:
 	ldw r0, r2[5]
 	stw r0, r1[S_MIC_CALIB_3]
 
-init_fir_phase:
-	ldaw t, sp[S_FIR_OFFSET]
-	ldc r1, 0
-	stw r1, t[S_FIR_PHASE]
-
 init_frame_index:
-	ldaw t, sp[S_FRAME_OFFSET]
+	ldaw r11, sp[S_FRAME_OFFSET]
 	ldc r1, 0
-	stw r1, t[S_AUDIO_POINTER_0_INDEX]
+	stw r1, r11[S_FRAME_0_INDEX]
 
-	ldw r1, t[S_FRAME_SIZE_LOG2]
-	{sub r1, r1, 1; ldc s, 1}
-	shl r1, s, r1
-	stw r1, t[S_AUDIO_POINTER_1_INDEX]
-	std r1, r1, t[S_D_FRAME_MIN_MAX_0]
-	std r1, r1, t[S_D_FRAME_MIN_MAX_1]
+	ldw r1, r11[S_FRAME_SIZE_LOG2]
+	{sub r1, r1, 1; ldc r10, 1}
+	shl r1, r10, r1
+	stw r1, r11[S_FRAME_1_INDEX]
+	std r1, r1, r11[S_D_FRAME_MIN_MAX_0]
+	std r1, r1, r11[S_D_FRAME_MIN_MAX_1]
 
 get_frame_pointer:
-	ldaw t, sp[S_FRAME_OFFSET]
-	ldw r2, t[S_C_OUTPUT]
-
+	ldw r2, sp[S_C_OUTPUT]
 	rx_buffer_count:
 	in r5, res[r2]
 	sub r5, r5, 1
 
 	bt r5, overlapping
 	non_overlapping:
-	    {in r1, res[r2];stw r5, t[S_OVERLAPPING_FRAMES]}
-	    {in r1, res[r2];stw r1, t[S_AUDIO_POINTER_0]}
-		stw r1, t[S_METADATA_POINTER_0]
-		bu confirm_init_complete
+	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
+	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
+		stw r1, r11[S_METADATA_POINTER_0]
+		bu setup_phase_counters
+
 	overlapping:
 	    {in r1, res[r2];}
-	    {in r1, res[r2];stw r1, t[S_AUDIO_POINTER_1]}
-		stw r1, t[S_METADATA_POINTER_1]
-	    {in r1, res[r2];stw r5, t[S_OVERLAPPING_FRAMES]}
-	    {in r1, res[r2];stw r1, t[S_AUDIO_POINTER_0]}
-		stw r1, t[S_METADATA_POINTER_0]
+	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
+		stw r1, r11[S_METADATA_POINTER_1]
+	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
+	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
+		stw r1, r11[S_METADATA_POINTER_0]
+
+setup_phase_counters:
+	ldaw r10, sp[S_THIRD_STAGE]
+	ldw r9, r10[S_THIRD_STAGE_PHASE_COUNT]
+	sub r9, r9, 1
+	stw r9, r10[S_THIRD_STAGE_PHASE]
+
+	ldc r9, (THIRD_STAGE_COEFS_PER_STAGE-1)
+	stw r9, r10[S_THIRD_STAGE_COEFS_PHASE]
 
 confirm_init_complete:
-	ldaw r1, sp[S_FRAME_OFFSET]
-	ldw r4, r1[S_C_OUTPUT]
+	ldw r4, sp[S_C_OUTPUT]
 	outct res[r4], 8 //WARNING: do not change this
 
-ds_loop:
-input_sample_0:
-	INPUT(S_D_INPUT_TEMP)	//TODO check speed requirements
-		integrate_2:
-		INTEGRATE(2, 6,  7,  8) //78 inst
-		integrate_3:
-		INTEGRATE(3, 9, 10, 11) //78 inst
-	ldd r1, r0, sp[S_D_INPUT_TEMP]
-	std r1, r0, sp[S_D_INPUT_0]
-input_sample_1:
-	INPUT(S_D_INPUT_1)//comb and dc eliminate all mics
-		comb0:
-		COMB(S_SECOND_STAGE_OUTPUT_0, 5, 0, 1, 2)
-		comb1:
-		COMB(S_SECOND_STAGE_OUTPUT_1, 11, 3, 4, 5)
-		comb2:
-		COMB(S_SECOND_STAGE_OUTPUT_2, 17, 6, 7, 8)
-		comb3:
-		COMB(S_SECOND_STAGE_OUTPUT_3, 23, 9, 10, 11)
+input_0_0:
+	INPUT_TO_OFFSET(15)
+	divide_by_n_0_0:
+	DIVIDE_BY_N_0()
 
-		check_dc_offset_removal:
-		ldaw t, sp[S_SETTINGS_OFFSET]
-		ldw t, t[S_DC_OFFSET_REMOVAL_ENABLED]
-		bf t, skip_dc_offset_removal
-			ldaw r3, sp[S_DC_ELIMINATE_OFFSET]
-			ldaw r4, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-			dc_offset_removal_0:
-			DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, S_SECOND_STAGE_OUTPUT_0);
-			dc_offset_removal_1:
-			DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, S_SECOND_STAGE_OUTPUT_1);
-			dc_offset_removal_2:
-			DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, S_SECOND_STAGE_OUTPUT_2);
-			dc_offset_removal_3:
-			DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, S_SECOND_STAGE_OUTPUT_3);
-			//ecallt c_input
-			bu gain_compensation
-		skip_dc_offset_removal:
-			ldw r1, cp[g_cic_max]	//this should be 1<<(6+6*log(16)) = 1<<30
-			shr r1, r1, 1
-			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-			ldd r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_01]
-			{sub r2, r2, r1; sub r3, r3, r1}
-			std r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_01]
-			ldd r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_23]
-			{sub r2, r2, r1; sub r3, r3, r1}
-			std r3, r2, r0[S_D_SECOND_STAGE_OUTPUT_23]
-		gain_compensation:
-		//apply gain compensation
-		ldaw r0, sp[S_SETTINGS_OFFSET]
-		ldw r1, r0[S_MIC_GAIN_COMP]
-		bf r1, input_sample_2
-		apply_mic_gain_compensation:
-			ldaw r0, sp[S_MIC_CALIB_OFFSET]
-			ldd r2, r1, r0[S_D_MIC_CALIB_01]
-			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-			ldd r4, r3, r0[S_D_SECOND_STAGE_OUTPUT_01]
-			{ldc r5, 0; ldc r6, 0}
-			maccs r5, r6, r1, r3
-			{ldc r6, 0; ldc r1, 0}
-			maccs r6, r1, r2, r4
-			std r6, r5, r0[S_D_SECOND_STAGE_OUTPUT_01]
-			ldaw r0, sp[S_MIC_CALIB_OFFSET]
-			ldd r2, r1, r0[S_D_MIC_CALIB_23]
-			ldaw r0, sp[S_SECOND_STAGE_OUTPUT_OFFSET]
-			ldd r4, r3, r0[S_D_SECOND_STAGE_OUTPUT_23]
-			{ldc r5, 0; ldc r6, 0}
-			maccs r5, r6, r1, r3
-			{ldc r6, 0; ldc r1, 0}
-			maccs r6, r1, r2, r4
-			std r6, r5, r0[S_D_SECOND_STAGE_OUTPUT_23]
+input_1_0:
+	INPUT_TO_OFFSET(14)
+	divide_by_n_0_1:
+	N_DIVIDE_BY_N_1()
 
-input_sample_2:
-	INPUT(S_D_INPUT_2)
-	fir0:
-	FIR(S_DATA_0, S_SECOND_STAGE_OUTPUT_0, S_D_SUM_0)
+input_2_0:
+	INPUT_TO_OFFSET(13)
+	bl post_process
 
-input_sample_3:
-	INPUT(S_D_INPUT_3)
-	fir1:
-	FIR(S_DATA_1, S_SECOND_STAGE_OUTPUT_1, S_D_SUM_1)
+input_3_0:
+	INPUT_TO_OFFSET(12)
+	ldaw r7, dp[12]
+	bl divide_by_four
 
-input_sample_4:
-	INPUT(S_D_INPUT_4)
-	fir2:
-	FIR(S_DATA_2, S_SECOND_STAGE_OUTPUT_2, S_D_SUM_2)
+input_4_0:
+	INPUT_TO_OFFSET(11)
+	divide_by_n_1_0:
+	DIVIDE_BY_N_0();
 
-input_sample_5:
-	INPUT(S_D_INPUT_5)
-	fir3:
-	FIR(S_DATA_3, S_SECOND_STAGE_OUTPUT_3, S_D_SUM_3)
+input_5_0:
+	INPUT_TO_OFFSET(10)
+	divide_by_n_1_1:
+	N_DIVIDE_BY_N_1()
 
-input_sample_6:
-	INPUT(S_D_INPUT_6)
+input_6_0:
+	INPUT_TO_OFFSET(9)
+	bl post_process
 
-	ldaw r0, sp[S_FIR_OFFSET]
-	ldaw r3, sp[S_SETTINGS_OFFSET]
-	ldw r1, r0[S_FIR_PHASE]
+input_7_0:
+	INPUT_TO_OFFSET(8)
+	ldaw r7, dp[8]
+	bl divide_by_four
 
-	{add r1, r1, 1;ldw r2, r3[S_DECIMATION_FACTOR]}
-	eq r2, r1, r2
-	{bt r2, save_sample; ldc r2, 0}
-	next_phase:
-	stw r1, r0[S_FIR_PHASE]
-	bu input_sample_7
-	save_sample:
+input_0_1:
+	INPUT_TO_OFFSET(7)
+	divide_by_n_2_0:
+	DIVIDE_BY_N_0();
 
-		stw r2, r0[S_FIR_PHASE]
+input_1_1:
+	INPUT_TO_OFFSET(6)
+	divide_by_n_2_1:
+	N_DIVIDE_BY_N_1()
 
-		//r0 = S_SETTINGS_OFFSET
-		//r1 = S_FRAME_OFFSET
-		//r2 = S_SECOND_STAGE_OUTPUT_OFFSET
-		ldaw r0, sp[S_SETTINGS_OFFSET]
-		ldaw r1, sp[S_FRAME_OFFSET]
-		ldaw r2, sp[S_SECOND_STAGE_OUTPUT_OFFSET]		//might be able to use short encodings here
+input_2_1:
+	INPUT_TO_OFFSET(5)
+	bl post_process
 
-		ldw r3, r1[S_AUDIO_POINTER_0_INDEX]
+input_3_1:
+	INPUT_TO_OFFSET(4)
+	ldaw r7, dp[4]
+	bl divide_by_four
 
-		APPLY_WINDOW_FN(0)
-        //MIN_MAX(S_FRAME_MIN_0, S_FRAME_MAX_0, 0)
-		ldw r5, r0[S_INDEX_BITREVERSING_ENABLED]
-		bt r5, index_bitrev_order_0
-			index_normal_order_0:
-				SAVE_SAMPLES_NORMAL(S_AUDIO_POINTER_0);
-				bu save_to_frame_complete_0
-			index_bitrev_order_0:
-				BITREV_INDEX();
-				SAVE_SAMPLES_BIT_REVERSED(S_AUDIO_POINTER_0);
-		save_to_frame_complete_0:
+input_4_1:
+	INPUT_TO_OFFSET(3)
+	divide_by_n_3_0:
+	DIVIDE_BY_N_0();
 
-		ldw r3, r1[S_AUDIO_POINTER_0_INDEX]
-		add r3, r3, 1
-		stw r3, r1[S_AUDIO_POINTER_0_INDEX]
+input_5_1:
+	INPUT_TO_OFFSET(2)
+	divide_by_n_3_1:
+	N_DIVIDE_BY_N_1()
 
-		ldw r4, r1[S_OVERLAPPING_FRAMES]
-		bt r4, overlapping_frames
-		no_overlapping_frames:
+input_6_1:
+	INPUT_TO_OFFSET(1)
+	bl post_process
 
-			CLEAR_FIR_ACCUMULATORS()
+input_7_1:
+	INPUT_TO_OFFSET(0)
+	ldaw r7, dp[0]
+	bl divide_by_four
+	bu input_0_0
 
-			//reset the S_D_AUDIO_POINTER_INDEX_0
-
-			ldw r4, r1[S_FRAME_SIZE_LOG2]
-			shr r4, r3, r4;
-			bf r4, input_sample_7
-
-				do_the_meta_data_stuff:
-				//set the metadata
-				{ldd r3, r4, r1[S_D_FRAME_MIN_MAX_0]}
-		        ldw r5, r1[S_METADATA_POINTER_0]
-		        std r3, r4, r5[0];
-		        ldw r3, r1[S_FRAME_NUMBER]
-		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
-		        stw r3, r1[S_FRAME_NUMBER]      //and save the new frame number back
-
-				exchange_buffers:
-				//exchange_buffers
-				ldw r4, r1[S_C_OUTPUT]
-				outct res[r4], 8 //WARNING: do not change this
-				inct r3, res[r4]
-		        //if the incomming token is EXCHANGE_BUFFERS then do that
-		        //if the incomming token is CONFIGURE_DECIMATOR then do that
-
-		        eq r5, r3, CONFIGURE_DECIMATOR
-		        bt r5, configure
-		        eq r5, r3, EXCHANGE_BUFFERS
-		        bt r5, do_the_exchange
-
-				do_the_exchange:
-		        {in r3, res[r4];ldc r5, 0}
-		        {std r5, r3, r1[S_D_AUDIO_POINTER_AND_INDEX_0]}
-
-		        get_the_new_metadata_pointer:
-		        in r3, res[r4]
-		        {stw r3, r1[S_METADATA_POINTER_0]}
-		        //reset the frame min and max to 0
-				{std r4, r4, r1[S_D_FRAME_MIN_MAX_0]}
-
-				ldw r4, r1[S_C_OUTPUT]
-				outct res[r4], 8 //WARNING: do not change this
-
-				bu input_sample_7
-
-		overlapping_frames:
-			//make sure index1 is in r3
-			ldw r3, r1[S_AUDIO_POINTER_1_INDEX]
-
-			APPLY_WINDOW_FN(1)
-       		//MIN_MAX(S_FRAME_MIN_1, S_FRAME_MAX_1, 1)
-
-			ldw r5, r0[S_INDEX_BITREVERSING_ENABLED]
-			bt r5, index_bitrev_order_1
-				index_normal_order_1:
-					SAVE_SAMPLES_NORMAL(S_AUDIO_POINTER_1);
-					bu save_to_frame_complete_1
-				index_bitrev_order_1:
-					BITREV_INDEX();
-					SAVE_SAMPLES_BIT_REVERSED(S_AUDIO_POINTER_1);
-			save_to_frame_complete_1:
-
-			CLEAR_FIR_ACCUMULATORS()
-
-			ldw r3, r1[S_AUDIO_POINTER_1_INDEX]
-			add r3, r3, 1
-			stw r3, r1[S_AUDIO_POINTER_1_INDEX]
-
-			ldw r4, r1[S_FRAME_SIZE_LOG2]
-			shr r3, r3, r4
-			stop_again:
-			bf r3, input_sample_7
-			at_the_end_of_the_overlapping_half_frame:
-
-				//exchange buffers and reset
-
-				//set the metadata
-				{ldd r3, r4, r1[S_D_FRAME_MIN_MAX_1]}
-		        ldw r5, r1[S_METADATA_POINTER_1]
-		        std r3, r4, r5[0];
-		        ldw r3, r1[S_FRAME_NUMBER]
-		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
-		        stw r3, r1[S_FRAME_NUMBER]      //and save the new frame number back
-
-		        //exchange_buffers
-				ldw r4, r1[S_C_OUTPUT]
-				outct res[r4], 8 //WARNING: do not change this
-				inct r3, res[r4]
-
-				eq r5, r3, CONFIGURE_DECIMATOR
-		        bt r5, configure
-		        eq r5, r3, EXCHANGE_BUFFERS
-		        bt r5, do_the_exchange2
-
-				do_the_exchange2:
-				ldd r3, r5, r1[S_D_AUDIO_POINTER_AND_INDEX_0]
-				std r3, r5, r1[S_D_AUDIO_POINTER_AND_INDEX_1]
-
-				ldd r3, r5, r1[S_D_FRAME_MIN_MAX_0]
-				std r3, r5, r1[S_D_FRAME_MIN_MAX_1]
-
-		        {in r3, res[r4];ldc r5, 0}
-		        {std r5, r3, r1[S_D_AUDIO_POINTER_AND_INDEX_0]}
-		        get_the_new_metadata_pointer2:
-		        in r3, res[r4]
-		        {stw r3, r1[S_METADATA_POINTER_0]}
-		        //reset the frame min and max to 0
-				{std r5, r5, r1[S_D_FRAME_MIN_MAX_0]}
-
-
-				ldw r4, r1[S_C_OUTPUT]
-				outct res[r4], 8 //WARNING: do not change this
-
-
-input_sample_7:
-	INPUT(S_D_INPUT_7)	//162 instruction per loop
-		integrate_0:
-		INTEGRATE(0, 0,  1,  2)	//71 inst
-		integrate_1:
-		INTEGRATE(1, 3,  4,  5) //71 inst
-	bl ds_loop
-
-.tmp_decimate_to_pcm_4ch:
-	.size	decimate_to_pcm_4ch, .tmp_decimate_to_pcm_4ch-decimate_to_pcm_4ch
-	.align	4
 	.cc_bottom decimate_to_pcm_4ch.function
-
-	.set	decimate_to_pcm_4ch.nstackwords,NSTACKWORDS
+	.set	decimate_to_pcm_4ch.nstackwords, STACKWORDS
 	.globl	decimate_to_pcm_4ch.nstackwords
 	.set	decimate_to_pcm_4ch.maxcores,1
 	.globl	decimate_to_pcm_4ch.maxcores
@@ -790,148 +513,572 @@ input_sample_7:
 	.globl	decimate_to_pcm_4ch.maxtimers
 	.set	decimate_to_pcm_4ch.maxchanends,0
 	.globl	decimate_to_pcm_4ch.maxchanends
+.Ldecimate_to_pcm_4ch_tmp:
+	.size	decimate_to_pcm_4ch, .Ldecimate_to_pcm_4ch_tmp-decimate_to_pcm_4ch
+	.cfi_endproc
 
+//////////////////////////////////////////////////////////////////////////////////////////
 
-.cc_top fir_impl.function
-	.globl	fir_impl
-	.align	8
-	.type	fir_impl,@function
+.globl	post_process
+.align	8
+.type	post_process,@function
+.cc_top post_process.function
+post_process:
+	.cfi_startproc
 	.issue_mode dual
 
-#define DOUBLE_TAP(I)\
-	ldd r2, t, r6[I];\
-	maccs r1, r0, t, r5;\
-	ldd r4, r3, r7[I];\
-	maccs r1, r0, r2, r5;\
-	std r3, r5, r7[I];\
-	ldd r2, t, r6[I+1];\
-	maccs r1, r0, t, r4;\
-	ldd r5, r3, r7[I+1];\
-	maccs r1, r0, r2, r3;\
-	std r3, r4, r7[I+1]
+	//increment THIRD_STAGE_PHASE mod THIRD_STAGE_PHASE_COUNT
+	ldaw r11, sp[S_THIRD_STAGE]
+	ldw r10, r11[S_THIRD_STAGE_PHASE];
+	{add r9, r10, 1; ldw r8, r11[S_THIRD_STAGE_PHASE_COUNT]}
+	{stw r9, r11[S_THIRD_STAGE_PHASE];eq r8, r8, r9}
 
-/*
-lo		0
-hi		1
-c0		t
-c1		2
-d0		3
-d1		4
-n		5
-coefs	6
-data	7
-*/
-
-
-.align 8
-.issue_mode dual
-fir_impl:
-	DOUBLE_TAP(0)
-	DOUBLE_TAP(2)
-	DOUBLE_TAP(4)
-	DOUBLE_TAP(6)
-	DOUBLE_TAP(8)
-	DOUBLE_TAP(10)
-	ldc t, 24*4
-	{add r7, r7, t; add r6, r6, t}
-	DOUBLE_TAP(0)
-	DOUBLE_TAP(2)
-	DOUBLE_TAP(4)
-	DOUBLE_TAP(6)
-	DOUBLE_TAP(8)
-	DOUBLE_TAP(10)
-	//ldc t, 24*4
-	//{add r7, r7, t; add r6, r6, t}
-	//DOUBLE_TAP(0)
-	//DOUBLE_TAP(2)
-	//TODO add the most possible - try to get to 60
+	bt r8, output_phase
+	bf r10, process_phase
 	retsp 0
-.tmp_fir_impl:
-	.size	fir_impl, .tmp_fir_impl-fir_impl
-	.align	4
-	.cc_bottom fir_impl.function
 
-	.set	fir_impl.nstackwords,0
-	.globl	fir_impl.nstackwords
-	.set	fir_impl.maxcores,1
-	.globl	fir_impl.maxcores
-	.set	fir_impl.maxtimers,0
-	.globl	fir_impl.maxtimers
-	.set	fir_impl.maxchanends,0
-	.globl	fir_impl.maxchanends
+	process_phase:
+	//r0, r1, r2, r3 are used as storage for the output of the 3rd stage FIR
+	//copy the accumulators in to registers
+	ldaw r4, sp[S_OUTPUT_STORAGE];
+	ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01];
+	ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+
+	//DC offset removal
+	ldaw r4, sp[S_SETTINGS_OFFSET]
+	ldw r4, r4[S_DC_OFFSET_REMOVAL_ENABLED]
+	bf r4, dc_offset_removal_complete
+		ldaw r4, sp[S_DC_ELIMINATE]
+		dc_offset_removal_ch0:
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, r0);
+		sub r0, r0, r6
+		dc_offset_removal_ch1:
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, r1);
+		sub r1, r1, r6
+		dc_offset_removal_ch2:
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, r2);
+		sub r2, r2, r6
+		dc_offset_removal_ch3:
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, r3);
+		sub r3, r3, r6
+	dc_offset_removal_complete:
+
+#define COMP(REG)\
+	{ldc r5, 0; ldc r6, 0};\
+	maccs r5, r6, REG, r4;\
+	lsats r5, r6, r7;\
+	lextract REG, r5, r6, r7, 32
+
+	//FIR gain compensation
+	fir_compensation:	// This normally turns the volume up to compensate for the FIR
+	ldw r4, sp[S_FIR_GAIN_COMP]  //load the fir gain comp, it is in 1.4.27 format
+	bf r4, gain_compensation
+	{ldc r7, 27}
+	COMP(r0)
+	COMP(r1)
+	COMP(r2)
+	COMP(r3)
+
+	//Do RMS calculation here (long term)
+
+	gain_compensation:	// This always turns the volume down
+	ldaw r4, sp[S_SETTINGS_OFFSET]
+	ldw r4, r4[S_MIC_GAIN_COMP]
+	bf r4, gain_comp_complete
+	apply_mic_gain_compensation:
+		ldaw r4, sp[S_MIC_CALIB_OFFSET]
+		{ldc r7, 31}
+		ldd r6, r5, r4[S_D_MIC_CALIB_01]
+		{ldc r8, 0; ldc r9, 0}
+		maccs r8, r9, r0, r5
+		lextract r0, r8, r9, r7, 32
+		{ldc r8, 0; ldc r9, 0}
+		maccs r8, r9, r1, r6
+		lextract r1, r8, r9, r7, 32
+		ldd r6, r5, r4[S_D_MIC_CALIB_23]
+		{ldc r8, 0; ldc r9, 0}
+		maccs r8, r9, r2, r5
+		lextract r2, r8, r9, r7, 32
+		{ldc r8, 0; ldc r9, 0}
+		maccs r8, r9, r3, r6
+		lextract r3, r8, r9, r7, 32
+	gain_comp_complete:
+
+	ldaw r4, sp[S_OUTPUT_STORAGE];
+	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
+	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+
+	retsp 0
+
+	output_phase:
+	//save stored channels to frame TODO
+		ldaw r4, sp[S_OUTPUT_STORAGE];
+		ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01];
+		ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+
+		ldaw r4, sp[S_FRAME_OFFSET]
+
+		ldw r6, r4[S_FRAME_0_INDEX]
+
+		APPLY_WINDOW_FN(0)
+		ldaw r4, sp[S_FRAME_OFFSET]
+		//MIN_MAX(S_FRAME_MIN_0, S_FRAME_MAX_0, 0)
+
+		ldaw r5, sp[S_SETTINGS_OFFSET]
+		ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
+		bt r5, index_bitrev_order_0
+			index_normal_order_0:
+				//TODO only save active channels
+				SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0);
+				bu save_to_frame_complete_0
+			index_bitrev_order_0:
+				//TODO only save active channels
+				BITREV_INDEX();
+				SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0);
+		save_to_frame_complete_0:
+
+		ldw r5, r4[S_FRAME_0_INDEX]
+		add r5, r5, 1
+		stw r5, r4[S_FRAME_0_INDEX]
+
+		ldw r6, r4[S_OVERLAPPING_FRAMES]
+		bt r6, overlapping_frames
+		no_overlapping_frames:
+
+		ldw r6, r4[S_FRAME_SIZE_LOG2]
+		{shr r5, r5, r6; ldc r6, 0}
+		bf r5, do_the_rest;
+
+			reset_the_frame_index:
+			stw r6, r4[S_FRAME_0_INDEX]
+
+			write_the_current_frames_metadata:
+			ldd r7, r6, r4[S_D_FRAME_MIN_MAX_0]
+	        ldw r5, r4[S_METADATA_POINTER_0]
+	        std r7, r6, r5[0];
+	        ldw r3, r4[S_FRAME_NUMBER]
+	        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
+	        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+
+			exchange_buffers:
+			ldw r6, sp[S_C_OUTPUT]
+			outct res[r6], 8 //WARNING: do not change this
+			inct r3, res[r6]
+
+	        eq r5, r3, EXCHANGE_BUFFERS		//if the incomming token is EXCHANGE_BUFFERS then do that
+	        {bt r5, do_the_exchange; eq r5, r3, CONFIGURE_DECIMATOR}	//if the incomming token is CONFIGURE_DECIMATOR then do that
+
+			ldap r11, configure
+			stw r11, sp[0]
+			ldw lr, sp[0]
+			retsp 0
+
+			do_the_exchange:
+	        {in r3, res[r6]; ldc r0, 0}
+	        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}
+
+	        get_the_new_metadata_pointer:
+	        {in r3, res[r6]}
+	        {stw r3, r4[S_METADATA_POINTER_0]}
+			std r0, r0, r4[S_D_FRAME_MIN_MAX_0]  //reset the frame min and max to 0
+
+			ldw r4, sp[S_C_OUTPUT]
+			outct res[r4], 8 //WARNING: do not change this
+			no_overlapping_frames_done:
+			bu do_the_rest
+
+		overlapping_frames:
+
+			ldw r6, r4[S_FRAME_1_INDEX] //load second frame index
+
+			ldaw r5, sp[S_OUTPUT_STORAGE];
+			ldd r0, r1, r5[S_D_OUTPUT_STORAGE_01];
+			ldd r2, r3, r5[S_D_OUTPUT_STORAGE_23];
+
+			//APPLY_WINDOW_FN(1)
+			//MIN_MAX(S_FRAME_MIN_1, S_FRAME_MAX_1, 1)
+
+			ldaw r5, sp[S_SETTINGS_OFFSET]
+			ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
+			bt r5, index_bitrev_order_1
+				index_normal_order_1:
+					SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_1);
+					bu save_to_frame_complete_1
+				index_bitrev_order_1:
+					BITREV_INDEX();
+					SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_1);
+			save_to_frame_complete_1:
+
+			ldw r5, r4[S_FRAME_1_INDEX]
+			add r5, r5, 1
+			stw r5, r4[S_FRAME_1_INDEX]
+
+			ldw r6, r4[S_FRAME_SIZE_LOG2]
+			{shr r5, r5, r6; ldc r6, 0}
+			bf r5, do_the_rest;
+			at_the_end_of_the_overlapping_half_frame:
+
+				//set the metadata
+				ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
+		        ldw r5, r4[S_METADATA_POINTER_1]
+		        std r7, r6, r5[0];
+		        ldw r3, r4[S_FRAME_NUMBER]
+		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
+		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+
+				ldw r6, sp[S_C_OUTPUT]
+				outct res[r6], 8 //WARNING: do not change this
+				inct r3, res[r6]
+
+		        eq r5, r3, EXCHANGE_BUFFERS		//if the incomming token is EXCHANGE_BUFFERS then do that
+		        {bt r5, flip_the_frames; eq r5, r3, CONFIGURE_DECIMATOR}	//if the incomming token is CONFIGURE_DECIMATOR then do that
+
+				ldap r11, configure
+				stw r11, sp[0]
+				ldw lr, sp[0]
+				retsp 0
+
+				flip_the_frames:
+				ldd r3, r5, r1[S_D_FRAME_POINTER_AND_INDEX_0]
+				std r3, r5, r1[S_D_FRAME_POINTER_AND_INDEX_1]
+				ldd r3, r5, r1[S_D_FRAME_MIN_MAX_0]
+				std r3, r5, r1[S_D_FRAME_MIN_MAX_1]
+
+		        {in r3, res[r6]; ldc r0, 0}
+		        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}
+
+		        get_the_new_metadata_pointer2:
+		        {in r3, res[r6]}
+		        {stw r3, r4[S_METADATA_POINTER_0]}
+				std r0, r0, r4[S_D_FRAME_MIN_MAX_0]  //reset the frame min and max to 0
+
+				ldw r4, sp[S_C_OUTPUT]
+				outct res[r4], 8 //WARNING: do not change this
+
+	do_the_rest:
+	ldaw r11, sp[S_THIRD_STAGE]
+
+	//copy accumulators to store
+	{ldw r0, r11[7]  ; nop}
+	{ldw r1, r11[9]	 ; nop}
+	{ldw r2, r11[11] ; ldc r3, 13}
+	{ldw r3, r11[r3] ; nop}
+
+	ldaw r4, sp[S_OUTPUT_STORAGE];
+	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
+	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+
+	ldc r10, 0
+	//set S_THIRD_STAGE_PHASE to 0
+	stw r10, r11[S_THIRD_STAGE_PHASE];
+	//reset accumulators
+	std r10, r10, r11[S_D_THIRD_STAGE_CH0_ACC]
+	std r10, r10, r11[S_D_THIRD_STAGE_CH1_ACC]
+	std r10, r10, r11[S_D_THIRD_STAGE_CH2_ACC]
+	std r10, r10, r11[S_D_THIRD_STAGE_CH3_ACC]
+
+	//increment S_THIRD_STAGE_COEFS_PHASE mod THIRD_STAGE_COEFS_PER_STAGE
+	ldw r10, r11[S_THIRD_STAGE_COEFS_PHASE]
+	{add r10, r10, 1; ldc r9, THIRD_STAGE_COEFS_PER_STAGE}
+	lsu r9, r10, r9
+	mul r10, r10, r9
+	stw r10, r11[S_THIRD_STAGE_COEFS_PHASE]
+	retsp 0
+
+.cc_bottom post_process.function
+	.set	post_process.nstackwords, 0
+	.globl	post_process.nstackwords
+	.set	post_process.maxcores,1
+	.globl	post_process.maxcores
+	.set	post_process.maxtimers,0
+	.globl	post_process.maxtimers
+	.set	post_process.maxchanends,0
+	.globl	post_process.maxchanends
+.Lpost_process_tmp:
+	.size	post_process, .Lpost_process_tmp-post_process
+	.cfi_endproc
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+.globl	divide_by_four
+.align	8
+.type	divide_by_four,@function
+.cc_top divide_by_four.function
+divide_by_four:
+	.cfi_startproc
+	.issue_mode dual
+
+	ldaw r10, sp[S_THIRD_STAGE]
+	{ldw r8, sp[S_CHAN_COUNT];ldc r11, THIRD_STAGE_COEFS_PER_STAGE}	//r11 = 32
+	mul r8, r8, r11
+	{ldw r11, r10[S_THIRD_STAGE_PHASE]; shl r6, r11, 2}
+	mul r8, r8, r11
+	ldw r11, r10[S_THIRD_STAGE_COEFS_PHASE]
+	{ldw r10, r10[S_THIRD_STAGE_DATA_POINTER];add r8, r8, r11}
+	ldaw r10, r10[r8]
+
+	ldw r8, sp[S_CHAN_COUNT]
+	{dualentsp 1; eq r9, r8, 4}
+	ldaw r11, cp[g_second_fir]
+
+	{bt r9, decimate_to_pcm_4ch_0; eq r9, r8, 3}
+	{bt r9, decimate_to_pcm_4ch_1; eq r9, r8, 2}
+	{bt r9, decimate_to_pcm_4ch_2; eq r9, r8, 1}
+	{bt r9, decimate_to_pcm_4ch_3;}
+	bu divide_by_four_complete
+
+	//r11 = coefs, r10 = pointer to where to put result, r7 = data, r6 = THIRD_STAGE_COEFS_PER_STAGE*sizeof(int)
+decimate_to_pcm_4ch_0:
+	{bl decimate_to_pcm_4ch_fir_impl ; }// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+	{stw r0, r10[0]; add r10, r10, r6}
+decimate_to_pcm_4ch_1:
+	{bl decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+	{stw r0, r10[0]; add r10, r10, r6}
+decimate_to_pcm_4ch_2:
+	{bl decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+	{stw r0, r10[0]; add r10, r10, r6}
+decimate_to_pcm_4ch_3:
+	{bl decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+	stw r0, r10[0]
+
+divide_by_four_complete:
+	retsp 1
+	.cc_bottom divide_by_four.function
+	.set	divide_by_four.nstackwords, 1
+	.globl	divide_by_four.nstackwords
+	.set	divide_by_four.maxcores,1
+	.globl	divide_by_four.maxcores
+	.set	divide_by_four.maxtimers,0
+	.globl	divide_by_four.maxtimers
+	.set	divide_by_four.maxchanends,0
+	.globl	divide_by_four.maxchanends
+.Ldivide_by_four_tmp:
+	.size	divide_by_four, .Ldivide_by_four_tmp-divide_by_four
+	.cfi_endproc
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+////This is the actual implementation of the third stage FIR
+
+.globl	third_stage_fir_impl
+.align	8
+.type	third_stage_fir_impl,@function
+.cc_top third_stage_fir_impl.function
+third_stage_fir_impl:
+	.cfi_startproc
+	.issue_mode dual
+
+#define TWO_TAPS(I, COEFS, H0, L0, DATA0, H1, L1, DATA1)\
+	{ldw r0, COEFS[0]; add COEFS, COEFS, 4};\
+	ldd r2, r1, DATA0[I];\
+	ldd r4, r3, DATA1[I];\
+	maccs H0, L0, r1, r0;\
+	maccs H1, L1, r3, r0;\
+	{ldw r0, COEFS[0]; add COEFS, COEFS, 4};\
+	maccs H0, L0, r2, r0;\
+	maccs H1, L1, r4, r0
+
+	TWO_TAPS(0, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(1, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(2, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(3, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(4, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(5, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(6, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(7, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(8, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(9, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(10, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(11, r9, r8, r7, r10, r6, r5, r11)
+	ldc r0, 4*24
+	{add r10, r10, r0; add r11, r11, r0}
+	TWO_TAPS(0, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(1, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(2, r9, r8, r7, r10, r6, r5, r11)
+	TWO_TAPS(3, r9, r8, r7, r10, r6, r5, r11)
+	retsp 0
+	.cc_bottom third_stage_fir_impl.function
+	.set	third_stage_fir_impl.nstackwords, 0
+	.globl	third_stage_fir_impl.nstackwords
+	.set	third_stage_fir_impl.maxcores,1
+	.globl	third_stage_fir_impl.maxcores
+	.set	third_stage_fir_impl.maxtimers,0
+	.globl	third_stage_fir_impl.maxtimers
+	.set	third_stage_fir_impl.maxchanends,0
+	.globl	third_stage_fir_impl.maxchanends
+.Lthird_stage_fir_impl_tmp:
+	.size	third_stage_fir_impl, .Lthird_stage_fir_impl_tmp-third_stage_fir_impl
+	.cfi_endproc
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+////This is the actual implementation of the second stage FIR
+
+.globl	decimate_to_pcm_4ch_fir_impl
+.align	8
+.type	decimate_to_pcm_4ch_fir_impl,@function
+.cc_top decimate_to_pcm_4ch_fir_impl.function
+decimate_to_pcm_4ch_fir_impl:
+	.cfi_startproc
+	.issue_mode dual
+
+	//r0, r1, r2, r3, r4, r5, r6 = 31, r7, r10, r11,
+	{ldc r0, 0; ldc r1, 0} //Initialise the accumulators
+
+	ldd r3, r2, r11[0]
+	ldd r5, r4, r7[0]
+	maccs r0, r1, r4, r2
+	maccs r0, r1, r5, r3
+	ldd r5, r4, r7[7]
+	maccs r0, r1, r4, r3
+	maccs r0, r1, r5, r2
+
+	ldd r3, r2, r11[1]
+	ldd r5, r4, r7[1]
+	maccs r0, r1, r4, r2
+	maccs r0, r1, r5, r3
+	ldd r5, r4, r7[6]
+	maccs r0, r1, r4, r3
+	maccs r0, r1, r5, r2
+
+	ldd r3, r2, r11[2]
+	ldd r5, r4, r7[2]
+	maccs r0, r1, r4, r2
+	maccs r0, r1, r5, r3
+	ldd r5, r4, r7[5]
+	maccs r0, r1, r4, r3
+	maccs r0, r1, r5, r2
+
+	ldd r3, r2, r11[3]
+	ldd r5, r4, r7[3]
+	maccs r0, r1, r4, r2
+	maccs r0, r1, r5, r3
+	ldd r5, r4, r7[4]
+	maccs r0, r1, r4, r3
+	maccs r0, r1, r5, r2
+
+	retsp 0
+	.cc_bottom decimate_to_pcm_4ch_fir_impl.function
+	.set	decimate_to_pcm_4ch_fir_impl.nstackwords, 0
+	.globl	decimate_to_pcm_4ch_fir_impl.nstackwords
+	.set	decimate_to_pcm_4ch_fir_impl.maxcores,1
+	.globl	decimate_to_pcm_4ch_fir_impl.maxcores
+	.set	decimate_to_pcm_4ch_fir_impl.maxtimers,0
+	.globl	decimate_to_pcm_4ch_fir_impl.maxtimers
+	.set	decimate_to_pcm_4ch_fir_impl.maxchanends,0
+	.globl	decimate_to_pcm_4ch_fir_impl.maxchanends
+.Ldecimate_to_pcm_4ch_fir_impl_tmp:
+	.size	decimate_to_pcm_4ch_fir_impl, .Ldecimate_to_pcm_4ch_fir_impl_tmp-decimate_to_pcm_4ch_fir_impl
+	.cfi_endproc
+
 
 //endpoint section
 #define STRINGIZE(S) #S
 
-#define EP_MARCO(ID) \
-	.ascii	STRINGIZE( input_sample_ ## ID ## _ep ) ;\
+#define EP_MARCO(ID0, ID1) \
+	.ascii	STRINGIZE( input_ ## ID0 ## _ ## ID1 ## _ep ) ;\
 	.byte	0 ;\
-	.ascii	"../src/test_lib_include.xc" ;\
+	.ascii	__FILE__ ;\
 	.byte	0 ;\
-	.long	124 ;\
-	.long	.Laddr_end ## ID -.Laddr_start ## ID ;\
-	.Laddr_start ## ID : ;\
-	.cc_top cc_ ## ID,input_sample_ ## ID;\
-	.long	input_sample_ ## ID ;\
+	.long	__LINE__ ;\
+	.long	.Laddr_end ## ID0 ## _ ## ID1 -.Laddr_start ## ID0 ## _ ## ID1 ;\
+	.Laddr_start ## ID0 ## _ ## ID1 : ;\
+	.cc_top cc_ ## ID0 ## _ ## ID1,input_ ## ID0 ## _ ## ID1;\
+	.long	input_ ## ID0 ## _ ## ID1 ;\
 	.byte	0 ;\
-	.cc_bottom cc_ ## ID ;\
-	.Laddr_end ## ID :
+	.cc_bottom cc_ ## ID0 ## _ ## ID1 ;\
+	.Laddr_end ## ID0 ## _ ## ID1 :
 
-#define EPT_MARCO(ID) \
-.cc_top cc_a ## ID,input_sample_ ## ID ;\
+#define EPT_MARCO(ID0, ID1) \
+.cc_top cc_a ## ID0 ## _ ## ID1,input_ ## ID0 ## _ ## ID1;\
 	.ascii	"";\
 	.byte	0;\
 	.long	0;\
-	.long	input_sample_ ## ID ;\
-.cc_bottom cc_a ## ID
+	.long	input_ ## ID0 ## _ ## ID1;\
+.cc_bottom cc_a ## ID0 ## _ ## ID1
 
+ /*
 	.section	.xtaendpoint,"",@progbits
 .Lentries_start0:
 	.long	.Lentries_end0-.Lentries_start0
 	.long	1
-	.ascii	"/home/andrew/lib_mic_array/tests/test_lib_include/.build"
+	.ascii	".build"
     .byte	0
-	EP_MARCO(0)
-	EP_MARCO(1)
-	EP_MARCO(2)
-	EP_MARCO(3)
-	EP_MARCO(4)
-	EP_MARCO(5)
-	EP_MARCO(6)
-	EP_MARCO(7)
-	.ascii	"configure_ep"
-	.byte	0
-	.ascii	"../src/test_lib_include.xc"
-	.byte	0
-	.long	123
-	.long	.Laddr_end8-.Laddr_start8
-.Laddr_start8:
-.cc_top cc_8,configure
-	.long	configure
-	.byte	0
-.cc_bottom cc_8
-.Laddr_end8:
 
+	EP_MARCO(0, 0)
+	EP_MARCO(1, 0)
+	EP_MARCO(2, 0)
+	EP_MARCO(3, 0)
+	EP_MARCO(4, 0)
+	EP_MARCO(5, 0)
+	EP_MARCO(6, 0)
+	EP_MARCO(7, 0)
+	EP_MARCO(0, 1)
+	EP_MARCO(1, 1)
+	EP_MARCO(2, 1)
+	EP_MARCO(3, 1)
+	EP_MARCO(4, 1)
+	EP_MARCO(5, 1)
+	EP_MARCO(6, 1)
+	EP_MARCO(7, 1)
 .Lentries_end0:
+
 	.section	.xtaendpointtable,"",@progbits
 .Lentries_start1:
 	.long	.Lentries_end1-.Lentries_start1
 	.long	0
 	.ascii	""
 	.byte	0
-	EPT_MARCO(0)
-	EPT_MARCO(1)
-	EPT_MARCO(2)
-	EPT_MARCO(3)
-	EPT_MARCO(4)
-	EPT_MARCO(5)
-	EPT_MARCO(6)
-	EPT_MARCO(7)
-.cc_top cc_18,configure
-	.ascii	""
-	.byte	0
-	.long	10
-	.long	configure
-.cc_bottom cc_18
+	EPT_MARCO(0, 0)
+	EPT_MARCO(1, 0)
+	EPT_MARCO(2, 0)
+	EPT_MARCO(3, 0)
+	EPT_MARCO(4, 0)
+	EPT_MARCO(5, 0)
+	EPT_MARCO(6, 0)
+	EPT_MARCO(7, 0)
+	EPT_MARCO(0, 1)
+	EPT_MARCO(1, 1)
+	EPT_MARCO(2, 1)
+	EPT_MARCO(3, 1)
+	EPT_MARCO(4, 1)
+	EPT_MARCO(5, 1)
+	EPT_MARCO(6, 1)
+	EPT_MARCO(7, 1)
 .Lentries_end1:
+*/
 
+
+
+//This is for testing the DC offset elimination
+//int dc_eliminate_tester(int x, long long y)
+.globl	dc_eliminate_tester
+.align	8
+.type	dc_eliminate_tester,@function
+.cc_top dc_eliminate_tester.function
+dc_eliminate_tester:
+	.cfi_startproc
+	.issue_mode dual
+//TODO make this do the right thing
+	dualentsp 12
+	std r0, r1, sp[0]
+	std r2, r3, sp[1]
+	std r4, r5, sp[2]
+	std r6, r7, sp[3]
+	std r8, r9, sp[4]
+	std r10, r11, sp[5]
+
+	DC_OFFSET_REMOVAL(0, r0);
+	retsp 12
+	.cc_bottom dc_eliminate_tester.function
+	.set	dc_eliminate_tester.nstackwords, 12
+	.globl	dc_eliminate_tester.nstackwords
+	.set	dc_eliminate_tester.maxcores,1
+	.globl	dc_eliminate_tester.maxcores
+	.set	dc_eliminate_tester.maxtimers,0
+	.globl	dc_eliminate_tester.maxtimers
+	.set	dc_eliminate_tester.maxchanends,0
+	.globl	dc_eliminate_tester.maxchanends
+.Ldc_eliminate_tester_tmp:
+	.size	dc_eliminate_tester, .Ldc_eliminate_tester_tmp-dc_eliminate_tester
+	.cfi_endproc
