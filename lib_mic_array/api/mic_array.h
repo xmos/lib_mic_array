@@ -222,7 +222,7 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
  *                           the decimate_to_pcm_4ch() tasks.
  *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
  *  \param buffer            The buffer index (Used internally)
- *  \param f_audio           An array of complex frames.
+ *  \param f_complex         An array of complex frames.
  *  \param buffer_count      The size of the f_audio array, i.e. the number of multi-channel frames
  *                           declared by the application task.
  *

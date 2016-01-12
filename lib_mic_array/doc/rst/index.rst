@@ -429,7 +429,7 @@ PDM Microphone processing
 .........................
 
 .. doxygenfunction:: decimate_to_pcm_4ch
-.. doxygenfunction:: decimate_configure
+.. doxygenfunction:: decimator_configure
 .. doxygenstruct:: decimator_config_common
 .. doxygenstruct:: decimator_config
 
