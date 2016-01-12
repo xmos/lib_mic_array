@@ -6,6 +6,17 @@ Microphone array library change log
 -----
 
   * Complete rewrite
+  * FRAME_SIZE_LOG2 renamed MAX_FRAME_SIZE_LOG2
+  * Decimator interface now takes arrays of streaming channels
+  * Decimators now take channel count as a parameter
+  * Document updates
+  * First stage now uses a FIR decimator
+  * Changed decimation flow
+  * Removed high res delay module
+  * Added generator for FIR coefficients
+  * Added ability to reduce number of channels active in a decimator
+  * Increased number of FIR taps
+  * Increased output dynamic range
 
 0.0.2
 -----
