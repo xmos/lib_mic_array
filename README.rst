@@ -17,6 +17,7 @@ Features
 ........
 
 The microphone array library has the following features:
+
   - 48kHz, 24kHz, 16kHz, 12kHz and 8kHz output sample rate by default, 
   - 1-16 PDM interfaces per tile,
   - Minimum of 100dBs of signal to noise for all output sample frequencies,

@@ -10,21 +10,45 @@ It shows the setup of the I2S for audio output via the DAC and very simple proce
 multi-channel audio frames to produce a single channel output based on a simple single steering direction.
 
 
-|appendix|
-|newpage|
+The simple hires delay and sum example
+--------------------------------------
+
+The example in this note uses the microphone array library and shows a simple program
+that interfaces to to the PDM microphones, decimates the PDM and finally packs it into frames.
+
+To start using the microphone array library library, you need to add ``lib_mic_array`` to
+your ``Makefile``::
+
+        USED_MODULES = ... lib_mic_array ...
+
+You can then access the microphone array library functions in your source code via
+the ``lib_mic_array.h`` header file::
+
+	#include ""lib_mic_array.h""
 
 Demo Hardware Setup
 ------------------- 
 
-Ensure that an XTAG is connected along with the microphone array via USB. 
-Headphones should be connected to the audio jack for listening to the beamformed output.
-
-|newpage|
+	#. Connect the xTAG-2 or xTAG-3 to Microphone array ref design v1.
+	#. Connect the xTAG-2 or xTAG-3 USB connector to the USB connector on your development PC using a USB cable. 
+	#. Connect the microphone array ref design v1 to your development PC using another USB cable. 
+	#. Connect the microphone array ref design v1 to your headphones.
 
 Launching the demo application
 ------------------------------
 
-Build the application then run using ``xrun --xscope app_hires_DAS_fixed.xe``. 
+Once the application source code is imported into the tools you can then build the project
+which will generate the binary file required to run the demo application.
+
+Once the application has been built you need to download the application binary
+code onto the xCORE microphone array ref design v1. Here you use the tools to load the application 
+over JTAG onto the xCORE multicore microcontroller.
+
+Then click **Run**.
+
+Alternatively, from the command line build the application, by doing a call to ``xmake``, then 
+run using ``xrun --xscope app_hires_DAS_fixed.xe``. Nothing will happen.
+ 
 Buttons ``A`` and ``D`` rotate the direction of the beam which is indicated by the LEDs.
 Buttons ``C`` and ``B`` increase and decrease the gain on the output signal respectively.
 

@@ -143,7 +143,41 @@ There is a further requirement that any application of a ``decimate_to_pcm_4ch``
 task must be on the same tile as the ``decimate_to_pcm_4ch`` task due to the sharaed
 frame memory.
   
+Additionally, a high resolution delay task can be inserted between the PDM interface 
+and the decimators, similar to the above, it is done in the following fashion::
 
+  #include <mic_array.h>
+  #include "mic_array_conf.h"
+  
+  clock pdmclk;
+  in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
+  in port             p_mclk      = XS1_PORT_1E;  
+  out port            p_pdm_clk   = XS1_PORT_1F;
+  
+  int main() {
+     par {
+        streaming chan c_pdm_to_hires[2];
+        streaming chan c_hires_to_dec[2];
+        streaming chan c_ds_output[2];
+        chan c_cmd;
+    
+        configure_clock_src_divide(pdmclk, p_mclk, 4);
+        configure_port_clock_output(p_pdm_clk, pdmclk);
+        configure_in_port(p_pdm_mics, pdmclk);
+        start_clock(pdmclk);
+    
+        par {
+            pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
+            hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
+            decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
+            decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+            application(c_ds_output, c_cmd);
+        }
+    }
+    return 0;
+  }
+  
+  
 ``mic_array_conf.h``
 --------------------
 
@@ -157,16 +191,20 @@ An application that uses ``lib_mic_array`` must define the header file
      This should be kept small as it governs the memory required for 
      a frame.
      
-Optionally `mic_array_conf.h`` may define
+Optionally, `mic_array_conf.h`` may define
 
    * DC_OFFSET_DIVIDER_LOG2
 
-     The DC offset is removed with a high pass filter obeying the relation
-	 Yn+1 = Yn * alpha + X where Y is the output sample and X is the input sample.
-	 The constant alpha is 1 - 2^(-DC_OFFSET_DIVIDER_LOG2), therefore DC_OFFSET_DIVIDER_LOG2 
+     The DC offset is removed with a high pass filter. ``DC_OFFSET_DIVIDER_LOG2``
 	 can be used to control the responsiveness of the filter vs the cut off frequency.
 	 The default is 13, but setting this will override it. The value must not exceed 31.
+	 See section DC offset removal for further explanation.
 
+   * HIRES_MAX_DELAY
+
+     This defines the length of the high resolution delay lines. This should be set to a power
+	 of two for efficiency. The default is 32. Increasing values will result in increasing memory
+	 usage.
 	 
 Four Channel Decimator
 ----------------------
@@ -269,6 +307,12 @@ the decimators, a count of the number of decimators, and an array of
 decimator configurations.
 
 The output of the decimator is 32bit PCM audio at the requested sample rate. 
+ 
+DC offset removal
+-----------------
+
+TODO
+ 
  
 Frames
 ------
@@ -386,6 +430,19 @@ subsequent audio frames.
 * ``buffer_count``: The number of frames in the ``f_complex`` array.
 
 
+High resolution delay task
+--------------------------
+The high resolution delay task, ``hires_delay()``, is capable to implementing delays 
+with a resolution of up to 1.3 microseconds(384kHz). It implements 8 delays lines of length 
+``HIRES_MAX_DELAY``, which has a default of 32. The delay line length can be overridden 
+by defining it in ``mic_array_conf.h``. Each delay line sample is clocked at the PDM clock
+rate divided by 8, that is, 384kHz for a 3.072MHz PDM clock and 352.8kHz for an PDM clock
+of 2.8224MHz. 
+By setting a positive delay of N samples on a channel then an input sample will take N extra 
+clocks to propagate to the decimators. Setting of the taps is done through the function 
+``hires_delay_set_taps();`` which will do an atomic update of all the active delay lines tap 
+positions at once. The default delay on each channel is zero.
+
 Signal Characteristics
 ----------------------
 
@@ -407,13 +464,35 @@ least 100dBs of signal to noise for all output sample rates.
 The decimation is achieved by applying three polyphase FIR filters sequentially. 
 The design of these filters can be view in the matlab script ``fir_design.m``. 
 
+Frame and FIR memory
+--------------------
+
+For each decimator a block of memory must be allocated for storing FIR data. The size of the data 
+block must be::
+  
+  Number of channels for that decimator * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
+
+bytes. The data must also be double word aligned. For example, if the decimation factor was set to 
+``DECIMATION_FACTOR`` then the memory allocation for the FIR memory would look like::
+
+  int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR] = {0};
+  int data_1[3*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR] = {0};
+
+The FIR memory must also be initialized in order to prevent a spurious click during startup. 
+Normally initializing to all zeros is sufficient. Also the frame memory must also be a double 
+word aligned array of length of at least 2. 
+
 Example Applications
 --------------------
 
 Examples of of how to set up phased aligned sampling are given in the
-application ``app_synchronous_delay_example`` with a worked example of a
+application ``app_phase_aligned_example`` with a worked example of a
 fixed beam delay and sum beam-former given in the application
-``example_lores_DAS_fixed``.
+``example_lores_DAS_fixed``. Also examples of of how to set up high 
+resolution delayed sampling are given in the application 
+``app_high_resolution_delay_example`` with a worked example of a
+fixed beam delay and sum beam-former given in the application
+``example_hires_DAS_fixed``. 
 
 API
 ---
@@ -465,9 +544,6 @@ High resolution delay task
 Known Issues
 ------------
 
-This is an early release of the library. We envisage to extend this library
-with functions for high-resolution delay adjustments.
-
-This revision is only intended for internal XMOS use.
+  * Reduce channel count on decimators untested, set to 4.
 
 .. include:: ../../../CHANGELOG.rst

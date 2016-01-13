@@ -4,6 +4,10 @@
 #include "mic_array.h"
 #include <string.h>
 
+#ifndef HIRES_MAX_DELAY
+    #define HIRES_MAX_DELAY 32
+#endif
+
 #pragma unsafe arrays
 void hires_delay(
         streaming chanend c_from_pdm_frontend[],
@@ -11,7 +15,6 @@ void hires_delay(
         unsigned n,
         chanend c_cmd){
 
-#define HIRES_MAX_DELAY 32
     unsigned delays[8] = {0};
     int data[8][HIRES_MAX_DELAY];
     memset(data, 0, sizeof(int)*8*HIRES_MAX_DELAY);
@@ -44,6 +47,7 @@ void hires_delay(
     }
 }
 
+#pragma unsafe arrays
 void hires_delay_set_taps(chanend c_cmd, unsigned delays[], unsigned num_channels){
     c_cmd <: 0;
     master{
