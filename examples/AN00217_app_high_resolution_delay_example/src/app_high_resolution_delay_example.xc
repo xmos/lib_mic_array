@@ -15,9 +15,7 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_2;
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 
-void example(streaming chanend c_ds_output[2],
-        hires_delay_config * unsafe config
-){
+void example(streaming chanend c_ds_output[2], chanend c_cmd){
 
     unsigned buffer;
     frame_audio audio[2];    //double buffered
@@ -46,36 +44,28 @@ int main(){
 
     par{
         on tile[0]: {
-            streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
+            streaming chan c_pdm_to_hires[2];
+            streaming chan c_hires_to_dec[2];
             streaming chan c_ds_output[2];
-            streaming chan c_sync;
+            chan c_cmd;
 
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
 
-            int64_t shared_memory[PDM_BUFFER_LENGTH] = {0};
-
             unsafe {
-                hires_delay_config hrd_config;
-                hrd_config.active_delay_set = 0;
-                hrd_config.memory_size_log2 = PDM_BUFFER_LENGTH_LOG2;
-                hires_delay_config * unsafe config = &hrd_config;
-
-                int64_t * unsafe p_shared_memory = shared_memory;
-
                 par{
-                    pdm_rx_hires_delay(p_pdm_mics, p_shared_memory,
-                            PDM_BUFFER_LENGTH_LOG2, c_sync);
+                    pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
 
-                    hires_delay(c_4x_pdm_mic_0, c_4x_pdm_mic_1,
-                           c_sync, config, p_shared_memory);
+                    hires_delay(c_pdm_to_hires,
+                            c_hires_to_dec, 2, c_cmd);
 
-                    decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-                    decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+                    decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
+                    decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
 
-                    example(c_ds_output, config);
+                    example(c_ds_output, c_cmd);
+                    par(int i=0;i<3;i++)while(1);
                 }
             }
         }

@@ -25,34 +25,6 @@ void pdm_rx(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend c_4x_pdm_mic_1);
 
-/** PDM Microphone Interface component for high resolution delay.
- *
- *  This task handles the interface to up to 8 PDM microphones whilst also decimating
- *  the PDM data by a factor of 8. The output is saved to a shared memory circular buffer
- *  given by shared_memory_array.
- *
- *  \param p_pdm_mics            The 8 bit wide port connected to the PDM microphones.
- *  \param shared_memory_array   A pointer to the location of the shared circular buffer.
- *  \param memory_size_log2      The count of samples in the circular buffer log 2.
- *  \param c_sync                The channel used for synchronizing the high resolution
- *                               delay buffer to the PDM input.
- */
-void pdm_rx_hires_delay(
-        in buffered port:32 p_pdm_mics,
-        int64_t * unsafe shared_memory_array,
-        unsigned memory_size_log2,
-        streaming chanend c_sync);
-
-/*
- * High Resolution Delay config structure.
- */
-typedef struct {
-    unsigned memory_size_log2;              /**< The number of multi-channel samples in the shared memory log two.*/
-    unsigned active_delay_set;              /**< Used internally*/
-    unsigned delay_set_head;                /**< Used internally*/
-    unsigned long long n;                   /**< Used internally*/
-    unsigned delays[2][MAX_NUM_CHANNELS];   /**< Used internally*/
-} hires_delay_config;
 
 /** High resolution delay component.
  *
@@ -61,33 +33,28 @@ typedef struct {
  *  at which the circular buffer is being updated. The maximum delay is given by the
  *  size of the circular buffer.
  *
- *  \param c_4x_pdm_mic_0       The channel where the decimated PDM of microphones 0-3 will
- *                              be outputted bytewise.
- *  \param c_4x_pdm_mic_1       The channel where the decimated PDM of microphones 4-7 will
- *                              be outputted bytewise.
- *  \param c_sync               The channel used for synchronizing the high resolution
- *                              delay buffer to the PDM input.
- *  \param config               The configuration structure describing the behaviour of the
- *                              high resolution delay component.
- *  \param shared_memory_array  The pointer to the location of the shared circular buffer.
+ *  \param c_from_pdm_frontend     The channels connecting to the output of the PDM interface
+ *  \param c_to_decimetor          The channel connecting to the input of the 4 channel decimators.
+ *  \param n                       The size of the first two arrays, they must be the same.
+ *  \param c_cmd                   The channel connecting the application to this task used for
+ *                                 setting the delays.
  */
 void hires_delay(
-        streaming chanend c_4x_pdm_mic_0,
-        streaming chanend c_4x_pdm_mic_1,
-        streaming chanend c_sync,
-        hires_delay_config * unsafe config,
-        int64_t * unsafe shared_memory_array);
+        streaming chanend c_from_pdm_frontend[],
+        streaming chanend c_to_decimator[],
+        unsigned n,
+        chanend c_cmd);
 
 /** Application side interface to high resolution delay.
  *
  *  This function is used by the client of the high resolution delay to set the delays.
  *
- *  \param config     A pointer to the hires_delay_config structure.
- *  \param delays     An array of the delays to be set.
- *  \param num_taps   The number of microphones. This is must be the same as the delays array.
- *  \returns          0 for success and 1 for buffer already contains pending delays.
+ *  \param c_cmd          The channel connecting the application to this task used for
+ *                        setting the delays.
+ *  \param delays         An array of the delays to be set. These must all be less than HIRES_MAX_DELAY.
+ *  \param num_channels   The number of microphones. This is must be the same as the delays array.
  */
-int hires_delay_set_taps(hires_delay_config * unsafe config, unsigned delays[], unsigned num_taps);
+void hires_delay_set_taps(chanend c_cmd, unsigned delays[], unsigned num_channels);
 
 /** Four Channel decimator buffering type.
  *

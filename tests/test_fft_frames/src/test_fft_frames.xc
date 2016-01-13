@@ -99,7 +99,7 @@ int main(){
             streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
             streaming chan c_ds_output[2];
 
-            interface led_button_if lb;
+            interface led_button_if lb[1];
 
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
@@ -107,11 +107,11 @@ int main(){
             start_clock(pdmclk);
 
             par{
-                button_and_led_server(lb, leds, p_buttons);
+                button_and_led_server(lb, 1, leds, p_buttons);
                 pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                 decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
                 decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
-                example(c_ds_output,lb);
+                example(c_ds_output, lb[0]);
                 while(1);
                 while(1);
                 while(1);

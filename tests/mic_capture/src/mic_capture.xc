@@ -74,7 +74,7 @@ int main(){
 
     streaming chan c_a, c_b, c_c;
 
-    interface led_button_if lb;
+    interface led_button_if lb[1];
     par {
         //input-er
         unsafe {
@@ -109,9 +109,9 @@ int main(){
                 c_c <: p;
             }
         }
-        button_and_led_server(lb, leds, p_buttons);
+        button_and_led_server(lb, 1, leds, p_buttons);
         //max-er
-        maxer(c_a, c_c, lb);
+        maxer(c_a, c_c, lb[0]);
     }
     return 0;
 }

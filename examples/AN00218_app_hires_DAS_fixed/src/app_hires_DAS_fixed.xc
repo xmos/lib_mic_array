@@ -84,7 +84,7 @@ int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 
 void hires_DAS_fixed(streaming chanend c_ds_output[2],
-        hires_delay_config * unsafe config,
+        chanend c_cmd,
         client interface led_button_if lb, chanend c_audio){
 
     unsigned buffer = 1;     //buffer index
@@ -132,7 +132,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                             printf("delay[%d] = %d\n", i, delay[i]);
                         printf("\n");
 
-                        hires_delay_set_taps(config, delay, 7);
+                        hires_delay_set_taps(c_cmd, delay, 7);
 
                         break;
                     }
@@ -155,7 +155,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                         for(unsigned i=0;i<7;i++)
                             printf("delay[%d] = %d\n", i, delay[i]);
                         printf("\n");
-                        hires_delay_set_taps(config, delay, 7);
+                        hires_delay_set_taps(c_cmd, delay, 7);
                         break;
                     }
                     }
@@ -175,7 +175,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
 }
 
 
-#define OUTPUT_SAMPLE_RATE (48000/DF)
+#define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
 
 [[distributable]]
@@ -248,43 +248,31 @@ int main(){
         on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], c_audio);
 
         on tile[0]: {
-            streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
+            streaming chan c_pdm_to_hires[2];
+            streaming chan c_hires_to_dec[2];
             streaming chan c_ds_output[2];
-            streaming chan c_sync;
+            chan c_cmd;
 
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
 
-            int64_t shared_memory[PDM_BUFFER_LENGTH] = {0};
-
             unsafe {
 
                 interface led_button_if lb[1];
 
-                hires_delay_config hrd_config;
-                hrd_config.active_delay_set = 0;
-                hrd_config.memory_size_log2 = PDM_BUFFER_LENGTH_LOG2;
-
-                hires_delay_config * unsafe config = &hrd_config;
-                int64_t * unsafe p_shared_memory = shared_memory;
                 par{
                     button_and_led_server(lb, 1, leds, p_buttons);
 
-                    pdm_rx_hires_delay(
-                            p_pdm_mics,
-                            p_shared_memory,
-                            PDM_BUFFER_LENGTH_LOG2,
-                            c_sync);
+                    pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
 
-                    hires_delay(c_4x_pdm_mic_0, c_4x_pdm_mic_1,
-                           c_sync, config, p_shared_memory);
+                    hires_delay(c_pdm_to_hires,
+                            c_hires_to_dec, 2, c_cmd);
+                    decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
+                    decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
 
-                    decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-                    decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
-
-                    hires_DAS_fixed(c_ds_output, config, lb[0], c_audio);
+                    hires_DAS_fixed(c_ds_output, c_cmd, lb[0], c_audio);
 
                 }
             }
