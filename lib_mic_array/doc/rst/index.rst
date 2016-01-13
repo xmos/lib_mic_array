@@ -418,14 +418,14 @@ fixed beam delay and sum beam-former given in the application
 API
 ---
 
-Creating an PDM Microphone interface instance
+Creating an PDM microphone interface instance
 .............................................
 
 .. doxygenfunction:: pdm_rx
 
 |newpage|
 
-PDM Microphone processing
+PDM microphone processing
 .........................
 
 .. doxygenfunction:: decimate_to_pcm_4ch
@@ -452,6 +452,13 @@ Frame types
 .. doxygenstruct:: complex
 .. doxygenstruct:: frame_audio
 .. doxygenstruct:: frame_complex
+
+High resolution delay task
+..........................
+
+.. doxygenfunction:: hires_delay
+.. doxygenfunction:: hires_delay_set_taps
+
 
 |newpage|
 

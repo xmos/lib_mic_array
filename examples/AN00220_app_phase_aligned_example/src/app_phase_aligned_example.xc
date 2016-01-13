@@ -9,6 +9,7 @@ on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 //This sets the FIR decimation factor.
+//Note that the coefficient array passed into dcc must match this.
 #define DF 6
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
@@ -19,10 +20,29 @@ void example(streaming chanend c_ds_output[2]){
 
     unsigned buffer;
     unsafe{
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_16kHz_fir, 0, 0};
+        decimator_config_common dcc = {
+                0, // frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
+                1, // DC offset elimination is turned on
+                0, // Index bit reversal is off
+                0, // No windowing function is being applied
+                DF,// The decimation factor is set to 6
+                g_third_16kHz_fir, //This corresponds to a 16kHz output hence this coef array is used
+                0, // Gain compensation is turned off
+                0  // FIR compensation is turned off
+        };
         decimator_config dc[2] = {
-                {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+                {
+                        &dcc,
+                        data_0,     // The storage area for the output decimator
+                        {INT_MAX, INT_MAX, INT_MAX, INT_MAX},  // Microphone gain compensation (turned off)
+                        4           // Enabled channel count
+                },
+                {
+                        &dcc,
+                        data_1,     // The storage area for the output decimator
+                        {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, // Microphone gain compensation (turned off)
+                        4           // Enabled channel count
+                }
         };
         decimator_configure(c_ds_output, 2, dc);
     }
@@ -31,9 +51,14 @@ void example(streaming chanend c_ds_output[2]){
 
     while(1){
 
+        //The final argument is set to two to reflect that frame_audio audio[2]; is size 2 also.
         frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
 
-        // code goes here
+        //buffer and audio should never be accessed.
+
+        int ch0_sample0 = current->data[0][0];
+        int ch1_sample0 = current->data[1][0];
+
 
     }
 }
@@ -41,7 +66,7 @@ void example(streaming chanend c_ds_output[2]){
 int main(){
     par{
         on tile[0]:{
-            streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
+            streaming chan c_pdm_to_dec[2];
             streaming chan c_ds_output[2];
 
             configure_clock_src_divide(pdmclk, p_mclk, 4);
@@ -50,9 +75,9 @@ int main(){
             start_clock(pdmclk);
 
             par{
-                pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+                pdm_rx(p_pdm_mics, c_pdm_to_dec[0], c_pdm_to_dec[1]);
+                decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0]);
+                decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1]);
                 example(c_ds_output);
             }
         }

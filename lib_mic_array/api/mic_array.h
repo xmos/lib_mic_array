@@ -34,7 +34,7 @@ void pdm_rx(
  *  size of the circular buffer.
  *
  *  \param c_from_pdm_frontend     The channels connecting to the output of the PDM interface
- *  \param c_to_decimetor          The channel connecting to the input of the 4 channel decimators.
+ *  \param c_to_decimator          The channel connecting to the input of the 4 channel decimators.
  *  \param n                       The size of the first two arrays, they must be the same.
  *  \param c_cmd                   The channel connecting the application to this task used for
  *                                 setting the delays.

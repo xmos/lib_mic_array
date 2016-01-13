@@ -5,7 +5,9 @@
 Overview
 --------
 
-This demo application shows a simple Delay and Sum (DAS) bemformer in high resolution mode.
+This demo application shows a simple Delay and Sum (DAS) bemformer in high resolution mode. 
+It shows the setup of the I2S for audio output via the DAC and very simple processing of
+multi-channel audio frames to produce a single channel output based on a simple single steering direction.
 
 
 |appendix|
@@ -14,15 +16,17 @@ This demo application shows a simple Delay and Sum (DAS) bemformer in high resol
 Demo Hardware Setup
 ------------------- 
 
-Ensure that an XTAG is connected along with the microphone array via USB. Headphones should be connected to the audio jack for listening to the beamformed output.
+Ensure that an XTAG is connected along with the microphone array via USB. 
+Headphones should be connected to the audio jack for listening to the beamformed output.
 
 |newpage|
 
 Launching the demo application
 ------------------------------
 
-Build the application then run using ``xrun --xscope app_hires_DAS_fixed.xe``. Buttons ``A`` and ``D`` rotate the direction of the beam which is indicated by the LEDs.
-
+Build the application then run using ``xrun --xscope app_hires_DAS_fixed.xe``. 
+Buttons ``A`` and ``D`` rotate the direction of the beam which is indicated by the LEDs.
+Buttons ``C`` and ``B`` increase and decrease the gain on the output signal respectively.
 
 |newpage|
 
@@ -39,6 +43,11 @@ References
 
     http://www.xmos.com/published/xmos-programming-guide
   
+  * XMOS Microphone Array Library
+
+    http://www.xmos.com/support/libraries/lib_mic_array
+	
+  * AN00162 - Using the I2S library
 
 |newpage|
 
