@@ -10,7 +10,7 @@ import java.util.Calendar;
 
 public class Generator {	
 	
-	final int coefsPerThirdPhase = 32;
+	final int maxCoefsPerThirdPhase = 32;
 	final double PDMClockRate = 3072000; //MHz
 	
 	private double [] read_array(String filename){
@@ -180,7 +180,7 @@ public class Generator {
 	private void output_third_fir_doubled(String filename, String name, BufferedWriter header, BufferedWriter impl) throws Exception{
 
 		double coefs[] = read_array(filename);
-		final int phases = coefs.length/coefsPerThirdPhase;
+		final int phases = coefs.length/maxCoefsPerThirdPhase;
 		
 		double abs_sum = 0;
 		double sum = 0;
@@ -284,14 +284,14 @@ public class Generator {
 			output_first_fir("first_h.txt", "first", header, impl);
 			
 			output_second_fir("second_h.txt", "second", header, impl);
-			output_third_fir_doubled("third_48_h.txt", "48kHz", header, impl);
-			output_third_fir_doubled("third_24_h.txt", "24kHz", header, impl);
-			output_third_fir_doubled("third_16_h.txt", "16kHz", header, impl);
-			output_third_fir_doubled("third_12_h.txt", "12kHz", header, impl);
-			output_third_fir_doubled("third_8_h.txt",  "8kHz", header, impl);
+			output_third_fir_doubled("third_stage_div_2_h.txt", "div_2", header, impl);
+			output_third_fir_doubled("third_stage_div_4_h.txt", "div_4", header, impl);
+			output_third_fir_doubled("third_stage_div_6_h.txt", "div_6", header, impl);
+			output_third_fir_doubled("third_stage_div_8_h.txt", "div_8", header, impl);
+			output_third_fir_doubled("third_stage_div_12_h.txt",  "div_12", header, impl);
 			
-			header.write("#define THIRD_STAGE_COEFS_PER_STAGE (" + (coefsPerThirdPhase) +")\n");
-			header.write("#define THIRD_STAGE_COEFS_PER_ROW   (" + (2*coefsPerThirdPhase-1) +")\n");
+			header.write("#define THIRD_STAGE_COEFS_PER_STAGE (" + (maxCoefsPerThirdPhase) +")\n");
+			header.write("#define THIRD_STAGE_COEFS_PER_ROW   (" + (2*maxCoefsPerThirdPhase-1) +")\n");
 			header.write("#endif /* FIR_DECIMATOR_H_ */\n");
 
 		} catch (Exception e) {
