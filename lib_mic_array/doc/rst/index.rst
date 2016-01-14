@@ -178,6 +178,32 @@ and the decimators, similar to the above, it is done in the following fashion::
   }
   
   
+Setting up the decimators
+-------------------------
+
+All decimators attached to an application, via streaming channels, are configured 
+simultaneously with the ``decimator_configure()`` function. The parameters to the
+``decimator_configure()`` function are described in a later section. To start the 
+frame exchange process, and with that the real-time constraint of the audio, 
+``decimator_init_audio_frame()`` must be called. Now the decimators are running
+and will be outputting frames at the rate given by their configuration.
+
+TODO state machine
+
+Accessing the samples
+---------------------
+Samples are accessed in the form of frames. TODO
+
+
+Changing decimator configuration
+--------------------------------
+
+Once the decimators are running the configuration remains constant. If a change of configuration 
+is required then a call to ``decimator_configure()`` allows a complete reconfigure. This will 
+reconfigure and reset all attached decimators. The only configuration that will survive reconfiguration
+is the frame numbers and the DC offset memory. It is assumed that the microphone specific DC offset 
+remains fairly constant between reconfigurations. 
+  
 ``mic_array_conf.h``
 --------------------
 
@@ -449,20 +475,61 @@ Signal Characteristics
 The output signal has been decimated from the original PDM in such a way to achieve at 
 least 100dBs of signal to noise for all output sample rates.
 
-  ======================== ===================== =============
-  fir_decimation_factor    Passband Cut Off      Sample rate
-  ======================== ===================== =============
-  2                        19kHz                 48 KHz
-  4                        10.4kHz               24 KHz
-  6                        7.1kHz                16 KHz
-  8                        5kHz                  12 KHz
-  12                       3.5kHz                8 KHz
-  2                        17.5kHz               44.1 KHz
-  4                        9.6kHz                22.05 KHz
-  ======================== ===================== =============
+  =================== ================= ====================== ============ ============
+  PDM Sample Rate(Hz) decimation_factor Output sample rate(Hz) Passband(Hz) Stopband(Hz)
+  =================== ================= ====================== ============ ============
+  3072000             2                 48000                  19200        26400
+  3072000             4                 24000                  9600         13200
+  3072000             6                 16000                  6400         8800
+  3072000             8                 12000                  4800         6600
+  3072000             12                8000                   3200         4400
+  2822400             2                 44100                  17640        24255
+  2822400             4                 22050                  8820         12127.5
+  2822400             6                 14700                  5880         8085
+  2822400             8                 11025                  4410         6063.75
+  2822400             12                7350                   2940         4042.5
+  =================== ================= ====================== ============ ============
 
-The decimation is achieved by applying three polyphase FIR filters sequentially. 
-The design of these filters can be view in the matlab script ``fir_design.m``. 
+The decimation is achieved by applying three poly-phase FIR filters sequentially. 
+The design of these filters can be view in the python script ``fir_design.py``. The default 
+magnitude responses of the first to third stages are given as figure 2 to 9 in the appendix.
+
+
+Advanced filter design
+......................
+
+The above table has been generated to provide 100dBs of signal to noise for all decimation factors
+whilst maintaining a fairly flat passband and wide bandwidth. However for a given specification 
+the filter characteristics can be optimised to reduce latency, increase passband, lower the 
+passband ripple and increase the signal to noise ratio. For example, in a system where a 16kHz
+output is required then limiting the passband to 8kHz would improve the other properties. Equally, 
+if the noise floor of the PDM microphone is 65dBs then there is little advantage exceeding that in the
+filter. 
+
+``fir_design.py`` usage
+.......................
+ 
+In order generate custom filters the ``fir_design.py`` can be modified. The purpose of this file 
+is to design end generate the FIR coefficients for the three stages of decimation. 
+ 
+* ``PDM_sample_rate``: Specifies the clock sample rate to the PDM microphones. 
+* ``stopband_attenuation``: Describes the desired attenuation to apply to the stop band at each stage. 
+* ``first_stage_pass_bandwidth``: The bandwidth of the passband. Assumed to start at 0Hz and end at this value.
+* ``first_stage_stop_bandwidth``: TODO
+* ``second_stage_pass_bandwidth``: The bandwidth of the passband. Assumed to start at 0Hz and end at this value.
+* ``second_stage_stop_bandwidth``: TODO
+* ``third_stage_num_taps_per_phase``: The number of FIR taps per stage(decimation factor). The 
+  fewer that there are then the lower the group delay. Up to 32 are allowed.
+* ``third_stage_configs``: This is a list of third stage output configurations to generate
+    - The decimation factor.
+	- The frequency that the passband ends.
+	- The frequency that the stopband starts.
+ 
+When ``fir_design.py`` has been configured to describe the desired configuration then it can be run with either
+``python fir_design.py`` or TODO. Following this the coefficients generated (``*.fir_coefs``) have to be 
+converted into ``fir_coefs.xc`` and``fir_decimator.h`` by running ``java -jar Generator.jar``. This takes the raw
+coefficients and preprocesses them to maximise the dynamic range and efficiency within the compiled application.
+ 
 
 Frame and FIR memory
 --------------------
@@ -538,7 +605,51 @@ High resolution delay task
 .. doxygenfunction:: hires_delay
 .. doxygenfunction:: hires_delay_set_taps
 
+|newpage|
+|appendix|
 
+.. figure:: first_stage.eps
+            :width: 60%
+                    
+            First stage FIR magnitude response.
+
+
+.. figure:: second_stage.eps
+            :width: 60%
+                    
+            Second stage FIR magnitude response.
+
+
+.. figure:: third_stage_div_2.eps
+            :width: 60%
+                    
+            Third stage FIR magnitude response for a divide of 2.
+
+
+.. figure:: third_stage_div_4.eps
+            :width: 60%
+                    
+            Third stage FIR magnitude response for a divide of 4.
+
+
+.. figure:: third_stage_div_6.eps
+            :width: 60%
+                    
+            Third stage FIR magnitude response for a divide of 6.
+
+
+.. figure:: third_stage_div_8.eps
+            :width: 60%
+                    
+            Third stage FIR magnitude response for a divide of 8.
+
+
+.. figure:: third_stage_div_12.eps
+            :width: 60%
+                    
+            Third stage FIR magnitude response for a divide of 12.
+
+				
 |newpage|
 
 Known Issues

@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 
 PDM_sample_rate = 3072.0;
 stopband_attenuation = 100;
-third_stage_dividers = [2, 4, 6, 8, 12]
 
 first_stage_pass_bandwidth = 16.0;
 first_stage_stop_bandwidth = 80.0;
@@ -17,6 +16,13 @@ second_stage_pass_bandwidth = 16.0;
 second_stage_stop_bandwidth = 14.0;
 
 third_stage_num_taps_per_phase = 32
+
+#Each entry generates a output 
+third_stage_configs = [	[2,  0.40, 0.55], 
+						[4,  0.40, 0.55], 
+						[6,  0.40, 0.55], 
+						[8,  0.40, 0.55], 
+						[12, 0.40, 0.55]]
 
 #Do not change parameters below here
 first_stage_num_taps = 48
@@ -62,8 +68,10 @@ def plot_response(H, file_name):
   plt.savefig(file_name +'.eps', format='eps', dpi=1000)
   return 
 
-def output_txt_file(h, file_name):
-  f = open (file_name + ".txt", 'w');
+def output_txt_file(h, num_taps_per_phase, file_name, filter_name):
+  f = open (file_name + ".fir_coefs", 'w');
+  f.write(filter_name + "\n");
+  f.write(str(num_taps_per_phase) + "\n");
   for i in h:
     f.write(str(i) + "\n");
   f.close();
@@ -95,7 +103,7 @@ while (-stop_band_atten) < stopband_attenuation:
 print("First Stage")
 print("Passband ripple:" + str(passband_ripple) + " dBs")
 print("Stopband attenuation:" + str(stop_band_atten) + " dBs")
-output_txt_file(first_h, "first_h");
+output_txt_file(first_h, first_stage_num_taps, "first_h", "first_stage");
 plot_response(H, "first_stage");
 print("")
 
@@ -122,7 +130,7 @@ while (-stop_band_atten) < stopband_attenuation:
 print("Second Stage")
 print("Passband ripple:" + str(passband_ripple) + " dBs")
 print("Stopband attenuation:" + str(stop_band_atten) + " dBs")
-output_txt_file(second_h, "second_h");
+output_txt_file(second_h, second_stage_num_taps, "second_h", "second_stage");
 plot_response(H, "second_stage");
 print("")
 
@@ -131,7 +139,7 @@ for divider in third_stage_dividers :
 	stop_band_atten = 0;
 	while (-stop_band_atten) < stopband_attenuation:
 	  third_stage_bands = [0, 0.4/divider, 0.55/divider, 0.5]
-	  third_div2_h = signal.remez(divider*third_stage_num_taps_per_phase, third_stage_bands, [1, 0], [weight, 1])
+	  third_h = signal.remez(divider*third_stage_num_taps_per_phase, third_stage_bands, [1, 0], [weight, 1])
 	  (w,H) = signal.freqz(third_div2_h)
 	  [stop_band_atten, passband_ripple] =  measure_stopband_and_ripple(third_stage_bands, H);
 	  weight = weight / 1.01
@@ -140,7 +148,7 @@ for divider in third_stage_dividers :
 	print("Passband ripple:" + str(passband_ripple) + " dBs")
 	print("Stopband attenuation:" + str(stop_band_atten) + " dBs")
 	print("")
-	output_txt_file(first_h, "third_stage_div_"+ str(divider) + "_h");
+	output_txt_file(third_h, third_stage_num_taps_per_phase, "third_stage_div_"+ str(divider) + "_h", "third_stage_div_"+ str(divider));
 	plot_response(H, "third_stage_div_"+ str(divider));
 
 
