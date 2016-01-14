@@ -91,7 +91,7 @@ clock as follows::
   start_clock(pdmclk);
 
 It should be noted that this is a 3.125 MHz clock, which is 1.7% off a true
-3.072 MHz clock. This may be acceptable to simple VUIs.
+3.072 MHz clock. This may be acceptable to simple Voice User Interfaces (VUIs).
 
 Usage
 -----
