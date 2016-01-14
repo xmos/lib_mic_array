@@ -485,7 +485,7 @@ word aligned array of length of at least 2.
 Example Applications
 --------------------
 
-Examples of of how to set up phased aligned sampling are given in the
+Examples of how to set up phased aligned sampling are given in the
 application ``app_phase_aligned_example`` with a worked example of a
 fixed beam delay and sum beam-former given in the application
 ``example_lores_DAS_fixed``. Also examples of of how to set up high 
