@@ -161,8 +161,8 @@ References
 Full source code listing
 ------------------------
 
-Source code for main.xc
-.......................
+Source code for app_lores_DAS_fixed.xc
+......................................
 
 .. literalinclude:: app_lores_DAS_fixed.xc
   :largelisting:
