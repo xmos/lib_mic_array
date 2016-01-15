@@ -48,7 +48,6 @@ public class Generator {
 			coefs[i] = Double.parseDouble(s);
 			i++;
 		}
-		
 		return coefs;
 		
 	}
@@ -123,7 +122,7 @@ public class Generator {
 		
 		double coefs[] = read_array(filename);
 		String name = g_firName;
-		
+
 		double abs_sum = 0;
 		double sum = 0;
 		
@@ -150,7 +149,7 @@ public class Generator {
 			double d=coefs[i]/abs_sum;
 			max = Math.max(max, d);
 			int d_int = (int)(d*(double)Integer.MAX_VALUE);
-			impl.write(String.format("\t0x%08x,\n", d_int));
+			impl.write(String.format("\t0x%08x,\n", d_int*2));
 			if(d_int>0){
 				t_sum_pos += ((long)d_int * (long) Integer.MAX_VALUE);
 				t_sum_pos += ((long)d_int * (long) Integer.MAX_VALUE);
@@ -192,9 +191,9 @@ public class Generator {
 
 		double coefs[] = read_array(filename);
 		String name = g_firName;
-		int coefsPerPhase = g_coefsPerPhase;
+		int coefsPerPhase = 32;
 		
-		final int phases = coefs.length/coefsPerPhase;
+		final int phases = coefs.length/32;
 		
 		double abs_sum = 0;
 		double sum = 0;
@@ -226,7 +225,8 @@ public class Generator {
 		header.write("extern const int g_third_stage_" +name+ "_fir["+(2*coefs.length-phases)+ "];\n");
 		
 		double max = 0.0;
-		for(int phase = 0 ;phase < phases; phase++){
+		for(int phase =phases-1 ;phase >=0; phase--){
+		//for(int phase = 0 ;phase < phases; phase++){
 			impl.write("//Phase " + phase + "\n");
 			
 			for(int i=0;i<coefs.length/phases;i++){
@@ -246,6 +246,7 @@ public class Generator {
 				}
 			}
 			for(int i=coefs.length/phases;i<maxCoefsPerThirdPhase;i++){
+				System.out.println("here");
 				impl.write(String.format("0x%08x, ", 0));
 				if(((i)%8)==7) impl.write("\n");
 			}
@@ -259,6 +260,7 @@ public class Generator {
 				if(((i)%8)==7) impl.write("\n");
 			}
 			for(int i=coefs.length/phases;i<maxCoefsPerThirdPhase;i++){
+				System.out.println("here");
 				impl.write(String.format("0x%08x, ", 0));
 				if(((i)%8)==7) impl.write("\n");
 			}
