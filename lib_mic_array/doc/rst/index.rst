@@ -200,6 +200,8 @@ and will be outputting frames at the rate given by their configuration.
 
 TODO state machine diagram
 
+
+
 Accessing the samples
 ---------------------
 Samples are accessed in the form of frames. A frame is either in the simple audio format, ``frame_audio``,
@@ -578,13 +580,11 @@ word aligned array of length of at least 2.
 Example Applications
 --------------------
 
-Examples of how to set up phased aligned sampling are given in the
-application ``app_phase_aligned_example`` with a worked example of a
+A worked example of a
 fixed beam delay and sum beam-former given in the application
 ``example_lores_DAS_fixed``. Also examples of of how to set up high 
-resolution delayed sampling are given in the application 
-``app_high_resolution_delay_example`` with a worked example of a
-fixed beam delay and sum beam-former given in the application
+resolution delayed sampling can be seen in the high resolution fixed 
+beam delay and sum beam-former given in the application
 ``example_hires_DAS_fixed``. 
 
 API

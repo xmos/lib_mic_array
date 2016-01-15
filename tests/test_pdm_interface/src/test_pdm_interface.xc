@@ -1,13 +1,8 @@
-// Copyright (c) 2016, XMOS Ltd, All rights reserved
 
 #include "mic_array.h"
-#include <limits.h>
 #include <stdio.h>
 #include <xs1.h>
-#include <xclib.h>
-#include <math.h>
 #include <stdlib.h>
-#include <print.h>
 
 extern void pdm_rx_debug(
         streaming chanend c_not_a_port,
@@ -19,62 +14,91 @@ int main(){
     par {
         pdm_rx_debug(c_port, c, d);
         {
+            for(unsigned ch=0;ch<8;ch++){
+                for(unsigned i=0;i<12;i++) c_port <: 0x00000000;
 
-            c_port <: 0x000000ff;
-            c_port <: 0x00000000;
-            for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+                unsigned mask = 1<<ch;
 
-            c_port <: 0x0000ff00;
-            c_port <: 0x00000000;
-            for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+                c_port <: mask<<0;
+                c_port <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
 
-            c_port <: 0x00ff0000;
-            c_port <: 0x00000000;
-            for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+                c_port <: mask<<8;
+                c_port <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
 
-            c_port <: 0xff000000;
-            c_port <: 0x00000000;
-            for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+                c_port <: mask<<16;
+                c_port <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
 
-            c_port <: 0x00000000;
-            c_port <: 0x000000ff;
-            for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+                c_port <: mask<<24;
+                c_port <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
 
-            c_port <: 0x00000000;
-            c_port <: 0x0000ff00;
-            for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+                c_port <: 0x00000000;
+                c_port <: mask<<0;
+                for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
 
-            c_port <: 0x00000000;
-            c_port <: 0x00ff0000;
-            for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+                c_port <: 0x00000000;
+                c_port <: mask<<8;
+                for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
 
-            c_port <: 0x00000000;
-            c_port <: 0xff000000;
-            for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+                c_port <: 0x00000000;
+                c_port <: mask<<16;
+                for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+
+                c_port <: 0x00000000;
+                c_port <: mask<<24;
+                for(unsigned i=0;i<10;i++) c_port <: 0x00000000;
+            }
         }
         {
-           for(unsigned o=0;o<8;o++){
-               for(unsigned s=0;s<6;s++){
-                    int v, t;
-                    c :> v;
-                    d :> t;
+            unsigned ch_to_mic[8] = {0, 4, 2, 4+2, 1, 4+1, 3, 4+3};
 
-                    if(t != v)
-                        printf("Error: not all channels are the same\n");
-                    for(unsigned i=0;i<3;i++){
-                        c:> t;
-                        if(t!= v)
-                            printf("Error: not all channels are the same\n");
-                        d:> t;
-                        if(t!= v)
-                            printf("Error: not all channels are the same\n");
+            for(unsigned ch=0;ch<8;ch++){
+
+                int min_sat; //first get the full -ve scale response
+                int vals[8];
+
+                for(unsigned i=0;i<4;i++){
+                    c :> vals[i*2];
+                    d :> vals[i*2+1];
+                }
+
+                for(unsigned j=0;j<5;j++){
+                    for(unsigned i=0;i<4;i++){
+                        int v;
+                        c :> v;
+                        if (v!= vals[i*2])
+                            printf("Error: channels are not the same\n");
+                        d :> v;
+                        if (v!= vals[i*2+1])
+                            printf("Error: channels are not the same\n");
                     }
+                }
+                unsigned m = ch_to_mic[ch];
+                min_sat = vals[m];
+                //then test each channel
 
-                    unsigned index = (7-o + s*8);
-                    int d =  (t + 1968382570)/2 - fir1_debug[index];
-                    if(d*d>1)
-                        printf("Error: coef incorrect, delta: %d\n", v - fir1_debug[index]);
-               }
+               for(unsigned o=0;o<8;o++){
+                   for(unsigned s=0;s<6;s++){
+                       for(unsigned i=0;i<4;i++){
+                           c :> vals[i*2];
+                           d :> vals[i*2+1];
+                       }
+                       for(unsigned i=0;i<8;i++){
+                           if(m == i){
+                               unsigned index = (7-o + s*8);
+                               int d =  (vals[i] - min_sat)/2 - fir1_debug[index];
+                               if(d*d>1)
+                                   printf("Error: unexpected coefficient\n");
+                           } else {
+                               if((vals[i] - min_sat) != 0)
+                                   printf("Error: crosstalk detected\n");
+                           }
+                       }
+                   }
+                }
             }
             printf("Success!\n");
             _Exit(1);
