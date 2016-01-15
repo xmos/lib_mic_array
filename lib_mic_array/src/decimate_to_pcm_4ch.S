@@ -819,7 +819,7 @@ divide_by_four:
 
 	ldw r8, sp[S_CHAN_COUNT]
 	{dualentsp 1; eq r9, r8, 4}
-	ldaw r11, cp[g_second_fir]
+	ldaw r11, cp[g_second_stage_fir]
 
 	{bt r9, decimate_to_pcm_4ch_0; eq r9, r8, 3}
 	{bt r9, decimate_to_pcm_4ch_1; eq r9, r8, 2}

@@ -79,7 +79,7 @@ void model(streaming chanend c_4x_pdm_mic_0,
                     }
                     val = filter(fir2_debug, second_stage_data, 16, input_sample, second_stage_n);
                 }
-                val = filter(fir3_48kHz_debug, third_stage_data, 32*DF, val, third_stage_n);
+                val = filter(fir3_div_2_debug, third_stage_data, 32*DF, val, third_stage_n);
             }
             c_model <: val;
         }
@@ -89,7 +89,7 @@ void model(streaming chanend c_4x_pdm_mic_0,
 void output( streaming chanend c_ds_output[2], streaming chanend c_actual){
     unsigned buffer;
     unsafe {
-        decimator_config_common dcc = {0, 0, 0, 0, 2, g_third_48kHz_fir, 0, 0};
+        decimator_config_common dcc = {0, 0, 0, 0, 2, g_third_stage_div_2_fir, 0, 0};
         decimator_config dc[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}

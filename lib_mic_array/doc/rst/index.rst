@@ -3,19 +3,26 @@
 Overview
 --------
 
-Eight PDM microphones can be attached using each high channel count PDM
-interface. The interface requires three logical cores as shown below:
+Up to eight PDM microphones can be attached to each high channel count PDM
+interface(``pdm_rx()``). The interface requires either two:
 
-.. figure:: chan4-8.pdf
+  .. figure:: chan1-4.pdf
+	:width: 100%
+	    
+	One to four channel count PDM interface
+
+Or three logical cores as shown below:
+
+  .. figure:: chan4-8.pdf
             :width: 100%
                     
-            High channel count PDM interface
+            Five to eight count PDM interface
 
-The left most task samples 8 microphones, and filters the data to provide up to
-eight 384 KHz data streams, split in two bundles of four channels. Two
-processing threads each process four channels. The processing thread
+The left most task, ``pdm_rx()``, samples 8 microphones and filters the data to provide up to
+eight 384 KHz data streams, split in two streams of four channels. One or two
+processing threads, ``decimate_to_pcm_4ch()``, each process up to four channels. The processing thread
 decimates the signal to a user chosen sample rate (one of 48, 24, 16, 12,
-or 8 KHz). After this a sequence of eight steps takes place:
+or 8 KHz). After the decimation to the output sample rate the sequence of eight steps takes place:
 
 * A number of channels are selected. The user selects between 0 and 4
   channels. The other channels are muted.
@@ -37,6 +44,9 @@ or 8 KHz). After this a sequence of eight steps takes place:
 * The data can be stored in an index bit-reversed manner, so that it can be passed
   into an FFT without having to do any preprocessing.
 
+There is also an optional high resolution delay, running at up to 384kHz, that can be used to add to the 
+signal path channel specific delays. This can be used for high resolution delay and sum
+bemforming.
 
 Hardware characteristics
 ------------------------
@@ -69,7 +79,7 @@ port is clocked from the PDM clock::
 
 The input clock for the microphones can be generated in a multitude of
 ways. For example one can generate a 3.072 MHz clock on the board, or one
-can use the XCORE to divide down 12.288 MHz master clock. Or, if clock
+can use the xCORE to divide down 12.288 MHz master clock. Or, if clock
 accuracy is not important, the internal 100 MHz reference can be divided down to provide an
 approximate clock.
 
@@ -107,8 +117,8 @@ An application must also define and include an extra header
 ``mic_array_conf.h`` which is used to describe the mandatory configuration
 described later in this document.
 
-The PDM microphone interface and two 4-channel decimators are instantiated as 
-parallel tasks that run in a ``par`` statement. The two 4-channel decimators must 
+The PDM microphone interface and 4-channel decimators are instantiated as 
+parallel tasks that run in a ``par`` statement. For example, in an eight channel setup the two 4-channel decimators must 
 connect to the PDM interface via streaming channels::
 
   #include <mic_array.h>
@@ -143,7 +153,7 @@ There is a further requirement that any application of a ``decimate_to_pcm_4ch``
 task must be on the same tile as the ``decimate_to_pcm_4ch`` task due to the sharaed
 frame memory.
   
-Additionally, a high resolution delay task can be inserted between the PDM interface 
+Additionally, the high resolution delay task can be inserted between the PDM interface 
 and the decimators, similar to the above, it is done in the following fashion::
 
   #include <mic_array.h>
@@ -188,17 +198,27 @@ frame exchange process, and with that the real-time constraint of the audio,
 ``decimator_init_audio_frame()`` must be called. Now the decimators are running
 and will be outputting frames at the rate given by their configuration.
 
-TODO state machine
+TODO state machine diagram
 
 Accessing the samples
 ---------------------
-Samples are accessed in the form of frames. TODO
+Samples are accessed in the form of frames. A frame is either in the simple audio format, ``frame_audio``,
+or in the frequency domain format, ``frame_complex``. 
+
+Simple audio frames contain a single two dimensional array, ``data``,
+with the first index being the channel ID and the second dimension being the sample number. Samples are ordered 
+``0`` as the oldest sample and increasing number being the newer.
+
+Complex audio frames contain a single two dimensional array, ``data``. The data is packed into the array by 
+even channels going into the real entries and odd channels going into the imaginary entries. Samples
+are inserted into the array in an index bit-reversed order. This results in frames that are ready for direct
+processing by an DIT FFT.
 
 
 Changing decimator configuration
 --------------------------------
 
-Once the decimators are running the configuration remains constant. If a change of configuration 
+Once the decimators are running the configuration od the decimators remain constant. If a change of configuration 
 is required then a call to ``decimator_configure()`` allows a complete reconfigure. This will 
 reconfigure and reset all attached decimators. The only configuration that will survive reconfiguration
 is the frame numbers and the DC offset memory. It is assumed that the microphone specific DC offset 
@@ -249,15 +269,16 @@ following settings through ``decimator_config_common``:
   2 to the power of frame_size_log2 samples of each channel. Set this to a maximum of ``MAX_FRAME_SIZE_LOG2``.
   
 * ``apply_dc_offset_removal``: This controls if the DC offset removal should be enabled
-  or not. Set to ``1`` to enable, or ``0`` to not apply DC offset removal.
+  or not. Set to non-zero to enable, or ``0`` to not apply DC offset removal.
   
-* ``fir_decimation_factor``: This specifies the decimation factor to apply to the input
-  after a 4x decimator has already been applied. The valid values
+* ``output_decimation_factor``: This specifies the decimation factor to apply to the PDM input
+  after a 8x decimtor and 4x decimator has already been applied, i.e. for s 3.072MHz PDM clock the 
+  ``output_decimation_factor`` will apply to a 96kHz sample rate. The default valid values
   are 2, 4, 6, 8, 12, 16. Common sample rates can be achieved by using
   these decimation factors as follows:
 
   ======================== ===================== ======== ========== =============
-  fir_decimation_factor    decimate_to_pcm_4x    PDM_rx   PDM clock  Sample rate
+  output_decimation_factor decimate_to_pcm_4x    PDM_rx   PDM clock  Sample rate
   ======================== ===================== ======== ========== =============
   2                        8 x                   8 x      3.072 MHz  48 KHz
   4                        16 x                  8 x      3.072 MHz  24 KHz
@@ -279,22 +300,22 @@ following settings through ``decimator_config_common``:
   previous decimators. This must be set to a value that depends on the
   ``fir_decimation_factor`` as follows:
   
-  ======================== ======================
-  fir_decimation_factor    fir_gain_compression
-  ======================== ======================
-  2                         FIR_COMPENSATOR_48KHZ
-  4                         FIR_COMPENSATOR_24KHZ
-  6                         FIR_COMPENSATOR_16KHZ
-  8                         FIR_COMPENSATOR_12KHZ
-  12                        FIR_COMPENSATOR_8KHZ
-  ======================== ======================
+  ======================== =======================
+  output_decimation_factor fir_gain_compression
+  ======================== =======================
+  2                         FIR_COMPENSATOR_DIV_2
+  4                         FIR_COMPENSATOR_DIV_4
+  6                         FIR_COMPENSATOR_DIV_6
+  8                         FIR_COMPENSATOR_DIV_8
+  12                        FIR_COMPENSATOR_DIV_12
+  ======================== =======================
   
-  If you wish to supply your own, this is a fixed
-  point number in 1.4.27 format.
+  If you wish to supply your own, this is a fixed point number in 1.4.27 format. And to apply
+  a unity gain the set to ``0``.
   
 * ``apply_mic_gain_compensation``: Set this to ``1`` if microphone gain compensation is 
   required. The compensation applied is controlled through the
-  ``mic_gain_compensation`` field in ``decimator_config`` below.
+  ``mic_gain_compensation`` arrayin ``decimator_config`` below.
   
 * A windowing function can be passed in through ``windowing_function``. It is a pointer
   to an array of integers that defines the windowing operator. Each sample
@@ -337,8 +358,12 @@ The output of the decimator is 32bit PCM audio at the requested sample rate.
 DC offset removal
 -----------------
 
-TODO
- 
+The DC offset removal is implemented as a single pole IIR high pass filer obeying the 
+relation::
+
+  Yn+1 = Yn * alpha + x
+
+Where ``alpha`` is defined as ``1 - 2^DC_OFFSET_DIVIDER_LOG2``. 
  
 Frames
 ------
@@ -515,15 +540,16 @@ is to design end generate the FIR coefficients for the three stages of decimatio
 * ``PDM_sample_rate``: Specifies the clock sample rate to the PDM microphones. 
 * ``stopband_attenuation``: Describes the desired attenuation to apply to the stop band at each stage. 
 * ``first_stage_pass_bandwidth``: The bandwidth of the passband. Assumed to start at 0Hz and end at this value.
-* ``first_stage_stop_bandwidth``: TODO
+* ``first_stage_stop_bandwidth``: The bandwidth of the stopbands.
 * ``second_stage_pass_bandwidth``: The bandwidth of the passband. Assumed to start at 0Hz and end at this value.
-* ``second_stage_stop_bandwidth``: TODO
+* ``second_stage_stop_bandwidth``: The bandwidth of the stopbands.
 * ``third_stage_num_taps_per_phase``: The number of FIR taps per stage(decimation factor). The 
   fewer that there are then the lower the group delay. Up to 32 are allowed.
 * ``third_stage_configs``: This is a list of third stage output configurations to generate
-    - The decimation factor.
-	- The frequency that the passband ends.
-	- The frequency that the stopband starts.
+  - The decimation factor.
+  - The frequency that the passband ends.
+  - The frequency that the stopband starts.
+  - The output name
  
 When ``fir_design.py`` has been configured to describe the desired configuration then it can be run with either
 ``python fir_design.py`` or TODO. Following this the coefficients generated (``*.fir_coefs``) have to be 
@@ -609,43 +635,43 @@ High resolution delay task
 |appendix|
 
 .. figure:: first_stage.eps
-            :width: 60%
+            :width: 70%
                     
             First stage FIR magnitude response.
 
 
 .. figure:: second_stage.eps
-            :width: 60%
+            :width: 70%
                     
             Second stage FIR magnitude response.
 
 
 .. figure:: third_stage_div_2.eps
-            :width: 60%
+            :width: 70%
                     
             Third stage FIR magnitude response for a divide of 2.
 
 
 .. figure:: third_stage_div_4.eps
-            :width: 60%
+            :width: 70%
                     
             Third stage FIR magnitude response for a divide of 4.
 
 
 .. figure:: third_stage_div_6.eps
-            :width: 60%
+            :width: 70%
                     
             Third stage FIR magnitude response for a divide of 6.
 
 
 .. figure:: third_stage_div_8.eps
-            :width: 60%
+            :width: 70%
                     
             Third stage FIR magnitude response for a divide of 8.
 
 
 .. figure:: third_stage_div_12.eps
-            :width: 60%
+            :width: 70%
                     
             Third stage FIR magnitude response for a divide of 12.
 

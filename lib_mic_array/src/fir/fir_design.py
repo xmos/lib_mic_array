@@ -18,11 +18,12 @@ second_stage_stop_bandwidth = 14.0;
 third_stage_num_taps_per_phase = 32
 
 #Each entry generates a output 
-third_stage_configs = [	[2,  0.40, 0.55, "div_2"], 
-			[4,  0.40, 0.55, "div_4"], 
-			[6,  0.40, 0.55, "div_6"], 
-			[8,  0.40, 0.55, "div_8"], 
-			[12, 0.40, 0.55, "div_12"]]
+third_stage_configs = [
+    [2,  0.35, 0.50, "div_2"],
+    [4,  0.4, 0.55, "div_4"], 
+    [6,  0.4, 0.55, "div_6"], 
+    [8,  0.4, 0.55, "div_8"], 
+    [12, 0.4, 0.55, "div_12"]]
 
 #Do not change parameters below here
 first_stage_num_taps = 48
@@ -141,13 +142,12 @@ for config in third_stage_configs:
 	normalised_pass = config[1]
 	normalised_stop = config[2]
 	name = config[3]
-
 	weight = 1.0;
 	stop_band_atten = 0;
 
 	#TODO use a binary search here to massivly improve preformance
 	while (-stop_band_atten) < stopband_attenuation:
-	  third_stage_bands = [0, 0.4/divider, 0.55/divider, 0.5]
+	  third_stage_bands = [0, normalised_pass/divider, normalised_stop/divider, 0.5]
 	  third_h = signal.remez(divider*third_stage_num_taps_per_phase, third_stage_bands, [1, 0], [weight, 1])
 	  (w,H) = signal.freqz(third_h)
 	  [stop_band_atten, passband_ripple] =  measure_stopband_and_ripple(third_stage_bands, H);

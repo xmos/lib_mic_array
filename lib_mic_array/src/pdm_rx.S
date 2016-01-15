@@ -57,11 +57,11 @@ pdm_rx_asm://(
 	std t, t, sp[4]
 	std t, t, sp[5]
 
-	ldaw t, cp[g_first_fir_0]
+	ldaw t, cp[g_first_stage_fir_0]
 	mov fir0, t
-	ldaw t, cp[g_first_fir_1]
+	ldaw t, cp[g_first_stage_fir_1]
 	mov fir1, t
-	ldaw t, cp[g_first_fir_2]
+	ldaw t, cp[g_first_stage_fir_2]
 	mov fir2, t
 
 	ldaw p, sp[0]

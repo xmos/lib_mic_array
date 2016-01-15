@@ -28,7 +28,7 @@ void example(streaming chanend c_ds_output[2],
     unsigned buffer;
 
     unsafe{
-        decimator_config_common dcc = {MAX_FRAME_SIZE_LOG2, 1, 0, 0, DF, g_third_16kHz_fir, 0, 0};
+        decimator_config_common dcc = {MAX_FRAME_SIZE_LOG2, 1, 0, 0, DF, g_third_stage_div_6_fir, 0, 0};
         decimator_config dc[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}

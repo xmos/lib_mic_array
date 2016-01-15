@@ -28,7 +28,7 @@ void mic_calib(streaming chanend c_ds_output[2], chanend c){
     unsigned buffer;     //buffer index
     unsafe{
 
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_16kHz_fir, 0, 0};
+        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_6_fir, 0, 0};
         decimator_config dcf[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}

@@ -293,18 +293,18 @@ void verifier(chanend c_model,
     unsafe{
         unsigned decimation_factor_lut[5] = {1*2, 2*2, 3*2, 4*2, 6*2};
         int * unsafe decimation_fir_lut[5] = {
-                g_third_48kHz_fir,
-                g_third_24kHz_fir,
-                g_third_16kHz_fir,
-                g_third_12kHz_fir,
-                g_third_8kHz_fir,
+                g_third_stage_div_2_fir,
+                g_third_stage_div_4_fir,
+                g_third_stage_div_6_fir,
+                g_third_stage_div_8_fir,
+                g_third_stage_div_12_fir,
         };
         int * unsafe decimation_fir_debug_lut[5] = {
-                fir3_48kHz_debug,
-                fir3_24kHz_debug,
-                fir3_16kHz_debug,
-                fir3_12kHz_debug,
-                fir3_8kHz_debug,
+                fir3_div_2_debug,
+                fir3_div_4_debug,
+                fir3_div_6_debug,
+                fir3_div_8_debug,
+                fir3_div_12_debug,
         };
 
         unsigned fir_comp_lut[4] = {0, INT_MAX>>4, INT_MAX<<4, INT_MAX>>8};

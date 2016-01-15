@@ -27,7 +27,7 @@ void example(streaming chanend c_ds_output[2], chanend c_cmd){
                 0, // Index bit reversal is off
                 0, // No windowing function is being applied
                 DF,// The decimation factor is set to 6
-                g_third_16kHz_fir, //This corresponds to a 16kHz output hence this coef array is used
+                g_third_stage_div_6_fir, //This corresponds to a 16kHz output hence this coef array is used
                 0, // Gain compensation is turned off
                 0  // FIR compensation is turned off
         };

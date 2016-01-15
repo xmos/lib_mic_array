@@ -48,7 +48,7 @@ void test_output(streaming chanend c_ds_output[2],
     unsigned gain = 8;
 
     unsafe{
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_48kHz_fir, 0, 0};
+        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0};
         decimator_config dc[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}

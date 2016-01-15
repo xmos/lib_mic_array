@@ -101,7 +101,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
     set_dir(lb, dir, delay);
 
     unsafe{
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_16kHz_fir, 0, 0};
+        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_6_fir, 0, 0};
         decimator_config dc[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
