@@ -18,11 +18,11 @@ second_stage_stop_bandwidth = 14.0;
 third_stage_num_taps_per_phase = 32
 
 #Each entry generates a output 
-third_stage_configs = [	[2,  0.40, 0.55], 
-						[4,  0.40, 0.55], 
-						[6,  0.40, 0.55], 
-						[8,  0.40, 0.55], 
-						[12, 0.40, 0.55]]
+third_stage_configs = [	[2,  0.40, 0.55, "div_2"], 
+			[4,  0.40, 0.55, "div_4"], 
+			[6,  0.40, 0.55, "div_6"], 
+			[8,  0.40, 0.55, "div_8"], 
+			[12, 0.40, 0.55, "div_12"]]
 
 #Do not change parameters below here
 first_stage_num_taps = 48
@@ -134,21 +134,30 @@ output_txt_file(second_h, second_stage_num_taps, "second_h", "second_stage");
 plot_response(H, "second_stage");
 print("")
 
-for divider in third_stage_dividers :
+#Third Stage
+for config in third_stage_configs:
+
+	divider = config[0]
+	normalised_pass = config[1]
+	normalised_stop = config[2]
+	name = config[3]
+
 	weight = 1.0;
 	stop_band_atten = 0;
+
+	#TODO use a binary search here to massivly improve preformance
 	while (-stop_band_atten) < stopband_attenuation:
 	  third_stage_bands = [0, 0.4/divider, 0.55/divider, 0.5]
 	  third_h = signal.remez(divider*third_stage_num_taps_per_phase, third_stage_bands, [1, 0], [weight, 1])
-	  (w,H) = signal.freqz(third_div2_h)
+	  (w,H) = signal.freqz(third_h)
 	  [stop_band_atten, passband_ripple] =  measure_stopband_and_ripple(third_stage_bands, H);
 	  weight = weight / 1.01
 
-	print("Third Stage Divide by "+ str(divider))
+	print("Third Stage ("+ name + ")")
 	print("Passband ripple:" + str(passband_ripple) + " dBs")
 	print("Stopband attenuation:" + str(stop_band_atten) + " dBs")
 	print("")
-	output_txt_file(third_h, third_stage_num_taps_per_phase, "third_stage_div_"+ str(divider) + "_h", "third_stage_div_"+ str(divider));
+	output_txt_file(third_h, third_stage_num_taps_per_phase, "third_stage_"+ name + "_h", name);
 	plot_response(H, "third_stage_div_"+ str(divider));
 
 

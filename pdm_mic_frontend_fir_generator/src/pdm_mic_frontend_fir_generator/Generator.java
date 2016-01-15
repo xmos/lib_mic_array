@@ -2,6 +2,7 @@ package pdm_mic_frontend_fir_generator;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,6 +14,9 @@ public class Generator {
 	final int maxCoefsPerThirdPhase = 32;
 	final double PDMClockRate = 3072000; //MHz
 	
+	String g_firName;
+	int g_coefsPerPhase;
+	
 	private double [] read_array(String filename){
 		
 		ArrayList<String> records = new ArrayList<String>();
@@ -20,6 +24,10 @@ public class Generator {
 		  {
 		    BufferedReader reader = new BufferedReader(new FileReader(filename));
 		    String line;
+		    
+		    g_firName = reader.readLine();
+		    g_coefsPerPhase =  Integer.parseInt(reader.readLine());
+		    
 		    while ((line = reader.readLine()) != null)
 		    {
 		      records.add(line);
@@ -48,9 +56,10 @@ public class Generator {
 	String first_define;
 	String second_define;
 	
-	private void output_first_fir(String filename, String name, BufferedWriter header, BufferedWriter impl) throws IOException{
-
+	private void output_first_fir(String filename, BufferedWriter header, BufferedWriter impl) throws IOException{
+		
 		double coefs[] = read_array(filename);
+		String name = g_firName;
 		
 		double abs_sum = 0;
 		double sum = 0;
@@ -64,9 +73,9 @@ public class Generator {
 		for(int i=0;i<coefs.length;i++)
 			abs_sum += Math.abs(coefs[i]);
 		
-		first_define = name.toUpperCase()+ "_STAGE_SCALE_FACTOR";
+		first_define = name.toUpperCase()+ "_SCALE_FACTOR";
 		header.write("#define " +first_define + " (" + abs_sum + ")\n");
-		System.out.println("//" +name+ " stage FIR length: " + coefs.length +" at PDM clock rate = " + 0.5*1000*(coefs.length / PDMClockRate) +"ms");
+		System.out.println("//" +name+ " FIR length: " + coefs.length +" at PDM clock rate = " + 0.5*1000*(coefs.length / PDMClockRate) +"ms");
 		
 		long t_sum_abs = 0;
 		for(int t=0;t<coefs.length/8/2;t++){
@@ -110,9 +119,11 @@ public class Generator {
 		impl.write("};\n\n");
 	}
 	
-	private void output_second_fir(String filename, String name, BufferedWriter header, BufferedWriter impl) throws Exception{
-
+	private void output_second_fir(String filename, BufferedWriter header, BufferedWriter impl) throws Exception{
+		
 		double coefs[] = read_array(filename);
+		String name = g_firName;
+		
 		double abs_sum = 0;
 		double sum = 0;
 		
@@ -125,9 +136,9 @@ public class Generator {
 		for(int i=0;i<coefs.length;i++)
 			abs_sum += Math.abs(coefs[i]);
 		
-		second_define = name.toUpperCase()+ "_STAGE_SCALE_FACTOR";
+		second_define = name.toUpperCase()+ "_SCALE_FACTOR";
 		header.write("#define " +second_define+ " (" + abs_sum + ")\n");
-		System.out.println("//" +name+ " stage FIR length: " + coefs.length+" at (PDM clock rate)/8 = " + 0.5*1000*(coefs.length / (PDMClockRate/8)) +"ms");
+		System.out.println("//" +name+ " FIR length: " + coefs.length+" at (PDM clock rate)/8 = " + 0.5*1000*(coefs.length / (PDMClockRate/8)) +"ms");
 
 		long t_sum_pos = 0;
 		long t_sum_neg = 0;
@@ -177,10 +188,13 @@ public class Generator {
 		impl.write("};\n\n");
 	}	
 
-	private void output_third_fir_doubled(String filename, String name, BufferedWriter header, BufferedWriter impl) throws Exception{
+	private void output_third_fir_doubled(String filename, BufferedWriter header, BufferedWriter impl) throws Exception{
 
 		double coefs[] = read_array(filename);
-		final int phases = coefs.length/maxCoefsPerThirdPhase;
+		String name = g_firName;
+		int coefsPerPhase = g_coefsPerPhase;
+		
+		final int phases = coefs.length/coefsPerPhase;
 		
 		double abs_sum = 0;
 		double sum = 0;
@@ -194,26 +208,27 @@ public class Generator {
 		for(int i=0;i<coefs.length;i++)
 			abs_sum += Math.abs(coefs[i]);
 
-		String third_define = "THIRD_STAGE_" +name.toUpperCase()+ "_SCALE_FACTOR";
+		String third_define = name.toUpperCase()+ "_SCALE_FACTOR";
 		header.write("#define " +third_define + "  (" + abs_sum + ")\n");
 		
 		
 		header.write("#define DECIMATION_FACTOR_"+name.toUpperCase() +" (" + phases + ")\n");
-		header.write("#define FIR_COMPENSATOR_"+name.toUpperCase()+" ((int)((double)INT_MAX/4.0 * " +
+		header.write("#define FIR_COMPENSATOR_"+name.toUpperCase()+" ((int)((double)(INT_MAX>>4) * " +
 		first_define +" * "+ second_define +" * "+ third_define + "))\n");
 		
-		System.out.println("//" +name+ " stage FIR length: " + coefs.length + " at (PDM clock rate)/32 = "
+		System.out.println("//" +name+ " FIR length: " + coefs.length + " at (PDM clock rate)/32 = "
 		+ 0.5*1000*(coefs.length / (PDMClockRate/(32))) +"ms");
 
 		long t_sum_pos = 0;
 		long t_sum_neg = 0;
 
-		impl.write("int g_third_" +name+ "_fir["+(2*coefs.length-phases)+ "] = {\n");
-		header.write("extern int g_third_" +name+ "_fir["+(2*coefs.length-phases)+ "];\n");
+		impl.write("const int g_third_stage_" +name+ "_fir["+(2*coefs.length-phases)+ "] = {\n");
+		header.write("extern const int g_third_stage_" +name+ "_fir["+(2*coefs.length-phases)+ "];\n");
 		
 		double max = 0.0;
 		for(int phase = 0 ;phase < phases; phase++){
 			impl.write("//Phase " + phase + "\n");
+			
 			for(int i=0;i<coefs.length/phases;i++){
 				
 				int index = coefs.length - phases - (i*phases - phase);
@@ -230,12 +245,21 @@ public class Generator {
 					t_sum_neg += ((long)d_int * (long) Integer.MAX_VALUE);
 				}
 			}
+			for(int i=coefs.length/phases;i<maxCoefsPerThirdPhase;i++){
+				impl.write(String.format("0x%08x, ", 0));
+				if(((i)%8)==7) impl.write("\n");
+			}
+			
 			for(int i=0;i<coefs.length/phases-1;i++){
 				int index = coefs.length - phases - (i*phases - phase);
 				double d=coefs[index]/abs_sum*2.0;
 				max = Math.max(max, d);
 				int d_int = (int)(d*(double)Integer.MAX_VALUE);
 				impl.write(String.format("0x%08x, ", d_int));
+				if(((i)%8)==7) impl.write("\n");
+			}
+			for(int i=coefs.length/phases;i<maxCoefsPerThirdPhase;i++){
+				impl.write(String.format("0x%08x, ", 0));
 				if(((i)%8)==7) impl.write("\n");
 			}
 			impl.write("\n");
@@ -281,14 +305,24 @@ public class Generator {
 			header.write("#include <limits.h>\n");
 			header.write("#define FIR_DECIMATOR_H_\n");
 
-			output_first_fir("first_h.txt", "first", header, impl);
+			output_first_fir("first_h.fir_coefs", header, impl);
+			output_second_fir("second_h.fir_coefs", header, impl);
 			
-			output_second_fir("second_h.txt", "second", header, impl);
-			output_third_fir_doubled("third_stage_div_2_h.txt", "div_2", header, impl);
-			output_third_fir_doubled("third_stage_div_4_h.txt", "div_4", header, impl);
-			output_third_fir_doubled("third_stage_div_6_h.txt", "div_6", header, impl);
-			output_third_fir_doubled("third_stage_div_8_h.txt", "div_8", header, impl);
-			output_third_fir_doubled("third_stage_div_12_h.txt",  "div_12", header, impl);
+			File dir = new File(".");
+			String[] children = dir.list();
+			if (children == null) {
+		         System.out.println("does not exist or is not a directory");
+		      }
+		      else {
+		         for (int i = 0; i < children.length; i++) {
+		            String filename = children[i];
+		            if(filename.endsWith(".fir_coefs") && 
+		            		!(filename.equals("first_h.fir_coefs")|| filename.equals("second_h.fir_coefs"))){
+		    			output_third_fir_doubled(filename, header, impl);
+		    		}
+		         }
+		      }
+			
 			
 			header.write("#define THIRD_STAGE_COEFS_PER_STAGE (" + (maxCoefsPerThirdPhase) +")\n");
 			header.write("#define THIRD_STAGE_COEFS_PER_ROW   (" + (2*maxCoefsPerThirdPhase-1) +")\n");
