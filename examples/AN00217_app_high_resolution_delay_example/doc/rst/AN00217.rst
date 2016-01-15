@@ -55,7 +55,14 @@ every four channels that need processing. The needs to be one ``hires_delay`` ta
 The PDM interface task, ``pdm_rx()`` can process eight channels so only one is needed per eight channels. 
 The PDM interface needs to be connected to the high resolution interface via two streaming channels and 
 connected to the two decimators via streaming channels. Finally, the decimators have to be connected to 
-the application. This gives the following task diagram::
+the application.This gives the following task diagram:
+
+  .. figure:: chan4-8.pdf
+	:width: 100%
+	    
+	Task diagram of the example
+
+Or represented in code as::
 
   streaming chan c_pdm_to_hires[2];
   streaming chan c_hires_to_dec[2];

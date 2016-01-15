@@ -80,7 +80,7 @@ typedef struct {
 
     int * unsafe windowing_function; /**< If non-null then this will apply a windowing function to the frame. Used in the case of preparing for an FFT. */
 
-    unsigned decimation_factor; /**< Final stage FIR Decimation factor*/
+    unsigned output_decimation_factor; /**< Final stage FIR Decimation factor*/
 
     const int *  unsafe coefs; /**< The coefficients for the FIR decimator */
 
