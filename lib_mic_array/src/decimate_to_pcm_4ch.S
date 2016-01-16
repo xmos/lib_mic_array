@@ -719,12 +719,12 @@ post_process:
 			at_the_end_of_the_overlapping_half_frame:
 
 				//set the metadata
-				ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
-		        ldw r5, r4[S_METADATA_POINTER_1]
-		        std r7, r6, r5[0];
-		        ldw r3, r4[S_FRAME_NUMBER]
-		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
-		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+				//ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
+		        //ldw r5, r4[S_METADATA_POINTER_1]
+		        //std r7, r6, r5[0];
+		        //ldw r3, r4[S_FRAME_NUMBER]
+		        //{stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
+		        //stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 
 				ldw r6, sp[S_C_OUTPUT]
 				outct res[r6], 8 //WARNING: do not change this
@@ -739,10 +739,10 @@ post_process:
 				retsp 0
 
 				flip_the_frames:
-				ldd r3, r5, r1[S_D_FRAME_POINTER_AND_INDEX_0]
-				std r3, r5, r1[S_D_FRAME_POINTER_AND_INDEX_1]
-				ldd r3, r5, r1[S_D_FRAME_MIN_MAX_0]
-				std r3, r5, r1[S_D_FRAME_MIN_MAX_1]
+				ldd r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_0]
+				std r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_1]
+				ldd r3, r5, r4[S_D_FRAME_MIN_MAX_0]
+				std r3, r5, r4[S_D_FRAME_MIN_MAX_1]
 
 		        {in r3, res[r6]; ldc r0, 0}
 		        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}

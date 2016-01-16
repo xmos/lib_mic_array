@@ -89,6 +89,7 @@ void model(streaming chanend c_4x_pdm_mic_0,
             unsigned gain_comp_enabled;
             unsigned gain_comp[8];
             unsigned windowing_enabled;
+            e_decimator_buffering_type buf_type;
             c_model :> fir;
             c_model :> debug_fir;
             c_model :> df;
@@ -99,6 +100,7 @@ void model(streaming chanend c_4x_pdm_mic_0,
             for(unsigned i=0;i<8;i++)
                 c_model:> gain_comp[i];
             c_model :> windowing_enabled;
+            c_model :> buf_type;
 
             int output[8][COUNT<<MAX_FRAME_SIZE_LOG2];
             memset(second_stage_data, 0, sizeof(int)*16*8);
@@ -191,6 +193,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
             unsigned gain_comp_enabled;
             unsigned gain_comp[8];
             unsigned windowing_enabled;
+            e_decimator_buffering_type buf_type;
             c_actual :> fir;
             c_actual :> debug_fir;
             c_actual :> df;
@@ -201,6 +204,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
             for(unsigned i=0;i<8;i++)
                 c_actual:> gain_comp[i];
             c_actual :> windowing_enabled;
+            c_actual :> buf_type;
 
             unsigned buffer;
 
@@ -222,7 +226,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                     };
                     decimator_configure(c_ds_output, 2, dc);
                 }
-               decimator_init_complex_frame(c_ds_output, 2, buffer, f_complex, DECIMATOR_NO_FRAME_OVERLAP);
+               decimator_init_complex_frame(c_ds_output, 2, buffer, f_complex, buf_type);
 
                for(unsigned c=0;c<COUNT;c++){
                     frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, 2);
@@ -247,7 +251,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                     };
                     decimator_configure(c_ds_output, 2, dc);
                 }
-               decimator_init_audio_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
+               decimator_init_audio_frame(c_ds_output, 2, buffer, audio, buf_type);
 
                for(unsigned c=0;c<COUNT;c++){
                     frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
@@ -269,9 +273,10 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
 }
 
 void send_settings(chanend  c_chan,
-        int * unsafe fir, int * unsafe debug_fir, unsigned df, int fir_comp,
+        const int * unsafe fir, int * unsafe debug_fir, unsigned df, int fir_comp,
         unsigned frame_size_log2, unsigned index_bit_reversal, unsigned  gain_comp_enabled,
-        unsigned gain[8], unsigned windowing_enabled){
+        unsigned gain[8], unsigned windowing_enabled,
+        e_decimator_buffering_type buf_type){
     unsafe{
         c_chan <: fir;
         c_chan <: debug_fir;
@@ -283,6 +288,7 @@ void send_settings(chanend  c_chan,
         for(unsigned i=0;i<8;i++)
             c_chan <: gain[i];
         c_chan <: windowing_enabled;
+        c_chan <: buf_type;
 
     }
 }
@@ -292,7 +298,7 @@ void verifier(chanend c_model,
         chanend c_actual){
     unsafe{
         unsigned decimation_factor_lut[5] = {1*2, 2*2, 3*2, 4*2, 6*2};
-        int * unsafe decimation_fir_lut[5] = {
+        const int * unsafe decimation_fir_lut[5] = {
                 g_third_stage_div_2_fir,
                 g_third_stage_div_4_fir,
                 g_third_stage_div_6_fir,
@@ -322,7 +328,7 @@ void verifier(chanend c_model,
         for(unsigned frame_size_log2 = 0;frame_size_log2<=MAX_FRAME_SIZE_LOG2;frame_size_log2++){
 
             for(unsigned decimation_index = 0; decimation_index < 5;decimation_index++){
-                int * unsafe fir = decimation_fir_lut[decimation_index];
+                const int * unsafe fir = decimation_fir_lut[decimation_index];
                 int * unsafe debug_fir = decimation_fir_debug_lut[decimation_index];
                 unsigned df = decimation_factor_lut[decimation_index];
 
@@ -337,42 +343,49 @@ void verifier(chanend c_model,
 
                                 for(unsigned windowing_enabled=0;windowing_enabled<2; windowing_enabled++){
 
-                                    send_settings(c_model, fir, debug_fir, df, fir_comp,
-                                            frame_size_log2, index_bit_reversal, gain_comp_enabled, gain_comp[gain_index], windowing_enabled);
-                                    send_settings(c_actual, fir, debug_fir, df, fir_comp,
-                                            frame_size_log2, index_bit_reversal, gain_comp_enabled, gain_comp[gain_index], windowing_enabled);
+                                    for(e_decimator_buffering_type buf_type = 1; buf_type<2; buf_type++){
+                                        if((frame_size_log2 == 0) && (buf_type == DECIMATOR_HALF_FRAME_OVERLAP))
+                                            continue;
+                                        send_settings(c_model, fir, debug_fir, df, fir_comp,
+                                                frame_size_log2, index_bit_reversal, gain_comp_enabled,
+                                                gain_comp[gain_index], windowing_enabled, buf_type);
+                                        send_settings(c_actual, fir, debug_fir, df, fir_comp,
+                                                frame_size_log2, index_bit_reversal, gain_comp_enabled,
+                                                gain_comp[gain_index], windowing_enabled, buf_type);
 
-                                    int max_diff = 0;
+                                        int max_diff = 0;
 
-                                    for(unsigned m=0;m<8;m++){
+                                        for(unsigned m=0;m<8;m++){
 
-                                        for(unsigned i=0;i<COUNT<<frame_size_log2;i++){
-                                            int a, b;
-                                            c_actual:> a;
-                                            c_model :> b;
-                                            int diff = a-b;
-                                            if (diff<0) diff = -diff;
-                                            if(diff>max_diff)
-                                                max_diff = diff;
+                                            for(unsigned i=0;i<COUNT<<frame_size_log2;i++){
+                                                int a, b;
+                                                c_actual:> a;
+                                                c_model :> b;
+                                                int diff = a-b;
+                                                if (diff<0) diff = -diff;
+                                                if(diff>max_diff)
+                                                    max_diff = diff;
+                                            }
                                         }
-                                    }
-                                    printf("%4d ", test++);
-                                    printf("df: %2d ", df);
-                                    printf("fir_comp: 0x%08x ", fir_comp);
-                                    printf("frame_size_log2: %d ", frame_size_log2);
-                                    printf("index_bit_reversal: %d ", index_bit_reversal);
-                                    printf("windowing_enabled: %d ", windowing_enabled);
-                                    printf("gain_comp_enabled: %d ", gain_comp_enabled);
+                                        printf("%4d ", test++);
+                                        printf("df: %2d ", df);
+                                        printf("fir_comp: 0x%08x ", fir_comp);
+                                        printf("frame_size_log2: %d ", frame_size_log2);
+                                        printf("index_bit_reversal: %d ", index_bit_reversal);
+                                        printf("windowing_enabled: %d ", windowing_enabled);
+                                        printf("gain_comp_enabled: %d ", gain_comp_enabled);
+                                        printf("e_decimator_buffering_type: %d ", buf_type);
 
-                                    if(max_diff < 16)
-                                        printf(" PASS\n");
-                                    else{
-                                        printf(" FAIL\n");
-                                        _Exit(1);
-                                    }
+                                        if(max_diff < 16)
+                                            printf(" PASS\n");
+                                        else{
+                                            printf(" FAIL\n");
+                                            _Exit(1);
+                                        }
 
-                                    c_actual:> int;
-                                    c_model :> int;
+                                        c_actual:> int;
+                                        c_model :> int;
+                                    }
                                 }
                             }
                         }
