@@ -408,10 +408,10 @@ get_frame_pointer:
 
 	overlapping:
 	    {in r1, res[r2];}
-	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
+	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
 		stw r1, r11[S_METADATA_POINTER_1]
 	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
-	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
+	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
 		stw r1, r11[S_METADATA_POINTER_0]
 
 setup_phase_counters:
