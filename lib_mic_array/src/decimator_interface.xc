@@ -29,8 +29,7 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
 
     for(unsigned i=0;i<decimator_count;i++)
         c_from_decimator[i] <: frames;
-
-    for(unsigned f=0;f<frames;f++){
+   for(unsigned f=0;f<frames;f++){
         unsafe {
             for(unsigned i=0;i<decimator_count;i++)
                c_from_decimator[i] <: (frame_audio * unsafe)audio[f].data[i*4];
@@ -46,7 +45,6 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
 
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
-
 
  frame_audio * alias decimator_get_next_audio_frame(
          streaming chanend c_from_decimator[], unsigned decimator_count,
@@ -78,11 +76,16 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
     for(unsigned i=0;i<decimator_count;i++)
         schkct(c_from_decimator[i], 8);
 
+    unsigned index;
+    if(buffer == 0)
+        index = buffer_count-1;
+    else
+        index = buffer-1;
+
     buffer++;
     if(buffer == buffer_count)
         buffer = 0;
-
-    return &audio[buffer];
+    return &audio[index];
 }
 
 void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
@@ -147,11 +150,17 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
      for(unsigned i=0;i<decimator_count;i++)
          schkct(c_from_decimator[i], 8);
 
+     unsigned index;
+     if(buffer == 0)
+         index = buffer_count-1;
+     else
+         index = buffer-1;
+
      buffer++;
      if(buffer == buffer_count)
          buffer = 0;
 
-     return &f_complex[buffer];
+     return &f_complex[index];
 }
 
 void decimator_configure(streaming chanend c_from_decimator[], unsigned decimator_count,
