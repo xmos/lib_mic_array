@@ -213,6 +213,9 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                 }
             }
             c_model <: 0;
+            int r;
+            c_model :> r;
+            if (r) return;
         }
     }
 }
@@ -373,6 +376,9 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                }
            }
            c_actual <: 0;
+           int r;
+           c_actual :> r;
+           if (r) return;
         }
     }
 }
@@ -451,6 +457,13 @@ void verifier(chanend c_model,
                                         if((frame_size_log2 == 0) && (buf_type == DECIMATOR_HALF_FRAME_OVERLAP))
                                             continue;
 
+                                        if(test){
+                                            c_actual:> int;
+                                            c_model :> int;
+                                            c_actual <: 0;
+                                            c_model  <: 0;
+                                        }
+
                                         send_settings(c_model, fir, debug_fir, df, fir_comp,
                                                 frame_size_log2, index_bit_reversal, gain_comp_enabled,
                                                 gain_comp[gain_index], windowing_enabled, buf_type);
@@ -473,7 +486,7 @@ void verifier(chanend c_model,
                                             }
                                         }
 #if 1
-                                        printf("%4d\n", test++);
+                                        //printf("%4d\n", test++);
 #else
                                         printf("%4d  %2d 0x%08x %d %d %d %d %d ", test++, df, fir_comp, frame_size_log2,
                                                 index_bit_reversal, windowing_enabled, gain_comp_enabled, buf_type);
@@ -493,8 +506,6 @@ void verifier(chanend c_model,
                                             _Exit(1);
                                         }
 
-                                        c_actual:> int;
-                                        c_model :> int;
                                     }
                                 }
                             }
@@ -504,6 +515,10 @@ void verifier(chanend c_model,
             }
         }
     }
+    c_actual:> int;
+    c_model :> int;
+    c_actual <: 1;
+    c_model  <: 1;
     printf("Success: %d channels supported\n", channel_count);
     //_Exit(0);
 }
@@ -512,44 +527,22 @@ void channel_count_test(){
 
     streaming chan c_4x_pdm_mic[4];
     streaming chan c_ds_output[4];
-
     chan c_model, c_actual;
-/*
     par {
-        model(c_4x_pdm_mic, 4, c_model);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
-        output(c_ds_output, c_actual, 4);
-        verifier(c_model, c_actual, 4);
-     }
-
-    par {
-        model(c_4x_pdm_mic, 8, c_model);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
-        output(c_ds_output, c_actual, 8);
-        verifier(c_model, c_actual, 8);
-     }
-     */
-    par {
-        model(c_4x_pdm_mic, 12, c_model);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2]);
-        output(c_ds_output, c_actual, 12);
-        verifier(c_model, c_actual, 12);
-     }
-    par {
-        model(c_4x_pdm_mic, 16, c_model);
+        for(unsigned c=4;c<=16;c+=4){
+            par{
+                model(c_4x_pdm_mic, c, c_model);
+                output(c_ds_output, c_actual, c);
+                verifier(c_model, c_actual, c);
+            }
+            printf("All done\n");
+            _Exit(0);
+        }
         decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
         decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
         decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2]);
         decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3]);
-        output(c_ds_output, c_actual, 16);
-        verifier(c_model, c_actual, 16);
      }
-
-
-
 
 }
 
