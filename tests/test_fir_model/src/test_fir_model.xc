@@ -12,7 +12,7 @@ static int pseudo_random(unsigned &x){
     crc32(x, -1, 0xEB31D82E);
     return (int)x;
 }
-
+#pragma unsafe arrays
 static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length, const int val){
     long long y = 0;
     data[0] = val;
@@ -34,6 +34,7 @@ frame_complex f_complex[FRAME_COUNT];
 
 #define COUNT 4
 
+#pragma unsafe arrays
 int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_buffering_type buf_type){
     if(buf_type == DECIMATOR_NO_FRAME_OVERLAP){
         if(fsl2==0)
@@ -43,18 +44,7 @@ int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_bufferi
             v = v*2+df*4;
         return v;
     } else {
-
-        unsigned lut0[13] = {
-                0, 0,
-                0, 0,
-                1, 0,
-                2, 0,
-                3, 0,
-                0, 0,
-                4
-        };
-
-       // printf("%d %d %d\n", fsl2, df, lut0[df]);
+        unsigned lut0[13] = { 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 4 };
         unsigned lut[5][5] = {
                 {0, 0,  0,   0,    0},
                 {0, 0,  0,   0,    0},
@@ -62,12 +52,11 @@ int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_bufferi
                 {12*2, 24*2, 36*2,  48*2,  72*2},
                 {28*2, 56*2, 84*2, 112*2, 168*2},
         };
-
         return lut[fsl2][lut0[df]];
     }
 }
 
-int apply_fir_comp(int val, int fir_comp){
+static int apply_fir_comp(int val, int fir_comp){
     long long v;
     if(fir_comp){
         v = (long long)val;
@@ -79,17 +68,18 @@ int apply_fir_comp(int val, int fir_comp){
     return (int)v;
 }
 
-int apply_gain_comp(int val, int gain){
+static int apply_gain_comp(int val, int gain){
     long long v = (long long)val;
     v = v * (long long)gain;
     v=v>>31;
     return (int)v;
 }
 
-unsigned bitreverse(unsigned i, unsigned bits){
+static unsigned bitreverse(unsigned i, unsigned bits){
     return (bitrev(i) >> (32-bits));
 }
 
+#pragma unsafe arrays
 void model(streaming chanend c_4x_pdm_mic_0,
   streaming chanend c_4x_pdm_mic_1, chanend c_model){
     int second_stage_data[8][16];
@@ -198,19 +188,17 @@ void model(streaming chanend c_4x_pdm_mic_0,
                 c_4x_pdm_mic_1 <: 0;
             }
 
-
             for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
                 for(unsigned m=0;m<8;m++){
                     c_model <: output[m][c];
-                   // printf("%12d ", output[m][c]);
                 }
-               // printf("\n");
             }
             c_model <: 0;
         }
     }
 }
 
+#pragma unsafe arrays
 void output(streaming chanend c_ds_output[2], chanend c_actual){
 
     int window[1<<(MAX_FRAME_SIZE_LOG2-1)];
@@ -322,7 +310,6 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
 
                decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
-
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
                         frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
@@ -348,28 +335,24 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                             unsigned index = (c<<(frame_size_log2-1)) + f - (1<<(frame_size_log2-1));
                             for(unsigned m=0;m<8;m++){
                                 output[m][index] = current->data[m][f];
-                              //printf("%12d ", output[m][index]);
                             }
-                            //printf("\n");
                         }
                    }
                }
            }
 
            for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
-               //printf("a: ");
                for(unsigned m=0;m<8;m++){
                    c_actual <: output[m][c];
-                   //printf("%12d ", output[m][c]);
                }
-              // printf("\n");
            }
            c_actual <: 0;
         }
     }
 }
 
-void send_settings(chanend  c_chan,
+#pragma unsafe arrays
+static void send_settings(chanend  c_chan,
         const int * unsafe fir, int * unsafe debug_fir, unsigned df, int fir_comp,
         unsigned frame_size_log2, unsigned index_bit_reversal, unsigned  gain_comp_enabled,
         unsigned gain[8], unsigned windowing_enabled,
@@ -391,6 +374,7 @@ void send_settings(chanend  c_chan,
 }
 
 
+#pragma unsafe arrays
 void verifier(chanend c_model,
         chanend c_actual){
     unsafe{
@@ -436,13 +420,9 @@ void verifier(chanend c_model,
 
                                 for(unsigned windowing_enabled=0;windowing_enabled<2; windowing_enabled++){
 
-                              //    e_decimator_buffering_type buf_type = 1;{
-                                for(e_decimator_buffering_type buf_type = 0; buf_type<2; buf_type++){
-                                        if(
-                                                (frame_size_log2 == 0) &&
-                                                (buf_type == DECIMATOR_HALF_FRAME_OVERLAP))
+                                    for(e_decimator_buffering_type buf_type = 0; buf_type<2; buf_type++){
+                                        if((frame_size_log2 == 0) && (buf_type == DECIMATOR_HALF_FRAME_OVERLAP))
                                             continue;
-
 
                                         send_settings(c_model, fir, debug_fir, df, fir_comp,
                                                 frame_size_log2, index_bit_reversal, gain_comp_enabled,
@@ -460,13 +440,20 @@ void verifier(chanend c_model,
                                                 c_actual:> a;
                                                 c_model :> b;
                                                 int diff = a-b;
-                                               // printf("%12d %12d %12d\n", a, b, diff);
                                                 if (diff<0) diff = -diff;
                                                 if(diff>max_diff)
                                                     max_diff = diff;
                                             }
                                         }
+#if 1
+                                        printf("%4d\n", test++);
+#else
+                                        printf("%4d  %2d 0x%08x %d %d %d %d %d ", test++, df, fir_comp, frame_size_log2,
+                                                index_bit_reversal, windowing_enabled, gain_comp_enabled, buf_type);
+#endif
+                                        if(max_diff < 16){
 
+                                        } else{
                                             printf("%4d ", test++);
                                             printf("df: %2d ", df);
                                             printf("fir_comp: 0x%08x ", fir_comp);
@@ -475,10 +462,8 @@ void verifier(chanend c_model,
                                             printf("windowing_enabled: %d ", windowing_enabled);
                                             printf("gain_comp_enabled: %d ", gain_comp_enabled);
                                             printf("e_decimator_buffering_type: %d ", buf_type);
-                                        if(max_diff < 16){
-                                            printf(" PASS\n");
-                                        } else{
                                             printf(" FAIL\n");
+                                            delay_milliseconds(1);
                                             _Exit(1);
                                         }
 
@@ -494,6 +479,7 @@ void verifier(chanend c_model,
         }
     }
     printf("Success\n");
+    _Exit(0);
 }
 
 int main(){
