@@ -82,11 +82,15 @@ typedef struct {
 
     unsigned output_decimation_factor; /**< Final stage FIR Decimation factor*/
 
-    const int *  unsafe coefs; /**< The coefficients for the FIR decimator */
+    const int * unsafe coefs; /**< The coefficients for the FIR decimator */
 
     int apply_mic_gain_compensation; /**< Set to non-zero to apply microphone gain compensation. */
 
     int fir_gain_compensation; /**< 1.4.27 format for the gain compensation for the three satges of FIR. */
+
+    e_decimator_buffering_type buffering_type;  /**< The buffering type used fopr frame exchange. */
+
+    unsigned number_of_frame_buffers;  /**< The count of frames used between the decimators and the application. */
 
 } decimator_config_common;
 
@@ -137,7 +141,7 @@ void decimate_to_pcm_4ch(
  *
  */
 void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-        unsigned &buffer, frame_audio f_audio[], e_decimator_buffering_type buffering_type);
+        unsigned &buffer, frame_audio f_audio[], decimator_config_common &dcc);
 
 
 /** Four Channel Decimation raw audio frame exchange function.
@@ -158,7 +162,7 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
  *                           recently written samples.
  */
 frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-       unsigned &buffer, frame_audio * alias f_audio, unsigned buffer_count, e_decimator_buffering_type buffering_type);
+       unsigned &buffer, frame_audio * alias f_audio, decimator_config_common &dcc);
 
 /** Four Channel Decimation initializer for complex frames.
  *
@@ -177,7 +181,7 @@ frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_from_deci
  *
  */
 void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex f_complex[], e_decimator_buffering_type buffering_type);
+     unsigned &buffer, frame_complex f_complex[], decimator_config_common &dcc);
 
 /** Four Channel Decimation complex frame exchange function.
  *
@@ -197,7 +201,7 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
  *                           recently written samples.
  */
 frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex * alias f_complex, unsigned buffer_count, e_decimator_buffering_type buffering_type);
+     unsigned &buffer, frame_complex * alias f_complex, decimator_config_common &dcc);
 
 
 /** Decimator configuration

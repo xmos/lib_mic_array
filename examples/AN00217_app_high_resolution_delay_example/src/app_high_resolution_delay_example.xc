@@ -14,56 +14,59 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_2;
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+frame_audio audio[2];    //double buffered
 
 void example(streaming chanend c_ds_output[2], chanend c_cmd){
 
-    unsigned buffer;
-    frame_audio audio[2];    //double buffered
-
     unsafe{
-        decimator_config_common dcc = {
-                0, // frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
-                1, // DC offset elimination is turned on
-                0, // Index bit reversal is off
-                0, // No windowing function is being applied
-                DF,// The decimation factor is set to 6
-                g_third_stage_div_6_fir, //This corresponds to a 16kHz output hence this coef array is used
-                0, // Gain compensation is turned off
-                0  // FIR compensation is turned off
-        };
-        decimator_config dc[2] = {
-                {
-                        &dcc,
-                        data_0,     // The storage area for the output decimator
-                        {INT_MAX, INT_MAX, INT_MAX, INT_MAX},  // Microphone gain compensation (turned off)
-                        4           // Enabled channel count
-                },
-                {
-                        &dcc,
-                        data_1,     // The storage area for the output decimator
-                        {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, // Microphone gain compensation (turned off)
-                        4           // Enabled channel count
-                }
-        };
-        decimator_configure(c_ds_output, 2, dc);
-    }
+        unsigned buffer;
 
-    decimator_init_audio_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
-
-    while(1){
-        //The final argument is set to two to reflect that frame_audio audio[2]; is size 2 also.
-        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
-
-        //buffer and audio should never be accessed.
-
-        int ch0_sample0 = current->data[0][0];
-        int ch1_sample0 = current->data[1][0];
+            decimator_config_common dcc = {
+                    0, // frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
+                    1, // DC offset elimination is turned on
+                    0, // Index bit reversal is off
+                    0, // No windowing function is being applied
+                    DF,// The decimation factor is set to 6
+                    g_third_stage_div_6_fir, //This corresponds to a 16kHz output hence this coef array is used
+                    0, // Gain compensation is turned off
+                    0,  // FIR compensation is turned off
+                    DECIMATOR_NO_FRAME_OVERLAP, //Frame over lapping is turned off
+                    2   //There are 2 buffers in the audio array
+            };
+            decimator_config dc[2] = {
+                    {
+                            &dcc,
+                            data_0,     // The storage area for the output decimator
+                            {INT_MAX, INT_MAX, INT_MAX, INT_MAX},  // Microphone gain compensation (turned off)
+                            4           // Enabled channel count
+                    },
+                    {
+                            &dcc,
+                            data_1,     // The storage area for the output decimator
+                            {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, // Microphone gain compensation (turned off)
+                            4           // Enabled channel count
+                    }
+            };
+            decimator_configure(c_ds_output, 2, dc);
 
 
+        decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
-        //delays can be change anything by calling
-        unsigned delays[7] = {0, 1, 2, 3, 4, 5, 6};
-        hires_delay_set_taps(c_cmd, delays, 7);
+        while(1){
+            //The final argument is set to two to reflect that frame_audio audio[2]; is size 2 also.
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+
+            //buffer and audio should never be accessed.
+
+            int ch0_sample0 = current->data[0][0];
+            int ch1_sample0 = current->data[1][0];
+
+
+
+            //delays can be change anything by calling
+            unsigned delays[7] = {0, 1, 2, 3, 4, 5, 6};
+            hires_delay_set_taps(c_cmd, delays, 7);
+        }
     }
 }
 

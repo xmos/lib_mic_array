@@ -195,8 +195,7 @@ Setting up the decimators
 All decimators attached to an application, via streaming channels, are configured 
 simultaneously with the ``decimator_configure()`` function. The parameters to the
 ``decimator_configure()`` function are described in a later section. To start the 
-frame exchange process, and with that the real-time constraint of the audio, 
-``decimator_init_audio_frame()`` must be called. Now the decimators are running
+frame exchange process ``decimator_init_audio_frame()`` or  ``decimator_init_complex_frame()`` must be called. Now the decimators are running
 and will be outputting frames at the rate given by their configuration.
 
 TODO state machine diagram

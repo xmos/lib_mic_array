@@ -87,95 +87,96 @@ frame_audio audio[2];
 void lores_DAS_fixed(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
 
-    unsigned buffer = 1;     //buffer index
-    memset(audio, sizeof(frame_audio), 0);
-
-#define MAX_DELAY 128
-
-    unsigned gain = 8*4096;
-    unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
-    int delay_buffer[MAX_DELAY][7];
-    memset(delay_buffer, sizeof(int)*8*8, 0);
-    unsigned delay_head = 0;
-    unsigned dir = 0;
-    set_dir(lb, dir, delay);
-
     unsafe{
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_6_fir, 0, 0};
-        decimator_config dc[2] = {
-                {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
-        };
-        decimator_configure(c_ds_output, 2, dc);
-    }
+        unsigned buffer = 1;     //buffer index
+        memset(audio, sizeof(frame_audio), 0);
 
-    decimator_init_audio_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
+    #define MAX_DELAY 128
 
-    while(1){
+        unsigned gain = 8*4096;
+        unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
+        int delay_buffer[MAX_DELAY][7];
+        memset(delay_buffer, sizeof(int)*8*8, 0);
+        unsigned delay_head = 0;
+        unsigned dir = 0;
+        set_dir(lb, dir, delay);
 
-        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
+            decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_6_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
+            decimator_config dc[2] = {
+                    {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
+                    {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+            };
+            decimator_configure(c_ds_output, 2, dc);
 
-        //copy the current sample to the delay buffer
-        for(unsigned i=0;i<7;i++)
-            delay_buffer[delay_head][i] = current->data[i][0];
 
-        //light the LED for the current direction
+        decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
-        int t;
-        select {
-            case lb.button_event():{
-                unsigned button;
-                e_button_state pressed;
-                lb.get_button_event(button, pressed);
-                if(pressed == BUTTON_PRESSED){
-                    switch(button){
-                    case 0:{
-                        dir--;
-                        if(dir == -1)
-                            dir = 5;
-                        set_dir(lb, dir, delay);
-                        printf("dir %d\n", dir+1);
-                        for(unsigned i=0;i<7;i++)
-                            printf("delay[%d] = %d\n", i, delay[i]);
-                        printf("\n");
-                        break;
+        while(1){
+
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+
+            //copy the current sample to the delay buffer
+            for(unsigned i=0;i<7;i++)
+                delay_buffer[delay_head][i] = current->data[i][0];
+
+            //light the LED for the current direction
+
+            int t;
+            select {
+                case lb.button_event():{
+                    unsigned button;
+                    e_button_state pressed;
+                    lb.get_button_event(button, pressed);
+                    if(pressed == BUTTON_PRESSED){
+                        switch(button){
+                        case 0:{
+                            dir--;
+                            if(dir == -1)
+                                dir = 5;
+                            set_dir(lb, dir, delay);
+                            printf("dir %d\n", dir+1);
+                            for(unsigned i=0;i<7;i++)
+                                printf("delay[%d] = %d\n", i, delay[i]);
+                            printf("\n");
+                            break;
+                        }
+                        case 1:{
+                            gain = ((gain<<3) + gain)>>3;
+                            printf("gain: %d\n", gain);
+                            break;
+                        }
+                        case 2:{
+                            gain = ((gain<<3) - gain)>>3;
+                            printf("gain: %d\n", gain);
+                            break;
+                        }
+                        case 3:{
+                            dir++;
+                            if(dir == 6)
+                                dir = 0;
+                            set_dir(lb, dir, delay);
+                            printf("dir %d\n", dir+1);
+                            for(unsigned i=0;i<7;i++)
+                                printf("delay[%d] = %d\n", i, delay[i]);
+                            printf("\n");
+                            break;
+                        }
+                        }
                     }
-                    case 1:{
-                        gain = ((gain<<3) + gain)>>3;
-                        printf("gain: %d\n", gain);
-                        break;
-                    }
-                    case 2:{
-                        gain = ((gain<<3) - gain)>>3;
-                        printf("gain: %d\n", gain);
-                        break;
-                    }
-                    case 3:{
-                        dir++;
-                        if(dir == 6)
-                            dir = 0;
-                        set_dir(lb, dir, delay);
-                        printf("dir %d\n", dir+1);
-                        for(unsigned i=0;i<7;i++)
-                            printf("delay[%d] = %d\n", i, delay[i]);
-                        printf("\n");
-                        break;
-                    }
-                    }
+                    break;
                 }
-                break;
+                default:break;
             }
-            default:break;
+            int output = 0;
+            for(unsigned i=0;i<7;i++)
+                output += delay_buffer[(delay_head - delay[i])%MAX_DELAY][i];
+            output = ((uint64_t)output*gain)>>8;
+            c_audio <: output;
+            c_audio <: output;
+            xscope_int(0, output);
+            delay_head++;
+            delay_head%=MAX_DELAY;
         }
-        int output = 0;
-        for(unsigned i=0;i<7;i++)
-            output += delay_buffer[(delay_head - delay[i])%MAX_DELAY][i];
-        output = ((uint64_t)output*gain)>>8;
-        c_audio <: output;
-        c_audio <: output;
-        xscope_int(0, output);
-        delay_head++;
-        delay_head%=MAX_DELAY;
     }
 }
 

@@ -10,9 +10,10 @@
 #endif
 
 void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-        unsigned &buffer, frame_audio audio[], e_decimator_buffering_type buffering_type){
+        unsigned &buffer, frame_audio audio[], decimator_config_common &dcc){
     memset(audio[0].metadata, 0, 2*sizeof(s_metadata));
     unsigned frames=1;
+    e_decimator_buffering_type buffering_type = dcc.buffering_type;
 
     if (buffering_type == DECIMATOR_NO_FRAME_OVERLAP){
         frames = 1;
@@ -48,7 +49,7 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
 
  frame_audio * alias decimator_get_next_audio_frame(
          streaming chanend c_from_decimator[], unsigned decimator_count,
-        unsigned &buffer, frame_audio * alias audio, unsigned buffer_count, e_decimator_buffering_type buffering_type){
+        unsigned &buffer, frame_audio * alias audio, decimator_config_common &dcc){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -77,6 +78,9 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
         schkct(c_from_decimator[i], 8);
 
     unsigned index;
+    unsigned buffer_count = dcc.number_of_frame_buffers;
+
+    e_decimator_buffering_type buffering_type = dcc.buffering_type;
     if(buffering_type == DECIMATOR_NO_FRAME_OVERLAP)
         index = buffer + buffer_count - 1;
     else
@@ -92,9 +96,10 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
 }
 
 void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex f_audio[], e_decimator_buffering_type buffering_type){
+     unsigned &buffer, frame_complex f_audio[], decimator_config_common &dcc){
      memset(f_audio[0].metadata, 0, 2*sizeof(s_metadata));
      unsigned frames;
+     e_decimator_buffering_type buffering_type = dcc.buffering_type;
 
      if (buffering_type == DECIMATOR_NO_FRAME_OVERLAP){
          frames = 1;
@@ -126,7 +131,7 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
 }
 
 frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex * alias f_complex, unsigned buffer_count, e_decimator_buffering_type buffering_type){
+     unsigned &buffer, frame_complex * alias f_complex, decimator_config_common &dcc){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -154,6 +159,8 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
          schkct(c_from_decimator[i], 8);
 
      unsigned index;
+     unsigned buffer_count = dcc.number_of_frame_buffers;
+     e_decimator_buffering_type buffering_type = dcc.buffering_type;
      if(buffering_type == DECIMATOR_NO_FRAME_OVERLAP)
          index = buffer + buffer_count - 1;
      else

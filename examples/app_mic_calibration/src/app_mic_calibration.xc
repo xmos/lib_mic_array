@@ -28,7 +28,7 @@ void mic_calib(streaming chanend c_ds_output[2], chanend c){
     unsigned buffer;     //buffer index
     unsafe{
 
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_6_fir, 0, 0};
+        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_6_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
         decimator_config dcf[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
@@ -41,7 +41,7 @@ void mic_calib(streaming chanend c_ds_output[2], chanend c){
 
         for(unsigned count=0;count<1<<N;count++){
 
-            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
             for(unsigned i=0;i<7;i++)
                 sum[i] += current->data[i][0];
@@ -56,7 +56,7 @@ void mic_calib(streaming chanend c_ds_output[2], chanend c){
 
         for(unsigned count=0;count<1<<N;count++){
 
-            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
             for(unsigned i=0;i<7;i++){
                 int64_t v = (int64_t)current->data[i][0];

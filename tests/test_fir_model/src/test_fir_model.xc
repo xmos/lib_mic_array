@@ -258,8 +258,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
 
 
             if(index_bit_reversal){
-                unsafe {
-                    decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir, gain_comp_enabled, fir_comp};
+                    decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir, gain_comp_enabled, fir_comp, buf_type, FRAME_COUNT};
 
                     if(windowing_enabled)
                         dcc.windowing_function = window;
@@ -269,13 +268,13 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                            {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4}
                     };
                     decimator_configure(c_ds_output, 2, dc);
-                }
-               decimator_init_complex_frame(c_ds_output, 2, buffer, f_complex, buf_type);
+
+               decimator_init_complex_frame(c_ds_output, 2, buffer, f_complex, dcc);
 
 
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
-                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, FRAME_COUNT, buf_type);
+                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, dcc);
                         for(unsigned f=0;f<(1<<frame_size_log2);f++){
                             unsigned ff = bitreverse(f, frame_size_log2);
                             unsigned index = (c<<frame_size_log2) + bitreverse(f, frame_size_log2);
@@ -287,7 +286,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                    }
                } else {
                    for(unsigned c=0;c<2*COUNT;c++){
-                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, FRAME_COUNT, buf_type);
+                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, dcc);
                         if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
                                 for(unsigned m=0;m<4;m++){
@@ -309,8 +308,8 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                    }
                }
             } else {
-                unsafe {
-                    decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir, gain_comp_enabled, fir_comp};
+                    decimator_config_common dcc = {
+                            frame_size_log2, 0, index_bit_reversal, 0, df, fir, gain_comp_enabled, fir_comp, buf_type, FRAME_COUNT};
 
                     if(windowing_enabled)
                         dcc.windowing_function = window;
@@ -320,13 +319,13 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                            {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4}
                     };
                     decimator_configure(c_ds_output, 2, dc);
-                }
-               decimator_init_audio_frame(c_ds_output, 2, buffer, audio, buf_type);
+
+               decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
 
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
-                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, FRAME_COUNT, buf_type);
+                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
                         for(unsigned f=0;f<(1<<frame_size_log2);f++){
                             for(unsigned m=0;m<8;m++){
                                 output[m][(c<<frame_size_log2) + f] = current->data[m][f];
@@ -335,7 +334,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                    }
                } else {
                    for(unsigned c=0;c<2*COUNT;c++){
-                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, FRAME_COUNT, buf_type);
+                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
                         if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
                                 unsigned index = (c<<(frame_size_log2-1)) + f - (1<<(frame_size_log2-1));

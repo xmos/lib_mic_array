@@ -42,56 +42,57 @@ frame_audio audio[2];
 void test_output(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
 
-    unsigned buffer;     //buffer index
-    memset(audio, sizeof(frame_audio), 0);
-
-    unsigned gain = 8;
-
     unsafe{
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0};
-        decimator_config dc[2] = {
-                {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
-        };
-        decimator_configure(c_ds_output, 2, dc);
-    }
+        unsigned buffer;     //buffer index
+        memset(audio, sizeof(frame_audio), 0);
 
-    decimator_init_audio_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
+        unsigned gain = 8;
 
-    while(1){
+            decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
+            decimator_config dc[2] = {
+                    {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
+                    {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+            };
+            decimator_configure(c_ds_output, 2, dc);
 
-        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
 
-        select {
-            case lb.button_event():{
-                unsigned button;
-                e_button_state pressed;
-                lb.get_button_event(button, pressed);
-                if(pressed == BUTTON_PRESSED){
-                    switch(button){
-                    case 0:
-                    case 1:{
-                        gain = ((gain<<3) + gain)>>3;
-                        printf("gain: %d\n", gain);
-                        break;
+        decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+
+        while(1){
+
+            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+
+            select {
+                case lb.button_event():{
+                    unsigned button;
+                    e_button_state pressed;
+                    lb.get_button_event(button, pressed);
+                    if(pressed == BUTTON_PRESSED){
+                        switch(button){
+                        case 0:
+                        case 1:{
+                            gain = ((gain<<3) + gain)>>3;
+                            printf("gain: %d\n", gain);
+                            break;
+                        }
+                        case 2:
+                        case 3:{
+                            gain = ((gain<<3) - gain)>>3;
+                            printf("gain: %d\n", gain);
+                            break;
+                        }
+                        }
                     }
-                    case 2:
-                    case 3:{
-                        gain = ((gain<<3) - gain)>>3;
-                        printf("gain: %d\n", gain);
-                        break;
-                    }
-                    }
+                    break;
                 }
-                break;
+                default:break;
             }
-            default:break;
+            int output = current -> data[0][0];
+            output *= gain;
+            c_audio <: output;
+            c_audio <: output;
+            xscope_int(0, output);
         }
-        int output = current -> data[0][0];
-        output *= gain;
-        c_audio <: output;
-        c_audio <: output;
-        xscope_int(0, output);
     }
 }
 
