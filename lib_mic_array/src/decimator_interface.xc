@@ -11,7 +11,7 @@
 
 void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
         unsigned &buffer, frame_audio audio[], decimator_config_common &dcc){
-    memset(audio[0].metadata, 0, 2*sizeof(s_metadata));
+   // memset(audio[0].metadata, 0, dcc.number_of_frame_buffers*sizeof(s_metadata));
     unsigned frames=1;
     e_decimator_buffering_type buffering_type = dcc.buffering_type;
 
@@ -97,7 +97,7 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
 
 void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
      unsigned &buffer, frame_complex f_audio[], decimator_config_common &dcc){
-     memset(f_audio[0].metadata, 0, 2*sizeof(s_metadata));
+    // memset(f_audio[0].metadata, 0, dcc.number_of_frame_buffers*sizeof(s_metadata));
      unsigned frames;
      e_decimator_buffering_type buffering_type = dcc.buffering_type;
 
