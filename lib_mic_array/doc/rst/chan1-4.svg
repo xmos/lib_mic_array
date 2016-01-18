@@ -15,7 +15,7 @@
    id="svg135463"
    version="1.1"
    inkscape:version="0.48.5 r10040"
-   sodipodi:docname="chan1-4.png">
+   sodipodi:docname="chan1-4.svg">
   <defs
      id="defs135465">
     <marker
@@ -89,7 +89,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="431.09935"
+     inkscape:cx="432.1095"
      inkscape:cy="170.2255"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -120,7 +120,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -193,7 +193,7 @@
          sodipodi:role="line"
          id="tspan136601"
          x="-167.36211"
-         y="34.999992">8 ch</tspan><tspan
+         y="34.999992">1 ch</tspan><tspan
          sodipodi:role="line"
          x="-167.36211"
          y="49.999992"
@@ -237,7 +237,7 @@
          y="154.99998"
          x="-167.36212"
          id="tspan136615"
-         sodipodi:role="line">2x4 ch </tspan><tspan
+         sodipodi:role="line">1x4 ch </tspan><tspan
          y="169.99998"
          x="-167.36212"
          sodipodi:role="line"
@@ -277,7 +277,7 @@
          sodipodi:role="line"
          id="tspan136629"
          x="-167.36211"
-         y="275">2x4 ch</tspan><tspan
+         y="275">1x4 ch</tspan><tspan
          sodipodi:role="line"
          x="-167.36211"
          y="290"
@@ -329,7 +329,7 @@
          y="395"
          x="-167.36211"
          id="tspan136655"
-         sodipodi:role="line">2x4 ch</tspan><tspan
+         sodipodi:role="line">1x4 ch</tspan><tspan
          y="410"
          x="-167.36211"
          sodipodi:role="line"
@@ -433,7 +433,7 @@
          sodipodi:role="line"
          id="tspan4437"
          x="-167.36211"
-         y="515">2x1..4 ch</tspan><tspan
+         y="515">1x1..4 ch</tspan><tspan
          id="tspan4439"
          sodipodi:role="line"
          x="-167.36211"
@@ -449,7 +449,7 @@
          y="634"
          x="-167.36211"
          id="tspan4443"
-         sodipodi:role="line">2x1..4 ch</tspan><tspan
+         sodipodi:role="line">1x1..4 ch</tspan><tspan
          y="649"
          x="-167.36211"
          sodipodi:role="line"

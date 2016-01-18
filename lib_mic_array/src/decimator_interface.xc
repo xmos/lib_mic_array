@@ -48,7 +48,7 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
 
  frame_audio * alias decimator_get_next_audio_frame(
          streaming chanend c_from_decimator[], unsigned decimator_count,
-        unsigned &buffer, frame_audio * alias audio, unsigned buffer_count){
+        unsigned &buffer, frame_audio * alias audio, unsigned buffer_count, e_decimator_buffering_type buffering_type){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -77,10 +77,13 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
         schkct(c_from_decimator[i], 8);
 
     unsigned index;
-    if(buffer == 0)
-        index = buffer_count-1;
+    if(buffering_type == DECIMATOR_NO_FRAME_OVERLAP)
+        index = buffer + buffer_count - 1;
     else
-        index = buffer-1;
+        index = buffer + buffer_count - 2;
+
+    if(index >= buffer_count)
+        index-=buffer_count;
 
     buffer++;
     if(buffer == buffer_count)
@@ -123,7 +126,7 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
 }
 
 frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex * alias f_complex, unsigned buffer_count){
+     unsigned &buffer, frame_complex * alias f_complex, unsigned buffer_count, e_decimator_buffering_type buffering_type){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -151,10 +154,13 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
          schkct(c_from_decimator[i], 8);
 
      unsigned index;
-     if(buffer == 0)
-         index = buffer_count-1;
+     if(buffering_type == DECIMATOR_NO_FRAME_OVERLAP)
+         index = buffer + buffer_count - 1;
      else
-         index = buffer-1;
+         index = buffer + buffer_count - 2;
+
+     if(index >= buffer_count)
+         index-=buffer_count;
 
      buffer++;
      if(buffer == buffer_count)
@@ -166,6 +172,8 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
 void decimator_configure(streaming chanend c_from_decimator[], unsigned decimator_count,
         decimator_config dc[]){
 
+
+     //TODO check the frame_size_log_2 is in bounds
     for(unsigned i=0;i<decimator_count;i++)
         schkct(c_from_decimator[i], 8);
 

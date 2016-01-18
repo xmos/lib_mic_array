@@ -55,7 +55,7 @@ void hires_delay_set_taps(chanend c_cmd, unsigned delays[], unsigned num_channel
             if(delays[i] < HIRES_MAX_DELAY)
                 c_cmd <: delays[i];
             else
-                c_cmd <: 0;
+                c_cmd <: HIRES_MAX_DELAY-1;
         }
     }
 }

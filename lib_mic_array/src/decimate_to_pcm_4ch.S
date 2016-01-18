@@ -408,10 +408,10 @@ get_frame_pointer:
 
 	overlapping:
 	    {in r1, res[r2];}
-	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
+	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
 		stw r1, r11[S_METADATA_POINTER_1]
 	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
-	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
+	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
 		stw r1, r11[S_METADATA_POINTER_0]
 
 setup_phase_counters:
@@ -689,13 +689,16 @@ post_process:
 
 		overlapping_frames:
 
+			ldaw r4, sp[S_FRAME_OFFSET]
 			ldw r6, r4[S_FRAME_1_INDEX] //load second frame index
 
 			ldaw r5, sp[S_OUTPUT_STORAGE];
 			ldd r0, r1, r5[S_D_OUTPUT_STORAGE_01];
 			ldd r2, r3, r5[S_D_OUTPUT_STORAGE_23];
 
-			//APPLY_WINDOW_FN(1)
+			APPLY_WINDOW_FN(1)
+			ldaw r4, sp[S_FRAME_OFFSET]
+			ldw r6, r4[S_FRAME_1_INDEX] //load second frame index
 			//MIN_MAX(S_FRAME_MIN_1, S_FRAME_MAX_1, 1)
 
 			ldaw r5, sp[S_SETTINGS_OFFSET]

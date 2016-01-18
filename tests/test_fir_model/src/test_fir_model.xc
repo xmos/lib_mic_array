@@ -32,7 +32,7 @@ int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[FRAME_COUNT];
 frame_complex f_complex[FRAME_COUNT];
 
-#define COUNT 16
+#define COUNT 4
 
 int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_buffering_type buf_type){
     if(buf_type == DECIMATOR_NO_FRAME_OVERLAP){
@@ -43,29 +43,6 @@ int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_bufferi
             v = v*2+df*4;
         return v;
     } else {
-        /*
-       fsl2 1  di 0 = 3
-       fsl2 1  di 1 = 3
-       fsl2 1  di 2 = 3
-       fsl2 1  di 3 = 3
-       fsl2 1  di 4 = 3
-       fsl2 2  di 0 = 3 + 8*1
-       fsl2 2  di 1 = 3 + 8*2
-       fsl2 2  di 2 = 3 + 8*3
-       fsl2 2  di 3 = 3 + 8*4
-       fsl2 2  di 4 = 3 + 8*6
-       fsl2 3  di 0 = 3 + 12*2
-       fsl2 3  di 1 = 3 + 24*2
-       fsl2 3  di 2 = 3 + 36*2
-       fsl2 3  di 3 = 3 + 48*2
-       fsl2 3  di 4 = 3 + 72*2
-       fsl2 4  di 0 = 3 + 28*2
-       fsl2 4  di 1 = 3 + 56*2
-       fsl2 4  di 2 = 3 + 84*2
-       fsl2 4  di 3 = 3 + 112*2
-       fsl2 4  di 4 = 3 + 168*2
-       */
-
 
         unsigned lut0[13] = {
                 0, 0,
@@ -115,17 +92,6 @@ unsigned bitreverse(unsigned i, unsigned bits){
 
 void model(streaming chanend c_4x_pdm_mic_0,
   streaming chanend c_4x_pdm_mic_1, chanend c_model){
-    /*
-    for(e_decimator_buffering_type buf_type = 0; buf_type<2; buf_type++){
-        for(unsigned f=0;f<=4;f++){
-            for(unsigned d=0;d<5;d++){
-                unsigned v = generate_tail_output_counter(f, d, buf_type);
-                printf("%3d ", v);
-            }
-            printf("\n");
-        }
-    }
-*/
     int second_stage_data[8][16];
     int third_stage_data[8][32*DF];
 
@@ -201,12 +167,25 @@ void model(streaming chanend c_4x_pdm_mic_0,
                         if(frame_size_log2)
                             index = zext(c+2, frame_size_log2);
 
-
                         if(windowing_enabled){
-                            if(index>>(frame_size_log2-1))
-                                index = (1<<frame_size_log2) -1- index;
-                            int w = window[index];
-                            v = apply_gain_comp(v, w);
+                            if(buf_type == DECIMATOR_HALF_FRAME_OVERLAP){
+
+                                if(!(index>>(frame_size_log2-1)))
+                                    index += (1<<(frame_size_log2-1));
+
+                                if(index>>(frame_size_log2-1))
+                                    index = (1<<frame_size_log2) -1- index;
+
+
+
+                                int w = window[index];
+                                v = apply_gain_comp(v, w);
+                            } else {
+                                if(index>>(frame_size_log2-1))
+                                    index = (1<<frame_size_log2) -1- index;
+                                int w = window[index];
+                                v = apply_gain_comp(v, w);
+                            }
                         }
 
                         output[m][c+2] = v;
@@ -219,16 +198,18 @@ void model(streaming chanend c_4x_pdm_mic_0,
                 c_4x_pdm_mic_1 <: 0;
             }
 
-            for(unsigned m=0;m<8;m++){
-                for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
+
+            for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
+                for(unsigned m=0;m<8;m++){
                     c_model <: output[m][c];
+                   // printf("%12d ", output[m][c]);
                 }
+               // printf("\n");
             }
             c_model <: 0;
         }
     }
 }
-
 
 void output(streaming chanend c_ds_output[2], chanend c_actual){
 
@@ -272,6 +253,9 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
             memset(data_0, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
             memset(data_1, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
 
+            memset(audio, 0, sizeof(frame_audio)*FRAME_COUNT);
+            memset(f_complex, 0, sizeof(frame_complex)*FRAME_COUNT);
+
 
             if(index_bit_reversal){
                 unsafe {
@@ -291,8 +275,9 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
 
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
-                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, FRAME_COUNT);
+                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, FRAME_COUNT, buf_type);
                         for(unsigned f=0;f<(1<<frame_size_log2);f++){
+                            unsigned ff = bitreverse(f, frame_size_log2);
                             unsigned index = (c<<frame_size_log2) + bitreverse(f, frame_size_log2);
                             for(unsigned m=0;m<4;m++){
                                 output[2*m  ][index] = current->data[m][f].re;
@@ -301,25 +286,23 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                         }
                    }
                } else {
-
-
                    for(unsigned c=0;c<2*COUNT;c++){
-                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, FRAME_COUNT);
-
+                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, f_complex, FRAME_COUNT, buf_type);
                         if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
-                                unsigned index = (c<<frame_size_log2) + bitreverse(f, frame_size_log2);
                                 for(unsigned m=0;m<4;m++){
+                                    //TODO compare to the previous buffer
                                     //output[2*m  ][index] = current->data[m][f].re;
                                     //output[2*m+1][index] = current->data[m][f].im;
                                 }
                             }
                         }
                         for(unsigned f=(1<<(frame_size_log2-1));f<(1<<frame_size_log2);f++){
-                            unsigned index = (c<<frame_size_log2) + bitreverse(f, frame_size_log2);
+                            unsigned ff = bitreverse(f, frame_size_log2);
+                            unsigned index = (c<<(frame_size_log2-1)) + f - (1<<(frame_size_log2-1));
                             for(unsigned m=0;m<4;m++){
-                                output[2*m  ][index] = current->data[m][f].re;
-                                output[2*m+1][index] = current->data[m][f].im;
+                                output[2*m  ][index] = current->data[m][ff].re;
+                                output[2*m+1][index] = current->data[m][ff].im;
                             }
                         }
 
@@ -343,7 +326,7 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
 
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
-                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, FRAME_COUNT);
+                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, FRAME_COUNT, buf_type);
                         for(unsigned f=0;f<(1<<frame_size_log2);f++){
                             for(unsigned m=0;m<8;m++){
                                 output[m][(c<<frame_size_log2) + f] = current->data[m][f];
@@ -352,27 +335,35 @@ void output(streaming chanend c_ds_output[2], chanend c_actual){
                    }
                } else {
                    for(unsigned c=0;c<2*COUNT;c++){
-                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, FRAME_COUNT);
+                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, FRAME_COUNT, buf_type);
                         if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
+                                unsigned index = (c<<(frame_size_log2-1)) + f - (1<<(frame_size_log2-1));
                                 for(unsigned m=0;m<8;m++){
-                                    //compare to the previous buffer
+                                    //TODO compare to the previous buffer
                                     //output[m][(c<<frame_size_log2) + f] = current->data[m][f];
                                 }
                             }
                         }
                         for(unsigned f=(1<<(frame_size_log2-1));f<(1<<frame_size_log2);f++){
+                            unsigned index = (c<<(frame_size_log2-1)) + f - (1<<(frame_size_log2-1));
                             for(unsigned m=0;m<8;m++){
-                                output[m][(c<<frame_size_log2) + f] = current->data[m][f];
+                                output[m][index] = current->data[m][f];
+                              //printf("%12d ", output[m][index]);
                             }
+                            //printf("\n");
                         }
                    }
                }
            }
-           for(unsigned m=0;m<8;m++){
-               for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
+
+           for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
+               //printf("a: ");
+               for(unsigned m=0;m<8;m++){
                    c_actual <: output[m][c];
+                   //printf("%12d ", output[m][c]);
                }
+              // printf("\n");
            }
            c_actual <: 0;
         }
@@ -427,9 +418,6 @@ void verifier(chanend c_model,
                 {INT_MAX/2, INT_MAX/3, INT_MAX/4, INT_MAX/6, INT_MAX/7, INT_MAX/8, INT_MAX/9, INT_MAX/11}
         };
 
-
-        //TODO dc offset elim
-        //TODO channel count
         unsigned test = 0;
         for(unsigned frame_size_log2 = 0;frame_size_log2<=MAX_FRAME_SIZE_LOG2;frame_size_log2++){
 
@@ -449,9 +437,11 @@ void verifier(chanend c_model,
 
                                 for(unsigned windowing_enabled=0;windowing_enabled<2; windowing_enabled++){
 
-                                    for(e_decimator_buffering_type buf_type = 0; buf_type<2; buf_type++){
-                                    //e_decimator_buffering_type buf_type = DECIMATOR_HALF_FRAME_OVERLAP;{
-                                        if((frame_size_log2 == 0) && (buf_type == DECIMATOR_HALF_FRAME_OVERLAP))
+                              //    e_decimator_buffering_type buf_type = 1;{
+                                for(e_decimator_buffering_type buf_type = 0; buf_type<2; buf_type++){
+                                        if(
+                                                (frame_size_log2 == 0) &&
+                                                (buf_type == DECIMATOR_HALF_FRAME_OVERLAP))
                                             continue;
 
 
@@ -471,25 +461,26 @@ void verifier(chanend c_model,
                                                 c_actual:> a;
                                                 c_model :> b;
                                                 int diff = a-b;
+                                               // printf("%12d %12d %12d\n", a, b, diff);
                                                 if (diff<0) diff = -diff;
                                                 if(diff>max_diff)
                                                     max_diff = diff;
                                             }
                                         }
-                                        printf("%4d ", test++);
-                                        printf("df: %2d ", df);
-                                        printf("fir_comp: 0x%08x ", fir_comp);
-                                        printf("frame_size_log2: %d ", frame_size_log2);
-                                        printf("index_bit_reversal: %d ", index_bit_reversal);
-                                        printf("windowing_enabled: %d ", windowing_enabled);
-                                        printf("gain_comp_enabled: %d ", gain_comp_enabled);
-                                        printf("e_decimator_buffering_type: %d ", buf_type);
 
-                                        if(max_diff < 16)
+                                            printf("%4d ", test++);
+                                            printf("df: %2d ", df);
+                                            printf("fir_comp: 0x%08x ", fir_comp);
+                                            printf("frame_size_log2: %d ", frame_size_log2);
+                                            printf("index_bit_reversal: %d ", index_bit_reversal);
+                                            printf("windowing_enabled: %d ", windowing_enabled);
+                                            printf("gain_comp_enabled: %d ", gain_comp_enabled);
+                                            printf("e_decimator_buffering_type: %d ", buf_type);
+                                        if(max_diff < 16){
                                             printf(" PASS\n");
-                                        else{
+                                        } else{
                                             printf(" FAIL\n");
-                                          //  _Exit(1);
+                                            _Exit(1);
                                         }
 
                                         c_actual:> int;
@@ -503,6 +494,7 @@ void verifier(chanend c_model,
             }
         }
     }
+    printf("Success\n");
 }
 
 int main(){

@@ -158,7 +158,7 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
  *                           recently written samples.
  */
 frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-       unsigned &buffer, frame_audio * alias f_audio, unsigned buffer_count);
+       unsigned &buffer, frame_audio * alias f_audio, unsigned buffer_count, e_decimator_buffering_type buffering_type);
 
 /** Four Channel Decimation initializer for complex frames.
  *
@@ -197,7 +197,7 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
  *                           recently written samples.
  */
 frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex * alias f_complex, unsigned buffer_count);
+     unsigned &buffer, frame_complex * alias f_complex, unsigned buffer_count, e_decimator_buffering_type buffering_type);
 
 
 /** Decimator configuration
