@@ -22,7 +22,8 @@ The left most task, ``pdm_rx()``, samples 8 microphones and filters the data to 
 eight 384 KHz data streams, split in two streams of four channels. One or two
 processing threads, ``decimate_to_pcm_4ch()``, each process up to four channels. The processing thread
 decimates the signal to a user chosen sample rate (one of 48, 24, 16, 12,
-or 8 KHz). After the decimation to the output sample rate the sequence of eight steps takes place:
+or 8 KHz). If more than 8 channels are required then another ``pdm_rx`` task can be created.
+After the decimation to the output sample rate the sequence of steps takes place:
 
 * Optionally, DC offset is eliminated on the each channel.
 
@@ -44,7 +45,7 @@ or 8 KHz). After the decimation to the output sample rate the sequence of eight 
 
 There is also an optional high resolution delay, running at up to 384kHz, that can be used to add to the 
 signal path channel specific delays. This can be used for high resolution delay and sum
-bemforming.
+beamforming.
 
 Hardware characteristics
 ------------------------
@@ -189,8 +190,12 @@ and the decimators, similar to the above, it is done in the following fashion::
 Note, using the high resolution delay consumes an extra core.
 
 
+Using the decimators
+--------------------
+
+
 Setting up the decimators
--------------------------
+.........................
 
 All decimators attached to an application, via streaming channels, are configured 
 simultaneously with the ``decimator_configure()`` function. The parameters to the
@@ -198,9 +203,23 @@ simultaneously with the ``decimator_configure()`` function. The parameters to th
 frame exchange process ``decimator_init_audio_frame()`` or  ``decimator_init_complex_frame()`` must be called. Now the decimators are running
 and will be outputting frames at the rate given by their configuration.
 
-TODO state machine diagram
+  .. _figstatemachine:
+  .. figure:: state_machine.pdf
+	:width: 100%
+	    
+	Order of the function calls allowed to the decimators.
 
+The configuration of the decimators can be changed at any time so long as the 
+function calls respect the control flow given in :ref:`figstatemachine`.
 
+Changing decimator configuration
+................................
+
+Once the decimators are running the configuration of the decimators remain constant. If a change of configuration 
+is required then a call to ``decimator_configure()`` allows a complete reconfigure. This will 
+reconfigure and reset all attached decimators. The only configuration that will survive reconfiguration
+is the DC offset memory. It is assumed that the microphone specific DC offset 
+remains fairly constant between reconfigurations. 
 
 Accessing the samples
 ---------------------
@@ -216,15 +235,12 @@ even channels going into the real entries and odd channels going into the imagin
 are inserted into the array in an index bit-reversed order. This results in frames that are ready for direct
 processing by an DIT FFT.
 
+  .. _figmemory:
+  .. figure:: memory_layout.pdf
+	:width: 100%
+	    
+	Memory layout of simple audio and complex frames.
 
-Changing decimator configuration
---------------------------------
-
-Once the decimators are running the configuration od the decimators remain constant. If a change of configuration 
-is required then a call to ``decimator_configure()`` allows a complete reconfigure. This will 
-reconfigure and reset all attached decimators. The only configuration that will survive reconfiguration
-is the frame numbers and the DC offset memory. It is assumed that the microphone specific DC offset 
-remains fairly constant between reconfigurations. 
   
 ``mic_array_conf.h``
 --------------------
@@ -251,7 +267,7 @@ Optionally, `mic_array_conf.h`` may define
    * HIRES_MAX_DELAY
 
      This defines the length of the high resolution delay lines. This should be set to a power
-	 of two for efficiency. The default is 32. Increasing values will result in increasing memory
+	 of two for efficiency. The default is 256. Increasing values will result in increasing memory
 	 usage.
 	 
 Four Channel Decimator
@@ -365,7 +381,9 @@ relation::
 
   Yn+1 = Yn * alpha + x
 
-Where ``alpha`` is defined as ``1 - 2^DC_OFFSET_DIVIDER_LOG2``. 
+Where ``alpha`` is defined as ``1 - 2^DC_OFFSET_DIVIDER_LOG2``. Increasing ``DC_OFFSET_DIVIDER_LOG2``
+will increase the stability of the filter and decrease the cut off point at the cost of slow settling
+time. Decreasing ``DC_OFFSET_DIVIDER_LOG2`` will increase the cut off point of the filter. 
  
 Frames
 ------
@@ -519,8 +537,8 @@ least 100dBs of signal to noise for all output sample rates.
 
 The decimation is achieved by applying three poly-phase FIR filters sequentially. 
 The design of these filters can be view in the python script ``fir_design.py``. The default 
-magnitude responses of the first to third stages are given as figure 2 to 9 in the appendix.
-
+magnitude responses of the first to third stages are given as :ref:`figthird_stage_div_2` 
+through to :ref:`figthird_stage_div_12` in the appendix.
 
 Advanced filter design
 ......................
@@ -536,27 +554,73 @@ filter.
 ``fir_design.py`` usage
 .......................
  
-In order generate custom filters the ``fir_design.py`` can be modified. The purpose of this file 
-is to design end generate the FIR coefficients for the three stages of decimation. 
+In order generate custom filters the ``fir_design.py`` can be executed. The purpose of this file 
+is to design end generate the FIR coefficients for the three stages of decimation. ``fir_design_.py`` 
+is a command line tool that takes a number of command line options to control each parameter of the
+filter design. As previously illustrated the PDM to PCM conversion is divided into three stages. 
+The overall noise floor is governed with the option ``--stopband-attenuation``. This should be a 
+positive number of decibels between 20 and 120. In the first stage of design the designer is able 
+to tune:
+
+* passband bandwidth(``--first-stage-pass-bw``) - The bandwidth of the passband, in kHz.
+* stopband bandwidth(``--first-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
+
+These are illustrated in figure :ref:`figfirst`.
+
+  .. _figfirst:
+  .. figure:: first_stage_diagram.pdf
+	:width: 100%
+	    
+	First stage design parameters.
+
+In the second stage the same options are available:
+
+* passband bandwidth(``--second-stage-pass-bw``) - The bandwidth of the passband, in kHz.
+* stopband bandwidth(``--second-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
+
+These are illustrated in figure :ref:`figsecond`.
+
+  .. _figsecond:
+  .. figure:: second_stage_diagram.pdf
+	:width: 100%
+	    
+	Second stage design parameters.
+
+In the third stage the designer can provide custom decimation factors and pass and stop band parameters.
+Also the delay of the filter can be controlled by tuning the number of taps to allocate for each phase of
+the poly-phase FIR (``--third-stage-num-taps``). The fewer the number of taps per phase then the shorter the
+delay of the filter but the harder the design will be to meet other criteria.
+
+To add a custom third stage filter ``--add-third-stage`` has to be called. It required the following arguments:
+
+* decimation factor - the ratio of input samples to output samples
+* normalized output passband - This specifies where the passband ends.
+* normalized output stopband - This specified where the stopband starts.
+* name - This assigns a name to the custom filter.
+
+These are illustrated in figure :ref:`figthird`.
+
+  .. _figthird:
+  .. figure:: third_stage_diagram.pdf
+	:width: 100%
+	    
+	Third stage design parameters.
+
+The name is used to generate the defines and coefficient arrays used to implement the filter in ``lib_mic_array``.
+The defines ``DECIMATION_FACTOR_ + (filter_name)`` and ``FIR_COMPENSATOR_ + (filter_name)`` will be generated to
+represent the filter designed. Additionally, the array ``const int g_third_stage_ + (filter_name) _fir[]`` will
+also be generated and will contain all the coefficients to implement the filter.
+For example, if ``fir_design.py`` was passed the option ``--add-third-stage 2 0.4 0.5 my_filter`` then available 
+in ``lib_mic_array`` would be::
  
-* ``PDM_sample_rate``: Specifies the clock sample rate to the PDM microphones. 
-* ``stopband_attenuation``: Describes the desired attenuation to apply to the stop band at each stage. 
-* ``first_stage_pass_bandwidth``: The bandwidth of the passband. Assumed to start at 0Hz and end at this value.
-* ``first_stage_stop_bandwidth``: The bandwidth of the stopbands.
-* ``second_stage_pass_bandwidth``: The bandwidth of the passband. Assumed to start at 0Hz and end at this value.
-* ``second_stage_stop_bandwidth``: The bandwidth of the stopbands.
-* ``third_stage_num_taps_per_phase``: The number of FIR taps per stage(decimation factor). The 
-  fewer that there are then the lower the group delay. Up to 32 are allowed.
-* ``third_stage_configs``: This is a list of third stage output configurations to generate
-  - The decimation factor.
-  - The frequency that the passband ends.
-  - The frequency that the stopband starts.
-  - The output name
- 
-When ``fir_design.py`` has been configured to describe the desired configuration then it can be run with either
-``python fir_design.py`` or TODO. Following this the coefficients generated (``*.fir_coefs``) have to be 
-converted into ``fir_coefs.xc`` and``fir_decimator.h`` by running ``java -jar Generator.jar``. This takes the raw
-coefficients and preprocesses them to maximise the dynamic range and efficiency within the compiled application.
+  #define DECIMATION_FACTOR_MY_FILTER (2)
+  #define FIR_COMPENSATOR_MY_FILTER ((int)((double)(INT_MAX>>4) * FIRST_STAGE_SCALE_FACTOR * SECOND_STAGE_SCALE_FACTOR * MY_FILTER_SCALE_FACTOR))
+  extern const int g_third_stage_my_filter_fir[126];
+
+Following the execution for ``fir_fesidn.py``, the coefficients generated (``*.fir_coefs``) have to be 
+converted into ``fir_coefs.xc`` and``fir_decimator.h`` by running ``java -jar Generator.jar``. This takes 
+the raw coefficients and preprocesses them to maximise the dynamic range and efficiency within the compiled 
+application.
  
 
 Frame and FIR memory
@@ -634,42 +698,50 @@ High resolution delay task
 |newpage|
 |appendix|
 
+
+.. _figfirst_stage:
 .. figure:: first_stage.eps
             :width: 70%
                     
             First stage FIR magnitude response.
 
 
+.. _figsecond_stage:
 .. figure:: second_stage.eps
             :width: 70%
                     
             Second stage FIR magnitude response.
 
 
+.. _figthird_stage_div_2:
 .. figure:: third_stage_div_2.eps
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 2.
 
 
+.. _figthird_stage_div_4:
 .. figure:: third_stage_div_4.eps
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 4.
 
 
+.. _figthird_stage_div_6:
 .. figure:: third_stage_div_6.eps
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 6.
 
 
+.. _figthird_stage_div_8:
 .. figure:: third_stage_div_8.eps
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 8.
 
 
+.. _figthird_stage_div_12:
 .. figure:: third_stage_div_12.eps
             :width: 70%
                     

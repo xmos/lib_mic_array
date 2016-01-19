@@ -135,8 +135,7 @@ void decimate_to_pcm_4ch(
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application (initialized internally)
  *  \param f_audio           An array of audio frames.
- *  \param buffering_type    Sets the decimator to double buffer(no overlap) or triple buffer (50% overlap)
- *                           the output frames.
+ *  \param dcc               The structure cointaining the decimator configuration.
  *
  */
 void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
@@ -154,8 +153,7 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
  *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
  *  \param buffer            The buffer index (Used internally)
  *  \param f_audio           An array of audio frames.
- *  \param buffer_count      The size of the f_audio array, i.e. the number of multi-channel frames
- *                           declared by the application task.
+ *  \param dcc               The structure cointaining the decimator configuration.
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.
@@ -175,8 +173,7 @@ frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_from_deci
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application (initialized internally)
  *  \param f_complex         An array of complex frames.
- *  \param buffering_type    Sets the decimator to double buffer(no overlap) or triple buffer (50% overlap)
- *                           the output frames.
+ *  \param dcc               The structure cointaining the decimator configuration.
  *
  */
 void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
@@ -193,8 +190,7 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
  *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
  *  \param buffer            The buffer index (Used internally)
  *  \param f_complex         An array of complex frames.
- *  \param buffer_count      The size of the f_audio array, i.e. the number of multi-channel frames
- *                           declared by the application task.
+ *  \param dcc               The structure cointaining the decimator configuration.
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.
