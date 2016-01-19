@@ -3,16 +3,14 @@
 #include <stdio.h>
 #include <xs1.h>
 #include <xclib.h>
-#include <math.h>
 #include <stdlib.h>
-#include <print.h>
 #include <string.h>
 
 static int pseudo_random(unsigned &x){
     crc32(x, -1, 0xEB31D82E);
     return (int)x;
 }
-//#pragma unsafe arrays
+#pragma unsafe arrays
 static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length, const int val){
     long long y = 0;
     data[0] = val;
@@ -36,7 +34,7 @@ frame_complex f_complex[FRAME_COUNT];
 
 #define COUNT 4
 
-//#pragma unsafe arrays
+#pragma unsafe arrays
 int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_buffering_type buf_type){
     if(buf_type == DECIMATOR_NO_FRAME_OVERLAP){
         if(fsl2==0)
@@ -81,7 +79,7 @@ static unsigned bitreverse(unsigned i, unsigned bits){
     return (bitrev(i) >> (32-bits));
 }
 
-//#pragma unsafe arrays
+#pragma unsafe arrays
 void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_model){
     int second_stage_data[16][16];
     int third_stage_data[16][32*DF];
@@ -220,7 +218,7 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
     }
 }
 
-//#pragma unsafe arrays
+#pragma unsafe arrays
 void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel_count){
 
     int window[1<<(MAX_FRAME_SIZE_LOG2-1)];
@@ -383,7 +381,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
     }
 }
 
-//#pragma unsafe arrays
+#pragma unsafe arrays
 static void send_settings(chanend  c_chan,
         const int * unsafe fir, int * unsafe debug_fir, unsigned df, int fir_comp,
         unsigned frame_size_log2, unsigned index_bit_reversal, unsigned  gain_comp_enabled,
@@ -405,11 +403,11 @@ static void send_settings(chanend  c_chan,
     }
 }
 
-//#pragma unsafe arrays
-void verifier(chanend c_model,
-        chanend c_actual, unsigned channel_count){
+#pragma unsafe arrays
+void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
     unsafe{
         unsigned decimation_factor_lut[5] = {1*2, 2*2, 3*2, 4*2, 6*2};
+
         const int * unsafe decimation_fir_lut[5] = {
                 g_third_stage_div_2_fir,
                 g_third_stage_div_4_fir,
@@ -427,14 +425,15 @@ void verifier(chanend c_model,
 
         unsigned fir_comp_lut[4] = {0, INT_MAX>>4, INT_MAX<<4, INT_MAX>>8};
 
-        unsigned gain_comp[2][16] = {
-                {INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX},
-                {INT_MAX/2, INT_MAX/3, INT_MAX/4, INT_MAX/6, INT_MAX/7, INT_MAX/8, INT_MAX/9, INT_MAX/11,
-                        INT_MAX/12, INT_MAX/13, INT_MAX/14, INT_MAX/16, INT_MAX/17, INT_MAX/18, INT_MAX/19, INT_MAX/111,
-                }
-        };
+        unsigned gain_comp[2][16] = { { INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX,
+            INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX,
+            INT_MAX, INT_MAX }, { INT_MAX / 2, INT_MAX / 3, INT_MAX / 4, INT_MAX / 6,
+            INT_MAX / 7, INT_MAX / 8, INT_MAX / 9, INT_MAX / 11,
+            INT_MAX / 12, INT_MAX / 13, INT_MAX / 14, INT_MAX / 16, INT_MAX / 17, INT_MAX
+            / 18, INT_MAX / 19, INT_MAX / 111, } };
 
         unsigned test = 0;
+
         for(unsigned frame_size_log2 = 0;frame_size_log2<=MAX_FRAME_SIZE_LOG2;frame_size_log2++){
 
             for(unsigned decimation_index = 0; decimation_index < 5;decimation_index++){
@@ -472,9 +471,7 @@ void verifier(chanend c_model,
                                                 gain_comp[gain_index], windowing_enabled, buf_type);
 
                                         int max_diff = 0;
-
                                         for(unsigned m=0;m<channel_count;m++){
-
                                             for(unsigned i=0;i<COUNT<<frame_size_log2;i++){
                                                 int a, b;
                                                 c_actual:> a;
@@ -485,13 +482,11 @@ void verifier(chanend c_model,
                                                     max_diff = diff;
                                             }
                                         }
-#if 1
-                                        //printf("%4d\n", test++);
-#else
-                                        printf("%4d  %2d 0x%08x %d %d %d %d %d ", test++, df, fir_comp, frame_size_log2,
-                                                index_bit_reversal, windowing_enabled, gain_comp_enabled, buf_type);
-#endif
+
+                                        printf("%4d\n", test++);
+
                                         if(max_diff < 16){
+
                                         } else{
                                             printf("%4d ", test++);
                                             printf("df: %2d ", df);
@@ -502,10 +497,8 @@ void verifier(chanend c_model,
                                             printf("gain_comp_enabled: %d ", gain_comp_enabled);
                                             printf("e_decimator_buffering_type: %d ", buf_type);
                                             printf(" FAIL\n");
-                                            delay_milliseconds(1);
                                             _Exit(1);
                                         }
-
                                     }
                                 }
                             }
@@ -515,25 +508,27 @@ void verifier(chanend c_model,
             }
         }
     }
+
     c_actual:> int;
     c_model :> int;
     c_actual <: 1;
     c_model  <: 1;
+
     printf("Success: %d channels supported\n", channel_count);
-    //_Exit(0);
 }
 
 void channel_count_test(){
-
     streaming chan c_4x_pdm_mic[4];
     streaming chan c_ds_output[4];
     chan c_model, c_actual;
     par {
-        for(unsigned c=4;c<=16;c+=4){
-            par{
-                model(c_4x_pdm_mic, c, c_model);
-                output(c_ds_output, c_actual, c);
-                verifier(c_model, c_actual, c);
+        {
+            for(unsigned c=4;c<=16;c+=4){
+                par{
+                    model(c_4x_pdm_mic, c, c_model);
+                    output(c_ds_output, c_actual, c);
+                    verifier(c_model, c_actual, c);
+                }
             }
             printf("All done\n");
             _Exit(0);
@@ -543,9 +538,7 @@ void channel_count_test(){
         decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2]);
         decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3]);
      }
-
 }
-
 
 int main(){
     channel_count_test();

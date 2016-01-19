@@ -15,6 +15,15 @@
 #define t                 	 r11
 #define unused3              r11
 
+#define CH0 0
+#define CH1 1
+#define CH2 4
+#define CH3 5
+#define CH4 2
+#define CH5 3
+#define CH6 6
+#define CH7 7
+
 #define STACKWORDS 16
 
 #define FIR_BLOCK(P) \
@@ -42,7 +51,7 @@
 pdm_rx_asm://(
         //in buffered port:32 p_pdm_mics,
         //streaming chanend c,
-        //streaming chanend d,
+        //streaming chanend ?d,
 
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
@@ -66,10 +75,12 @@ pdm_rx_asm://(
 
 	ldaw p, sp[0]
 
-//2604ns per loop
+	ldc c, CH0
+	bt c_two, pdm_rx_8ch_loop
+
+	ldc c, 0
 	.align 8
-pdm_rx_loop:
-//about 6 inst spare without optimisation
+pdm_rx_4ch_loop:
 
 	ldw a, sp[15]
 	in b, res[a]
@@ -79,26 +90,15 @@ pdm_rx_loop:
 	unzip a, b, 0
 	std a, b, p[0]
 
-	ldc c, 0
 	FIR();
-	OUTPUT(1, c_one)	//output c_one
+	OUTPUT(4, c_one)	//output c_one
 	FIR();
-	OUTPUT(2, c_two)	//output c_two
+	OUTPUT(2, c_one)	//output c_one
 	FIR();
-	OUTPUT(3, c_one)	//output c_one
-	FIR();
-	OUTPUT(4, c_two)	//output c_two
-	FIR();
-	{mov temp_one, a; ldc c, 5}
-	FIR();
-	{mov temp_two, a; ldc c, 6}
+	{mov temp_one, a; ldc c, 6}
 	FIR();
 	{out res[c_one], temp_one}
-	OUTPUT(7, c_one)	//output unused0 then this to c_one
-	FIR();
-	{out res[c_two], temp_two}	//TODO move the output of channel one to here to synchronise the threads
-								// 		use unused3 as a temp for this
-	OUTPUT(0, c_two)
+	OUTPUT(0, c_one)	//output unused0 then this to c_one
 
 	ldd a, b, p[4]
 	std a, b, p[5]
@@ -116,7 +116,57 @@ pdm_rx_loop:
 
 	ldd a, b, p[0]
 	std a, b, p[1]
-	bl pdm_rx_loop
+	bl pdm_rx_4ch_loop
+//2604ns per loop
+	.align 8
+pdm_rx_8ch_loop:
+//about 6 inst spare without optimisation
+
+	ldw a, sp[15]
+	in b, res[a]
+	in a, res[a]
+	unzip a, b, 2
+	unzip a, b, 1
+	unzip a, b, 0
+	std a, b, p[0]
+
+	FIR();
+	OUTPUT(CH1, c_one)	//output c_one
+	FIR();
+	OUTPUT(CH2, c_two)	//output c_two
+	FIR();
+	OUTPUT(CH3, c_one)	//output c_one
+	FIR();
+	OUTPUT(CH4, c_two)	//output c_two
+	FIR();
+	{mov temp_one, a; ldc c, CH5}
+	FIR();
+	{mov temp_two, a; ldc c, CH6}
+	FIR();
+	{out res[c_one], temp_one}
+	OUTPUT(CH7, c_one)	//output unused0 then this to c_one
+	FIR();
+	{out res[c_two], temp_two}	//TODO move the output of channel one to here to synchronise the threads
+								// 		use unused3 as a temp for this
+	OUTPUT(CH0, c_two)
+
+	ldd a, b, p[4]
+	std a, b, p[5]
+
+	ldd a, b, p[3]
+	std a, b, p[4]
+
+	ldd a, b, p[2]
+	{bitrev a, a; bitrev b, b}
+	{byterev a, a; byterev b, b}
+	std a, b, p[3]
+
+	ldd a, b, p[1]
+	std a, b, p[2]
+
+	ldd a, b, p[0]
+	std a, b, p[1]
+	bl pdm_rx_8ch_loop
 
 .pdm_rx_asm_tmp:
 	.size	pdm_rx_asm, .pdm_rx_asm_tmp-pdm_rx_asm

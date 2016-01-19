@@ -6,7 +6,6 @@
 #include <limits.h>
 #include "fir_decimator.h"
 #include "mic_array_frame.h"
-#include "mic_array_defines.h"
 
 /** PDM Microphone Interface component.
  *
@@ -23,7 +22,7 @@
 void pdm_rx(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
-        streaming chanend c_4x_pdm_mic_1);
+        streaming chanend ?c_4x_pdm_mic_1);
 
 
 /** High resolution delay component.
