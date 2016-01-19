@@ -1,167 +1,206 @@
+#!/usr/bin/env python
+
+import argparse
 import numpy
 import scipy
 import matplotlib
-import sys, getopt
+import sys
 import math
 from scipy import signal
 import matplotlib.pyplot as plt
 
-PDM_sample_rate = 3072.0;
-stopband_attenuation = 100;
+################################################################################
 
-first_stage_pass_bandwidth = 16.0;
-first_stage_stop_bandwidth = 80.0;
+def parseArguments(third_stage_configs):
+    parser = argparse.ArgumentParser(description="Filter builder")
 
-second_stage_pass_bandwidth = 16.0;
-second_stage_stop_bandwidth = 14.0;
+    parser.add_argument('--pdm-sample-rate', type=float, default=3072.0,
+                        help='The sample rate (in kHz) of the PDM microphones',
+                        metavar='kHz')
+    parser.add_argument('--stopband-attenuation', type=int, default=100,
+                        help='The desired attenuation to apply to the stop band at each stage')
 
-third_stage_num_taps_per_phase = 32
+    parser.add_argument('--first-stage-pass-bw', type=float, default=16.0,
+                        help='The pass bandwidth (in kHz) of the first stage filter.'
+                             ' Starts at 0Hz and ends at this frequency',
+                        metavar='kHz')
+    parser.add_argument('--first-stage-stop-bw', type=float, default=80.0,
+                        help='The stop bandwidth (in kHz) of the first stage filter.',
+                        metavar='kHz')
 
-#Each entry generates a output 
-third_stage_configs = [
-    [2,  0.35, 0.50, "div_2"],
-    [4,  0.4, 0.55, "div_4"], 
-    [6,  0.4, 0.55, "div_6"], 
-    [8,  0.4, 0.55, "div_8"], 
-    [12, 0.4, 0.55, "div_12"]]
+    parser.add_argument('--second-stage-pass-bw', type=float, default=16.0,
+                        help='The pass bandwidth (in kHz) of the second stage filter.'
+                             ' Starts at 0Hz and ends at this frequency',
+                        metavar='kHz')
+    parser.add_argument('--second-stage-stop-bw', type=float, default=14.0,
+                        help='The stop bandwidth (in kHz) of the second stage filter.',
+                        metavar='kHz')
 
-#Do not change parameters below here
-first_stage_num_taps = 48
-second_stage_num_taps = 16
+    parser.add_argument('--third-stage-num-taps', type=int, default=32, choices=range(1,33),
+                        help='The number of FIR taps per stage (decimation factor).'
+                             ' The fewer there are the lower the group delay.')
 
-if third_stage_num_taps_per_phase > 32:
-  print("There cannot be more then 32 taps per third phase: third_stage_num_taps_per_phase = 32")
-  third_stage_num_taps_per_phase = 32
+    parser.add_argument('--add-third-stage', nargs=4,
+                        help='Add a third stage filter e.g. 12 0.4 0.55 my_filt',
+                        metavar=('DIVIDER', 'NORM_PASS', 'NORM_STOP', 'NAME'))
+
+    args = parser.parse_args()
+
+    to_add = args.add_third_stage
+    if to_add:
+        try:
+            divider = int(to_add[0])
+            norm_pass = float(to_add[1])
+            norm_stop = float(to_add[2])
+            name = to_add[3]
+            third_stage_configs.append(
+                [divider, norm_pass, norm_stop, name])
+        except:
+            print("ERROR: Invalid arguments for third stage")
+            sys.exit(1)
+
+    return args
+
+################################################################################
 
 def measure_stopband_and_ripple(bands, H):
-    dbs = 20*numpy.log10(abs(H));
-    worst_stop_band_atten = -1000000;
-    pass_band_max = -1000000;
-    pass_band_min = 1000000;
+    dbs = 20 * numpy.log10(abs(H))
+    worst_stop_band_atten = -1000000
+    pass_band_max = -1000000
+    pass_band_min = 1000000
     atten = -1000000
     for f in range(0, dbs.size):
-      freq = f * (0.5/ dbs.size);
-      is_in_stop_band = 0;
+      freq = f * (0.5/ dbs.size)
+      is_in_stop_band = 0
       for b in range(2, len(bands), 2):
         if freq > bands[b] and freq < bands[b+1]:
-          is_in_stop_band = 1;
+          is_in_stop_band = 1
         if is_in_stop_band:
-          atten = dbs[f] - dbs[0];
+          atten = dbs[f] - dbs[0]
       if worst_stop_band_atten < atten:
         worst_stop_band_atten = atten
       if freq > bands[0] and freq < bands[1]:
-         p = dbs[f] - dbs[0];
+         p = dbs[f] - dbs[0]
          if pass_band_max < p:
            pass_band_max = p
          if pass_band_min > p:
            pass_band_min = p
-    passband_ripple = pass_band_max - pass_band_min;
+    passband_ripple = pass_band_max - pass_band_min
 
     return [worst_stop_band_atten, passband_ripple]
 
+################################################################################
+
 def plot_response(H, file_name):
-  magnitude_response = 20*numpy.log10(abs(H));
-  input_freq = numpy.arange(0.0, 0.5, 0.5/len(magnitude_response));
-  plt.clf();
-  plt.plot(input_freq, magnitude_response);
+  magnitude_response = 20 * numpy.log10(abs(H))
+  input_freq = numpy.arange(0.0, 0.5, 0.5/len(magnitude_response))
+  plt.clf()
+  plt.plot(input_freq, magnitude_response)
   plt.ylabel('Magnitude Response')
   plt.xlabel('Normalised Input Freq')
   plt.savefig(file_name +'.eps', format='eps', dpi=1000)
-  return 
+
+################################################################################
 
 def output_txt_file(h, num_taps_per_phase, file_name, filter_name):
-  f = open (file_name + ".fir_coefs", 'w');
-  f.write(filter_name + "\n");
-  f.write(str(num_taps_per_phase) + "\n");
+  f = open (file_name + ".fir_coefs", 'w')
+  f.write(filter_name + "\n")
+  f.write(str(num_taps_per_phase) + "\n")
   for i in h:
-    f.write(str(i) + "\n");
-  f.close();
-  return 
+    f.write(str(i) + "\n")
+  f.close()
 
-bw = PDM_sample_rate;
-nulls = (bw)/8.0;
-sbw = first_stage_stop_bandwidth;
-first_stage_bands = [0, 
-	first_stage_pass_bandwidth/bw, 
-	(nulls*1-sbw)/bw, 
-	(nulls*1+sbw)/bw, 
-	(nulls*2-sbw)/bw, 
-	(nulls*2+sbw)/bw, 
-	(nulls*3-sbw)/bw, 
-	(nulls*3+sbw)/bw, 
-	(nulls*4-sbw)/bw, 
-	0.5];
-a = [1, 0, 0, 0, 0];
-weight = 1.0
-stop_band_atten = 0;
-while (-stop_band_atten) < stopband_attenuation:
-  w = [weight, 1, 1, 1, 1];
-  first_h = signal.remez(first_stage_num_taps, first_stage_bands, a, w)
-  (w,H) = signal.freqz(first_h)
-  [stop_band_atten, passband_ripple] = measure_stopband_and_ripple(first_stage_bands, H);
-  weight = weight / 1.01;
+################################################################################
 
-print("First Stage")
-print("Passband ripple:" + str(passband_ripple) + " dBs")
-print("Stopband attenuation:" + str(stop_band_atten) + " dBs")
-output_txt_file(first_h, first_stage_num_taps, "first_h", "first_stage");
-plot_response(H, "first_stage");
-print("")
+def generate_stage(stage, num_taps, bands, a, divider=1, name=None):
+  stage_string = "{} Stage{}".format(
+    stage.capitalize(), " ({})".format(name) if name else "")
+  print(stage_string)
 
-#Second stage
-bw = PDM_sample_rate/8;
-nulls = (bw)/4.0;
-sbw = second_stage_stop_bandwidth;
-second_stage_bands = [0, 
-	second_stage_pass_bandwidth/bw, 
-	(nulls*1-sbw)/bw, 
-	(nulls*1+sbw)/bw, 
-	(nulls*2-sbw)/bw, 
-	0.5];
-a = [1, 0, 0];
-weight = 1.0
-stop_band_atten = 0;
-while (-stop_band_atten) < stopband_attenuation:
-  w = [weight, 1, 1];
-  second_h = signal.remez(second_stage_num_taps, second_stage_bands, a, w)
-  (w,H) = signal.freqz(second_h)
-  [stop_band_atten, passband_ripple] = measure_stopband_and_ripple(second_stage_bands, H);
-  weight = weight / 1.01;
+  w = [1] * len(a)
+  weight = 1.0
+  stop_band_atten = 0
+  while (-stop_band_atten) < args.stopband_attenuation:
+    w[0] = weight
 
-print("Second Stage")
-print("Passband ripple:" + str(passband_ripple) + " dBs")
-print("Stopband attenuation:" + str(stop_band_atten) + " dBs")
-output_txt_file(second_h, second_stage_num_taps, "second_h", "second_stage");
-plot_response(H, "second_stage");
-print("")
+    try:
+      h = signal.remez(divider*num_taps, bands, a, w)
+    except ValueError:
+      print("Failed to converge - unable to write filter: {}".format(stage_string))
+      return
 
-#Third Stage
-for config in third_stage_configs:
+    (_, H) = signal.freqz(h)
+    [stop_band_atten, passband_ripple] = measure_stopband_and_ripple(bands, H)
+    weight = weight / 1.01
 
-	divider = config[0]
-	normalised_pass = config[1]
-	normalised_stop = config[2]
-	name = config[3]
-	weight = 1.0;
-	stop_band_atten = 0;
+  print("Passband ripple: " + str(passband_ripple) + " dBs")
+  print("Stopband attenuation: " + str(stop_band_atten) + " dBs")
+  if name is None:
+    output_txt_file(h, num_taps, stage + "_h", stage + "_stage")
+  else:
+    output_txt_file(h, num_taps, stage + "_stage_" + name + "_h", name)
 
-	#TODO use a binary search here to massivly improve preformance
-	while (-stop_band_atten) < stopband_attenuation:
-	  third_stage_bands = [0, normalised_pass/divider, normalised_stop/divider, 0.5]
-	  third_h = signal.remez(divider*third_stage_num_taps_per_phase, third_stage_bands, [1, 0], [weight, 1])
-	  (w,H) = signal.freqz(third_h)
-	  [stop_band_atten, passband_ripple] =  measure_stopband_and_ripple(third_stage_bands, H);
-	  weight = weight / 1.01
+  plot_response(H, stage + "_stage" + ("_{}".format(name) if name else ""))
+  print("")
 
-	print("Third Stage ("+ name + ")")
-	print("Passband ripple:" + str(passband_ripple) + " dBs")
-	print("Stopband attenuation:" + str(stop_band_atten) + " dBs")
-	print("")
-	output_txt_file(third_h, third_stage_num_taps_per_phase, "third_stage_"+ name + "_h", name);
-	plot_response(H, "third_stage_div_"+ str(divider));
+################################################################################
 
+# Each entry generates a output
+third_stage_configs = [
+    [2,  0.35, 0.50, "div_2"],
+    [4,  0.4, 0.55, "div_4"],
+    [6,  0.4, 0.55, "div_6"],
+    [8,  0.4, 0.55, "div_8"],
+    [12, 0.4, 0.55, "div_12"]]
 
+args = parseArguments(third_stage_configs)
 
+# Do not change the following parameters
+first_stage_num_taps = 48
+second_stage_num_taps = 16
 
+# First stage
+bw = args.pdm_sample_rate
+sbw = args.first_stage_stop_bw
+nulls = bw/8.0
+generate_stage(
+  "first", first_stage_num_taps, [
+    0,
+    args.first_stage_pass_bw/bw,
+    (nulls*1-sbw)/bw,
+    (nulls*1+sbw)/bw,
+    (nulls*2-sbw)/bw,
+    (nulls*2+sbw)/bw,
+    (nulls*3-sbw)/bw,
+    (nulls*3+sbw)/bw,
+    (nulls*4-sbw)/bw,
+    0.5],
+    [1, 0, 0, 0, 0]
+  )
 
+# Second stage
+bw = args.pdm_sample_rate/8
+nulls = bw/4.0
+sbw = args.second_stage_stop_bw
+generate_stage(
+  "second", second_stage_num_taps, [
+    0,
+    args.second_stage_pass_bw/bw,
+    (nulls*1-sbw)/bw,
+    (nulls*1+sbw)/bw,
+    (nulls*2-sbw)/bw,
+    0.5],
+    [1, 0, 0]
+  )
 
+# Third Stage
+for (divider, normalised_pass, normalised_stop, name) in third_stage_configs:
+  generate_stage(
+    "third", args.third_stage_num_taps, [
+      0,
+      normalised_pass/divider,
+      normalised_stop/divider,
+      0.5],
+      [1, 0],
+      divider, name
+    )
