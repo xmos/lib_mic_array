@@ -2,7 +2,7 @@
 #ifndef PCM_FRAME_H_
 #define PCM_FRAME_H_
 
-#define MAX_NUM_MICS 8
+#define MAX_NUM_MICS 16
 #include <stdint.h>
 
 #include "mic_array_conf.h"

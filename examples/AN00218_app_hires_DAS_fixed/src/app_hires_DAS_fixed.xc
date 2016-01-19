@@ -15,7 +15,7 @@
 #include "i2c.h"
 #include "i2s.h"
 
-#define DF 6    //Decimation Factor
+#define DF 2    //Decimation Factor
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
@@ -78,7 +78,8 @@ static void set_dir(client interface led_button_if lb, unsigned dir, unsigned de
     }
     }
 }
-//TODO make these not global
+
+
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
@@ -92,18 +93,17 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
 
     #define MAX_DELAY 128
 
-        unsigned gain = 8*4096;
+        unsigned gain = 4;
         unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
         unsigned dir = 0;
         set_dir(lb, dir, delay);
 
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_6_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
+        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
         decimator_config dc[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
         decimator_configure(c_ds_output, 2, dc);
-
 
         decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
@@ -127,21 +127,21 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                                 dir = 5;
                             set_dir(lb, dir, delay);
                             printf("dir %d\n", dir+1);
-                            for(unsigned i=0;i<7;i++)
-                                printf("delay[%d] = %d\n", i, delay[i]);
-                            printf("\n");
+                            //for(unsigned i=0;i<7;i++)
+                           //     printf("delay[%d] = %d\n", i, delay[i]);
+                           // printf("\n");
 
                             hires_delay_set_taps(c_cmd, delay, 7);
 
                             break;
                         }
                         case 1:{
-                            gain = ((gain<<3) + gain)>>3;
+                            gain++;
                             printf("gain: %d\n", gain);
                             break;
                         }
                         case 2:{
-                            gain = ((gain<<3) - gain)>>3;
+                            gain--;
                             printf("gain: %d\n", gain);
                             break;
                         }
@@ -151,9 +151,9 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                                 dir = 0;
                             set_dir(lb, dir, delay);
                             printf("dir %d\n", dir+1);
-                            for(unsigned i=0;i<7;i++)
-                                printf("delay[%d] = %d\n", i, delay[i]);
-                            printf("\n");
+                            //for(unsigned i=0;i<7;i++)
+                            //    printf("delay[%d] = %d\n", i, delay[i]);
+                            //printf("\n");
                             hires_delay_set_taps(c_cmd, delay, 7);
                             break;
                         }
@@ -166,23 +166,19 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
             int output = 0;
             for(unsigned i=0;i<7;i++)
                 output += current->data[i][0];
-            output = ((uint64_t)output*gain)>>8;
+            output *= gain;
             c_audio <: output;
             c_audio <: output;
-            xscope_int(0, output);
         }
     }
 }
-
 
 #define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
 
 [[distributable]]
 void i2s_handler(server i2s_callback_if i2s,
-                 client i2c_master_if i2c, chanend c_audio)
-{
-
+                 client i2c_master_if i2c, chanend c_audio){
   p_rst_shared <: 0xF;
 
   i2c_regop_res_t res;
@@ -205,32 +201,26 @@ void i2s_handler(server i2s_callback_if i2s,
   data &= ~1;
   res = i2c.write_reg(i, 0x02, data); // Power up
 
-
   while (1) {
     select {
     case i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
-      /* Configure the I2S bus */
       i2s_config.mode = I2S_MODE_LEFT_JUSTIFIED;
       i2s_config.mclk_bclk_ratio = (MASTER_CLOCK_FREQUENCY/OUTPUT_SAMPLE_RATE)/64;
-
       break;
 
     case i2s.restart_check() -> i2s_restart_t restart:
-      // This application never restarts the I2S bus
       restart = I2S_NO_RESTART;
       break;
 
     case i2s.receive(size_t index, int32_t sample):
       break;
 
-
     case i2s.send(size_t index) -> int32_t sample:
       c_audio:> sample;
       break;
     }
   }
-};
-
+}
 
 int main(){
 

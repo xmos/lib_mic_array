@@ -5,7 +5,7 @@
 #include <string.h>
 
 #ifndef HIRES_MAX_DELAY
-    #define HIRES_MAX_DELAY 32
+    #define HIRES_MAX_DELAY 256
 #endif
 
 #pragma unsafe arrays
@@ -34,9 +34,9 @@ void hires_delay(
             head = 0;
 
         select {
-            case c_cmd :> int cmd :{
+            case c_cmd :> int num_channels :{
                 slave{
-                    for(unsigned i=0;i<8;i++){
+                    for(unsigned i=0;i<num_channels;i++){
                         c_cmd :> delays[i];
                     }
                 }
@@ -49,7 +49,7 @@ void hires_delay(
 
 #pragma unsafe arrays
 void hires_delay_set_taps(chanend c_cmd, unsigned delays[], unsigned num_channels){
-    c_cmd <: 0;
+    c_cmd <: num_channels;
     master{
         for(unsigned i=0;i<num_channels;i++){
             if(delays[i] < HIRES_MAX_DELAY)

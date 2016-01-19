@@ -36,6 +36,7 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
+//Based on the spreadsheet, given in the root directory of this app
 static const one_meter_thirty_degrees[6] = {0, 3, 8, 11, 8, 3};
 
 static void set_dir(client interface led_button_if lb, unsigned dir, unsigned delay[]){
@@ -91,9 +92,8 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
         unsigned buffer = 1;     //buffer index
         memset(audio, sizeof(frame_audio), 0);
 
-    #define MAX_DELAY 128
-
-        unsigned gain = 8*4096;
+    #define MAX_DELAY 16
+        unsigned gain = 8;
         unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
         int delay_buffer[MAX_DELAY][7];
         memset(delay_buffer, sizeof(int)*8*8, 0);
@@ -108,7 +108,6 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
             };
             decimator_configure(c_ds_output, 2, dc);
 
-
         decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
         while(1){
@@ -120,7 +119,6 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
                 delay_buffer[delay_head][i] = current->data[i][0];
 
             //light the LED for the current direction
-
             int t;
             select {
                 case lb.button_event():{
@@ -170,25 +168,21 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
             int output = 0;
             for(unsigned i=0;i<7;i++)
                 output += delay_buffer[(delay_head - delay[i])%MAX_DELAY][i];
-            output = ((uint64_t)output*gain)>>8;
+            output *= gain;
             c_audio <: output;
             c_audio <: output;
-            xscope_int(0, output);
             delay_head++;
             delay_head%=MAX_DELAY;
         }
     }
 }
 
-
 #define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
 
 [[distributable]]
 void i2s_handler(server i2s_callback_if i2s,
-                 client i2c_master_if i2c, chanend c_audio)
-{
-
+                 client i2c_master_if i2c, chanend c_audio){
   p_rst_shared <: 0xF;
 
   i2c_regop_res_t res;
@@ -211,32 +205,26 @@ void i2s_handler(server i2s_callback_if i2s,
   data &= ~1;
   res = i2c.write_reg(i, 0x02, data); // Power up
 
-
   while (1) {
     select {
     case i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
-      /* Configure the I2S bus */
       i2s_config.mode = I2S_MODE_LEFT_JUSTIFIED;
       i2s_config.mclk_bclk_ratio = (MASTER_CLOCK_FREQUENCY/OUTPUT_SAMPLE_RATE)/64;
-
       break;
 
     case i2s.restart_check() -> i2s_restart_t restart:
-      // This application never restarts the I2S bus
       restart = I2S_NO_RESTART;
       break;
 
     case i2s.receive(size_t index, int32_t sample):
       break;
 
-
     case i2s.send(size_t index) -> int32_t sample:
       c_audio:> sample;
       break;
     }
   }
-};
-
+}
 
 int main(){
 
