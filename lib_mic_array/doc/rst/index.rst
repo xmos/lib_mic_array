@@ -753,6 +753,6 @@ High resolution delay task
 Known Issues
 ------------
 
-  * Reduce channel count on decimators untested, set to 4.
+  * Reduced channel count on decimator_config untested, set to 4.
 
 .. include:: ../../../CHANGELOG.rst

@@ -1,15 +1,16 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
 #include "mic_array.h"
-#include <stdio.h>
 #include <xs1.h>
 #include <xclib.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <print.h>
 static int pseudo_random(unsigned &x){
     crc32(x, -1, 0xEB31D82E);
     return (int)x;
 }
+
+#if 0
 #pragma unsafe arrays
 static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length, const int val){
     long long y = 0;
@@ -20,6 +21,36 @@ static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned l
         data[i] = data[i-1];
     return y>>31;
 }
+#else
+
+
+static unsafe void add_to_filter(int * unsafe data, const unsigned length,
+        const int val, unsigned &n){
+    data[n] = val;
+    if ((n + 1) == length)
+        n=0;
+    else
+        n=n+1;
+}
+static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length,
+        const int val, unsigned &n){
+
+    long long y = 0;
+    data[n] = val;
+    for (unsigned i=0; i<length; i++)
+        y += (long long)coefs[i] * (long long)data[((length - i) + n) % length];
+
+    if ((n + 1) == length)
+        n=0;
+    else
+        n=n+1;
+    return y>>31;
+}
+#endif
+
+
+
+
 #define DF 12    //12 is the maximum I want to support
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
@@ -84,6 +115,9 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
     int second_stage_data[16][16];
     int third_stage_data[16][32*DF];
 
+    unsigned second_stage_n[16] = {0};
+    unsigned third_stage_n[16] = {0};
+
     int window[1<<(MAX_FRAME_SIZE_LOG2-1)];
     {
         unsigned x=0x9876543;
@@ -95,6 +129,13 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
     unsafe {
         while(1){
 
+            c_model :> int;
+            c_model <: 0;
+            int r;
+            c_model :> r;
+            if(r)
+                return;
+
             int * unsafe fir;
             int * unsafe debug_fir;
             unsigned df;
@@ -105,26 +146,31 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
             unsigned gain_comp[16];
             unsigned windowing_enabled;
             e_decimator_buffering_type buf_type;
-            c_model :> fir;
-            c_model :> debug_fir;
-            c_model :> df;
-            c_model :> fir_comp;
-            c_model :> frame_size_log2;
-            c_model :> index_bit_reversal;
-            c_model :> gain_comp_enabled;
-            for(unsigned i=0;i<16;i++)
-                c_model:> gain_comp[i];
-            c_model :> windowing_enabled;
-            c_model :> buf_type;
-
+            slave{
+                c_model :> fir;
+                c_model :> debug_fir;
+                c_model :> df;
+                c_model :> fir_comp;
+                c_model :> frame_size_log2;
+                c_model :> index_bit_reversal;
+                c_model :> gain_comp_enabled;
+                for(unsigned i=0;i<16;i++)
+                    c_model:> gain_comp[i];
+                c_model :> windowing_enabled;
+                c_model :> buf_type;
+            }
             int output[16][COUNT<<MAX_FRAME_SIZE_LOG2];
             memset(second_stage_data, 0, sizeof(int)*16*16);
             memset(third_stage_data, 0, sizeof(int)*32*DF*16);
             memset(output, 0, sizeof(int)*(COUNT<<MAX_FRAME_SIZE_LOG2)*16);
+            memset(second_stage_n, 0, sizeof(unsigned)*16);
+            memset(third_stage_n, 0, sizeof(unsigned)*16);
             int val[16];
 
 
             for(unsigned c=0;c<(COUNT<<frame_size_log2);c++){
+
+#if 0
                 for(unsigned r=0;r<df;r++){
                     for(unsigned p=0;p<4;p++){
 
@@ -142,18 +188,70 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                     for(unsigned i=0;i<channel_count;i++)
                         val[i] = filter(debug_fir, third_stage_data[i], 32*df, val[i]);
                 }
+#else
+                for(unsigned r=0;r<df-1;r++){
+                    for(unsigned p=0;p<3;p++){
 
-                //This needs to be generalised for channel_count
-                //this is to accomotate for the channel interleaving
-                /*
-                unsigned reorder_channels[8] = {0, 2, 4, 6, 1, 3, 5, 7};
-                if(channel_count==4){
-                    reorder_channels[0] = 0;
-                    reorder_channels[1] = 1;
-                    reorder_channels[2] = 2;
-                    reorder_channels[3] = 3;
+                        int data[16];
+                        for(unsigned i=0;i<channel_count;i++){
+                            data[i] = pseudo_random(x);
+                            add_to_filter(second_stage_data[i], 16, data[i], second_stage_n[i]);
+                        }
+                        for(unsigned i=0;i<4;i++){
+                            for(unsigned j=0;j<channel_count/4;j++){
+                                c_4x_pdm_mic[j] <: data[i*(channel_count/4)+j];
+                            }
+                        }
+                    }
+                    {
+
+                        int data[16];
+                        for(unsigned i=0;i<channel_count;i++){
+                            data[i] = pseudo_random(x);
+                            val[i] = filter(fir2_debug, second_stage_data[i], 16, data[i], second_stage_n[i]);
+                        }
+                        for(unsigned i=0;i<4;i++){
+                            for(unsigned j=0;j<channel_count/4;j++){
+                                c_4x_pdm_mic[j] <: data[i*(channel_count/4)+j];
+                            }
+                        }
+                    }
+                    for(unsigned i=0;i<channel_count;i++)
+                        add_to_filter(third_stage_data[i], 32*df, val[i], third_stage_n[i]);
                 }
-                */
+                {
+                    for(unsigned p=0;p<3;p++){
+
+                        int data[16];
+                        for(unsigned i=0;i<channel_count;i++){
+                            data[i] = pseudo_random(x);
+                            add_to_filter(second_stage_data[i], 16, data[i], second_stage_n[i]);
+                        }
+                        for(unsigned i=0;i<4;i++){
+                            for(unsigned j=0;j<channel_count/4;j++){
+                                c_4x_pdm_mic[j] <: data[i*(channel_count/4)+j];
+                            }
+                        }
+                    }
+                    {
+
+                        int data[16];
+                        for(unsigned i=0;i<channel_count;i++){
+                            data[i] = pseudo_random(x);
+                            val[i] = filter(fir2_debug, second_stage_data[i], 16, data[i], second_stage_n[i]);
+                        }
+                        for(unsigned i=0;i<4;i++){
+                            for(unsigned j=0;j<channel_count/4;j++){
+                                c_4x_pdm_mic[j] <: data[i*(channel_count/4)+j];
+                            }
+                        }
+                    }
+                    for(unsigned i=0;i<channel_count;i++)
+                        val[i] = filter(debug_fir, third_stage_data[i], 32*df, val[i], third_stage_n[i]);
+                }
+
+#endif
+
                 unsigned reorder_channels[16];
                 unsigned k=0;
                 for(unsigned i=0;i<channel_count;i+=4){
@@ -182,8 +280,6 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                                 if(index>>(frame_size_log2-1))
                                     index = (1<<frame_size_log2) -1- index;
 
-
-
                                 int w = window[index];
                                 v = apply_gain_comp(v, w);
                             } else {
@@ -210,10 +306,6 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                     c_model <: output[m][c];
                 }
             }
-            c_model <: 0;
-            int r;
-            c_model :> r;
-            if (r) return;
         }
     }
 }
@@ -229,8 +321,16 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
     }
 
     unsafe {
+
         while(1){
             //get the settings from the verifier
+
+            c_actual :> int;
+            c_actual <: 0;
+            int r;
+            c_actual :> r;
+            if(r)
+                return;
 
             int * unsafe fir;
             int * unsafe debug_fir;
@@ -242,18 +342,19 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
             unsigned gain_comp[16];
             unsigned windowing_enabled;
             e_decimator_buffering_type buf_type;
-            c_actual :> fir;
-            c_actual :> debug_fir;
-            c_actual :> df;
-            c_actual :> fir_comp;
-            c_actual :> frame_size_log2;
-            c_actual :> index_bit_reversal;
-            c_actual :> gain_comp_enabled;
-            for(unsigned i=0;i<16;i++)
-                c_actual:> gain_comp[i];
-            c_actual :> windowing_enabled;
-            c_actual :> buf_type;
-
+            slave{
+                c_actual :> fir;
+                c_actual :> debug_fir;
+                c_actual :> df;
+                c_actual :> fir_comp;
+                c_actual :> frame_size_log2;
+                c_actual :> index_bit_reversal;
+                c_actual :> gain_comp_enabled;
+                for(unsigned i=0;i<16;i++)
+                    c_actual:> gain_comp[i];
+                c_actual :> windowing_enabled;
+                c_actual :> buf_type;
+            }
             unsigned buffer;
 
             int output[16][COUNT<<MAX_FRAME_SIZE_LOG2];
@@ -303,7 +404,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                         if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
                                 for(unsigned m=0;m<channel_count/2;m++){
-                                    //TODO compare to the previous buffer
+                                    //TODO compare to the previous buffer - if not windowing
                                     //output[2*m  ][index] = current->data[m][f].re;
                                     //output[2*m+1][index] = current->data[m][f].im;
                                 }
@@ -353,7 +454,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
                                 unsigned index = (c<<(frame_size_log2-1)) + f - (1<<(frame_size_log2-1));
                                 for(unsigned m=0;m<channel_count;m++){
-                                    //TODO compare to the previous buffer
+                                    //TODO compare to the previous buffer - if not windowing
                                     //output[m][(c<<frame_size_log2) + f] = current->data[m][f];
                                 }
                             }
@@ -373,10 +474,6 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                    c_actual <: output[m][c];
                }
            }
-           c_actual <: 0;
-           int r;
-           c_actual :> r;
-           if (r) return;
         }
     }
 }
@@ -388,17 +485,19 @@ static void send_settings(chanend  c_chan,
         unsigned gain[16], unsigned windowing_enabled,
         e_decimator_buffering_type buf_type){
     unsafe{
-        c_chan <: fir;
-        c_chan <: debug_fir;
-        c_chan <: df;
-        c_chan <: fir_comp;
-        c_chan <: frame_size_log2;
-        c_chan <: index_bit_reversal;
-        c_chan <: gain_comp_enabled;
-        for(unsigned i=0;i<16;i++)
-            c_chan <: gain[i];
-        c_chan <: windowing_enabled;
-        c_chan <: buf_type;
+        master {
+            c_chan <: fir;
+            c_chan <: debug_fir;
+            c_chan <: df;
+            c_chan <: fir_comp;
+            c_chan <: frame_size_log2;
+            c_chan <: index_bit_reversal;
+            c_chan <: gain_comp_enabled;
+            for(unsigned i=0;i<16;i++)
+                c_chan <: gain[i];
+            c_chan <: windowing_enabled;
+            c_chan <: buf_type;
+        }
 
     }
 }
@@ -456,12 +555,12 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                                         if((frame_size_log2 == 0) && (buf_type == DECIMATOR_HALF_FRAME_OVERLAP))
                                             continue;
 
-                                        if(test){
-                                            c_actual:> int;
-                                            c_model :> int;
-                                            c_actual <: 0;
-                                            c_model  <: 0;
-                                        }
+                                        c_actual <: 0;
+                                        c_model  <: 0;
+                                        c_actual:> int;
+                                        c_model :> int;
+                                        c_actual <: 0;
+                                        c_model  <: 0;
 
                                         send_settings(c_model, fir, debug_fir, df, fir_comp,
                                                 frame_size_log2, index_bit_reversal, gain_comp_enabled,
@@ -483,11 +582,10 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                                             }
                                         }
 
-                                        printf("%4d\n", test++);
-
                                         if(max_diff < 16){
 
                                         } else{
+                                            /*
                                             printf("%4d ", test++);
                                             printf("df: %2d ", df);
                                             printf("fir_comp: 0x%08x ", fir_comp);
@@ -496,7 +594,9 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                                             printf("windowing_enabled: %d ", windowing_enabled);
                                             printf("gain_comp_enabled: %d ", gain_comp_enabled);
                                             printf("e_decimator_buffering_type: %d ", buf_type);
-                                            printf(" FAIL\n");
+                                            */
+                                            printstrln(" FAIL\n");
+                                            delay_milliseconds(50);
                                             _Exit(1);
                                         }
                                     }
@@ -509,12 +609,16 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
         }
     }
 
+    c_actual <: 0;
+    c_model  <: 0;
     c_actual:> int;
     c_model :> int;
     c_actual <: 1;
     c_model  <: 1;
 
-    printf("Success: %d channels supported\n", channel_count);
+    printstr("Success: ");
+    printint(channel_count);
+    printstrln(" channels supported");
 }
 
 void channel_count_test(){
@@ -530,7 +634,7 @@ void channel_count_test(){
                     verifier(c_model, c_actual, c);
                 }
             }
-            printf("All done\n");
+            printstrln("All done\n");
             _Exit(0);
         }
         decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
