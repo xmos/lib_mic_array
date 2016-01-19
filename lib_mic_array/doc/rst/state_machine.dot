@@ -1,10 +1,14 @@
 digraph g {
 	
-	decimator_configure [label="decimator_configure()"];
-	decimator_init_audio [label="decimator_init_audio_frame()"];
-	decimator_get_next_audio_frame [label="decimator_get_next_audio_frame"]; 
-	decimator_init_complex [label="decimator_init_complex_frame()"];
-	decimator_get_next_complex_frame [label="decimator_get_next_complex_frame"]; 
+  program_start [label="Program start", shape=box];
+
+	decimator_configure [label="decimator_configure()", shape=box];
+	decimator_init_audio [label="decimator_init_audio_frame()", shape=box];
+	decimator_get_next_audio_frame [label="decimator_get_next_audio_frame", shape=box]; 
+	decimator_init_complex [label="decimator_init_complex_frame()", shape=box];
+	decimator_get_next_complex_frame [label="decimator_get_next_complex_frame", shape=box]; 
+  
+  program_start -> decimator_configure;
 
 	decimator_configure -> decimator_init_audio;
 	decimator_configure -> decimator_init_complex;
@@ -16,5 +20,5 @@ digraph g {
 
 	decimator_init_complex -> decimator_get_next_complex_frame;
 	decimator_get_next_complex_frame -> decimator_get_next_complex_frame;
-	decimator_get_next_complex_frame -> decimator_configure§
+	decimator_get_next_complex_frame -> decimator_configure
 }
