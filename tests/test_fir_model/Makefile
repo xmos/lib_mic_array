@@ -9,7 +9,7 @@ TARGET = XCORE-200-EXPLORER
 APP_NAME = test_fir_model
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_mic_array
+USED_MODULES = lib_mic_array lib_logging
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:
