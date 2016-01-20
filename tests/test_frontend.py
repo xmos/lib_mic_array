@@ -22,4 +22,3 @@ def do_frontend_test(channel_count, testlevel):
 def runtest():
     do_frontend_test(4, "smoke")
     do_frontend_test(8, "smoke")
-
