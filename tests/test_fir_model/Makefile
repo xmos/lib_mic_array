@@ -16,7 +16,7 @@ USED_MODULES = lib_mic_array lib_logging
 # XCC_XC_FLAGS, XCC_C_FLAGS, XCC_ASM_FLAGS, XCC_CPP_FLAGS
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-COMMON_FLAGS = -O2 -g -Wno-timing
+COMMON_FLAGS = -O2 -g -Wno-timing -DDEBUG_PRINT_ENABLE=1
 
 XCC_FLAGS_COUNT4 = $(COMMON_FLAGS) -DCOUNT=4
 XCC_FLAGS_COUNT64 = $(COMMON_FLAGS) -DCOUNT=64
