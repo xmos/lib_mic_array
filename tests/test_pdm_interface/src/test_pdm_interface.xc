@@ -200,7 +200,7 @@ void test4ch(){
 
 int main(){
 
-#ifdef TEST4CH
+#if CHANNELS == 4
     test4ch();
 #else
     test8ch();

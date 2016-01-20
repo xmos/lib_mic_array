@@ -16,7 +16,10 @@ USED_MODULES = lib_mic_array
 # XCC_XC_FLAGS, XCC_C_FLAGS, XCC_ASM_FLAGS, XCC_CPP_FLAGS
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-XCC_FLAGS = -O2 -g -Wno-timing
+COMMON_FLAGS = -O2 -g -Wno-timing
+
+XCC_FLAGS_CH4 = $(COMMON_FLAGS) -DCHANNELS=4
+XCC_FLAGS_CH8 = $(COMMON_FLAGS) -DCHANNELS=8
 
 # The XCORE_ARM_PROJECT variable, if set to 1, configures this
 # project to create both xCORE and ARM binaries.
