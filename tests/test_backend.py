@@ -7,7 +7,7 @@ def do_backend_test(frame_count, testlevel):
 
     binary = 'test_fir_model/bin/COUNT{fc}/test_fir_model_COUNT{fc}.xe'.format(fc=frame_count)
 
-    tester = xmostest.ComparisonTester(open('backend.expect'),
+    tester = xmostest.ComparisonTester(open('fir_model.expect'),
                                        'lib_mic_array',
                                        'lib_mic_array_backend_tests',
                                        'basic_test_%s'%testlevel,
