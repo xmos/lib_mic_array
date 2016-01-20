@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import xmostest
-import os
 
 def do_backend_test(frame_count, testlevel):
 
