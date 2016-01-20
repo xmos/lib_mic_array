@@ -9,8 +9,10 @@ def do_backend_test(frame_count, testlevel):
     binary = 'test_fir_model/bin/COUNT{ch}/test_fir_model_COUNT{ch}.xe'.format(ch=frame_count)
 
     tester = xmostest.ComparisonTester(open('backend.expect'),
-                                     'lib_mic_array', 'lib_mic_array_backend_tests',
-                                       'basic_test_%s'%testlevel, { 'frame_count':frame_count})
+                                       'lib_mic_array',
+                                       'lib_mic_array_backend_tests',
+                                       'basic_test_%s'%testlevel,
+                                       {'frame_count':frame_count})
 
     tester.set_min_testlevel(testlevel)
 
@@ -19,6 +21,6 @@ def do_backend_test(frame_count, testlevel):
                               tester = tester)
 
 def runtest():
-   do_backend_test(4, "smoke")
-   do_backend_test(64, "nightly")
+    do_backend_test(4, "smoke")
+    do_backend_test(64, "nightly")
 
