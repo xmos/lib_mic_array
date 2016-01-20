@@ -178,6 +178,25 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/xc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.xc.compiler.input.576741367" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
@@ -483,6 +502,25 @@
 									<listOptionValue builtIn="false" value="/home/andrew/vda_view/Installs/Linux/target/include/clang"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.c.compiler.input.c.1358792521" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
@@ -794,6 +832,25 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/clang&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/c++/v1&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src/fir}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_logging/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_xassert}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array/src}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.238096472" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>

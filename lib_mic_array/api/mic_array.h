@@ -42,7 +42,7 @@ void hires_delay(
         streaming chanend c_from_pdm_frontend[],
         streaming chanend c_to_decimator[],
         unsigned n,
-        chanend c_cmd);
+        streaming chanend c_cmd);
 
 /** Application side interface to high resolution delay.
  *
@@ -53,7 +53,7 @@ void hires_delay(
  *  \param delays         An array of the delays to be set. These must all be less than HIRES_MAX_DELAY.
  *  \param num_channels   The number of microphones. This is must be the same as the delays array.
  */
-void hires_delay_set_taps(chanend c_cmd, unsigned delays[], unsigned num_channels);
+void hires_delay_set_taps(streaming chanend c_cmd, unsigned delays[], unsigned num_channels);
 
 /** Four Channel decimator buffering type.
  *

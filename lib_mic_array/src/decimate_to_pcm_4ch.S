@@ -2,7 +2,6 @@
 	.section	.dp.data,"awd",@progbits
 	.text
 
-//#include "mic_array_defines.h"
 #include "mic_array_conf.h"
 
 #define EXCHANGE_BUFFERS 0
@@ -102,11 +101,7 @@
 #define S_D_PREV_Y_1 					1
 #define S_D_PREV_Y_2 					2
 #define S_D_PREV_Y_3 					3
-#define S_D_LONG_TERM_PREV_Y_0 			4
-#define S_D_LONG_TERM_PREV_Y_1 			5
-#define S_D_LONG_TERM_PREV_Y_2 			6
-#define S_D_LONG_TERM_PREV_Y_3 			7
-#define DC_ELIMINATE_STACK_SIZE 		16
+#define DC_ELIMINATE_STACK_SIZE 		8
 
 //frame
 #define S_FRAME_OFFSET (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
@@ -225,6 +220,7 @@
 #ifndef DC_OFFSET_DIVIDER_LOG2
 	#define DC_OFFSET_DIVIDER_LOG2 13
 #endif
+
 // r4 is used as a zero for the first lsub as the
 // lower bit is always a zero
 #define DC_OFFSET_REMOVAL(PREV_Y, REGISTER) \
@@ -237,6 +233,9 @@
 	lsub r8, r5, r5, r8, r4;\
 	lsub r8, r6, r6, r7, r8;\
 	std r6, r5, r4[PREV_Y]
+
+
+
 
 //r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
 #define APPLY_WINDOW_FN(P)\
@@ -313,12 +312,18 @@ decimate_to_pcm_4ch:
 	outct res[r1], 8		//we say we are ready
 	inct r2, res[r1]		//they say CONFIGURE_DECIMATOR
 
-	//TODO initialise the DC offset removal
+	// Initialise the DC offset removal.
+	ldaw r0, sp[S_DC_ELIMINATE];
+	ldc r1, 0
+	std r1, r1, r0[S_D_PREV_Y_0]
+	std r1, r1, r0[S_D_PREV_Y_1]
+	std r1, r1, r0[S_D_PREV_Y_2]
+	std r1, r1, r0[S_D_PREV_Y_3]
 
 configure:
 	DUALENTSP_lu6 0
 	//Initialise the stack -- TODO optimise this
-	ldc r0, (S_SETTINGS_OFFSET - S_SECOND_STAGE_DATA)/2
+	ldc r0, (S_DC_ELIMINATE - S_SECOND_STAGE_DATA)/2
 	{ldaw r1, sp[S_SECOND_STAGE_DATA];ldc r2, 0}
 stack_init_loop:
 	std r2, r2, r1[r0]

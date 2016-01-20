@@ -16,7 +16,7 @@ int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];    //double buffered
 
-void example(streaming chanend c_ds_output[2], chanend c_cmd){
+void example(streaming chanend c_ds_output[2], streaming chanend c_cmd){
 
     unsafe{
         unsigned buffer;
@@ -77,7 +77,7 @@ int main(){
             streaming chan c_pdm_to_hires[2];
             streaming chan c_hires_to_dec[2];
             streaming chan c_ds_output[2];
-            chan c_cmd;
+            streaming chan c_cmd;
 
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);

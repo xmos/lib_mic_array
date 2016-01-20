@@ -4,9 +4,9 @@
 #include <xs1.h>
 #include <stdlib.h>
 #include <print.h>
-#include <stdio.h>
 #include <string.h>
 #include <xclib.h>
+#include "debug_print.h"
 
 #include "fir_decimator.h"
 #include "mic_array.h"
@@ -79,19 +79,16 @@ static void set_dir(client interface led_button_if lb, unsigned dir, unsigned de
     }
 }
 
-
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 
 void hires_DAS_fixed(streaming chanend c_ds_output[2],
-        chanend c_cmd,
+        streaming chanend c_cmd,
         client interface led_button_if lb, chanend c_audio){
     unsafe {
-        unsigned buffer = 1;     //buffer index
+        unsigned buffer;
         memset(audio, sizeof(frame_audio), 0);
-
-    #define MAX_DELAY 128
 
         unsigned gain = 4;
         unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
@@ -103,7 +100,9 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
-        decimator_configure(c_ds_output, 2, dc);
+
+        decimator_configure(c_ds_output, 2,dc);
+
 
         decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
@@ -126,10 +125,10 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                             if(dir == -1)
                                 dir = 5;
                             set_dir(lb, dir, delay);
-                            printf("dir %d\n", dir+1);
-                            //for(unsigned i=0;i<7;i++)
-                           //     printf("delay[%d] = %d\n", i, delay[i]);
-                           // printf("\n");
+                            debug_printf("dir %d\n", dir+1);
+                            for(unsigned i=0;i<7;i++)
+                                debug_printf("delay[%d] = %d\n", i, delay[i]);
+                            debug_printf("\n");
 
                             hires_delay_set_taps(c_cmd, delay, 7);
 
@@ -137,12 +136,12 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                         }
                         case 1:{
                             gain++;
-                            printf("gain: %d\n", gain);
+                            debug_printf("gain: %d\n", gain);
                             break;
                         }
                         case 2:{
                             gain--;
-                            printf("gain: %d\n", gain);
+                            debug_printf("gain: %d\n", gain);
                             break;
                         }
                         case 3:{
@@ -150,10 +149,10 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                             if(dir == 6)
                                 dir = 0;
                             set_dir(lb, dir, delay);
-                            printf("dir %d\n", dir+1);
-                            //for(unsigned i=0;i<7;i++)
-                            //    printf("delay[%d] = %d\n", i, delay[i]);
-                            //printf("\n");
+                            debug_printf("dir %d\n", dir+1);
+                            for(unsigned i=0;i<7;i++)
+                                debug_printf("delay[%d] = %d\n", i, delay[i]);
+                            debug_printf("\n");
                             hires_delay_set_taps(c_cmd, delay, 7);
                             break;
                         }
@@ -241,7 +240,7 @@ int main(){
             streaming chan c_pdm_to_hires[2];
             streaming chan c_hires_to_dec[2];
             streaming chan c_ds_output[2];
-            chan c_cmd;
+            streaming chan c_cmd;
 
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
