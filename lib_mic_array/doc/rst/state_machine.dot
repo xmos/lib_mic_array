@@ -1,12 +1,12 @@
 digraph g {
 	
-  program_start [label="Program start", shape=box];
+  program_start [label="Program start"];
 
-	decimator_configure [label="decimator_configure()", shape=box];
-	decimator_init_audio [label="decimator_init_audio_frame()", shape=box];
-	decimator_get_next_audio_frame [label="decimator_get_next_audio_frame", shape=box]; 
-	decimator_init_complex [label="decimator_init_complex_frame()", shape=box];
-	decimator_get_next_complex_frame [label="decimator_get_next_complex_frame", shape=box]; 
+	decimator_configure [label="decimator_configure()"];
+	decimator_init_audio [label="decimator_init_audio_frame()"];
+	decimator_get_next_audio_frame [label="decimator_get_next_audio_frame"]; 
+	decimator_init_complex [label="decimator_init_complex_frame()"];
+	decimator_get_next_complex_frame [label="decimator_get_next_complex_frame"]; 
   
   program_start -> decimator_configure;
 

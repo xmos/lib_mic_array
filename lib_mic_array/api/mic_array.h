@@ -17,7 +17,7 @@
  *  \param c_4x_pdm_mic_0    The channel where the decimated PDM of microphones 0-3 will
  *                           be outputted.
  *  \param c_4x_pdm_mic_1    The channel where the decimated PDM of microphones 4-7 will
- *                           be outputted.
+ *                           be outputted. This can be null for 4 channel output.
  */
 void pdm_rx(
         in buffered port:32 p_pdm_mics,
@@ -57,7 +57,7 @@ void hires_delay_set_taps(chanend c_cmd, unsigned delays[], unsigned num_channel
 
 /** Four Channel decimator buffering type.
  *
- *  This type is used to describe the buffering mode. Note: to use a windowing function the COLA property
+ *  This type is used to describe the buffering mode. Note: to use a windowing function the constant-overlap-and-add property
  *  must be obeyed, i.e. Coef[n] = 1-Coef[N-n] where N is the array length. Only half the array need be
  *  specified as the windowing function is assumed symmetric.
  */
@@ -85,7 +85,7 @@ typedef struct {
 
     int apply_mic_gain_compensation; /**< Set to non-zero to apply microphone gain compensation. */
 
-    int fir_gain_compensation; /**< 1.4.27 format for the gain compensation for the three satges of FIR. */
+    int fir_gain_compensation; /**< 5.27 format for the gain compensation for the three satges of FIR. */
 
     e_decimator_buffering_type buffering_type;  /**< The buffering type used fopr frame exchange. */
 
