@@ -6,7 +6,7 @@ def do_backend_test(frame_count, testlevel):
 
     resources = xmostest.request_resource("xsim")
 
-    binary = 'test_fir_model/bin/COUNT{ch}/test_fir_model_COUNT{ch}.xe'.format(ch=frame_count)
+    binary = 'test_fir_model/bin/COUNT{fc}/test_fir_model_COUNT{fc}.xe'.format(fc=frame_count)
 
     tester = xmostest.ComparisonTester(open('backend.expect'),
                                        'lib_mic_array',
