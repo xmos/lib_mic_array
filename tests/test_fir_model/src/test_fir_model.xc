@@ -63,8 +63,6 @@ int data_3[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[FRAME_COUNT];
 frame_complex f_complex[FRAME_COUNT];
 
-#define COUNT 4
-
 #pragma unsafe arrays
 int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_buffering_type buf_type){
     if(buf_type == DECIMATOR_NO_FRAME_OVERLAP){
