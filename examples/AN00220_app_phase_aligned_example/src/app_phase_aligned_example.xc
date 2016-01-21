@@ -54,14 +54,12 @@ void example(streaming chanend c_ds_output[2]){
         while(1){
 
             //The final argument is set to two to reflect that frame_audio audio[2]; is size 2 also.
-            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+            frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
             //buffer and audio should never be accessed.
 
             int ch0_sample0 = current->data[0][0];
             int ch1_sample0 = current->data[1][0];
-
-
         }
     }
 }
@@ -69,13 +67,13 @@ void example(streaming chanend c_ds_output[2]){
 int main(){
     par{
         on tile[0]:{
-            streaming chan c_pdm_to_dec[2];
-            streaming chan c_ds_output[2];
-
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
+
+            streaming chan c_pdm_to_dec[2];
+            streaming chan c_ds_output[2];
 
             par{
                 pdm_rx(p_pdm_mics, c_pdm_to_dec[0], c_pdm_to_dec[1]);
