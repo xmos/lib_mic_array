@@ -13,9 +13,9 @@ The high resolution delay example
 ---------------------------------
 
 The example in this note uses the microphone array library and shows a simple program
-that interfaces to to the PDM microphones, decimates the PDM and finally packs it into frames.
+that interfaces to the PDM microphones, decimates the PDM and finally packs it into frames.
 
-To start using the microphone array library library, you need to add ``lib_mic_array`` to
+To start using the microphone array library you need to add ``lib_mic_array`` to
 your ``Makefile``::
 
         USED_MODULES = ... lib_mic_array ...
@@ -23,14 +23,14 @@ your ``Makefile``::
 You can then access the microphone array library functions in your source code via
 the ``lib_mic_array.h`` header file::
 
-	#include ""lib_mic_array.h""
+	#include "lib_mic_array.h"
 
 Demo Hardware Setup
 ------------------- 
 
-	#. Connect the xTAG-2 or xTAG-3 to Microphone array ref design v1.
+	#. Connect the xTAG-2 or xTAG-3 to Microphone Array Ref Design v1.
 	#. Connect the xTAG-2 or xTAG-3 USB connector to the USB connector on your development PC using a USB cable. 
-	#. Connect the Microphone array ref design v1 to your development PC using another USB cable. 
+	#. Connect the Microphone Array Ref Design v1 to your development PC using another USB cable. 
 
 Launching the demo application
 ------------------------------
@@ -38,7 +38,7 @@ Once the application source code is imported into the tools you can then build t
 which will generate the binary file required to run the demo application.
 
 Once the application has been built you need to download the application binary
-code onto the xCORE microphone array ref design v1. Here you use the tools to load the application 
+code onto the Microphone Array Ref Design v1. Here you use the tools to load the application 
 over JTAG onto the xCORE multicore microcontroller.
 
 Then click **Run**.
@@ -51,7 +51,7 @@ Task setup
 
 The PDM microphones interface task, high resolution delay task and the decimators have to be connected 
 together and to the application (``example()``). There needs to be one ``decimate_to_pcm_4ch()`` task per
-every four channels that need processing. The needs to be one ``hires_delay`` task per eight channels.
+four channels that need processing. There needs to be one ``hires_delay`` task per eight channels.
 The PDM interface task, ``pdm_rx()`` can process eight channels so only one is needed per eight channels. 
 The PDM interface needs to be connected to the high resolution interface via two streaming channels and 
 connected to the two decimators via streaming channels. Finally, the decimators have to be connected to 
@@ -69,9 +69,11 @@ Or represented in code as::
   streaming chan c_ds_output[2];
   chan c_cmd;
 
+  ...
+
   par{
     pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
-    hires_delay(c_pdm_to_hires,c_hires_to_dec, 2, c_cmd);
+    hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
     decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
     decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
     example(c_ds_output, c_cmd);
@@ -94,7 +96,8 @@ bytes. The data must also be double word aligned. For example::
   int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
   int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 
-Also the frame memory must also be a double word aligned array of length of at least 2.   
+Also the frame memory must also be a double word aligned array of length of at least 2.
+Note that on the xCORE-200 all global arrays are guaranteed to be double-word aligned.
 
 Configuration
 -------------
@@ -102,14 +105,16 @@ Configuration
 Configuration for the example is achieved through::
 
    decimator_config_common dcc = {
-                  0, // frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
+                  0, // Frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
                   1, // DC offset elimination is turned on
                   0, // Index bit reversal is off
                   0, // No windowing function is being applied
                   DF,// The decimation factor is set to 6
                   g_third_16kHz_fir, //This corresponds to a 16kHz output hence this coef array is used
                   0, // Gain compensation is turned off
-                  0  // FIR compensation is turned off
+                  0  // FIR compensation is turned offspecified to be 
+                  DECIMATOR_NO_FRAME_OVERLAP, //Frame over lapping is turned off
+                  2  // There are 2 buffers in the audio array
           };
           decimator_config dc[2] = {
                   {
@@ -130,11 +135,11 @@ Configuration for the example is achieved through::
 All configuration options are enumerated in the Microphone array library. Once configured 
 then the decimators require initialization via::
   
-  decimator_init_audio_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
+  decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
 The the decimators will start presenting samples in the form of frames that can be accessed with::
 
-  frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
+  frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
   
 The return value of the above is a pointer to the frame that the application (``example()``) is allowed 
 to access. The ``current`` structure contains the frame data in the ``data`` member. ``data`` is a 2D array
@@ -148,7 +153,7 @@ Updating the delays
 The high resolution delay task is initially set to delay by a zero 384kHz clock cycles. Each channel can 
 be delayed by up to HIRES_MAX_DELAY (default 32) samples at a sample rate of 384kHz. Setting of the taps
 is done through the function ``hires_delay_set_taps();`` which will do an atomic update of all the 
-active delay lines tap positions at once.
+active delay lines tap positions.
 		  
 |newpage|
 

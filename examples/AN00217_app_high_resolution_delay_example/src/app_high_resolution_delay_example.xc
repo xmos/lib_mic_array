@@ -22,16 +22,16 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd){
         unsigned buffer;
 
             decimator_config_common dcc = {
-                    0, // frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
+                    0, // Frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
                     1, // DC offset elimination is turned on
                     0, // Index bit reversal is off
                     0, // No windowing function is being applied
                     DF,// The decimation factor is set to 6
                     g_third_stage_div_6_fir, //This corresponds to a 16kHz output hence this coef array is used
                     0, // Gain compensation is turned off
-                    0,  // FIR compensation is turned off
+                    0, // FIR compensation is turned off
                     DECIMATOR_NO_FRAME_OVERLAP, //Frame over lapping is turned off
-                    2   //There are 2 buffers in the audio array
+                    2  // There are 2 buffers in the audio array
             };
             decimator_config dc[2] = {
                     {
@@ -54,14 +54,12 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd){
 
         while(1){
             //The final argument is set to two to reflect that frame_audio audio[2]; is size 2 also.
-            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+            frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
             //buffer and audio should never be accessed.
 
             int ch0_sample0 = current->data[0][0];
             int ch1_sample0 = current->data[1][0];
-
-
 
             //delays can be change anything by calling
             unsigned delays[7] = {0, 1, 2, 3, 4, 5, 6};
