@@ -504,13 +504,46 @@ decimator configurations.
 
 The output of the decimator is 32bit PCM audio at the requested sample rate. 
  
+Intended usage model
+--------------------
+
+The library has been designed with the intention of being able to dynamically 
+change sample rates and other configurations, however, for minimal memory 
+footprint choosing a single output rate means the fewest FIR coefficient 
+end up in the binary.
+A typical code structure will contain the following::
+
+	unsigned buffer;
+    decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+
+	while(1){
+		frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+
+
+	}
+ 
+The ``buffer`` variable is not intended to be used by the application, it is an index used 
+by ``lib_mic_array`` for keeping track of ownership of the frame buffers. 
+The pointer to the current frame, or latest frame, ``current`` is a pointer to a frame that the 
+application is allowed to access. When a frame buffer is of size N is being used then in non-frame 
+overlapping mode the user has up to N-1 frames that are possible to be accessed (one is always
+in the possession of the decimators). In half frame overlapping mode there would be N-2 
+frames avaliable to the application as two are always in the possession of the decimators.
+
+When a reconfigure is performed then there will be a short interval (to flush the FIR data buffers)
+before the audio continue.
+
+Overlapping frames are supported so that frequency domain algorithms can be converted back into the 
+time domain without artifacts. See ``lib_dsp`` for FFT functions.
+ 
+ 
 DC offset removal
 -----------------
 
 The DC offset removal is implemented as a single pole IIR high pass filer obeying the 
 relation::
 
-  Yn+1 = Yn * alpha + x
+  Y[n] = Y[n-1] * alpha + x[n] - x[n-1]
 
 Where ``alpha`` is defined as ``1 - 2^DC_OFFSET_DIVIDER_LOG2``. Increasing ``DC_OFFSET_DIVIDER_LOG2``
 will increase the stability of the filter and decrease the cut off point at the cost of slow settling
@@ -651,12 +684,14 @@ Note, globally declared memory is always double word aligned.
 Example Applications
 --------------------
 
-A worked example of a
-fixed beam delay and sum beam-former given in the application
-``example_lores_DAS_fixed``. Also examples of of how to set up high 
-resolution delayed sampling can be seen in the high resolution fixed 
-beam delay and sum beam-former given in the application
-``example_hires_DAS_fixed``. 
+Two stand alone applications showing the minimum code required to build a functioning
+microphone array are given in ``AN00217_app_high_resolution_delay_example`` and in 
+``AN00220_app_phase_aligned_example``. 
+
+A worked example of a fixed beam delay and sum beam-former given in the application
+``AN00219_app_lores_DAS_fixed``. Also examples of of how to set up high resolution delayed 
+sampling can be seen in the high resolution fixed beam delay and sum beam-former given 
+in the application ``AN00219_app_hires_DAS_fixed``. 
 
 API
 ---

@@ -55,7 +55,6 @@ void test_output(streaming chanend c_ds_output[2],
             };
             decimator_configure(c_ds_output, 2, dc);
 
-
         decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
         while(1){

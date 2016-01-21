@@ -8,6 +8,7 @@ lib_mic_array change log
   * FRAME_SIZE_LOG2 renamed MAX_FRAME_SIZE_LOG2
   * Decimator interface now takes arrays of streaming channels
   * Decimators now take channel count as a parameter
+  * Added filter designer script
   * Documentation updates
   * First stage now uses a FIR decimator
   * Changed decimation flow
