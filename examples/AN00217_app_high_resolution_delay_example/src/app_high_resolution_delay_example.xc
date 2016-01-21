@@ -68,33 +68,30 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd){
     }
 }
 
-int main(){
+int main() {
 
-    par{
+    par {
         on tile[0]: {
-            streaming chan c_pdm_to_hires[2];
-            streaming chan c_hires_to_dec[2];
-            streaming chan c_ds_output[2];
-            streaming chan c_cmd;
-
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
 
-            unsafe {
-                par{
-                    pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
+            streaming chan c_pdm_to_hires[2];
+            streaming chan c_hires_to_dec[2];
+            streaming chan c_ds_output[2];
+            streaming chan c_cmd;
 
-                    hires_delay(c_pdm_to_hires,
-                            c_hires_to_dec, 2, c_cmd);
+            par {
+                pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
 
-                    decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
-                    decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+                hires_delay(c_pdm_to_hires,
+                        c_hires_to_dec, 2, c_cmd);
 
-                    example(c_ds_output, c_cmd);
-                    par(int i=0;i<3;i++)while(1);
-                }
+                decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
+                decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+
+                example(c_ds_output, c_cmd);
             }
         }
     }
