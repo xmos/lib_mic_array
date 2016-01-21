@@ -97,11 +97,17 @@
 
 //Note: this will survive a reconfig
 #define S_DC_ELIMINATE 					(S_OUTPUT_STORAGE+S_OUTPUT_STORAGE_SIZE)
-#define S_D_PREV_Y_0 					0
-#define S_D_PREV_Y_1 					1
-#define S_D_PREV_Y_2 					2
-#define S_D_PREV_Y_3 					3
-#define DC_ELIMINATE_STACK_SIZE 		8
+#define S_PREV_X_0						0
+#define S_PREV_X_1						1
+#define S_PREV_X_2						2
+#define S_PREV_X_3						3
+#define S_D_PREV_X_01					0
+#define S_D_PREV_X_23					1
+#define S_D_PREV_Y_0 					2
+#define S_D_PREV_Y_1 					3
+#define S_D_PREV_Y_2 					4
+#define S_D_PREV_Y_3 					5
+#define DC_ELIMINATE_STACK_SIZE 		12
 
 //frame
 #define S_FRAME_OFFSET (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
@@ -221,20 +227,14 @@
 	#define DC_OFFSET_DIVIDER_LOG2 13
 #endif
 
-// r4 is used as a zero for the first lsub as the
-// lower bit is always a zero
-#define DC_OFFSET_REMOVAL(PREV_Y, REGISTER) \
+#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
+	{ldw r7, r4[PREV_X]};\
+	{stw REGISTER, r4[PREV_X]; sub r7, REGISTER, r7};\
 	ldd r6, r5, r4[PREV_Y];\
-	ashr r7, r6, 1;\
-	ashr r8, REGISTER, 1;\
-	{sub r7, r7, r8; ldc r9, 32 - DC_OFFSET_DIVIDER_LOG2};\
-	{shl r8, r7, r9; ldc r9, DC_OFFSET_DIVIDER_LOG2};\
-	ashr r7, r7, r9;\
-	lsub r8, r5, r5, r8, r4;\
-	lsub r8, r6, r6, r7, r8;\
-	std r6, r5, r4[PREV_Y]
-
-
+	{ldc r9, DC_OFFSET_DIVIDER_LOG2; add r8, r6, r7};\
+	ashr r6, r6, r9;\
+	sub REGISTER, r8, r6;\
+	std REGISTER, r5, r4[PREV_Y]
 
 
 //r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
@@ -315,6 +315,8 @@ decimate_to_pcm_4ch:
 	// Initialise the DC offset removal.
 	ldaw r0, sp[S_DC_ELIMINATE];
 	ldc r1, 0
+	std r1, r1, r0[S_D_PREV_X_01]
+	std r1, r1, r0[S_D_PREV_X_23]
 	std r1, r1, r0[S_D_PREV_Y_0]
 	std r1, r1, r0[S_D_PREV_Y_1]
 	std r1, r1, r0[S_D_PREV_Y_2]
@@ -555,17 +557,13 @@ post_process:
 	bf r4, dc_offset_removal_complete
 		ldaw r4, sp[S_DC_ELIMINATE]
 		dc_offset_removal_ch0:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, r0);
-		sub r0, r0, r6
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0);
 		dc_offset_removal_ch1:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, r1);
-		sub r1, r1, r6
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, r1);
 		dc_offset_removal_ch2:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, r2);
-		sub r2, r2, r6
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, r2);
 		dc_offset_removal_ch3:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, r3);
-		sub r3, r3, r6
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3);
 	dc_offset_removal_complete:
 
 #define COMP(REG)\
@@ -1059,7 +1057,7 @@ decimate_to_pcm_4ch_fir_impl:
 
 
 //This is for testing the DC offset elimination
-//int dc_eliminate_tester(int x, long long y)
+//void dc_eliminate_tester(int &x, long long &y)
 .globl	dc_eliminate_tester
 .align	8
 .type	dc_eliminate_tester,@function
@@ -1067,19 +1065,26 @@ decimate_to_pcm_4ch_fir_impl:
 dc_eliminate_tester:
 	.cfi_startproc
 	.issue_mode dual
-//TODO make this do the right thing
-	dualentsp 12
-	std r0, r1, sp[0]
-	std r2, r3, sp[1]
+	dualentsp 16
+
 	std r4, r5, sp[2]
 	std r6, r7, sp[3]
 	std r8, r9, sp[4]
 	std r10, r11, sp[5]
 
-	DC_OFFSET_REMOVAL(0, r0);
-	retsp 12
+	ldw r2, r0[0]
+	mov r4, r1
+	DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r2);
+	stw r2, r0[0]
+
+	ldd r4, r5, sp[2]
+	ldd r6, r7, sp[3]
+	ldd r8, r9, sp[4]
+	ldd r10, r11, sp[5]
+
+	retsp 16
 	.cc_bottom dc_eliminate_tester.function
-	.set	dc_eliminate_tester.nstackwords, 12
+	.set	dc_eliminate_tester.nstackwords, 16
 	.globl	dc_eliminate_tester.nstackwords
 	.set	dc_eliminate_tester.maxcores,1
 	.globl	dc_eliminate_tester.maxcores

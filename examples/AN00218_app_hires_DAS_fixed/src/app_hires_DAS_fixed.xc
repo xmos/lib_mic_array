@@ -164,10 +164,12 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
             }
             int output = 0;
             for(unsigned i=0;i<7;i++)
-                output += current->data[i][0];
+                output += (current->data[i][0]>>3);
             output *= gain;
             c_audio <: output;
             c_audio <: output;
+            xscope_int(0, output);
+
         }
     }
 }

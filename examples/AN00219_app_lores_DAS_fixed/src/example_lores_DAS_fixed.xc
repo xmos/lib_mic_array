@@ -167,7 +167,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
             }
             int output = 0;
             for(unsigned i=0;i<7;i++)
-                output += delay_buffer[(delay_head - delay[i])%MAX_DELAY][i];
+                output += (delay_buffer[(delay_head - delay[i])%MAX_DELAY][i]>>3);
             output *= gain;
             c_audio <: output;
             c_audio <: output;
