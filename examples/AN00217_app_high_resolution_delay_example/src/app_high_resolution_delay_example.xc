@@ -61,7 +61,7 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
             int ch0_sample0 = current->data[0][0];
             int ch1_sample0 = current->data[1][0];
 
-            // Update the delays. Delay values must be in range 0..MIRES_MAX_DELAY
+            // Update the delays. Delay values must be in range 0..HIRES_MAX_DELAY
             unsigned delays[7] = {0, 1, 2, 3, 4, 5, 6};
             hires_delay_set_taps(c_cmd, delays, 7);
         }

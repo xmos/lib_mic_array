@@ -12,6 +12,7 @@
 #include "i2c.h"
 #include "i2s.h"
 
+//If the decimation factor is changed the the coefs array of decimator_config must also be changed.
 #define DF 2    //Decimation Factor
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
@@ -32,6 +33,8 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
+// Based on the spreadsheet mic_array_das_beamformer_calcs.xls,
+// which can be found in the root directory of this app
 static const one_meter_thirty_degrees[6] = {0, 45, 132, 175, 132, 45};
 
 static void set_dir(client interface led_button_if lb,

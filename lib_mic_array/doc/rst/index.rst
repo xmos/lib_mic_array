@@ -3,8 +3,14 @@
 Overview
 --------
 
+This guide is designed so that the user can understand how to use ``lib_mic_array``
+by reading up to :ref:`section_examples`. :ref:`section_dc` and on are designed to explain 
+implementation details of ``lib_mic_array``, but do not need to be understood to use 
+it effectively.
+
 Up to eight PDM microphones can be attached to each high channel count PDM
-interface(``pdm_rx()``). The interface requires either two:
+interface(``pdm_rx()``). One or two processing threads, ``decimate_to_pcm_4ch()``, 
+each process up to four channels. The interface requires either two:
 
   .. figure:: chan1-4.pdf
 	:width: 100%
@@ -19,8 +25,7 @@ Or three logical cores as shown below:
             Five to eight count PDM interface
 
 The left most task, ``pdm_rx()``, samples 8 microphones and filters the data to provide up to
-eight 384 KHz data streams, split in two streams of four channels. One or two
-processing threads, ``decimate_to_pcm_4ch()``, each process up to four channels. The processing thread
+eight 384 KHz data streams, split in two streams of four channels. The processing thread
 decimates the signal to a user chosen sample rate (one of 48, 24, 16, 12,
 or 8 KHz). If more than 8 channels are required then another ``pdm_rx`` task can be created.
 After the decimation to the output sample rate the sequence of steps takes place:
@@ -128,7 +133,7 @@ All PDM microphone functions are accessed via the ``mic_array.h`` header::
 You also have to add ``lib_mic_array`` to the
 ``USED_MODULES`` field of your application Makefile.
 
-An project must also include an extra header``mic_array_conf.h`` which is used 
+An project must also include an extra header ``mic_array_conf.h`` which is used 
 to describe the mandatory configuration described later in this document.
 
 The PDM microphone interface and 4-channel decimators are instantiated as 
@@ -143,7 +148,6 @@ connect to the PDM interface via streaming channels::
   out port            p_pdm_clk   = XS1_PORT_1F;
   
   int main() {
-     par {
         streaming chan c_pdm_to_dec[2];
         streaming chan c_ds_output[2];
     
@@ -154,12 +158,13 @@ connect to the PDM interface via streaming channels::
     
         par {
             pdm_rx(p_pdm_mics, c_pdm_to_dec[0], c_pdm_to_dec[1]);
+
             decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0]);
             decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1]);
+
             application(c_ds_output);
         }
-    }
-    return 0;
+        return 0;
   }
 
 There is a further requirement that any application of a ``decimate_to_pcm_4ch`` 
@@ -177,7 +182,6 @@ and the decimators, similar to the above, it is done in the following fashion::
   out port            p_pdm_clk   = XS1_PORT_1F;
   
   int main() {
-     par {
         streaming chan c_pdm_to_hires[2];
         streaming chan c_hires_to_dec[2];
         streaming chan c_ds_output[2];
@@ -190,13 +194,15 @@ and the decimators, similar to the above, it is done in the following fashion::
     
         par {
             pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
+
             hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
+
             decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
             decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+
             application(c_ds_output, c_cmd);
         }
-    }
-    return 0;
+        return 0;
   }
   
   
@@ -393,7 +399,7 @@ Optionally, `mic_array_conf.h`` may define
      The DC offset is removed with a high pass filter. ``DC_OFFSET_DIVIDER_LOG2``
 	 can be used to control the responsiveness of the filter vs the cut off frequency.
 	 The default is 13, but setting this will override it. The value must not exceed 31.
-	 See section DC offset removal for further explanation.
+	 See :ref:`section_dc` DC offset removal for further explanation.
 
    * HIRES_MAX_DELAY
 
@@ -536,7 +542,44 @@ before the audio continue.
 Overlapping frames are supported so that frequency domain algorithms can be converted back into the 
 time domain without artifacts. See ``lib_dsp`` for FFT functions.
  
+
+Frame and FIR memory
+--------------------
+
+For each decimator a block of memory must be allocated for storing FIR data. The size of the data 
+block must be::
+  
+  4 channels * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
+
+bytes. The data must also be double word aligned. For example, if the decimation factor was set to 
+``DECIMATION_FACTOR`` then the memory allocation for the FIR memory would look like::
+
+  int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR] = {0};
+  int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR] = {0};
+
+The FIR memory must also be initialized in order to prevent a spurious click during startup. 
+Normally initializing to all zeros is sufficient. Also the frame memory must also be a double 
+word aligned array of length of at least 2. 
+
+Note, globally declared memory is always double word aligned.
+
+
+.. _section_examples:
+
+Example Applications
+--------------------
+
+Two stand alone applications showing the minimum code required to build a functioning
+microphone array are given in ``AN00217_app_high_resolution_delay_example`` and in 
+``AN00220_app_phase_aligned_example``. 
+
+A worked example of a fixed beam delay and sum beam-former given in the application
+``AN00219_app_lores_DAS_fixed``. Also examples of of how to set up high resolution delayed 
+sampling can be seen in the high resolution fixed beam delay and sum beam-former given 
+in the application ``AN00219_app_hires_DAS_fixed``. 
  
+.. _section_dc:
+
 DC offset removal
 -----------------
 
@@ -658,40 +701,7 @@ Following the execution for ``fir_fesidn.py``, the coefficients generated (``*.f
 converted into ``fir_coefs.xc`` and``fir_decimator.h`` by running ``java -jar Generator.jar``. This takes 
 the raw coefficients and preprocesses them to maximise the dynamic range and efficiency within the compiled 
 application.
- 
 
-Frame and FIR memory
---------------------
-
-For each decimator a block of memory must be allocated for storing FIR data. The size of the data 
-block must be::
-  
-  4 channels * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
-
-bytes. The data must also be double word aligned. For example, if the decimation factor was set to 
-``DECIMATION_FACTOR`` then the memory allocation for the FIR memory would look like::
-
-  int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR] = {0};
-  int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR] = {0};
-
-The FIR memory must also be initialized in order to prevent a spurious click during startup. 
-Normally initializing to all zeros is sufficient. Also the frame memory must also be a double 
-word aligned array of length of at least 2. 
-
-Note, globally declared memory is always double word aligned.
-
-
-Example Applications
---------------------
-
-Two stand alone applications showing the minimum code required to build a functioning
-microphone array are given in ``AN00217_app_high_resolution_delay_example`` and in 
-``AN00220_app_phase_aligned_example``. 
-
-A worked example of a fixed beam delay and sum beam-former given in the application
-``AN00219_app_lores_DAS_fixed``. Also examples of of how to set up high resolution delayed 
-sampling can be seen in the high resolution fixed beam delay and sum beam-former given 
-in the application ``AN00219_app_hires_DAS_fixed``. 
 
 API
 ---
@@ -795,7 +805,7 @@ High resolution delay task
 Known Issues
 ------------
 
-  * Reduced channel count on decimator_config untested, must be set to 4.
+  * decimator_config channel count is tested for 4 channels per decimator, few than 4 is untested.
   * Generator currently under calculated the FIR compensation factor, use 0 (unity gain) until corrected.
 
 .. include:: ../../../CHANGELOG.rst

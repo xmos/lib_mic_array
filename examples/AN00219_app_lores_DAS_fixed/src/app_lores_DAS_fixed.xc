@@ -14,6 +14,7 @@
 #include "i2c.h"
 #include "i2s.h"
 
+//If the decimation factor is changed the the coefs array of decimator_config must also be changed.
 #define DF 2    // Decimation Factor
 
 on tile[0]:p_leds leds = DEFAULT_INIT;

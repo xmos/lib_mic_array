@@ -1,7 +1,7 @@
 lib_mic_array change log
 ========================
 
-0.0.3
+1.0.0
 -----
 
   * Major refactor
