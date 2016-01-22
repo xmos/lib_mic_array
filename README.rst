@@ -33,10 +33,15 @@ The microphone array library has the following features:
 Components
 ...........
 
- * PDM interface,
- * Four channel decimators,
- * High resolution delay block.
+ * PDM interface
+ * Four channel decimators
+ * High resolution delay block
+ 
+ Known Issues
+............
 
+ * Data from mic pairs 1/2 and 5/6 are swapped from expected ordering. i.e. indices 1/2 and 5/6 of frame_audio.data[] (#17167)
+   
 Software version and dependencies
 .................................
 
