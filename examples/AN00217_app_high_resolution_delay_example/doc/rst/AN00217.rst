@@ -21,14 +21,14 @@ your ``Makefile``::
         USED_MODULES = ... lib_mic_array ...
 
 You can then access the microphone array library functions in your source code via
-the ``lib_mic_array.h`` header file:
+the ``mic_array.h`` header file:
 
 .. literalinclude:: app_high_resolution_delay_example.xc
    :start-on: include "mic_array.h"
    :end-before: on tile
 
 Demo Hardware Setup
-------------------- 
+-------------------
 
 	#. Connect the xTAG-2 or xTAG-3 to Microphone Array Ref Design v1.
 	#. Connect the xTAG-2 or xTAG-3 USB connector to the USB connector on your development PC using a USB cable. 
@@ -61,7 +61,7 @@ the application.This gives the following task diagram:
 
   .. figure:: chan4-8hires.pdf
 	:width: 100%
-	    
+
 	Task diagram of the example
 
 Or represented in code as:
@@ -79,7 +79,7 @@ Frame memory
 
 For each decimator an block of memory must be allocated for storing FIR data. The size of the data 
 block must be::
-  
+
   Number of channels for that decimator * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
 
 bytes. The data must also be double word aligned. For example:
@@ -102,7 +102,7 @@ Configuration for the example is achieved through:
 
 All configuration options are enumerated in the Microphone array library. Once configured 
 then the decimators require initialization via:
-  
+
 .. literalinclude:: app_high_resolution_delay_example.xc
    :start-on: decimator_init_audio_frame
    :end-before: while(1)
@@ -111,14 +111,14 @@ The the decimators will start presenting samples in the form of frames that can 
 
 .. literalinclude:: app_high_resolution_delay_example.xc
    :start-on: decimator_get_next
-   :end-before: buffer and audio
+   :end-before: Buffer and audio
 
-The return value of the above is a pointer to the frame that the application (``example()``) is allowed 
+The return value of the above is a pointer to the frame that the application (``hires_DAS_fixed()``) is allowed 
 to access. The ``current`` structure contains the frame data in the ``data`` member. ``data`` is a 2D array
 with the first index denoting the channel number and the second index denoting the frame index. The frame
 index used 0 for the oldest samples and 2 to the power of ``dcc.frame_size_log2`` minus one as the newest
 samples.
-		  
+
 Updating the delays
 -------------------
 
@@ -126,12 +126,12 @@ The high resolution delay task is initially set to delay by a zero 384kHz clock 
 be delayed by up to HIRES_MAX_DELAY (default 32) samples at a sample rate of 384kHz. Setting of the taps
 is done through the function ``hires_delay_set_taps();`` which will do an atomic update of all the 
 active delay lines tap positions.
-		  
+
 |newpage|
 
 References
 ----------
-  
+
 .. nopoints::
 
   * XMOS Tools User Guide
@@ -141,7 +141,7 @@ References
   * XMOS xCORE Programming Guide
 
     http://www.xmos.com/published/xmos-programming-guide
-  
+
   * XMOS Microphone Array Library
 
     http://www.xmos.com/support/libraries/lib_mic_array
@@ -158,4 +158,3 @@ Source code for app_high_resolution_delay_example.xc
   :largelisting:
 
 |newpage|
-

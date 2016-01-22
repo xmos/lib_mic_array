@@ -21,17 +21,19 @@ your ``Makefile``::
         USED_MODULES = ... lib_mic_array ...
 
 You can then access the microphone array library functions in your source code via
-the ``lib_mic_array.h`` header file::
+the ``mic_array.h`` header file:
 
-	#include ""lib_mic_array.h""
+.. literalinclude:: example_lores_DAS_fixed.xc
+   :start-on: include "mic_array.h"
+   :end-before: include "mic_array_board_support.h"
 
 Demo Hardware Setup
-------------------- 
+-------------------
 
-	#. Connect the xTAG-2 or xTAG-3 to Microphone array ref design v1.
+	#. Connect the xTAG-2 or xTAG-3 to Microphone Array Ref Design v1.
 	#. Connect the xTAG-2 or xTAG-3 USB connector to the USB connector on your development PC using a USB cable. 
-	#. Connect the microphone array ref design v1 to your development PC using another USB cable. 
-	#. Connect the microphone array ref design v1 to your headphones.
+	#. Connect the Microphone Array Ref Design v1 to your development PC using another USB cable. 
+	#. Connect the Microphone Array Ref Design v1 to your headphones.
 
 Launching the demo application
 ------------------------------
@@ -40,105 +42,84 @@ Once the application source code is imported into the tools you can then build t
 which will generate the binary file required to run the demo application.
 
 Once the application has been built you need to download the application binary
-code onto the xCORE microphone array ref design v1. Here you use the tools to load the application 
+code onto the Microphone Array Ref Design v1. Here you use the tools to load the application 
 over JTAG onto the xCORE multicore microcontroller.
 
 Then click **Run**.
 
 Alternatively, from the command line build the application, by doing a call to ``xmake``, then 
-run using ``xrun --xscope app_lores_DAS_fixed.xe``. Nothing will happen.
- 
+run using ``xrun --xscope example_lores_DAS_fixed.xe``.  The output of the microphones should
+be heard through your headphones.
+
 Buttons ``A`` and ``D`` rotate the direction of the beam which is indicated by the LEDs.
-Buttons ``C`` and ``B`` increase and decrease the gain on the output signal respectively.
+Buttons ``B`` and ``C`` decrease and increase the gain on the output signal respectively.
 
 Task setup
 ----------
 
-The PDM microphones interface task and decimators have to be connected together 
-and to the application (``example()``). There needs to be one ``decimate_to_pcm_4ch()`` task per
-every four channels that need processing. The PDM interface task, ``pdm_rx()`` can process 
+The PDM microphones interface task and decimators have to be connected together
+and to the application (``lores_DAS_fixed()``). There needs to be one ``decimate_to_pcm_4ch()`` task per
+four channels that need processing. The PDM interface task, ``pdm_rx()`` can process 
 eight channels so only one is needed per eight channels. The PDM interface must be connected 
 to each of the decimators via a streaming channel. Finally, the decimators have to be 
-connected to the application. This gives the following task diagram::
+connected to the application. This gives the following task diagram:
 
-  streaming chan c_pdm_to_dec[2];
-  streaming chan c_ds_output[2];
+.. literalinclude:: example_lores_DAS_fixed.xc
+   :start-on: streaming chan c_4x_pdm_mic[2];
+   :end-on: lores_DAS_fixed
 
-  par{
-  	pdm_rx(p_pdm_mics, c_pdm_to_dec[0], c_pdm_to_dec[1]);
-  	decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0]);
-  	decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1]);
-  	example(c_ds_output);
-  }
-	
 Note that the decimators have to be on the same tile as the application due to shared frame memory.	
 
 Frame memory
 ------------
 
 For each decimator a block of memory must be allocated for storing FIR data. The size of the data 
-block must be::
-  
+block must be:
+
   Number of channels for that decimator * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
 
-bytes. The data must also be double word aligned. For example::
+bytes. The data must also be double word aligned. For example:
 
-  int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-  int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+.. literalinclude:: example_lores_DAS_fixed.xc
+   :start-on: int data_0
+   :end-on: int data_1
 
 Also the frame memory must also be a double word aligned array of length of at least 2.   
+Note that on the xCORE-200 all global arrays are guaranteed to be double-word aligned.
 
 Configuration
 -------------
 
-Configuration for the example is achieved through::
+Configuration for the example is achieved through:
 
-   decimator_config_common dcc = {
-                  0, // frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
-                  1, // DC offset elimination is turned on
-                  0, // Index bit reversal is off
-                  0, // No windowing function is being applied
-                  DF,// The decimation factor is set to 6
-                  g_third_16kHz_fir, //This corresponds to a 16kHz output hence this coef array is used
-                  0, // Gain compensation is turned off
-                  0  // FIR compensation is turned off
-          };
-          decimator_config dc[2] = {
-                  {
-                          &dcc,
-                          data_0,     // The storage area for the output decimator
-                          {INT_MAX, INT_MAX, INT_MAX, INT_MAX},  // Microphone gain compensation (turned off)
-                          4           // Enabled channel count
-                  },
-                  {
-                          &dcc,
-                          data_1,     // The storage area for the output decimator
-                          {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, // Microphone gain compensation (turned off)
-                          4           // Enabled channel count
-                  }
-          };
-          decimator_configure(c_ds_output, 2, dc);
+.. literalinclude:: example_lores_DAS_fixed.xc
+   :start-on: decimator_config_common
+   :end-on: decimator_configure
 
 All configuration options are enumerated in the Microphone array library. Once configured 
-then the decimators require initialization via::
-  
-  decimator_init_audio_frame(c_ds_output, 2, buffer, audio, DECIMATOR_NO_FRAME_OVERLAP);
+then the decimators require initialization via:
 
-The the decimators will start presenting samples in the form of frames that can be accessed with::
+.. literalinclude:: example_lores_DAS_fixed.xc
+   :start-on: decimator_init_audio_frame
+   :end-before: while(1)
 
-  frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, 2);
-  
-The return value of the above is a pointer to the frame that the application (``example()``) is allowed 
+The the decimators will start presenting samples in the form of frames that can be accessed with:
+
+.. literalinclude:: example_lores_DAS_fixed.xc
+   :start-on: decimator_get_next
+   :end-before: copy the current sample
+
+The return value of the above is a pointer to the frame that the application (``lores_DAS_fixed()``) is allowed 
 to access. The ``current`` structure contains the frame data in the ``data`` member. ``data`` is a 2D array
 with the first index denoting the channel number and the second index denoting the frame index. The frame
 index used 0 for the oldest samples and 2 to the power of ``dcc.frame_size_log2`` minus one as the newest
 samples.
-		  
+
 |newpage|
 
 References
 ----------
-  
+
 .. nopoints::
 
   * XMOS Tools User Guide
@@ -148,11 +129,11 @@ References
   * XMOS xCORE Programming Guide
 
     http://www.xmos.com/published/xmos-programming-guide
-  
+
   * XMOS Microphone Array Library
 
     http://www.xmos.com/support/libraries/lib_mic_array
-	
+
   * AN00162 - Using the I2S library
 
 |newpage|
@@ -161,11 +142,10 @@ References
 Full source code listing
 ------------------------
 
-Source code for app_lores_DAS_fixed.xc
-......................................
+Source code for example_lores_DAS_fixed.xc
+..........................................
 
-.. literalinclude:: app_lores_DAS_fixed.xc
+.. literalinclude:: example_lores_DAS_fixed.xc
   :largelisting:
 
 |newpage|
-

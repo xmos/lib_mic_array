@@ -2,12 +2,10 @@
 #include <xscope.h>
 #include <platform.h>
 #include <xs1.h>
-#include <stdlib.h>
-#include <print.h>
-#include <stdio.h>
 #include <string.h>
 #include <xclib.h>
 #include <stdint.h>
+#include "debug_print.h"
 
 #include "fir_decimator.h"
 #include "mic_array.h"
@@ -16,7 +14,7 @@
 #include "i2c.h"
 #include "i2s.h"
 
-#define DF 2    //Decimation Factor
+#define DF 2    // Decimation Factor
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
@@ -36,10 +34,12 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-//Based on the spreadsheet, given in the root directory of this app
+// Based on the spreadsheet mic_array_das_beamformer_calcs.xls,
+// which can be found in the root directory of this app
 static const one_meter_thirty_degrees[6] = {0, 3, 8, 11, 8, 3};
 
-static void set_dir(client interface led_button_if lb, unsigned dir, unsigned delay[]){
+static void set_dir(client interface led_button_if lb,
+                    unsigned dir, unsigned delay[]) {
 
     for(unsigned i=0;i<13;i++)
         lb.set_led_brightness(i, 0);
@@ -86,13 +86,13 @@ int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
 
 void lores_DAS_fixed(streaming chanend c_ds_output[2],
-        client interface led_button_if lb, chanend c_audio){
+        client interface led_button_if lb, chanend c_audio) {
 
     unsafe{
-        unsigned buffer = 1;     //buffer index
+        unsigned buffer = 1;     // buffer index
         memset(audio, sizeof(frame_audio), 0);
 
-    #define MAX_DELAY 16
+        #define MAX_DELAY 16
         unsigned gain = 8;
         unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
         int delay_buffer[MAX_DELAY][7];
@@ -101,24 +101,24 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
         unsigned dir = 0;
         set_dir(lb, dir, delay);
 
-            decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
-            decimator_config dc[2] = {
-                    {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                    {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
-            };
-            decimator_configure(c_ds_output, 2, dc);
+        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
+        decimator_config dc[2] = {
+          {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
+          {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+        };
+        decimator_configure(c_ds_output, 2, dc);
 
         decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
         while(1){
 
-            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+            frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
-            //copy the current sample to the delay buffer
+            // Copy the current sample to the delay buffer
             for(unsigned i=0;i<7;i++)
                 delay_buffer[delay_head][i] = current->data[i][0];
 
-            //light the LED for the current direction
+            // light the LED for the current direction
             int t;
             select {
                 case lb.button_event():{
@@ -127,38 +127,39 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
                     lb.get_button_event(button, pressed);
                     if(pressed == BUTTON_PRESSED){
                         switch(button){
-                        case 0:{
+                        case 0:
                             dir--;
                             if(dir == -1)
                                 dir = 5;
                             set_dir(lb, dir, delay);
-                            printf("dir %d\n", dir+1);
+                            debug_printf("dir %d\n", dir+1);
                             for(unsigned i=0;i<7;i++)
-                                printf("delay[%d] = %d\n", i, delay[i]);
-                            printf("\n");
+                                debug_printf("delay[%d] = %d\n", i, delay[i]);
+                            debug_printf("\n");
                             break;
-                        }
-                        case 1:{
-                            gain = ((gain<<3) + gain)>>3;
-                            printf("gain: %d\n", gain);
-                            break;
-                        }
-                        case 2:{
+
+                        case 1:
                             gain = ((gain<<3) - gain)>>3;
-                            printf("gain: %d\n", gain);
+                            debug_printf("gain: %d\n", gain);
                             break;
-                        }
-                        case 3:{
+
+                        case 2:
+                            if (gain == 0)
+                                gain = 5;
+                            gain = ((gain<<3) + gain)>>3;
+                            debug_printf("gain: %d\n", gain);
+                            break;
+
+                        case 3:
                             dir++;
                             if(dir == 6)
                                 dir = 0;
                             set_dir(lb, dir, delay);
-                            printf("dir %d\n", dir+1);
+                            debug_printf("dir %d\n", dir+1);
                             for(unsigned i=0;i<7;i++)
-                                printf("delay[%d] = %d\n", i, delay[i]);
-                            printf("\n");
+                                debug_printf("delay[%d] = %d\n", i, delay[i]);
+                            debug_printf("\n");
                             break;
-                        }
                         }
                     }
                     break;
@@ -182,7 +183,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
 
 [[distributable]]
 void i2s_handler(server i2s_callback_if i2s,
-                 client i2c_master_if i2c, chanend c_audio){
+                 client i2c_master_if i2c, chanend c_audio) {
   p_rst_shared <: 0xF;
 
   i2c_regop_res_t res;
@@ -226,7 +227,7 @@ void i2s_handler(server i2s_callback_if i2s,
   }
 }
 
-int main(){
+int main() {
 
     i2s_callback_if i_i2s;
     i2c_master_if i_i2c[1];
@@ -243,25 +244,24 @@ int main(){
         on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], c_audio);
 
         on tile[0]: {
-            streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
-            streaming chan c_ds_output[2];
-
-            interface led_button_if lb[1];
-
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
 
-            par{
+            streaming chan c_4x_pdm_mic[2];
+            streaming chan c_ds_output[2];
+
+            interface led_button_if lb[1];
+
+            par {
                 button_and_led_server(lb, 1, leds, p_buttons);
-                pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+                pdm_rx(p_pdm_mics, c_4x_pdm_mic[0], c_4x_pdm_mic[1]);
+                decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
+                decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
                 lores_DAS_fixed(c_ds_output, lb[0], c_audio);
             }
         }
     }
     return 0;
 }
-
