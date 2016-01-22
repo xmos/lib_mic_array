@@ -795,6 +795,7 @@ High resolution delay task
 Known Issues
 ------------
 
-  * Reduced channel count on decimator_config untested, set to 4.
+  * Reduced channel count on decimator_config untested, must be set to 4.
+  * Generator currently under calculated the FIR compensation factor, use 0 (unity gain) until corrected.
 
 .. include:: ../../../CHANGELOG.rst

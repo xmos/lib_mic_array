@@ -59,7 +59,7 @@ The PDM interface needs to be connected to the high resolution interface via two
 connected to the two decimators via streaming channels. Finally, the decimators have to be connected to 
 the application.This gives the following task diagram:
 
-  .. figure:: chan4-8.pdf
+  .. figure:: chan4-8hires.pdf
 	:width: 100%
 	    
 	Task diagram of the example
