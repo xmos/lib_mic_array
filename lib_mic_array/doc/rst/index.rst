@@ -464,7 +464,7 @@ following settings through ``decimator_config_common``:
   
 * ``apply_mic_gain_compensation``: Set this to ``1`` if microphone gain compensation is 
   required. The compensation applied is controlled through the
-  ``mic_gain_compensation`` arrayin ``decimator_config`` below.
+  ``mic_gain_compensation`` array in ``decimator_config`` below.
   
 * A windowing function can be passed in through ``windowing_function``. It is a pointer
   to an array of integers that defines the windowing operator. Each sample
@@ -528,7 +528,7 @@ The pointer to the current frame, or latest frame, ``current`` is a pointer to a
 application is allowed to access. When a frame buffer is of size N is being used then in non-frame 
 overlapping mode the user has up to N-1 frames that are possible to be accessed (one is always
 in the possession of the decimators). In half frame overlapping mode there would be N-2 
-frames avaliable to the application as two are always in the possession of the decimators.
+frames available to the application as two are always in the possession of the decimators.
 
 When a reconfigure is performed then there will be a short interval (to flush the FIR data buffers)
 before the audio continue.
