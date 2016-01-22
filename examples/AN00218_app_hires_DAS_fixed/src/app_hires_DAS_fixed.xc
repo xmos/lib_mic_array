@@ -159,7 +159,12 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
             for(unsigned i=0;i<7;i++)
                 output += (current->data[i][0]>>3);
             output *= gain;
-            lb.set_led_brightness(12, output >> 22);
+
+            // Update the center LED with a volume indicator
+            unsigned value = output >> 20;
+            unsigned magnitude = (value * value) >> 8;
+            lb.set_led_brightness(12, magnitude);
+
             c_audio <: output;
             c_audio <: output;
             xscope_int(0, output);

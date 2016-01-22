@@ -23,7 +23,7 @@ your ``Makefile``::
 You can then access the microphone array library functions in your source code via
 the ``mic_array.h`` header file:
 
-.. literalinclude:: example_lores_DAS_fixed.xc
+.. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: include "mic_array.h"
    :end-before: include "mic_array_board_support.h"
 
@@ -48,7 +48,7 @@ over JTAG onto the xCORE multicore microcontroller.
 Then click **Run**.
 
 Alternatively, from the command line build the application, by doing a call to ``xmake``, then 
-run using ``xrun --xscope example_lores_DAS_fixed.xe``.  The output of the microphones should
+run using ``xrun --xscope app_lores_DAS_fixed.xe``.  The output of the microphones should
 be heard through your headphones.
 
 Buttons ``A`` and ``D`` rotate the direction of the beam which is indicated by the LEDs.
@@ -64,7 +64,7 @@ eight channels so only one is needed per eight channels. The PDM interface must 
 to each of the decimators via a streaming channel. Finally, the decimators have to be 
 connected to the application. This gives the following task diagram:
 
-.. literalinclude:: example_lores_DAS_fixed.xc
+.. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: streaming chan c_4x_pdm_mic[2];
    :end-on: lores_DAS_fixed
 
@@ -80,7 +80,7 @@ block must be:
 
 bytes. The data must also be double word aligned. For example:
 
-.. literalinclude:: example_lores_DAS_fixed.xc
+.. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: int data_0
    :end-on: int data_1
 
@@ -92,20 +92,20 @@ Configuration
 
 Configuration for the example is achieved through:
 
-.. literalinclude:: example_lores_DAS_fixed.xc
+.. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: decimator_config_common
    :end-on: decimator_configure
 
 All configuration options are enumerated in the Microphone array library. Once configured 
 then the decimators require initialization via:
 
-.. literalinclude:: example_lores_DAS_fixed.xc
+.. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: decimator_init_audio_frame
    :end-before: while(1)
 
 The the decimators will start presenting samples in the form of frames that can be accessed with:
 
-.. literalinclude:: example_lores_DAS_fixed.xc
+.. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: decimator_get_next
    :end-before: copy the current sample
 
@@ -142,10 +142,10 @@ References
 Full source code listing
 ------------------------
 
-Source code for example_lores_DAS_fixed.xc
+Source code for app_lores_DAS_fixed.xc
 ..........................................
 
-.. literalinclude:: example_lores_DAS_fixed.xc
+.. literalinclude:: app_lores_DAS_fixed.xc
   :largelisting:
 
 |newpage|
