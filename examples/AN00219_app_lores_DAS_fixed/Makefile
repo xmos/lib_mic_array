@@ -6,7 +6,7 @@ TARGET = MIC-ARRAY-1V0
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to
 # the project name
-APP_NAME = example_lores_DAS_fixed
+APP_NAME = app_lores_DAS_fixed
 
 # The USED_MODULES variable lists other module used by the application.
 USED_MODULES = lib_i2c lib_i2s lib_mic_array lib_mic_array_board_support

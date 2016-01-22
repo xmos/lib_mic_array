@@ -170,6 +170,12 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
             for(unsigned i=0;i<7;i++)
                 output += (delay_buffer[(delay_head - delay[i])%MAX_DELAY][i]>>3);
             output *= gain;
+
+            // Update the center LED with a volume indicator
+            unsigned value = output >> 20;
+            unsigned magnitude = (value * value) >> 8;
+            lb.set_led_brightness(12, magnitude);
+
             c_audio <: output;
             c_audio <: output;
             delay_head++;
