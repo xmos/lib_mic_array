@@ -34,7 +34,8 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
 static const one_meter_thirty_degrees[6] = {0, 45, 132, 175, 132, 45};
 
-static void set_dir(client interface led_button_if lb, unsigned dir, unsigned delay[]) {
+static void set_dir(client interface led_button_if lb,
+                    unsigned dir, unsigned delay[]) {
 
     for(unsigned i=0;i<13;i++)
         lb.set_led_brightness(i, 0);
@@ -100,7 +101,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
 
             frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
-            //light the LED for the current directionction
+            // light the LED for the current directionction
 
             int t;
             select {
@@ -158,6 +159,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
             for(unsigned i=0;i<7;i++)
                 output += (current->data[i][0]>>3);
             output *= gain;
+            lb.set_led_brightness(12, output >> 22);
             c_audio <: output;
             c_audio <: output;
             xscope_int(0, output);

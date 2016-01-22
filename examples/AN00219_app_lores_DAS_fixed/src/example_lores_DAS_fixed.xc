@@ -14,7 +14,7 @@
 #include "i2c.h"
 #include "i2s.h"
 
-#define DF 2    //Decimation Factor
+#define DF 2    // Decimation Factor
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
@@ -34,10 +34,12 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-//Based on the spreadsheet, given in the root directory of this app
+// Based on the spreadsheet mic_array_das_beamformer_calcs.xls,
+// which can be found in the root directory of this app
 static const one_meter_thirty_degrees[6] = {0, 3, 8, 11, 8, 3};
 
-static void set_dir(client interface led_button_if lb, unsigned dir, unsigned delay[]){
+static void set_dir(client interface led_button_if lb,
+                    unsigned dir, unsigned delay[]) {
 
     for(unsigned i=0;i<13;i++)
         lb.set_led_brightness(i, 0);
@@ -87,7 +89,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio) {
 
     unsafe{
-        unsigned buffer = 1;     //buffer index
+        unsigned buffer = 1;     // buffer index
         memset(audio, sizeof(frame_audio), 0);
 
         #define MAX_DELAY 16
@@ -112,11 +114,11 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
 
             frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
-            //copy the current sample to the delay buffer
+            // Copy the current sample to the delay buffer
             for(unsigned i=0;i<7;i++)
                 delay_buffer[delay_head][i] = current->data[i][0];
 
-            //light the LED for the current direction
+            // light the LED for the current direction
             int t;
             select {
                 case lb.button_event():{
@@ -263,4 +265,3 @@ int main() {
     }
     return 0;
 }
-

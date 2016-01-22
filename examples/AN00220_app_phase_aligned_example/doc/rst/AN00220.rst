@@ -109,7 +109,7 @@ The the decimators will start presenting samples in the form of frames that can 
 
 .. literalinclude:: app_phase_aligned_example.xc
    :start-on: decimator_get_next
-   :end-before: buffer and audio
+   :end-before: Buffer and audio
 
 The return value of the above is a pointer to the frame that the application (``example()``) is allowed 
 to access. The ``current`` structure contains the frame data in the ``data`` member. ``data`` is a 2D array
