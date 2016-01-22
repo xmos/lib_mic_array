@@ -4,7 +4,7 @@
 #include <xclib.h>
 #include <stdlib.h>
 #include <string.h>
-#include <print.h>
+#include "debug_print.h"
 static int pseudo_random(unsigned &x){
     crc32(x, -1, 0xEB31D82E);
     return (int)x;
@@ -583,17 +583,15 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                                         if(max_diff < 16){
 
                                         } else{
-                                            /*
-                                            printf("%4d ", test++);
-                                            printf("df: %2d ", df);
-                                            printf("fir_comp: 0x%08x ", fir_comp);
-                                            printf("frame_size_log2: %d ", frame_size_log2);
-                                            printf("index_bit_reversal: %d ", index_bit_reversal);
-                                            printf("windowing_enabled: %d ", windowing_enabled);
-                                            printf("gain_comp_enabled: %d ", gain_comp_enabled);
-                                            printf("e_decimator_buffering_type: %d ", buf_type);
-                                            */
-                                            printstrln(" FAIL\n");
+                                            debug_printf("%4d ", test++);
+                                            debug_printf("df: %2d ", df);
+                                            debug_printf("fir_comp: 0x%08x ", fir_comp);
+                                            debug_printf("frame_size_log2: %d ", frame_size_log2);
+                                            debug_printf("index_bit_reversal: %d ", index_bit_reversal);
+                                            debug_printf("windowing_enabled: %d ", windowing_enabled);
+                                            debug_printf("gain_comp_enabled: %d ", gain_comp_enabled);
+                                            debug_printf("e_decimator_buffering_type: %d ", buf_type);
+                                            debug_printf(" FAIL\n");
                                             delay_milliseconds(50);
                                             _Exit(1);
                                         }
@@ -614,9 +612,7 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
     c_actual <: 1;
     c_model  <: 1;
 
-    printstr("Success: ");
-    printint(channel_count);
-    printstrln(" channels supported");
+    debug_printf("Success: %d channels supported\n", channel_count);
 }
 
 void channel_count_test(){
@@ -632,7 +628,7 @@ void channel_count_test(){
                     verifier(c_model, c_actual, c);
                 }
             }
-            printstrln("All done\n");
+            debug_printf("All done\n");
             _Exit(0);
         }
         decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
