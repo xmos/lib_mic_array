@@ -16,7 +16,7 @@ USED_MODULES = lib_i2c lib_i2s lib_mic_array lib_mic_array_board_support
 # XCC_XC_FLAGS, XCC_C_FLAGS, XCC_ASM_FLAGS, XCC_CPP_FLAGS
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-XCC_FLAGS = -O2 -g -Wno-timing
+XCC_FLAGS = -O2 -g
 
 # The XCORE_ARM_PROJECT variable, if set to 1, configures this
 # project to create both xCORE and ARM binaries.

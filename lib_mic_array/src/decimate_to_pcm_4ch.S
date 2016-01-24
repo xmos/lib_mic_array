@@ -6,39 +6,37 @@
 
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
-
-.xtacommand "analyse endpoints input_0_0 input_1_0","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_0_0_ep input_1_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-
-.xtacommand "analyse endpoints input_1_0 input_2_0","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_1_0_ep input_2_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_2_0 input_3_0","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_2_0_ep input_3_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_3_0 input_4_0","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_3_0_ep input_4_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_4_0 input_5_0","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_4_0_ep input_5_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_5_0 input_6_0","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_5_0_ep input_6_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_6_0 input_7_0","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_6_0_ep input_7_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_7_0 input_0_1","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_7_0_ep input_0_1_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_0_1 input_1_1","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_0_1_ep input_1_1_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_1_1 input_2_1","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_1_1_ep input_2_1_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_2_1 input_3_1","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_2_1_ep input_3_1_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_3_1 input_4_1","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_3_1_ep input_4_1_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_4_1 input_5_1","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_4_1_ep input_5_1_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_5_1 input_6_1","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_5_1_ep input_6_1_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_6_1 input_7_1","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_6_1_ep input_7_1_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-.xtacommand "analyse endpoints input_7_1 input_0_0","", __FILE__, __LINE__
+.xtacommand "analyse endpoints input_7_1_ep input_0_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
 #define SECOND_STAGE_COEF_COUNT 		16		//This must reflect the implementation in decimate_to_pcm_4ch_fir_impl
@@ -975,84 +973,10 @@ decimate_to_pcm_4ch_fir_impl:
 	.globl	decimate_to_pcm_4ch_fir_impl.maxchanends
 .Ldecimate_to_pcm_4ch_fir_impl_tmp:
 	.size	decimate_to_pcm_4ch_fir_impl, .Ldecimate_to_pcm_4ch_fir_impl_tmp-decimate_to_pcm_4ch_fir_impl
-	.cfi_endproc
+
+.cfi_endproc
 
 
-//endpoint section
-#define STRINGIZE(S) #S
-
-#define EP_MARCO(ID0, ID1) \
-	.ascii	STRINGIZE( input_ ## ID0 ## _ ## ID1 ## _ep ) ;\
-	.byte	0 ;\
-	.ascii	__FILE__ ;\
-	.byte	0 ;\
-	.long	__LINE__ ;\
-	.long	.Laddr_end ## ID0 ## _ ## ID1 -.Laddr_start ## ID0 ## _ ## ID1 ;\
-	.Laddr_start ## ID0 ## _ ## ID1 : ;\
-	.cc_top cc_ ## ID0 ## _ ## ID1,input_ ## ID0 ## _ ## ID1;\
-	.long	input_ ## ID0 ## _ ## ID1 ;\
-	.byte	0 ;\
-	.cc_bottom cc_ ## ID0 ## _ ## ID1 ;\
-	.Laddr_end ## ID0 ## _ ## ID1 :
-
-#define EPT_MARCO(ID0, ID1) \
-.cc_top cc_a ## ID0 ## _ ## ID1,input_ ## ID0 ## _ ## ID1;\
-	.ascii	"";\
-	.byte	0;\
-	.long	0;\
-	.long	input_ ## ID0 ## _ ## ID1;\
-.cc_bottom cc_a ## ID0 ## _ ## ID1
-
- /*
-	.section	.xtaendpoint,"",@progbits
-.Lentries_start0:
-	.long	.Lentries_end0-.Lentries_start0
-	.long	1
-	.ascii	".build"
-    .byte	0
-
-	EP_MARCO(0, 0)
-	EP_MARCO(1, 0)
-	EP_MARCO(2, 0)
-	EP_MARCO(3, 0)
-	EP_MARCO(4, 0)
-	EP_MARCO(5, 0)
-	EP_MARCO(6, 0)
-	EP_MARCO(7, 0)
-	EP_MARCO(0, 1)
-	EP_MARCO(1, 1)
-	EP_MARCO(2, 1)
-	EP_MARCO(3, 1)
-	EP_MARCO(4, 1)
-	EP_MARCO(5, 1)
-	EP_MARCO(6, 1)
-	EP_MARCO(7, 1)
-.Lentries_end0:
-
-	.section	.xtaendpointtable,"",@progbits
-.Lentries_start1:
-	.long	.Lentries_end1-.Lentries_start1
-	.long	0
-	.ascii	""
-	.byte	0
-	EPT_MARCO(0, 0)
-	EPT_MARCO(1, 0)
-	EPT_MARCO(2, 0)
-	EPT_MARCO(3, 0)
-	EPT_MARCO(4, 0)
-	EPT_MARCO(5, 0)
-	EPT_MARCO(6, 0)
-	EPT_MARCO(7, 0)
-	EPT_MARCO(0, 1)
-	EPT_MARCO(1, 1)
-	EPT_MARCO(2, 1)
-	EPT_MARCO(3, 1)
-	EPT_MARCO(4, 1)
-	EPT_MARCO(5, 1)
-	EPT_MARCO(6, 1)
-	EPT_MARCO(7, 1)
-.Lentries_end1:
-*/
 
 
 
@@ -1095,3 +1019,79 @@ dc_eliminate_tester:
 .Ldc_eliminate_tester_tmp:
 	.size	dc_eliminate_tester, .Ldc_eliminate_tester_tmp-dc_eliminate_tester
 	.cfi_endproc
+
+	//endpoint section
+
+#define STRINGIZE(S) #S
+
+#define EP_MARCO(ID, PASS) \
+	.ascii	STRINGIZE( input_ ## ID ## _ ## PASS ## _ep ) ;\
+	.byte	0 ;\
+	.ascii	"../src/test_lib_include.xc" ;\
+	.byte	0 ;\
+	.long	124 ;\
+	.long	.Laddr_end ## ID ## _ ## PASS ## -.Laddr_start ## ID ## _ ## PASS;\
+	.Laddr_start ## ID ## _ ## PASS : ;\
+	.cc_top cc_ ## ID ## _ ## PASS ## ,input_ ## ID ## _ ## PASS ;\
+	.long	input_ ## ID ## _ ## PASS ;\
+	.byte	0 ;\
+	.cc_bottom cc_ ## ID ## _ ## PASS ;\
+	.Laddr_end ## ID ## _ ## PASS :
+
+#define EPT_MARCO(ID, PASS) \
+.cc_top cc_a ## ID ## _ ## PASS,input_ ## ID ## _ ## PASS ;\
+	.ascii	"";\
+	.byte	0;\
+	.long	0;\
+	.long	input_ ## ID ## _ ## PASS;\
+.cc_bottom cc_a ## ID ## _ ## PASS
+
+	.section	.xtaendpoint,"",@progbits
+.Lentries_start0:
+	.long	.Lentries_end0-.Lentries_start0
+	.long	1
+	.ascii	"/home/andrew/lib_mic_array/tests/test_lib_include/.build"
+    .byte	0
+	EP_MARCO(0, 0)
+	EP_MARCO(1, 0)
+	EP_MARCO(2, 0)
+	EP_MARCO(3, 0)
+	EP_MARCO(4, 0)
+	EP_MARCO(5, 0)
+	EP_MARCO(6, 0)
+	EP_MARCO(7, 0)
+	EP_MARCO(0, 1)
+	EP_MARCO(1, 1)
+	EP_MARCO(2, 1)
+	EP_MARCO(3, 1)
+	EP_MARCO(4, 1)
+	EP_MARCO(5, 1)
+	EP_MARCO(6, 1)
+	EP_MARCO(7, 1)
+.Laddr_end9:
+
+.Lentries_end0:
+
+	.section	.xtaendpointtable,"",@progbits
+.Lentries_start1:
+	.long	.Lentries_end1-.Lentries_start1
+	.long	0
+	.ascii	""
+	.byte	0
+	EPT_MARCO(0, 0)
+	EPT_MARCO(1, 0)
+	EPT_MARCO(2, 0)
+	EPT_MARCO(3, 0)
+	EPT_MARCO(4, 0)
+	EPT_MARCO(5, 0)
+	EPT_MARCO(6, 0)
+	EPT_MARCO(7, 0)
+	EPT_MARCO(0, 1)
+	EPT_MARCO(1, 1)
+	EPT_MARCO(2, 1)
+	EPT_MARCO(3, 1)
+	EPT_MARCO(4, 1)
+	EPT_MARCO(5, 1)
+	EPT_MARCO(6, 1)
+	EPT_MARCO(7, 1)
+.Lentries_end1:
