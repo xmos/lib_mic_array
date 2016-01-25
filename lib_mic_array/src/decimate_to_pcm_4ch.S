@@ -235,8 +235,11 @@
 	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
     lsub r11, r6, r6, r9, r11; \
     {ldw r7, r4[PREV_X]};\
-    lsub r9, r8, REGISTER, r7, r4; 	comment(same here) \
-    {sext r9, 1;ldc r10, 16};\
+    ashr r9, REGISTER, 32;\
+    ashr r10, r7, 32;\
+    lsub r11, r8, REGISTER, r7, r4; 	comment(same here) \
+    lsub r11, r9, r9, r10, r11;\
+    {ldc r10, 16};\
     lextract r9, r9, r8, r10, 32;\
     {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
     lsub r11, r5, r5, r8, r4; 		comment(same here) \

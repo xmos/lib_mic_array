@@ -4,5 +4,6 @@
 
 #define MAX_FRAME_SIZE_LOG2 0
 
+#define DC_OFFSET_DIVIDER_LOG2 5
 
 #endif /* MIC_ARRAY_CONF_H_ */
