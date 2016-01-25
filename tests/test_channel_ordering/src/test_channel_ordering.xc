@@ -209,13 +209,15 @@ void test4ch_backend(){
     }
 
 }
-#define FRONTEND
 
 int main(){
 
-#ifdef FRONTEND
+#ifdef FRONTEND_8BIT_4CH
     test4ch_frontend();
-   // test8ch_frontend();
+#endif
+
+#ifdef FRONTEND_8BIT_8CH
+     test8ch_frontend();
 #endif
 
 #ifdef BACKEND

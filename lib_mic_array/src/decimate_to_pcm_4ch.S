@@ -1027,9 +1027,9 @@ dc_eliminate_tester:
 #define EP_MARCO(ID, PASS) \
 	.ascii	STRINGIZE( input_ ## ID ## _ ## PASS ## _ep ) ;\
 	.byte	0 ;\
-	.ascii	"../src/test_lib_include.xc" ;\
+	.ascii	"" ;\
 	.byte	0 ;\
-	.long	124 ;\
+	.long	0 ;\
 	.long	.Laddr_end ## ID ## _ ## PASS ## -.Laddr_start ## ID ## _ ## PASS;\
 	.Laddr_start ## ID ## _ ## PASS : ;\
 	.cc_top cc_ ## ID ## _ ## PASS ## ,input_ ## ID ## _ ## PASS ;\
@@ -1050,7 +1050,7 @@ dc_eliminate_tester:
 .Lentries_start0:
 	.long	.Lentries_end0-.Lentries_start0
 	.long	1
-	.ascii	"/home/andrew/lib_mic_array/tests/test_lib_include/.build"
+	.ascii	""
     .byte	0
 	EP_MARCO(0, 0)
 	EP_MARCO(1, 0)
