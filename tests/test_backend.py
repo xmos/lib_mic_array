@@ -15,7 +15,7 @@ def do_backend_test(frame_count, testlevel):
     tester = xmostest.ComparisonTester(open('fir_model.expect'),
                                        'lib_mic_array',
                                        'lib_mic_array_backend_tests',
-                                       'basic_test_%s'%testlevel,
+                                       'backend_test_%s'%testlevel,
                                        {'frame_count':frame_count})
 
     tester.set_min_testlevel(testlevel)

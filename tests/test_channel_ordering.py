@@ -10,7 +10,7 @@ def do_channel_ordering_test(test_name, testlevel):
     tester = xmostest.ComparisonTester(open('test_channel_ordering_{t}.expect'.format(t=test_name)),
                                        'lib_mic_array',
                                        'lib_mic_array_channel_ordering_tests',
-                                       'basic_test_%s'%testlevel,
+                                       'channel_ordering_test_%s'%testlevel,
                                        {'config':test_name})
 
     tester.set_min_testlevel(testlevel)

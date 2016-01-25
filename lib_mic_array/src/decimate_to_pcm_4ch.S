@@ -225,15 +225,24 @@
 	#define DC_OFFSET_DIVIDER_LOG2 13
 #endif
 
-#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
-	{ldw r7, r4[PREV_X]};\
-	{stw REGISTER, r4[PREV_X]; sub r7, REGISTER, r7};\
-	ldd r6, r5, r4[PREV_Y];\
-	{ldc r9, DC_OFFSET_DIVIDER_LOG2; add r8, r6, r7};\
-	ashr r6, r6, r9;\
-	sub REGISTER, r8, r6;\
-	std REGISTER, r5, r4[PREV_Y]
+#define comment(X)
 
+#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
+	ldd r6, r5, r4[PREV_Y];\
+	ldc r7, DC_OFFSET_DIVIDER_LOG2;\
+	ashr r9, r6, r7;\
+	lextract r8, r6, r5, r7, 32;\
+	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
+    lsub r11, r6, r6, r9, r11; \
+    {ldw r7, r4[PREV_X]};\
+    lsub r9, r8, REGISTER, r7, r4; 	comment(same here) \
+    {sext r9, 1;ldc r10, 16};\
+    lextract r9, r9, r8, r10, 32;\
+    {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
+    lsub r11, r5, r5, r8, r4; 		comment(same here) \
+    lsub r11, r6, r6, r9, r11;\
+	std r6, r5, r4[PREV_Y];\
+	lextract REGISTER, r6, r5, r10, 32
 
 //r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
 #define APPLY_WINDOW_FN(P)\

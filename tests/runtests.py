@@ -27,7 +27,6 @@ Tests the lib_mic_array backend, tests for:
  * windowing function application
  * frame size log2 of 0, 1, 2, 3 and 4
  * index bit reversal enabled/disbaled
- * NOT DC offset elimination
  * XTA elimination on unlinked code
 """)
 

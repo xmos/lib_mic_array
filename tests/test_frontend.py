@@ -10,7 +10,7 @@ def do_frontend_test(channel_count, testlevel):
     tester = xmostest.ComparisonTester(open('pdm_interface.expect'),
                                        'lib_mic_array',
                                        'lib_mic_array_frontend_tests',
-                                       'basic_test_%s'%testlevel,
+                                       'frontend_test_%s'%testlevel,
                                        {'channel_count':channel_count})
 
     tester.set_min_testlevel(testlevel)
