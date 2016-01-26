@@ -1,6 +1,14 @@
 lib_mic_array change log
 ========================
 
+1.0.1
+-----
+
+  * Added dynamic DC offset removal at startup to eliminate slow convergance
+  * Mute first 32 samples to allow DC offset to adapt before outputting signal
+  * Fixed XTA scripte to ensure timing is being met
+  * Now use a 64-bit accumulator for DC offset removal
+
 1.0.0
 -----
 

@@ -173,9 +173,9 @@ int main(){
                 decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
                 decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
                 test_output(c_ds_output, lb[0], c_audio);
+                par(int i=0;i<3;i++)while(1);
             }
         }
     }
     return 0;
 }
-

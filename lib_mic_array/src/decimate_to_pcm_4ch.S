@@ -39,6 +39,10 @@
 .xtacommand "analyse endpoints input_7_1_ep input_0_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
+#define DC_OFFSET_SAMPLE_SIGNAL_ENABLE 	32		//This is the sample number at which point the signal will be enabled
+#define DC_OFFSET_CONVERGANCE			4		//controls the rate of convergance of the dynamic DC offset
+												//higher settings are faster but more unstable.
+
 #define SECOND_STAGE_COEF_COUNT 		16		//This must reflect the implementation in decimate_to_pcm_4ch_fir_impl
 #define THIRD_STAGE_COEFS_PER_STAGE 	32		//This must reflect the implementation in third_stage_fir_impl
 #define THIRD_STAGE_COEFS_PER_ROW 		63		//This must reflect the implementation in third_stage_fir_impl
@@ -50,13 +54,18 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-#define S_STORAGE 			0
-#define S_UNUSED			0
-#define S_C_INPUT 			1
-#define S_C_OUTPUT 			2
-#define S_CHAN_COUNT 	 	3
-#define S_FIR_GAIN_COMP     4
-#define S_STORAGE_SIZE 		6
+#define S_STORAGE 				0
+#define S_UNUSED				0
+#define S_C_INPUT 				1
+#define S_C_OUTPUT 				2
+#define S_CHAN_COUNT 	 		3
+
+#define S_D_DC_OFFSET_SAMPLE_AND_LOG2 2
+#define S_DC_OFFSET_SAMPLE_NO   4
+#define S_DC_OFFSET_LOG2    	5
+
+#define S_FIR_GAIN_COMP     	6
+#define S_STORAGE_SIZE 			8
 
 //////////////////////////////////////////////////////////////////////////////////////
 //this address must be double word aligned
@@ -226,10 +235,32 @@
 #endif
 
 #define comment(X)
-
+/*
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
 	ldd r6, r5, r4[PREV_Y];\
 	ldc r7, DC_OFFSET_DIVIDER_LOG2;\
+	ashr r9, r6, r7;\
+	lextract r8, r6, r5, r7, 32;\
+	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
+    lsub r11, r6, r6, r9, r11; \
+    {ldw r7, r4[PREV_X]};\
+    ashr r9, REGISTER, 32;\
+    ashr r10, r7, 32;\
+    lsub r11, r8, REGISTER, r7, r4; 	comment(same here) \
+    lsub r11, r9, r9, r10, r11;\
+    {ldc r10, 16};\
+    lextract r9, r9, r8, r10, 32;\
+    {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
+    lsub r11, r5, r5, r8, r4; 		comment(same here) \
+    lsub r11, r6, r6, r9, r11;\
+	std r6, r5, r4[PREV_Y];\
+	lextract REGISTER, r6, r5, r10, 32
+	*/
+
+
+#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
+	ldd r6, r5, r4[PREV_Y];\
+	ldw r7, sp[S_DC_OFFSET_LOG2];\
 	ashr r9, r6, r7;\
 	lextract r8, r6, r5, r7, 32;\
 	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
@@ -331,6 +362,9 @@ decimate_to_pcm_4ch:
 	std r1, r1, r0[S_D_PREV_Y_1]
 	std r1, r1, r0[S_D_PREV_Y_2]
 	std r1, r1, r0[S_D_PREV_Y_3]
+	ldw r1, sp[S_DC_OFFSET_SAMPLE_NO]
+	ldc r1, 1
+	ldw r1, sp[S_DC_OFFSET_LOG2]
 
 configure:
 	DUALENTSP_lu6 0
@@ -574,6 +608,16 @@ post_process:
 		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, r2);
 		dc_offset_removal_ch3:
 		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3);
+
+		{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO]; ldc r5, DC_OFFSET_DIVIDER_LOG2 + DC_OFFSET_CONVERGANCE - 1}
+		{add r4, r4, 1;ldc r7, DC_OFFSET_SAMPLE_SIGNAL_ENABLE}
+		{shr r6, r4, DC_OFFSET_CONVERGANCE; stw r4, sp[S_DC_OFFSET_SAMPLE_NO]}
+		{shr r5, r6, r5; clz r6, r6}
+		sub r6, r7, r6
+		stw r6, sp[S_DC_OFFSET_LOG2]
+		{bf r5, dc_offset_removal_complete;sub r4, r4, 1}
+		   {stw r4, sp[S_DC_OFFSET_SAMPLE_NO]; ldc r4, DC_OFFSET_DIVIDER_LOG2};
+		   {stw r4, sp[S_DC_OFFSET_LOG2]};
 	dc_offset_removal_complete:
 
 #define COMP(REG)\
@@ -616,6 +660,14 @@ post_process:
 		maccs r8, r9, r3, r6
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
+
+	mute_startup:
+	{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO];ldc r5, 32}
+	lsu r5, r4, r5
+	{bf r5, mute_complete; ldc r5, 0}
+		{ldc r0, 0; ldc r1, 0}
+		{ldc r2, 0; ldc r3, 0}
+	mute_complete:
 
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
