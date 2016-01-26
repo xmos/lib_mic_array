@@ -662,6 +662,9 @@ post_process:
 	gain_comp_complete:
 
 	mute_startup:
+	ldaw r4, sp[S_SETTINGS_OFFSET]
+	ldw r4, r4[S_DC_OFFSET_REMOVAL_ENABLED]
+	bf r4, mute_complete
 	{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO];ldc r5, 32}
 	lsu r5, r4, r5
 	{bf r5, mute_complete; ldc r5, 0}
