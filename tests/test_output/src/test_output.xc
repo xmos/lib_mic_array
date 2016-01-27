@@ -70,13 +70,13 @@ void test_output(streaming chanend c_ds_output[2],
                         switch(button){
                         case 0:
                         case 1:{
-                            gain = ((gain<<3) + gain)>>3;
+                            gain++;
                             printf("gain: %d\n", gain);
                             break;
                         }
                         case 2:
                         case 3:{
-                            gain = ((gain<<3) - gain)>>3;
+                            gain--;
                             printf("gain: %d\n", gain);
                             break;
                         }
@@ -86,11 +86,12 @@ void test_output(streaming chanend c_ds_output[2],
                 }
                 default:break;
             }
-            int output = current -> data[0][0];
+            int output = current->data[0][0];
             output *= gain;
             c_audio <: output;
             c_audio <: output;
-            xscope_int(0, output);
+            for(unsigned i=0;i<7;i++)
+                xscope_int(i, current->data[i][0]);
         }
     }
 }

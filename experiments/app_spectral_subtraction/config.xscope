@@ -16,12 +16,8 @@
 
 <xSCOPEconfig ioMode="basic" enabled="true">
 
-   <Probe name="mic_0" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-   <Probe name="mic_1" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-   <Probe name="mic_2" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-   <Probe name="mic_3" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-   <Probe name="mic_4" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-   <Probe name="mic_5" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-   <Probe name="mic_6" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <!-- For example: -->
+   <Probe name="output" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/> 
+    <!-- From the target code, call: xscope_int(PROBE_NAME, value); -->
 
 </xSCOPEconfig>

@@ -235,28 +235,6 @@
 #endif
 
 #define comment(X)
-/*
-#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
-	ldd r6, r5, r4[PREV_Y];\
-	ldc r7, DC_OFFSET_DIVIDER_LOG2;\
-	ashr r9, r6, r7;\
-	lextract r8, r6, r5, r7, 32;\
-	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
-    lsub r11, r6, r6, r9, r11; \
-    {ldw r7, r4[PREV_X]};\
-    ashr r9, REGISTER, 32;\
-    ashr r10, r7, 32;\
-    lsub r11, r8, REGISTER, r7, r4; 	comment(same here) \
-    lsub r11, r9, r9, r10, r11;\
-    {ldc r10, 16};\
-    lextract r9, r9, r8, r10, 32;\
-    {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
-    lsub r11, r5, r5, r8, r4; 		comment(same here) \
-    lsub r11, r6, r6, r9, r11;\
-	std r6, r5, r4[PREV_Y];\
-	lextract REGISTER, r6, r5, r10, 32
-	*/
-
 
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
 	ldd r6, r5, r4[PREV_Y];\
@@ -690,7 +668,7 @@ post_process:
 
 		APPLY_WINDOW_FN(0)
 		ldaw r4, sp[S_FRAME_OFFSET]
-		//MIN_MAX(S_FRAME_MIN_0, S_FRAME_MAX_0, 0)
+
 
 		ldaw r5, sp[S_SETTINGS_OFFSET]
 		ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
@@ -790,12 +768,12 @@ post_process:
 			at_the_end_of_the_overlapping_half_frame:
 
 				//set the metadata
-				//ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
-		        //ldw r5, r4[S_METADATA_POINTER_1]
-		        //std r7, r6, r5[0];
-		        //ldw r3, r4[S_FRAME_NUMBER]
-		        //{stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
-		        //stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+				ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
+		        ldw r5, r4[S_METADATA_POINTER_1]
+		        std r7, r6, r5[0];
+		        ldw r3, r4[S_FRAME_NUMBER]
+		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
+		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 
 				ldw r6, sp[S_C_OUTPUT]
 				outct res[r6], 8 //WARNING: do not change this
