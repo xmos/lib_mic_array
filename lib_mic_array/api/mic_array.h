@@ -112,7 +112,7 @@ typedef struct {
  *  decimation_factor is greater than 2.
  *  The channel c_frame_output is used to transfer data and control information between the
  *  application and this task. It relies of shared memory for so the client of this talk must
- *  be on the same tile as this taks.
+ *  be on the same tile as this task.
  *
  *  \param c_from_pdm_interface      The channel where the decimated PDM from pdm_rx task will be inputted.
  *  \param c_frame_output            The channel used to transfer data and control information between
@@ -126,7 +126,7 @@ void decimate_to_pcm_4ch(
 /** Four Channel Decimation initializer for raw audio frames.
  *
  *  This function call sets up the four channel decimators. After this has been called there
- *  will be a real time requirement on this task, i.e. this taks must call
+ *  will be a real time requirement on this task, i.e. this task must call
  *  decimator_get_next_audio_frame() at the output sample rate multiplied by the frame size.
  *
  *  \param c_from_decimator  The channels used to transfer pointers between the application and
@@ -164,7 +164,7 @@ frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_from_deci
 /** Four Channel Decimation initializer for complex frames.
  *
  *  This function call sets up the four channel decimators. After this has been called there
- *  will be a real time requirement on this task, i.e. this taks must call
+ *  will be a real time requirement on this task, i.e. this task must call
  *  decimator_get_next_complex_frame() at the output sample rate multiplied by the frame size.
  *
  *  \param c_from_decimator  The channels used to transfer pointers between the application and

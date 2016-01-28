@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <limits.h>
+#include <print.h>
 
 #include "mic_array.h"
 #include "mic_array_board_support.h"
@@ -21,7 +22,7 @@
 
 #include "beamforming.h"
 
-#define DF 1    //Decimation Factor
+#define DF 2    //Decimation Factor
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
@@ -41,25 +42,55 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-frame_complex comp[4];
 
 #define FFT_N (1<<MAX_FRAME_SIZE_LOG2)
 
-lib_dsp_fft_complex_t p[FFT_N];
+void output_frame(chanend c_audio, int proc_buffer[4][FFT_N/2], lib_dsp_fft_complex_t p[FFT_N],
+        unsigned &head){
+
+    lib_dsp_fft_rebuild_one_real_input(p, FFT_N);
+    lib_dsp_fft_bit_reverse(p, FFT_N);
+    lib_dsp_fft_inverse_complex(p, FFT_N, lib_dsp_sine_512);
+    for(unsigned i=0;i<FFT_N/2;i++){
+        proc_buffer[head][i] += p[i].re;
+        proc_buffer[(head+1)%4][i] = p[i+FFT_N/2].re;
+    }
+
+    unsafe {
+        c_audio <: (int * unsafe)(proc_buffer[head]);
+    }
+    head++;
+    if(head == 4)
+        head = 0;
+}
+
+    int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+    int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 
 void noise_red(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
 
     unsigned buffer ;     //buffer index
-    memset(comp,  sizeof(frame_complex)*4, 0);
 
 
-    int window[FFT_N/2] = {0};//TODO fill this up
+    frame_complex comp[4];
+    memset(comp, 0, sizeof(frame_complex)*4);
+    lib_dsp_fft_complex_t p[FFT_N];
 
+    int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++){
-         window[i] = (int)((double)INT_MAX*0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(FFT_N+1)))); //TODO verify this is correct
+         window[i] = (int)((double)INT_MAX*0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(FFT_N-2))));
+    }
+
+    //verify the window function is a constant overlap and add one
+    for(unsigned i=0;i<FFT_N/2;i++){
+        int sum = window[i] + window[FFT_N/2 -1 - i];
+        int diff = INT_MAX - sum;
+        if (diff<0) diff = -diff;
+        if (diff > 2) {
+            printf("Error in windowing function\n");
+            _Exit(1);
+        }
     }
 
     unsafe{
@@ -80,48 +111,82 @@ void noise_red(streaming chanend c_ds_output[2],
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
+
         decimator_configure(c_ds_output, 2, dc);
 
+        decimator_init_complex_frame(c_ds_output, 2, buffer, comp, dcc);
 
-    decimator_init_complex_frame(c_ds_output, 2, buffer, comp, dcc);
-
-    unsafe {
         int proc_buffer[4][FFT_N/2];
 
         memset(proc_buffer, 0, sizeof(int)*4*FFT_N/2);
 
         unsigned head = 0;
 
+        int lpf[FFT_N/2] = {0};
+        int enabled = 0;
         while(1){
 
-           frame_complex *  current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
+           frame_complex * current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
 
            for(unsigned i=0;i<4;i++){
                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
                lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
            }
+           frame_frequency * frequency = (frame_frequency *)current;
 
-           for(unsigned i=0;i<FFT_N/2;i++){
-               p[i].re =  current->data[0][i].re;
-               p[i].im =  current->data[0][i].im;
+
+           for(unsigned i=4; i<FFT_N/2-2;i++){
+              int32_t hypot, angle;
+
+              int re = frequency->data[0][i].re;
+              int im = frequency->data[0][i].im;
+
+              cordic(re, im, hypot, angle);
+              if(enabled){
+                  if (hypot){
+                      long long t;
+                      int v, q;
+                      q = hypot - lpf[i];
+                      if (q<0) q=-q;
+                      t = (long long)re * (long long)(q);
+                      v = t>>31;
+                      re = v/hypot;
+
+                      v = hypot - lpf[i];
+                      if (v<0) v=-v;
+                      t = (long long)re * (long long)(q);
+                      v = t>>31;
+                      im = v/hypot;
+                  }
+              }
+
+             lpf[i] = lpf[i] - ((lpf[i] -hypot)>>6);
+
+             frequency->data[0][i].re = re;
+             frequency->data[0][i].im = im;
+
            }
 
-           lib_dsp_fft_rebuild_one_real_input(p, FFT_N);
-           lib_dsp_fft_bit_reverse(p, FFT_N);
-           lib_dsp_fft_inverse_complex(p, FFT_N, lib_dsp_sine_512);
+           select {
+               case lb.button_event():{
+                   unsigned button;
+                   e_button_state pressed;
+                   lb.get_button_event(button, pressed);
+                   if(pressed == BUTTON_PRESSED){
+                       enabled = 1-enabled;
+                   }
+                   break;
+               }
+               default:break;
+           }
 
+           for(unsigned i=0;i<FFT_N/2;i++){
+               p[i].re =  frequency->data[0][i].re;
+               p[i].im =  frequency->data[0][i].im;
+           }
 
-           for(unsigned i=0;i<FFT_N/2;i++)
-               proc_buffer[head][i] += p[i].re;
-           for(unsigned i=0;i<FFT_N/2;i++)
-               proc_buffer[(head+1)%4][i] = p[i+FFT_N/2].re;
-
-           c_audio <: (int * unsafe)(proc_buffer[head]);
-           head++;
-           head%=4;
-
+           output_frame(c_audio, proc_buffer, p, head);
         }
-    }
     }
 }
 
@@ -163,7 +228,7 @@ void decouple(chanend c_in, chanend c_out){
 }
 
 
-#define OUTPUT_SAMPLE_RATE (48000/DF)
+#define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
 
 [[distributable]]
@@ -211,14 +276,13 @@ void i2s_handler(server i2s_callback_if i2s,
     case i2s.receive(size_t index, int32_t sample):
       break;
 
-
     case i2s.send(size_t index) -> int32_t sample:
       c_audio:> sample;
       sample <<=3;
       break;
     }
   }
-};
+}
 
 int main(){
 

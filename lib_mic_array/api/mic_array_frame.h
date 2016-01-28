@@ -12,7 +12,7 @@ typedef struct {
     int32_t min;                /**<The minimum data value in this frame. UNUSED*/
     int32_t max;                /**<The maximum data value in this frame. UNUSED */
     unsigned frame_number;  	/**<The frame_number. UNUSED*/
-    unsigned x;  		/**<Padding. UNUSED*/
+    unsigned x;  		        /**<Padding. UNUSED*/
 } s_metadata;
 
 /** Complex number in Cartesian coordinates.*/
@@ -29,18 +29,28 @@ typedef struct {
 
 /** A frame of raw audio.*/
 typedef struct {
+    long long alignment;
     int32_t data[MAX_NUM_MICS][1<<MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
     s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
 } frame_audio;
 
 /** A frame of frequency domain audio in Cartesian coordinates.*/
 typedef struct {
+    long long alignment;
     complex data[MAX_NUM_MICS/2][1<<MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Cartesian)*/
     s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
 } frame_complex;
 
+/** A frame of frequency domain audio in Cartesian coordinates.*/
+typedef struct {
+    long long alignment;
+    complex data[MAX_NUM_MICS][1<<(MAX_FRAME_SIZE_LOG2-1)]; /**< Complex audio data (Cartesian)*/
+    s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
+} frame_frequency;
+
 /** A frame of frequency domain audio in Polar coordinates.*/
 typedef struct {
+    long long alignment;
     polar data[MAX_NUM_MICS/2][1<<MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Polar)*/
     s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
 } frame_polar;

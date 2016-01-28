@@ -285,14 +285,14 @@ Complex audio
 If *complex audio* output is used (``index_bit_reversal`` is set to 1),
 then the data is stored in frames that are designed to be processed with an
 FFT. The data is stored in four arrays of length two to the power of
-``MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log_2`` 
+``MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log2`` 
 entries contain valid data, each element storing a real and an imaginary
 part. The data is stored in a bit reversed order (ie, the oldest element is
 at index 0b0000....0000, the next oldest is at element 0b1000...0000, the
 next one at element 0b0100...0000, etc up to element 0b1111...1111), and
 the real elements store the even channels, whereas the imaginary elements
 store the odd channels. A postprocess function must be applied after the
-DIT-FFT in order to recover the frequency bins.
+Decimate-in-Time(DIT) FFT in order to recover the frequency bins.
 
 Frames are initialised by the application by a call to
 ``decimator_init_complex_frame``. Pass it:
@@ -336,7 +336,7 @@ Setting up the decimators
 
 All decimators attached to an application, via streaming channels, are configured 
 simultaneously with the ``decimator_configure()`` function. The parameters to the
-``decimator_configure()`` function are described in a later section. To start the 
+``decimator_configure()`` function are described in a :ref:`section_api`. To start the 
 frame exchange process ``decimator_init_audio_frame()`` or  ``decimator_init_complex_frame()`` must be called. Now the decimators are running
 and will be outputting frames at the rate given by their configuration.
 
@@ -392,7 +392,7 @@ An application that uses ``lib_mic_array`` must define the header file
      This should be kept small as it governs the memory required for 
      a frame.
      
-Optionally, `mic_array_conf.h`` may define
+Optionally, ``mic_array_conf.h`` may define
 
    * DC_OFFSET_DIVIDER_LOG2
 
@@ -476,7 +476,8 @@ following settings through ``decimator_config_common``:
   to an array of integers that defines the windowing operator. Each sample
   in the frame is multiplied by its associated window value and shifted
   right by 31 places. This is performed before any index bit reversal (see
-  the next entry).
+  the next entry). The window function data is in 1.31 fixed point format and only the first half
+  of the window function is required.
   
 * If the data is going to be post processed using an FFT, then
   ``index_bit_reversal`` can be set to 1. This will store the data elements
@@ -523,21 +524,21 @@ A typical code structure will contain the following::
     decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
 	while(1){
-		frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+		frame_audio *  latest_frame = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
 
 	}
  
 The ``buffer`` variable is not intended to be used by the application, it is an index used 
 by ``lib_mic_array`` for keeping track of ownership of the frame buffers. 
-The pointer to the current frame, or latest frame, ``current`` is a pointer to a frame that the 
-application is allowed to access. When a frame buffer is of size N is being used then in non-frame 
-overlapping mode the user has up to N-1 frames that are possible to be accessed (one is always
+The pointer to the latest frame, ``latest_frame``, is a pointer to a frame that the 
+application is allowed to access. When a frame buffer of size N is being used then, in non-frame 
+overlapping, mode the user has up to N-1 frames that can be accessed (one is always
 in the possession of the decimators). In half frame overlapping mode there would be N-2 
 frames available to the application as two are always in the possession of the decimators.
 
 When a reconfigure is performed then there will be a short interval (to flush the FIR data buffers)
-before the audio continue.
+before the audio continues.
 
 Overlapping frames are supported so that frequency domain algorithms can be converted back into the 
 time domain without artifacts. See ``lib_dsp`` for FFT functions.
@@ -573,9 +574,9 @@ Two stand alone applications showing the minimum code required to build a functi
 microphone array are given in ``AN00217_app_high_resolution_delay_example`` and in 
 ``AN00220_app_phase_aligned_example``. 
 
-A worked example of a fixed beam delay and sum beam-former given in the application
+A worked example of a fixed beam delay and sum beamformer given in the application
 ``AN00219_app_lores_DAS_fixed``. Also examples of of how to set up high resolution delayed 
-sampling can be seen in the high resolution fixed beam delay and sum beam-former given 
+sampling can be seen in the high resolution fixed beam delay and sum beamformer given 
 in the application ``AN00219_app_hires_DAS_fixed``. 
  
 .. _section_dc:
@@ -635,7 +636,7 @@ filter.
 .......................
  
 In order generate custom filters the ``fir_design.py`` can be executed. The purpose of this file 
-is to design end generate the FIR coefficients for the three stages of decimation. ``fir_design_.py`` 
+is to design end generate the FIR coefficients for the three stages of decimation. ``fir_design.py`` 
 is a command line tool that takes a number of command line options to control each parameter of the
 filter design. As previously illustrated the PDM to PCM conversion is divided into three stages. 
 The overall noise floor is governed with the option ``--stopband-attenuation``. This should be a 
@@ -702,6 +703,8 @@ converted into ``fir_coefs.xc`` and``fir_decimator.h`` by running ``java -jar Ge
 the raw coefficients and preprocesses them to maximise the dynamic range and efficiency within the compiled 
 application.
 
+
+.. _section_api:
 
 API
 ---

@@ -33,9 +33,9 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
    for(unsigned f=0;f<frames;f++){
         unsafe {
             for(unsigned i=0;i<decimator_count;i++)
-               c_from_decimator[i] <: (frame_audio * unsafe)audio[f].data[i*4];
+               c_from_decimator[i] <: (int * unsafe)(audio[f].data[i*4]);
             for(unsigned i=0;i<decimator_count;i++)
-               c_from_decimator[i] <: (frame_audio * unsafe)&audio[f].metadata[i];
+               c_from_decimator[i] <: (s_metadata * unsafe)&audio[f].metadata[i];
         }
     }
     for(unsigned i=0;i<decimator_count;i++)
@@ -69,9 +69,9 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
 
     unsafe {
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (frame_audio * unsafe)audio[buffer].data[i*4];
+            c_from_decimator[i] <: (int * unsafe)(audio[buffer].data[i*4]);
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (frame_audio * unsafe)&audio[buffer].metadata[i];
+            c_from_decimator[i] <: (s_metadata * unsafe)&audio[buffer].metadata[i];
     }
 
     for(unsigned i=0;i<decimator_count;i++)
@@ -119,9 +119,9 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
      for(unsigned f=0;f<frames;f++){
          unsafe {
              for(unsigned i=0;i<decimator_count;i++)
-                c_from_decimator[i] <: (frame_complex * unsafe)f_audio[f].data[i*2];
+                c_from_decimator[i] <: (complex * unsafe)(f_audio[f].data[i*2]);
              for(unsigned i=0;i<decimator_count;i++)
-                c_from_decimator[i] <: (frame_complex * unsafe)&f_audio[f].metadata[i];
+                c_from_decimator[i] <: (s_metadata * unsafe)&f_audio[f].metadata[i];
          }
      }
      for(unsigned i=0;i<decimator_count;i++)
@@ -150,9 +150,9 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
          soutct(c_from_decimator[i], EXCHANGE_BUFFERS);
      unsafe {
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (frame_complex * unsafe)f_complex[buffer].data[i*2];
+            c_from_decimator[i] <: (complex * unsafe)(f_complex[buffer].data[i*2]);
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (frame_complex * unsafe)&f_complex[buffer].metadata[i];
+            c_from_decimator[i] <: (s_metadata * unsafe)&f_complex[buffer].metadata[i];
      }
 
      for(unsigned i=0;i<decimator_count;i++)
