@@ -486,6 +486,12 @@ following settings through ``decimator_config_common``:
   complex numbers, in such a way that a single complex FFT operates on two
   microphones in parallel.
 
+* ``buffering_type`` is used to specify half frame overlapping or sequential 
+  frames.
+
+* ``number_of_frame_buffers`` is used to specify the umber of frames used by the 
+  application plus decimators.
+
 ``decimator_config`` configures the per-channel information:
 
 * ``dcc``: This is a pointer to the common decimator configuration.
@@ -520,14 +526,14 @@ footprint choosing a single output rate means the fewest FIR coefficient
 end up in the binary.
 A typical code structure will contain the following::
 
-	unsigned buffer;
-    decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+  unsigned buffer;
+  decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
-	while(1){
-		frame_audio *  latest_frame = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+  while(1){
+    frame_audio *  latest_frame = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
 
-
-	}
+  }
+	
  
 The ``buffer`` variable is not intended to be used by the application, it is an index used 
 by ``lib_mic_array`` for keeping track of ownership of the frame buffers. 
@@ -577,7 +583,7 @@ microphone array are given in ``AN00217_app_high_resolution_delay_example`` and 
 A worked example of a fixed beam delay and sum beamformer given in the application
 ``AN00219_app_lores_DAS_fixed``. Also examples of of how to set up high resolution delayed 
 sampling can be seen in the high resolution fixed beam delay and sum beamformer given 
-in the application ``AN00219_app_hires_DAS_fixed``. 
+in the application ``AN00218_app_hires_DAS_fixed``. 
  
 .. _section_dc:
 

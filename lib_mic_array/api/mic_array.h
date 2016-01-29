@@ -87,7 +87,7 @@ typedef struct {
 
     int fir_gain_compensation; /**< 5.27 format for the gain compensation for the three satges of FIR. */
 
-    e_decimator_buffering_type buffering_type;  /**< The buffering type used fopr frame exchange. */
+    e_decimator_buffering_type buffering_type;  /**< The buffering type used for frame exchange. */
 
     unsigned number_of_frame_buffers;  /**< The count of frames used between the decimators and the application. */
 
