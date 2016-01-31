@@ -46,11 +46,22 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 #define FFT_N (1<<MAX_FRAME_SIZE_LOG2)
 
 void output_frame(chanend c_audio, int proc_buffer[4][FFT_N/2], lib_dsp_fft_complex_t p[FFT_N],
-        unsigned &head){
+        unsigned &head, int * window){
 
     lib_dsp_fft_rebuild_one_real_input(p, FFT_N);
     lib_dsp_fft_bit_reverse(p, FFT_N);
     lib_dsp_fft_inverse_complex(p, FFT_N, lib_dsp_sine_512);
+
+    //apply the window function
+    for(unsigned i=0;i<FFT_N/2;i++){
+       long long t = (long long)window[i] * (long long)p[i].re;
+       p[i].re = (t>>31);
+    }
+    for(unsigned i=FFT_N/2;i<FFT_N;i++){
+       long long t = (long long)window[FFT_N-1-i] * (long long)p[i].re;
+       p[i].re = (t>>31);
+    }
+
     for(unsigned i=0;i<FFT_N/2;i++){
         proc_buffer[head][i] += p[i].re;
         proc_buffer[(head+1)%4][i] = p[i+FFT_N/2].re;
@@ -98,7 +109,7 @@ void noise_red(streaming chanend c_ds_output[2],
                 MAX_FRAME_SIZE_LOG2,
                 1,
                 1,
-                window,
+                0,
                 DF,
                 g_third_stage_div_2_fir,
                 0,
@@ -122,17 +133,39 @@ void noise_red(streaming chanend c_ds_output[2],
 
         unsigned head = 0;
 
-        int lpf[FFT_N/2] = {0};
+        long long lpf[FFT_N/2] = {0};
         int enabled = 0;
+
+        int threshold = 0;
+        long long long_lpf = 0;
+
+#define THRESHOLD_SHIFT 24
+
+
         while(1){
 
            frame_complex * current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
 
+           long long sum = 0;
+           for(unsigned i=0;i<FFT_N;i++){
+               long long t = (long long)current->data[0][i].re;
+               t=t*t;
+               t=t>>MAX_FRAME_SIZE_LOG2;
+               sum += t;
+           }
+           long_lpf = long_lpf + sum>>THRESHOLD_SHIFT;
+
+           int l_lpf = long_lpf>>16;
+           xscope_int(0, l_lpf);
+           xscope_int(1, sum>>30);
            for(unsigned i=0;i<4;i++){
                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
                lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
            }
            frame_frequency * frequency = (frame_frequency *)current;
+
+
+           int noise = 1;
 
 
            for(unsigned i=4; i<FFT_N/2-2;i++){
@@ -146,24 +179,28 @@ void noise_red(streaming chanend c_ds_output[2],
                   if (hypot){
                       long long t;
                       int v, q;
-                      q = hypot - lpf[i];
+                      q = hypot - (lpf[i]>>32);
                       if (q<0) q=-q;
                       t = (long long)re * (long long)(q);
                       v = t>>31;
                       re = v/hypot;
 
-                      v = hypot - lpf[i];
+                      v = hypot - (lpf[i]>>32);
                       if (v<0) v=-v;
                       t = (long long)re * (long long)(q);
                       v = t>>31;
                       im = v/hypot;
                   }
+                 frequency->data[0][i].re = re;
+                 frequency->data[0][i].im = im;
+              }
+              if(noise){
+                  long long h = (long long)hypot;
+                  unsigned s = 2;
+                  h <<= (32 - s);
+                  lpf[i] = lpf[i] - (lpf[i]>>s) + h;
               }
 
-             lpf[i] = lpf[i] - ((lpf[i] -hypot)>>6);
-
-             frequency->data[0][i].re = re;
-             frequency->data[0][i].im = im;
 
            }
 
@@ -181,11 +218,16 @@ void noise_red(streaming chanend c_ds_output[2],
            }
 
            for(unsigned i=0;i<FFT_N/2;i++){
-               p[i].re =  frequency->data[0][i].re;
-               p[i].im =  frequency->data[0][i].im;
+               if(enabled){
+                   p[i].re =  frequency->data[0][i].re*2;
+                   p[i].im =  frequency->data[0][i].im*2;
+               } else {
+                   p[i].re =  frequency->data[0][i].re;
+                   p[i].im =  frequency->data[0][i].im;
+               }
            }
 
-           output_frame(c_audio, proc_buffer, p, head);
+           output_frame(c_audio, proc_buffer, p, head, window);
         }
     }
 }
@@ -208,7 +250,7 @@ void decouple(chanend c_in, chanend c_out){
                c_out <: p_head[head];
                c_out <: p_head[head];
 
-               xscope_int(0, p_head[head]);
+              // xscope_int(0, p_head[head]);
 
                head++;
                if(head == FFT_N/2){
