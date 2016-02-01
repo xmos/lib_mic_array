@@ -219,8 +219,8 @@ void noise_red(streaming chanend c_ds_output[2],
 
            for(unsigned i=0;i<FFT_N/2;i++){
                if(enabled){
-                   p[i].re =  frequency->data[0][i].re*2;
-                   p[i].im =  frequency->data[0][i].im*2;
+                   p[i].re =  frequency->data[0][i].re;
+                   p[i].im =  frequency->data[0][i].im;
                } else {
                    p[i].re =  frequency->data[0][i].re;
                    p[i].im =  frequency->data[0][i].im;

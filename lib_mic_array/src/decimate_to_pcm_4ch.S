@@ -39,7 +39,7 @@
 .xtacommand "analyse endpoints input_7_1_ep input_0_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-#define DC_OFFSET_SAMPLE_SIGNAL_ENABLE 	32		//This is the sample number at which point the signal will be enabled
+#define DC_OFFSET_SAMPLE_SIGNAL_ENABLE 	63   	//This is the sample number at which point the signal will be enabled
 #define DC_OFFSET_CONVERGANCE			4		//controls the rate of convergance of the dynamic DC offset
 												//higher settings are faster but more unstable.
 
@@ -108,13 +108,20 @@
 #define S_PREV_X_1						1
 #define S_PREV_X_2						2
 #define S_PREV_X_3						3
+#define S_DC_0							4
+#define S_DC_1							5
+#define S_DC_2							6
+#define S_DC_3							7
+
 #define S_D_PREV_X_01					0
 #define S_D_PREV_X_23					1
-#define S_D_PREV_Y_0 					2
-#define S_D_PREV_Y_1 					3
-#define S_D_PREV_Y_2 					4
-#define S_D_PREV_Y_3 					5
-#define DC_ELIMINATE_STACK_SIZE 		12
+#define S_D_DC_01						2
+#define S_D_DC_23						3
+#define S_D_PREV_Y_0 					4
+#define S_D_PREV_Y_1 					5
+#define S_D_PREV_Y_2 					6
+#define S_D_PREV_Y_3 					7
+#define DC_ELIMINATE_STACK_SIZE 		16
 
 //frame
 #define S_FRAME_OFFSET (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
@@ -341,7 +348,7 @@ decimate_to_pcm_4ch:
 	std r1, r1, r0[S_D_PREV_Y_2]
 	std r1, r1, r0[S_D_PREV_Y_3]
 	ldw r1, sp[S_DC_OFFSET_SAMPLE_NO]
-	ldc r1, 1
+	ldc r1, DC_OFFSET_CONVERGANCE
 	ldw r1, sp[S_DC_OFFSET_LOG2]
 
 configure:
@@ -587,15 +594,14 @@ post_process:
 		dc_offset_removal_ch3:
 		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3);
 
-		{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO]; ldc r5, DC_OFFSET_DIVIDER_LOG2 + DC_OFFSET_CONVERGANCE - 1}
-		{add r4, r4, 1;ldc r7, DC_OFFSET_SAMPLE_SIGNAL_ENABLE}
+		{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO];}
+		{add r4, r4, 1;ldc r7, 31}
 		{shr r6, r4, DC_OFFSET_CONVERGANCE; stw r4, sp[S_DC_OFFSET_SAMPLE_NO]}
-		{shr r5, r6, r5; clz r6, r6}
-		sub r6, r7, r6
-		stw r6, sp[S_DC_OFFSET_LOG2]
-		{bf r5, dc_offset_removal_complete;sub r4, r4, 1}
-		   {stw r4, sp[S_DC_OFFSET_SAMPLE_NO]; ldc r4, DC_OFFSET_DIVIDER_LOG2};
-		   {stw r4, sp[S_DC_OFFSET_LOG2]};
+		{clz r6, r6; ldc r5, DC_OFFSET_CONVERGANCE + DC_OFFSET_DIVIDER_LOG2}
+		{sub r6, r7, r6; mkmsk r5, r5}
+		{lsu r5, r4, r5}
+		{bf r5, dc_offset_removal_complete;}
+			stw r6, sp[S_DC_OFFSET_LOG2]
 	dc_offset_removal_complete:
 
 #define COMP(REG)\
@@ -643,7 +649,7 @@ post_process:
 	ldaw r4, sp[S_SETTINGS_OFFSET]
 	ldw r4, r4[S_DC_OFFSET_REMOVAL_ENABLED]
 	bf r4, mute_complete
-	{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO];ldc r5, 32}
+	{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO];ldc r5, DC_OFFSET_SAMPLE_SIGNAL_ENABLE}
 	lsu r5, r4, r5
 	{bf r5, mute_complete; ldc r5, 0}
 		{ldc r0, 0; ldc r1, 0}
