@@ -142,6 +142,7 @@ void noise_red(streaming chanend c_ds_output[2],
 #define THRESHOLD_SHIFT 24
 
 
+        int sync=1;
         while(1){
 
            frame_complex * current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
@@ -155,9 +156,10 @@ void noise_red(streaming chanend c_ds_output[2],
            }
            long_lpf = long_lpf + sum>>THRESHOLD_SHIFT;
 
-           int l_lpf = long_lpf>>16;
-           xscope_int(0, l_lpf);
-           xscope_int(1, sum>>30);
+           //int l_lpf = long_lpf>>16;
+           //xscope_int(0, l_lpf);
+           //xscope_int(1, sum>>30);
+
            for(unsigned i=0;i<4;i++){
                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
                lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
@@ -168,42 +170,51 @@ void noise_red(streaming chanend c_ds_output[2],
            int noise = 1;
 
 
-           for(unsigned i=4; i<FFT_N/2-2;i++){
+           xscope_int(0, INT_MAX*sync);
+           sync=1-sync;
+           xscope_int(1, 0);
+           xscope_int(2, 0);
+
+           frequency->data[0][0].re = 0;
+           frequency->data[0][0].im = 0;
+           for(unsigned i=1; i<FFT_N/2-2;i++){
               int32_t hypot, angle;
 
               int re = frequency->data[0][i].re;
               int im = frequency->data[0][i].im;
 
               cordic(re, im, hypot, angle);
+              xscope_int(2, hypot);
+
+
               if(enabled){
                   if (hypot){
                       long long t;
                       int v, q;
-                      q = hypot - (lpf[i]>>32);
+                      q = hypot - (lpf[i]>>31);
                       if (q<0) q=-q;
                       t = (long long)re * (long long)(q);
-                      v = t>>31;
-                      re = v/hypot;
+                      //v = t>>31;
+                      re = t/hypot;
 
-                      v = hypot - (lpf[i]>>32);
+                      v = hypot - (lpf[i]>>31);
                       if (v<0) v=-v;
                       t = (long long)re * (long long)(q);
-                      v = t>>31;
-                      im = v/hypot;
+                      //v = t>>31;
+                      im = t/hypot;
                   }
+
                  frequency->data[0][i].re = re;
                  frequency->data[0][i].im = im;
               }
               if(noise){
                   long long h = (long long)hypot;
-                  unsigned s = 2;
-                  h <<= (32 - s);
+                  unsigned s = 10;
+                  h <<= (30 - s);
                   lpf[i] = lpf[i] - (lpf[i]>>s) + h;
+                  xscope_int(1, lpf[i]>>31);
               }
-
-
            }
-
            select {
                case lb.button_event():{
                    unsigned button;
@@ -247,8 +258,8 @@ void decouple(chanend c_in, chanend c_out){
            }
            if(p_head){
 
-               c_out <: p_head[head];
-               c_out <: p_head[head];
+               c_out <: p_head[head]*4;
+               c_out <: p_head[head]*4;
 
               // xscope_int(0, p_head[head]);
 
