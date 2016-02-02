@@ -75,6 +75,25 @@ void output_frame(chanend c_audio, int proc_buffer[4][FFT_N/2], lib_dsp_fft_comp
         head = 0;
 }
 
+
+/*
+
+0  1   0
+1   0.5 -6.0205999133
+2   0.25    -12.0411998266
+3   0.125   -18.0617997398
+4   0.0625  -24.0823996531
+5   0.03125 -30.1029995664
+6   0.015625    -36.1235994797
+7   0.0078125   -42.144199393
+8   0.00390625  -48.1647993062
+9   0.001953125 -54.1853992195
+10  0.0009765625    -60.2059991328
+11  0.0004882813    -66.2265990461
+12  0.0002441406    -72.2471989594
+
+ */
+
     int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
     int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 
@@ -156,10 +175,6 @@ void noise_red(streaming chanend c_ds_output[2],
            }
            long_lpf = long_lpf + sum>>THRESHOLD_SHIFT;
 
-           //int l_lpf = long_lpf>>16;
-           //xscope_int(0, l_lpf);
-           //xscope_int(1, sum>>30);
-
            for(unsigned i=0;i<4;i++){
                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
                lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
@@ -170,13 +185,15 @@ void noise_red(streaming chanend c_ds_output[2],
            int noise = 1;
 
 
-           xscope_int(0, INT_MAX*sync);
+           //xscope_int(0, INT_MAX*sync);
            sync=1-sync;
-           xscope_int(1, 0);
-           xscope_int(2, 0);
+           //xscope_int(1, 0);
+           //xscope_int(2, 0);
 
-           frequency->data[0][0].re = 0;
+
+         //  frequency->data[0][0].re = 0;
            frequency->data[0][0].im = 0;
+
            for(unsigned i=1; i<FFT_N/2-2;i++){
               int32_t hypot, angle;
 
@@ -184,23 +201,25 @@ void noise_red(streaming chanend c_ds_output[2],
               int im = frequency->data[0][i].im;
 
               cordic(re, im, hypot, angle);
-              xscope_int(2, hypot);
+             // xscope_int(2, hypot);
 
+              long long t = (long long)hypot - (lpf[i]>>30);
+              t=t*t;
+              t=t>>MAX_FRAME_SIZE_LOG2;
+              sum += t;
 
               if(enabled){
                   if (hypot){
                       long long t;
                       int v, q;
-                      q = hypot - (lpf[i]>>31);
+                      q = hypot - (lpf[i]>>30);
                       if (q<0) q=-q;
                       t = (long long)re * (long long)(q);
-                      //v = t>>31;
                       re = t/hypot;
 
-                      v = hypot - (lpf[i]>>31);
+                      v = hypot - (lpf[i]>>30);
                       if (v<0) v=-v;
                       t = (long long)re * (long long)(q);
-                      //v = t>>31;
                       im = t/hypot;
                   }
 
@@ -212,9 +231,11 @@ void noise_red(streaming chanend c_ds_output[2],
                   unsigned s = 10;
                   h <<= (30 - s);
                   lpf[i] = lpf[i] - (lpf[i]>>s) + h;
-                  xscope_int(1, lpf[i]>>31);
+                 // xscope_int(1, lpf[i]>>30);
               }
            }
+
+           xscope_int(0, sum>>31);
            select {
                case lb.button_event():{
                    unsigned button;
@@ -261,7 +282,7 @@ void decouple(chanend c_in, chanend c_out){
                c_out <: p_head[head]*4;
                c_out <: p_head[head]*4;
 
-              // xscope_int(0, p_head[head]);
+              //xscope_int(0, p_head[head]);
 
                head++;
                if(head == FFT_N/2){

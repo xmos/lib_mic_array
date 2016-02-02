@@ -123,6 +123,10 @@ clock as follows::
 It should be noted that this is a 3.030 MHz clock, which is 0.14% off a true
 3.072 MHz clock. This may be acceptable to simple Voice User Interfaces (VUIs).
 
+PDM microphones
+...............
+There is a maximum 28ms delay at startup during which the PDM microphones are in initialization.   
+
 Usage
 -----
 
