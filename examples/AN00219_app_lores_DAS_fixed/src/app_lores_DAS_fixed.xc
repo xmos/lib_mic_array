@@ -213,6 +213,10 @@ void i2s_handler(server i2s_callback_if i2s,
   data &= ~1;
   res = i2c.write_reg(i, 0x02, data); // Power up
 
+#define CS2100_I2C_DEVICE_ADDR      (0x9c>>1)
+  res = i2c.write_reg(CS2100_I2C_DEVICE_ADDR, 0x3, 0); // Reset the PLL to use the aux out
+
+
   while (1) {
     select {
     case i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
