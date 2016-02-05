@@ -16,8 +16,8 @@
 
 <xSCOPEconfig ioMode="basic" enabled="true">
 
-   <Probe name="output" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/> 
-   <Probe name="lpf" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/> 
-   <Probe name="hypot" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/> 
+   <Probe name="mag" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/> 
+   <Probe name="a" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/> 
+   <Probe name="b" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/> 
 
 </xSCOPEconfig>

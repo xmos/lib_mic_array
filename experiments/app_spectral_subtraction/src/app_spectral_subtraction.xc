@@ -75,24 +75,43 @@ void output_frame(chanend c_audio, int proc_buffer[4][FFT_N/2], lib_dsp_fft_comp
         head = 0;
 }
 
+{int, int} foo(int x, int y, unsigned old_h, unsigned new_h){
 
-/*
+    unsigned long long t = (unsigned long long)new_h;
 
-0  1   0
-1   0.5 -6.0205999133
-2   0.25    -12.0411998266
-3   0.125   -18.0617997398
-4   0.0625  -24.0823996531
-5   0.03125 -30.1029995664
-6   0.015625    -36.1235994797
-7   0.0078125   -42.144199393
-8   0.00390625  -48.1647993062
-9   0.001953125 -54.1853992195
-10  0.0009765625    -60.2059991328
-11  0.0004882813    -66.2265990461
-12  0.0002441406    -72.2471989594
+    if(!old_h)
+        return {0, 0};
 
- */
+    if(!new_h)
+        return {0, 0};
+
+    if(x>0){
+        unsigned long long v =t*(unsigned)x;
+        x = v/old_h;
+    } else {
+        x=-x;
+        unsigned long long v =t*(unsigned)x;
+        x = v/old_h;
+        x=-x;
+    }
+
+    if(y>0){
+        unsigned long long v =t*(unsigned)y;
+        y = v/old_h;
+    } else {
+        y=-y;
+        unsigned long long v =t*(unsigned)y;
+        y = v/old_h;
+        y=-y;
+    }
+ /*
+    if(old_h){
+        x = (long long)x * (long long)new_h / (long long)old_h;
+        y = (long long)y * (long long)new_h / (long long)old_h;
+    }
+*/
+   return {x, y};
+}
 
     int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
     int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
@@ -101,26 +120,12 @@ void noise_red(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
 
     unsigned buffer ;     //buffer index
-
-
     frame_complex comp[4];
     memset(comp, 0, sizeof(frame_complex)*4);
     lib_dsp_fft_complex_t p[FFT_N];
-
     int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++){
-         window[i] = (int)((double)INT_MAX*0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(FFT_N-2))));
-    }
-
-    //verify the window function is a constant overlap and add one
-    for(unsigned i=0;i<FFT_N/2;i++){
-        int sum = window[i] + window[FFT_N/2 -1 - i];
-        int diff = INT_MAX - sum;
-        if (diff<0) diff = -diff;
-        if (diff > 2) {
-            printf("Error in windowing function\n");
-            _Exit(1);
-        }
+         window[i] = (int)((double)INT_MAX*sqrt(0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(FFT_N-2)))));
     }
 
     unsafe{
@@ -128,7 +133,7 @@ void noise_red(streaming chanend c_ds_output[2],
                 MAX_FRAME_SIZE_LOG2,
                 1,
                 1,
-                0,
+                window,
                 DF,
                 g_third_stage_div_2_fir,
                 0,
@@ -152,90 +157,84 @@ void noise_red(streaming chanend c_ds_output[2],
 
         unsigned head = 0;
 
-        long long lpf[FFT_N/2] = {0};
+        unsigned long long lpf[FFT_N/2] = {0};
         int enabled = 0;
 
-        int threshold = 0;
-        long long long_lpf = 0;
-
-#define THRESHOLD_SHIFT 24
-
-
-        int sync=1;
         while(1){
-
            frame_complex * current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
-
-           long long sum = 0;
-           for(unsigned i=0;i<FFT_N;i++){
-               long long t = (long long)current->data[0][i].re;
-               t=t*t;
-               t=t>>MAX_FRAME_SIZE_LOG2;
-               sum += t;
-           }
-           long_lpf = long_lpf + sum>>THRESHOLD_SHIFT;
-
            for(unsigned i=0;i<4;i++){
                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
                lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
            }
            frame_frequency * frequency = (frame_frequency *)current;
-
-
            int noise = 1;
 
+           long long sum = 0;
 
-           //xscope_int(0, INT_MAX*sync);
-           sync=1-sync;
-           //xscope_int(1, 0);
-           //xscope_int(2, 0);
+          // xscope_int(0, 0);
+          // xscope_int(1, 0);
 
-
-         //  frequency->data[0][0].re = 0;
-           frequency->data[0][0].im = 0;
-
+           #define FLOOR 5
+           //  frequency->data[0][0].re>>=FLOOR;
+          // frequency->data[0][0].im = 0;
            for(unsigned i=1; i<FFT_N/2-2;i++){
-              int32_t hypot, angle;
 
               int re = frequency->data[0][i].re;
               int im = frequency->data[0][i].im;
 
-              cordic(re, im, hypot, angle);
-             // xscope_int(2, hypot);
+              unsigned mag = hypot_i(re, im);
+              unsigned noise_floor = lpf[i]>>30;
 
-              long long t = (long long)hypot - (lpf[i]>>30);
-              t=t*t;
-              t=t>>MAX_FRAME_SIZE_LOG2;
-              sum += t;
+            //  int32_t a, b;
+            //  cordic(a, b, a, b);
 
+             // xscope_int(0,mag);
+             // xscope_int(1, noise_floor);
               if(enabled){
-                  if (hypot){
-                      long long t;
-                      int v, q;
-                      q = hypot - (lpf[i]>>30);
-                      if (q<0) q=-q;
-                      t = (long long)re * (long long)(q);
-                      re = t/hypot;
+                  noise_floor=noise_floor>>2;
+                  if(mag > noise_floor){
 
-                      v = hypot - (lpf[i]>>30);
-                      if (v<0) v=-v;
-                      t = (long long)re * (long long)(q);
-                      im = t/hypot;
+                     unsigned new_mag = mag - noise_floor;
+
+                     if(mag > 0){
+                         if((mag>>FLOOR) > new_mag)
+                             new_mag = (mag>>FLOOR);
+                     } else {
+                         if((mag>>FLOOR) < new_mag)
+                             new_mag = (mag>>FLOOR);
+                     }
+
+                     //xscope_int(2, new_mag);
+                     {re, im} = foo(re, im, mag, new_mag);
+
+                     frequency->data[0][i].re = re;
+                     frequency->data[0][i].im = im;
                   }
+                  else {
+                      unsigned new_mag = noise_floor - mag;
+                      if(mag > 0){
+                          if((mag>>FLOOR) > new_mag)
+                              new_mag = (mag>>FLOOR);
+                      } else {
+                          if((mag>>FLOOR) < new_mag)
+                              new_mag = (mag>>FLOOR);
+                      }
 
-                 frequency->data[0][i].re = re;
-                 frequency->data[0][i].im = im;
+                      {re, im} = foo(re, im, mag, new_mag);
+
+                     // xscope_int(2, new_mag);
+                      frequency->data[0][i].re = re;
+                      frequency->data[0][i].im = im;
+                  }
               }
-              if(noise){
-                  long long h = (long long)hypot;
-                  unsigned s = 10;
-                  h <<= (30 - s);
-                  lpf[i] = lpf[i] - (lpf[i]>>s) + h;
-                 // xscope_int(1, lpf[i]>>30);
-              }
+
+              unsigned long long h = (unsigned long long)mag;
+              unsigned s = 8;
+              h <<= (30 - s);
+              lpf[i] = lpf[i] - (lpf[i]>>s) + h;
+
            }
 
-           xscope_int(0, sum>>31);
            select {
                case lb.button_event():{
                    unsigned button;
@@ -243,6 +242,7 @@ void noise_red(streaming chanend c_ds_output[2],
                    lb.get_button_event(button, pressed);
                    if(pressed == BUTTON_PRESSED){
                        enabled = 1-enabled;
+                       printf("%d\n", enabled);
                    }
                    break;
                }
@@ -279,10 +279,10 @@ void decouple(chanend c_in, chanend c_out){
            }
            if(p_head){
 
-               c_out <: p_head[head]*4;
-               c_out <: p_head[head]*4;
+               c_out <: p_head[head]*2;
+               c_out <: p_head[head]*2;
 
-              //xscope_int(0, p_head[head]);
+              xscope_int(0, p_head[head]);
 
                head++;
                if(head == FFT_N/2){
@@ -331,6 +331,9 @@ void i2s_handler(server i2s_callback_if i2s,
   data = i2c.read_reg(i, 0x02, res);
   data &= ~1;
   res = i2c.write_reg(i, 0x02, data); // Power up
+
+#define CS2100_I2C_DEVICE_ADDR      (0x9c>>1)
+  res = i2c.write_reg(CS2100_I2C_DEVICE_ADDR, 0x3, 0); // Reset the PLL to use the aux out
 
   while (1) {
     select {
@@ -392,8 +395,6 @@ int main(){
                 decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
                 decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
                 noise_red(c_ds_output, lb[0], c_audio);
-                while(1);
-                while(1);
             }
         }
     }
