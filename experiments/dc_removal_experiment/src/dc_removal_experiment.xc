@@ -23,7 +23,6 @@ on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
-
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
@@ -31,7 +30,6 @@ frame_audio audio[2];
 int dc_elim_model(int x, int &prev_x, long long & y, unsigned shift){
     long long X = (long long)x;
     long long prev_X = (long long)prev_x;
-
     long long t = X - prev_X;
     y = y - (y>>shift);
     y = y + (t<<16);
@@ -39,13 +37,14 @@ int dc_elim_model(int x, int &prev_x, long long & y, unsigned shift){
     return y>>16;
 }
 
-void lores_DAS_fixed(streaming chanend c_ds_output[2],
-        client interface led_button_if lb) {
+#define ENABLED 1
 
+void test_dc_algorithm(streaming chanend c_ds_output[2],
+        client interface led_button_if lb) {
     unsafe{
         unsigned buffer;
 
-        decimator_config_common dcc = {0, 0, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
+        decimator_config_common dcc = {0, ENABLED, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
         decimator_config dc[2] = {
           {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
           {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
@@ -61,54 +60,46 @@ void lores_DAS_fixed(streaming chanend c_ds_output[2],
 
         int dc_offset = 0;
 
-        unsigned shift = 3;
+        unsigned shift = 8;
         xscope_int(0, 0);
         while(sample < 16000*8){
 
             frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
             int output = current->data[0][0];
-
+#if ENABLED == 0
             output = dc_elim_model(output, prev_x, y, shift);
 
-            if(sample > 128)
-                xscope_int(0, output);
-            else
-                xscope_int(0, 0);
 
+            dc_offset = dc_offset - (dc_offset>>12) + output;
+            int n = dc_offset;
 
-           // if(sample > 64){
-                dc_offset = dc_offset - (dc_offset>>8) + output;
-
-                int n = dc_offset;
-
-                if(n<0) n=-n;
-                //int n = (n * n)>>8;
-
-                shift = clz(n);
-                if(shift>16)
-                    shift=16;
-
-           // }
-
-            xscope_int(1, shift);
-            xscope_int(2, dc_offset);
+            shift = clz(((long long)n*n)>>32);
+#endif
+            xscope_int(0, output);
             sample++;
         }
-
         _Exit(1);
     }
 }
-
+#include <stdio.h>
 int main() {
 
     par{
 
         on tile[0]: {
+
+
+#if 0
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
-
+#else
+            configure_clock_rate(pdmclk, 100, 34);
+            configure_port_clock_output(p_pdm_clk, pdmclk);
+            configure_in_port(p_pdm_mics, pdmclk);
+            start_clock(pdmclk);
+#endif
             streaming chan c_4x_pdm_mic[2];
             streaming chan c_ds_output[2];
 
@@ -119,7 +110,7 @@ int main() {
                 pdm_rx(p_pdm_mics, c_4x_pdm_mic[0], c_4x_pdm_mic[1]);
                 decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
                 decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
-                lores_DAS_fixed(c_ds_output, lb[0]);
+                test_dc_algorithm(c_ds_output, lb[0]);
                 par(int i=0;i<3;i++) while(1);
             }
         }

@@ -4,8 +4,6 @@
 
 #include "mic_array_conf.h"
 
-#define EXCHANGE_BUFFERS 0
-#define CONFIGURE_DECIMATOR 1
 .xtacommand "analyse endpoints input_0_0_ep input_1_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 .xtacommand "analyse endpoints input_1_0_ep input_2_0_ep","", __FILE__, __LINE__
@@ -39,9 +37,15 @@
 .xtacommand "analyse endpoints input_7_1_ep input_0_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-#define DC_OFFSET_SAMPLE_SIGNAL_ENABLE 	63   	//This is the sample number at which point the signal will be enabled
-#define DC_OFFSET_CONVERGANCE			4		//controls the rate of convergance of the dynamic DC offset
-												//higher settings are faster but more unstable.
+#ifndef DC_OFFSET_SAMPLE_SIGNAL_ENABLE
+	#define DC_OFFSET_SAMPLE_SIGNAL_ENABLE 	63   	//This is the sample number at which point the signal will be enabled
+#endif
+
+#ifndef DC_OFFSET_DIVIDER_LOG2
+	#define DC_OFFSET_DIVIDER_LOG2			12		//controls the rate of convergance of the dynamic DC offset
+													//higher settings are faster but more unstable.
+#endif
+
 
 #define SECOND_STAGE_COEF_COUNT 		16		//This must reflect the implementation in decimate_to_pcm_4ch_fir_impl
 #define THIRD_STAGE_COEFS_PER_STAGE 	32		//This must reflect the implementation in third_stage_fir_impl
@@ -54,18 +58,27 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 
+//This stuff is at the start of the stack for really quick access
 #define S_STORAGE 				0
+
 #define S_UNUSED				0
 #define S_C_INPUT 				1
+
 #define S_C_OUTPUT 				2
 #define S_CHAN_COUNT 	 		3
 
-#define S_D_DC_OFFSET_SAMPLE_AND_LOG2 2
-#define S_DC_OFFSET_SAMPLE_NO   4
-#define S_DC_OFFSET_LOG2    	5
+#define S_D_DC_OFFSET_LOG2_CH01 2
+#define S_D_DC_OFFSET_LOG2_CH23 3
 
-#define S_FIR_GAIN_COMP     	6
-#define S_STORAGE_SIZE 			8
+#define S_DC_OFFSET_LOG2_CH0   	4
+#define S_DC_OFFSET_LOG2_CH1   	5
+#define S_DC_OFFSET_LOG2_CH2   	6
+#define S_DC_OFFSET_LOG2_CH3   	7
+
+#define S_DC_OFFSET_SAMPLE_NO   8
+
+#define S_FIR_GAIN_COMP     	9
+#define S_STORAGE_SIZE 			10
 
 //////////////////////////////////////////////////////////////////////////////////////
 //this address must be double word aligned
@@ -165,6 +178,8 @@
 //This must be an even number
 #define STACKWORDS 						(S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
 
+//This is used for commenting within marcos
+#define comment(X)
 
 //TODO - use this when everything works
 //TODO then reduce the memory usage
@@ -237,15 +252,9 @@
 	std r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]
 
 
-#ifndef DC_OFFSET_DIVIDER_LOG2
-	#define DC_OFFSET_DIVIDER_LOG2 13
-#endif
-
-#define comment(X)
-
-#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
+#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER, DC_OFFSET_LOG2) \
 	ldd r6, r5, r4[PREV_Y];\
-	ldw r7, sp[S_DC_OFFSET_LOG2];\
+	ldw r7, sp[DC_OFFSET_LOG2];\
 	ashr r9, r6, r7;\
 	lextract r8, r6, r5, r7, 32;\
 	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
@@ -348,8 +357,12 @@ decimate_to_pcm_4ch:
 	std r1, r1, r0[S_D_PREV_Y_2]
 	std r1, r1, r0[S_D_PREV_Y_3]
 	ldw r1, sp[S_DC_OFFSET_SAMPLE_NO]
-	ldc r1, DC_OFFSET_CONVERGANCE
-	ldw r1, sp[S_DC_OFFSET_LOG2]
+	ldc r1, 3 // This cotrols the rate of convergence of the DC offset
+			  // for the initial sample. It has little effect, i.e. don't change it.
+	ldw r1, sp[S_DC_OFFSET_LOG2_CH0]
+	ldw r1, sp[S_DC_OFFSET_LOG2_CH1]
+	ldw r1, sp[S_DC_OFFSET_LOG2_CH2]
+	ldw r1, sp[S_DC_OFFSET_LOG2_CH3]
 
 configure:
 	DUALENTSP_lu6 0
@@ -586,23 +599,41 @@ post_process:
 	bf r4, dc_offset_removal_complete
 		ldaw r4, sp[S_DC_ELIMINATE]
 		dc_offset_removal_ch0:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0, S_DC_OFFSET_LOG2_CH0);
 		dc_offset_removal_ch1:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, r1);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, r1, S_DC_OFFSET_LOG2_CH1);
 		dc_offset_removal_ch2:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, r2);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, r2, S_DC_OFFSET_LOG2_CH2);
 		dc_offset_removal_ch3:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3, S_DC_OFFSET_LOG2_CH3);
 
-		{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO];}
-		{add r4, r4, 1;ldc r7, 31}
-		{shr r6, r4, DC_OFFSET_CONVERGANCE; stw r4, sp[S_DC_OFFSET_SAMPLE_NO]}
-		{clz r6, r6; ldc r5, DC_OFFSET_CONVERGANCE + DC_OFFSET_DIVIDER_LOG2}
-		{sub r6, r7, r6; mkmsk r5, r5}
-		{lsu r5, r4, r5}
-		{bf r5, dc_offset_removal_complete;}
-			stw r6, sp[S_DC_OFFSET_LOG2]
-	dc_offset_removal_complete:
+		ldc r10, 12
+		ldd r5, r6, r4[S_D_DC_01]
+		ashr r7, r5, r10
+		ashr r8, r6, r10
+		{sub r5, r5, r7; sub r6, r6, r8}
+		{add r5, r5, r1; add r6, r6, r0}
+		std r5, r6, r4[S_D_DC_01]
+		ldd r7, r8, r4[S_D_DC_23]
+		ashr r9, r7, r10
+		ashr r10, r6, r10
+		{sub r7, r7, r9; sub r8, r8, r10}
+		{add r7, r7, r3; add r8, r8, r2}
+		std r7, r8, r4[S_D_DC_23]
+
+		{ldc r11, 0; ldc r10, 0}
+		maccs r10, r5, r5, r5
+		maccs r11, r6, r6, r6
+		{clz r10, r10; clz r11, r11}
+		std r10, r11, sp[S_D_DC_OFFSET_LOG2_CH01]
+
+		{ldc r11, 0; ldc r10, 0}
+		maccs r10, r7, r7, r7
+		maccs r11, r8, r8, r8
+		{clz r10, r10; clz r11, r11}
+		std r10, r11, sp[S_D_DC_OFFSET_LOG2_CH23]
+
+dc_offset_removal_complete:
 
 #define COMP(REG)\
 	{ldc r5, 0; ldc r6, 0};\
@@ -613,8 +644,7 @@ post_process:
 	//FIR gain compensation
 	fir_compensation:	// This normally turns the volume up to compensate for the FIR
 	ldw r4, sp[S_FIR_GAIN_COMP]  //load the fir gain comp, it is in 1.4.27 format
-	bf r4, gain_compensation
-	{ldc r7, 27}
+	{bf r4, gain_compensation;ldc r7, 27}
 	COMP(r0)
 	COMP(r1)
 	COMP(r2)
@@ -625,10 +655,9 @@ post_process:
 	gain_compensation:	// This always turns the volume down
 	ldaw r4, sp[S_SETTINGS_OFFSET]
 	ldw r4, r4[S_MIC_GAIN_COMP]
-	bf r4, gain_comp_complete
+	{bf r4, gain_comp_complete;ldc r7, 31}
 	apply_mic_gain_compensation:
 		ldaw r4, sp[S_MIC_CALIB_OFFSET]
-		{ldc r7, 31}
 		ldd r6, r5, r4[S_D_MIC_CALIB_01]
 		{ldc r8, 0; ldc r9, 0}
 		maccs r8, r9, r0, r5
@@ -645,25 +674,16 @@ post_process:
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
 
-	mute_startup:
-	ldaw r4, sp[S_SETTINGS_OFFSET]
-	ldw r4, r4[S_DC_OFFSET_REMOVAL_ENABLED]
-	bf r4, mute_complete
-	{ldw r4, sp[S_DC_OFFSET_SAMPLE_NO];ldc r5, DC_OFFSET_SAMPLE_SIGNAL_ENABLE}
-	lsu r5, r4, r5
-	{bf r5, mute_complete; ldc r5, 0}
-		{ldc r0, 0; ldc r1, 0}
-		{ldc r2, 0; ldc r3, 0}
-	mute_complete:
-
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
-
 	retsp 0
 
 	output_phase:
-	//save stored channels to frame TODO
+
+#define EXCHANGE_BUFFERS 0
+#define CONFIGURE_DECIMATOR 1
+
 		ldaw r4, sp[S_OUTPUT_STORAGE];
 		ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 		ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23];
@@ -674,7 +694,6 @@ post_process:
 
 		APPLY_WINDOW_FN(0)
 		ldaw r4, sp[S_FRAME_OFFSET]
-
 
 		ldaw r5, sp[S_SETTINGS_OFFSET]
 		ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
@@ -751,7 +770,6 @@ post_process:
 			APPLY_WINDOW_FN(1)
 			ldaw r4, sp[S_FRAME_OFFSET]
 			ldw r6, r4[S_FRAME_1_INDEX] //load second frame index
-			//MIN_MAX(S_FRAME_MIN_1, S_FRAME_MAX_1, 1)
 
 			ldaw r5, sp[S_SETTINGS_OFFSET]
 			ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
@@ -1049,7 +1067,7 @@ dc_eliminate_tester:
 
 	ldw r2, r0[0]
 	mov r4, r1
-	DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r2);
+	DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r2, 0); //TODO setup the last arg
 	stw r2, r0[0]
 
 	ldd r4, r5, sp[2]
