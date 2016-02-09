@@ -42,7 +42,6 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-
 #define FFT_N (1<<MAX_FRAME_SIZE_LOG2)
 
 void output_frame(chanend c_audio, int proc_buffer[4][FFT_N/2], lib_dsp_fft_complex_t p[FFT_N],
@@ -76,45 +75,95 @@ void output_frame(chanend c_audio, int proc_buffer[4][FFT_N/2], lib_dsp_fft_comp
 }
 
 {int, int} foo(int x, int y, unsigned old_h, unsigned new_h){
-
-    unsigned long long t = (unsigned long long)new_h;
-
-    if(!old_h)
-        return {0, 0};
-
-    if(!new_h)
-        return {0, 0};
-
-    if(x>0){
-        unsigned long long v =t*(unsigned)x;
-        x = v/old_h;
-    } else {
-        x=-x;
-        unsigned long long v =t*(unsigned)x;
-        x = v/old_h;
-        x=-x;
-    }
-
-    if(y>0){
-        unsigned long long v =t*(unsigned)y;
-        y = v/old_h;
-    } else {
-        y=-y;
-        unsigned long long v =t*(unsigned)y;
-        y = v/old_h;
-        y=-y;
-    }
- /*
     if(old_h){
         x = (long long)x * (long long)new_h / (long long)old_h;
         y = (long long)y * (long long)new_h / (long long)old_h;
     }
-*/
    return {x, y};
 }
 
-    int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-    int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+
+typedef struct {
+    unsigned long long energy_lpf[MIC_ARRAY_NUM_MICS];
+    unsigned hang_over;
+} vad_state;
+
+typedef struct {
+    int signal_gain;
+    int noise_gain;
+} agc_state;
+
+void compute_freq_magnitude_single_channel(frame_frequency * f, unsigned mag[], unsigned ch){
+    for(unsigned i=0;i<FFT_N/2;i++){
+        int re = f->data[ch][i].re;
+        int im = f->data[ch][i].im;
+        mag[i] = hypot_i(re, im);
+    }
+}
+
+void compute_freq_magnitude(frame_frequency * f, unsigned mag[MIC_ARRAY_NUM_MICS][FFT_N/2]){
+    for(unsigned ch=0;ch<MIC_ARRAY_NUM_MICS;ch++){
+        compute_freq_magnitude_single_channel(f, mag[ch], ch);
+    }
+}
+
+/*
+ * The upper word of lpf[i] will contain mag[i] low pass filtered
+ */
+void low_pass_filter_u(unsigned long long lpf[], unsigned mag[], unsigned array_length, unsigned shift){
+    //need to treat 0(DC) and the final bin seperatly
+    for(unsigned i=1;i<array_length;i++){
+        unsigned long long h = (unsigned long long)mag[i];
+        h <<= (32 - shift);
+        lpf[i] = lpf[i] - (lpf[i]>>shift) + h;
+    }
+}
+
+/*
+ * The upper word of lpf[i] will contain mag[i] low pass filtered
+ */
+void low_pass_filter_s(long long lpf[], int mag[], unsigned array_length, unsigned shift){
+    //need to treat 0(DC) and the final bin seperatly
+    for(unsigned i=1;i<array_length;i++){
+        long long h = mag[i];
+        h <<= (31 - shift);
+        lpf[i] = lpf[i] - (lpf[i]>>shift) + h;
+    }
+}
+
+
+int vad_single_channel(unsigned mag[], unsigned long long lpf[], vad_state &v, unsigned channel){
+
+    unsigned long long energy = 0;
+    for(unsigned i=1;i<32;i++){
+        energy += ((long long)mag[i]);
+    }
+    unsigned e = energy/32;
+    unsigned shift = 8;
+    unsigned long long h = (unsigned long long)energy;
+    h <<= (32 - shift);
+    v.energy_lpf[channel]  = v.energy_lpf[channel]  - (v.energy_lpf[channel] >> shift) + h;
+    unsigned o =v.energy_lpf[channel] >> (32+5);
+
+    int thresh = e>o;
+    if(thresh){
+        v.hang_over = 20;
+        return 1;
+    } else {
+        if(v.hang_over){
+            v.hang_over--;
+            return 1;
+        } else
+            return 0;
+    }
+}
+
+void vad(unsigned mag[MIC_ARRAY_NUM_MICS][FFT_N/2], unsigned long long lpf[], vad_state &v, int is_voice[MIC_ARRAY_NUM_MICS]){
+    for(unsigned i=0;i<MIC_ARRAY_NUM_MICS;i++)
+        is_voice[i] = vad_single_channel(mag[i], lpf, v, i);
+}
 
 void noise_red(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
@@ -140,7 +189,6 @@ void noise_red(streaming chanend c_ds_output[2],
                 0,
                 DECIMATOR_HALF_FRAME_OVERLAP,
                 4
-
         };
         decimator_config dc[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
@@ -158,91 +206,119 @@ void noise_red(streaming chanend c_ds_output[2],
         unsigned head = 0;
 
         unsigned long long lpf[FFT_N/2] = {0};
-        int enabled = 0;
+        int enabled = 1;
 
+#define FLOOR 3
+        vad_state vad;
+        memset(&vad, 0, sizeof(vad));
+        unsigned shift = 9;
         while(1){
            frame_complex * current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
+
+
+               unsigned c=32;
+
+               for(unsigned i=0;i<FFT_N;i++){
+                   int d = current->data[0][i].re;
+                   if(d<0) d=-d;
+                   unsigned t = clz(d);
+                   if(t<c)
+                       c=t;
+               }
+
+               for(unsigned i=0;i<FFT_N;i++){
+                   current->data[0][i].re<<=(c-2);
+               }
+
            for(unsigned i=0;i<4;i++){
                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
                lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
            }
            frame_frequency * frequency = (frame_frequency *)current;
-           int noise = 1;
 
-           long long sum = 0;
+           unsigned mag[FFT_N/2];
 
-          // xscope_int(0, 0);
-          // xscope_int(1, 0);
+           compute_freq_magnitude_single_channel(frequency, mag, 0);
 
-           #define FLOOR 5
-           //  frequency->data[0][0].re>>=FLOOR;
-          // frequency->data[0][0].im = 0;
-           for(unsigned i=1; i<FFT_N/2-2;i++){
+           int is_voice = vad_single_channel(mag, lpf, vad, 0);
 
-              int re = frequency->data[0][i].re;
-              int im = frequency->data[0][i].im;
+           if(is_voice){
+               lb.set_led_brightness(11, 255);
+           } else {
+               lb.set_led_brightness(11, 0);
+           }
+           low_pass_filter_u(lpf, mag, FFT_N/2, shift);
 
-              unsigned mag = hypot_i(re, im);
-              unsigned noise_floor = lpf[i]>>30;
-
-            //  int32_t a, b;
-            //  cordic(a, b, a, b);
-
-             // xscope_int(0,mag);
-             // xscope_int(1, noise_floor);
-              if(enabled){
-                  noise_floor=noise_floor>>2;
-                  if(mag > noise_floor){
-
-                     unsigned new_mag = mag - noise_floor;
-
-                     if(mag > 0){
-                         if((mag>>FLOOR) > new_mag)
-                             new_mag = (mag>>FLOOR);
-                     } else {
-                         if((mag>>FLOOR) < new_mag)
-                             new_mag = (mag>>FLOOR);
-                     }
-
-                     //xscope_int(2, new_mag);
-                     {re, im} = foo(re, im, mag, new_mag);
-
-                     frequency->data[0][i].re = re;
-                     frequency->data[0][i].im = im;
-                  }
-                  else {
-                      unsigned new_mag = noise_floor - mag;
-                      if(mag > 0){
-                          if((mag>>FLOOR) > new_mag)
-                              new_mag = (mag>>FLOOR);
-                      } else {
-                          if((mag>>FLOOR) < new_mag)
-                              new_mag = (mag>>FLOOR);
-                      }
-
-                      {re, im} = foo(re, im, mag, new_mag);
-
-                     // xscope_int(2, new_mag);
-                      frequency->data[0][i].re = re;
-                      frequency->data[0][i].im = im;
-                  }
-              }
-
-              unsigned long long h = (unsigned long long)mag;
-              unsigned s = 8;
-              h <<= (30 - s);
-              lpf[i] = lpf[i] - (lpf[i]>>s) + h;
-
+           //frequency->data[0][0].re = 0;      //remove dc offset
+           //frequency->data[0][0].im = 0;      //remove highest frequency bin, i think??
+           if(enabled){
+               if(1){
+#define PLOT_FREQ 0
+#if PLOT_FREQ
+                   xscope_int(0, 0);
+                   xscope_int(1, 0);
+#endif
+                   for(unsigned i=1; i<FFT_N/2-2;i++){
+                       unsigned current_mag = mag[i];
+                       unsigned noise_mag = (lpf[i]>>32);
+#if PLOT_FREQ
+                       xscope_int(0, noise_mag);
+                       xscope_int(1, current_mag);
+                       delay_microseconds(5);
+#endif
+                       if(current_mag > noise_mag*2){
+                           unsigned output = current_mag - noise_mag*2;
+                           if((current_mag>>FLOOR) < output){   //suppression limiting
+                               int re = frequency->data[0][i].re;
+                               int im = frequency->data[0][i].im;
+                               {re, im} = foo(re, im, current_mag, output);
+                               frequency->data[0][i].re = re;
+                               frequency->data[0][i].im = im;
+                           } else {
+                               frequency->data[0][i].re >>= FLOOR;
+                               frequency->data[0][i].im >>= FLOOR;
+                           }
+                       } else {
+                           frequency->data[0][i].re >>= (FLOOR);
+                           frequency->data[0][i].im >>= (FLOOR);
+                       }
+                   }
+#if PLOT_FREQ
+               xscope_int(0, 0);
+               xscope_int(1, 0);
+#endif
+               } else {
+#define NOISE_ATTEN 5
+                   for(unsigned i=1; i<FFT_N/2-2;i++){
+                       frequency->data[0][i].re >>= (NOISE_ATTEN);
+                       frequency->data[0][i].im >>= (NOISE_ATTEN);
+                   }
+               }
            }
 
+           //apply agc(is_voice)
            select {
                case lb.button_event():{
                    unsigned button;
                    e_button_state pressed;
                    lb.get_button_event(button, pressed);
                    if(pressed == BUTTON_PRESSED){
-                       enabled = 1-enabled;
-                       printf("%d\n", enabled);
+                       if(button == 0){
+                           shift++;
+                           printf("shift: %d\n", shift);
+                       }
+                       if(button == 1){
+                           shift--;
+                           printf("shift: %d\n", shift);
+
+                       }
+                       if(button == 2){
+                           enabled = 1-enabled;
+                           printf("%d\n", enabled);
+                       }
+                       if(button == 3){
+                           _Exit(1);
+                       }
                    }
                    break;
                }
@@ -250,13 +326,8 @@ void noise_red(streaming chanend c_ds_output[2],
            }
 
            for(unsigned i=0;i<FFT_N/2;i++){
-               if(enabled){
-                   p[i].re =  frequency->data[0][i].re;
-                   p[i].im =  frequency->data[0][i].im;
-               } else {
-                   p[i].re =  frequency->data[0][i].re;
-                   p[i].im =  frequency->data[0][i].im;
-               }
+               p[i].re =  frequency->data[0][i].re>>(c-3);
+               p[i].im =  frequency->data[0][i].im>>(c-3);
            }
 
            output_frame(c_audio, proc_buffer, p, head, window);
@@ -277,12 +348,12 @@ void decouple(chanend c_in, chanend c_out){
                }
                default:break;
            }
-           if(p_head){
+           if(p_head) {
 
-               c_out <: p_head[head]*2;
-               c_out <: p_head[head]*2;
+               c_out <: p_head[head];
+               c_out <: p_head[head];
 
-              xscope_int(0, p_head[head]);
+              //xscope_int(0, p_head[head]);
 
                head++;
                if(head == FFT_N/2){
@@ -304,7 +375,6 @@ void decouple(chanend c_in, chanend c_out){
 
 #define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
-
 [[distributable]]
 void i2s_handler(server i2s_callback_if i2s,
                  client i2c_master_if i2c, chanend c_audio)
