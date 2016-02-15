@@ -36,14 +36,14 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
 // Based on the spreadsheet mic_array_das_beamformer_calcs.xls,
 // which can be found in the root directory of this app
-static const one_meter_thirty_degrees[6] = {0, 45, 132, 175, 132, 45};
+static const one_meter_thirty_degrees[6] = {0, 23, 66, 87, 66, 23};
 
 static void set_dir(client interface led_button_if lb,
                     unsigned dir, unsigned delay[]) {
 
     for(unsigned i=0;i<13;i++)
         lb.set_led_brightness(i, 0);
-    delay[0] = 87;
+    delay[0] = 43;
     for(unsigned i=0;i<6;i++)
         delay[i+1] = one_meter_thirty_degrees[(i - dir + 3 +6)%6];
 
@@ -78,7 +78,7 @@ static void set_dir(client interface led_button_if lb,
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 frame_audio audio[2];
-
+#include <stdio.h>
 void hires_DAS_fixed(streaming chanend c_ds_output[2],
         streaming chanend c_cmd,
         client interface led_button_if lb, chanend c_audio) {
@@ -86,7 +86,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
         unsigned buffer;
         memset(audio, sizeof(frame_audio), 0);
 
-        unsigned gain = 4;
+        unsigned gain = 16;
         unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
         unsigned dir = 0;
         set_dir(lb, dir, delay);
@@ -121,10 +121,10 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                                 dir = 5;
                             set_dir(lb, dir, delay);
 
-                            debug_printf("dir %d\n", dir+1);
+                            printf("dir %d\n", dir+1);
                             for(unsigned i=0;i<7;i++)
-                              debug_printf("delay[%d] = %d\n", i, delay[i]);
-                            debug_printf("\n");
+                              printf("delay[%d] = %d\n", i, delay[i]);
+                            printf("\n");
 
                             hires_delay_set_taps(c_cmd, delay, 7);
                             break;
@@ -146,10 +146,10 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                                 dir = 0;
                             set_dir(lb, dir, delay);
 
-                            debug_printf("dir %d\n", dir+1);
+                            printf("dir %d\n", dir+1);
                             for(unsigned i=0;i<7;i++)
-                              debug_printf("delay[%d] = %d\n", i, delay[i]);
-                            debug_printf("\n");
+                              printf("delay[%d] = %d\n", i, delay[i]);
+                            printf("\n");
 
                             hires_delay_set_taps(c_cmd, delay, 7);
                             break;
@@ -171,7 +171,9 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
 
             c_audio <: output;
             c_audio <: output;
-            xscope_int(0, output);
+		for(unsigned i=0;i<7;i++)
+           	 xscope_int(i, current->data[i][0]);
+
 
         }
     }
@@ -179,6 +181,8 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
 
 #define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
+
+//on tile[1] : out port p_pll_clk                 = XS1_PORT_4D;
 
 [[distributable]]
 void i2s_handler(server i2s_callback_if i2s,
@@ -235,6 +239,22 @@ int main() {
     i2c_master_if i_i2c[1];
     chan c_audio;
     par {
+        on tile[1]:
+        {
+            timer t;
+            unsigned now;
+            t:> now;
+            unsigned step = 1666666;
+            while(1){
+                t when timerafter(now):> int;
+                now += step;
+              //  p_pll_clk <: 0xf;
+                t when timerafter(now):> int;
+                now += step;
+              //  p_pll_clk <: 0;
+            }
+        }
+
         on tile[1]: {
           configure_clock_src(mclk, p_mclk_in1);
           start_clock(mclk);
