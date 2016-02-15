@@ -4,12 +4,9 @@
 #include "mic_array.h"
 #include <string.h>
 
-#ifndef HIRES_MAX_DELAY
-    #define HIRES_MAX_DELAY 256
-#endif
-
 unsigned g_hires_shared_memory[16];
 
+#define MICS_PER_S_CHAN 4
 
 #pragma unsafe arrays
 void hires_delay(
@@ -24,15 +21,16 @@ void hires_delay(
 
     unsigned head = 0;
     while(1){
-        for(unsigned i=0;i<4;i++){
+        for(unsigned i=0;i<MICS_PER_S_CHAN;i++){
             for(unsigned j=0;j<n;j++){
-                c_from_pdm_frontend[j] :> data[i*n+j][head];
+                c_from_pdm_frontend[j] :> data[i+j*MICS_PER_S_CHAN][head];
             }
         }
 
-        for(unsigned i=0;i<4;i++){
+        for(unsigned i=0;i<MICS_PER_S_CHAN;i++){
             for(unsigned j=0;j<n;j++){
-                c_to_decimator[j] <: data[i*n+j][(head-delays[2*i])%HIRES_MAX_DELAY];
+                c_to_decimator[j] <:
+                    data[i+j*MICS_PER_S_CHAN][(head-delays[i+j*MICS_PER_S_CHAN])%HIRES_MAX_DELAY];
             }
         }
         head++;

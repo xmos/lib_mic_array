@@ -7,6 +7,12 @@
 #include "fir_decimator.h"
 #include "mic_array_frame.h"
 
+
+#ifndef HIRES_MAX_DELAY
+    #define HIRES_MAX_DELAY 256
+#endif
+
+
 /** PDM Microphone Interface component.
  *
  *  This task handles the interface to up to 8 PDM microphones whilst also decimating
