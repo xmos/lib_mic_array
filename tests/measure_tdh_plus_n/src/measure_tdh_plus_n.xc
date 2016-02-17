@@ -9,8 +9,8 @@
 #define TEST_FREQUENCY 1000.0
 #define SAMPLE_RATE 384000.0
 
-#define SAMPLE_COUNT (384000/32)
-#define PI (3.141592653589793238462643383279502884197169399375105820974944592307816406286)
+#define SAMPLE_COUNT (384000)
+#define PI (3.1415926535897932384626433832795028)
 #define OMEGA (2.0*PI*TEST_FREQUENCY/SAMPLE_RATE)
 
 int data[4*THIRD_STAGE_COEFS_PER_STAGE*12] = {0};
@@ -53,7 +53,6 @@ void test_backend(){
         decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0]);
         {
             unsafe{
-
                 unsigned divider_lut[5] = {2, 4, 6, 8, 12};
                  const int * unsafe coef_lut[5] = {
                         g_third_stage_div_2_fir,
@@ -79,7 +78,6 @@ void test_backend(){
                     }
                     unsigned buffer;
                     unsigned divider = divider_lut[div_index];
-
                     unsigned count = SAMPLE_COUNT/(4*divider);
 
                     fprintf(fptr,"%f\n", SAMPLE_RATE/(4.0*(double)divider));
@@ -94,11 +92,6 @@ void test_backend(){
                     //first wait until the filter delay has passed
                     for(unsigned i=0;i<64;i++)
                         decimator_get_next_audio_frame(c_ds_output, 1, buffer, audio, dcc);
-
-                    //that should be long enough
-
-                    double total_energy=0.0;
-                    double noise_energy=0.0;
 
                     for(unsigned i=0;i<count;i++){
                         frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 1, buffer, audio, dcc);
