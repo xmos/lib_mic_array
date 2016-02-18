@@ -105,7 +105,85 @@ void test_backend(){
     }
 }
 
+extern void pdm_rx_debug(
+        streaming chanend c_not_a_port,
+        streaming chanend c_4x_pdm_mic_0,
+        streaming chanend ?c_4x_pdm_mic_1);
+
+void create_DSD_source(streaming chanend c_not_a_port){
+
+    double sampleRate = 3072000.0;
+    double freq = 1000.0;
+    int actual_integral = 0;
+    double prevError = 0.0;
+
+    unsigned s=0;
+    while(1){
+        unsigned data = 0;
+        for(unsigned i=0;i<4;i++){
+            double m =  freq * 2.0 *  PI / sampleRate;
+            double perfect_integral = (1.0 - cos((double)s*m))/m;
+            double error = (double)(actual_integral) - perfect_integral + prevError *0.1;
+
+            prevError = error;
+
+            data = data>>8;
+            if(error <= 0.0){
+                actual_integral += 1;
+                data += 0xff000000;
+            } else {
+                actual_integral -= 1;
+            }
+            s++;
+        }
+        c_not_a_port <: data;
+    }
+}
+
+void test_frontend(){
+    streaming chan c_not_a_port, c_4x_pdm_mic_0, c_4x_pdm_mic_1;
+    par {
+       create_DSD_source(c_not_a_port);
+       pdm_rx_debug(c_not_a_port, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+       {
+           FILE * movable fptr;
+           fptr=fopen("pdm_output.txt","w");
+           if(fptr==NULL){
+               printf("Error!");
+               exit(1);
+           }
+           unsigned count = 3720000/8;
+
+           fprintf(fptr,"%f\n", count);
+           fprintf(fptr,"%f\n", TEST_FREQUENCY);
+           fprintf(fptr,"%d\n", count);
+
+           for(unsigned i=0;i<64;i++){
+               c_4x_pdm_mic_0 :> int;
+               c_4x_pdm_mic_1 :> int;
+           }
+           for(unsigned j=0;j<count;j++){
+               int a;
+               for(unsigned i=0;i<4;i++){
+                   c_4x_pdm_mic_0 :> a;
+                   c_4x_pdm_mic_1 :> a;
+               }
+               fprintf(fptr,"%d\n", a);
+               printf("%d\n", j);
+           }
+           fclose(move(fptr));
+       }
+    }
+
+
+
+
+
+}
+
+
 int main(){
-    test_backend();
+    test_frontend();
+    //test_backend();
     return 0;
 }

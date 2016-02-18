@@ -24,7 +24,7 @@
 #define CH6 6
 #define CH7 7
 
-#define STACKWORDS 16
+#define STACKWORDS 32
 
 #define FIR_BLOCK(P) \
 	{ld8u b, p[c]; add a, a, b};\
