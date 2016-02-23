@@ -34,7 +34,7 @@ typedef struct {
 
 /** Complex number in Polar coordinates.*/
 typedef struct {
-    #if MIC_ARRAY_WORD_LENGTH_SHORT
+#if MIC_ARRAY_WORD_LENGTH_SHORT
     int32_t hyp;        /**<The hypotenuse component. */
     int32_t theta;      /**<The angle component. */
 #else

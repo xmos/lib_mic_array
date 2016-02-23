@@ -32,8 +32,13 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
         c_from_decimator[i] <: frames;
    for(unsigned f=0;f<frames;f++){
         unsafe {
-            for(unsigned i=0;i<decimator_count;i++)
-               c_from_decimator[i] <: (int * unsafe)(audio[f].data[i*4]);
+            for(unsigned i=0;i<decimator_count;i++){
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+                c_from_decimator[i] <: (int16_t * unsafe)(audio[f].data[i*4]);
+#else
+               c_from_decimator[i] <: (int32_t * unsafe)(audio[f].data[i*4]);
+#endif
+            }
             for(unsigned i=0;i<decimator_count;i++)
                c_from_decimator[i] <: (s_metadata * unsafe)&audio[f].metadata[i];
         }
@@ -68,8 +73,13 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
          soutct(c_from_decimator[i], EXCHANGE_BUFFERS);
 
     unsafe {
-         for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (int * unsafe)(audio[buffer].data[i*4]);
+         for(unsigned i=0;i<decimator_count;i++){
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+            c_from_decimator[i] <: (int16_t * unsafe)(audio[buffer].data[i*4]);
+#else
+            c_from_decimator[i] <: (int32_t * unsafe)(audio[buffer].data[i*4]);
+#endif
+         }
          for(unsigned i=0;i<decimator_count;i++)
             c_from_decimator[i] <: (s_metadata * unsafe)&audio[buffer].metadata[i];
     }

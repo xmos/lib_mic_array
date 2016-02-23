@@ -1,4 +1,5 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
+#include <platform.h>
 #include "mic_array.h"
 #include <xs1.h>
 #include <xclib.h>
@@ -6,26 +7,16 @@
 #include <string.h>
 #include "debug_print.h"
 #include <stdio.h>
+
+#define DF 12    //12 is the maximum I want to support
+#define FRAME_COUNT 3
+
 static int pseudo_random(unsigned &x){
     crc32(x, -1, 0xEB31D82E);
-    x=INT_MAX;
     return (int)x;
 }
 
-#if 0
 #pragma unsafe arrays
-static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length, const int val){
-    long long y = 0;
-    data[0] = val;
-    for (unsigned i=0; i<length; i++)
-        y += (long long)coefs[i] * (long long)data[i];
-    for (unsigned i=length-1; i>0; i--)
-        data[i] = data[i-1];
-    return y>>31;
-}
-#else
-
-
 static unsafe void add_to_filter(int * unsafe data, const unsigned length,
         const int val, unsigned &n){
     data[n] = val;
@@ -34,6 +25,8 @@ static unsafe void add_to_filter(int * unsafe data, const unsigned length,
     else
         n=n+1;
 }
+
+#pragma unsafe arrays
 static unsafe int filter(const int * unsafe coefs, int * unsafe data, const unsigned length,
         const int val, unsigned &n){
 
@@ -48,22 +41,6 @@ static unsafe int filter(const int * unsafe coefs, int * unsafe data, const unsi
         n=n+1;
     return y>>31;
 }
-#endif
-
-
-
-
-#define DF 12    //12 is the maximum I want to support
-
-int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-int data_2[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-int data_3[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-
-#define FRAME_COUNT 3
-
-frame_audio audio[FRAME_COUNT];
-frame_complex f_complex[FRAME_COUNT];
 
 #pragma unsafe arrays
 int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_buffering_type buf_type){
@@ -162,33 +139,13 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
             int output[16][COUNT<<MAX_FRAME_SIZE_LOG2];
             memset(second_stage_data, 0, sizeof(int)*16*16);
             memset(third_stage_data, 0, sizeof(int)*32*DF*16);
-            memset(output, 0xffffffff, sizeof(int)*(COUNT<<MAX_FRAME_SIZE_LOG2)*16);
+            memset(output, 0, sizeof(int)*(COUNT<<MAX_FRAME_SIZE_LOG2)*16);
             memset(second_stage_n, 0, sizeof(unsigned)*16);
             memset(third_stage_n, 0, sizeof(unsigned)*16);
             int val[16];
 
 
             for(unsigned c=0;c<(COUNT<<frame_size_log2);c++){
-
-#if 0
-                for(unsigned r=0;r<df;r++){
-                    for(unsigned p=0;p<4;p++){
-
-                        int data[16];
-                        for(unsigned i=0;i<channel_count;i++){
-                            data[i] = pseudo_random(x);
-                            val[i] = filter(fir2_debug, second_stage_data[i], 16, data[i]);
-                        }
-                        for(unsigned i=0;i<4;i++){
-                            for(unsigned j=0;j<channel_count/4;j++){
-                                c_4x_pdm_mic[j] <: data[i*(channel_count/4)+j];
-                            }
-                        }
-                    }
-                    for(unsigned i=0;i<channel_count;i++)
-                        val[i] = filter(debug_fir, third_stage_data[i], 32*df, val[i]);
-                }
-#else
                 for(unsigned r=0;r<df-1;r++){
                     for(unsigned p=0;p<3;p++){
 
@@ -250,8 +207,6 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                         val[i] = filter(debug_fir, third_stage_data[i], 32*df, val[i], third_stage_n[i]);
                 }
 
-#endif
-
                 unsigned reorder_channels[16];
                 unsigned k=0;
                 for(unsigned i=0;i<channel_count;i+=4){
@@ -305,6 +260,7 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                 }
             }
 
+
 #define DEBUG_MODEL  0
 #define DEBUG_OUTPUT 0
 
@@ -312,7 +268,12 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                 for(unsigned m=0;m<channel_count;m++){
                     c_model <: output[m][c];
 #if DEBUG_MODEL
+
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+                    printf("%08x ", output[m][c]>>16);
+#else
                     printf("%08x ", output[m][c]);
+#endif
 #endif
                 }
 #if DEBUG_MODEL
@@ -325,6 +286,15 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
 
 #pragma unsafe arrays
 void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel_count){
+
+    frame_audio audio[FRAME_COUNT];
+    frame_complex f_complex[FRAME_COUNT];
+
+    //FIXME this might cause weird crashes!! due to memory alignment
+    int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+    int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+    int data_2[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+    int data_3[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 
     int window[1<<(MAX_FRAME_SIZE_LOG2-1)];
     {
@@ -486,7 +456,11 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                for(unsigned m=0;m<channel_count;m++){
                    c_actual <: output[m][c];
 #if DEBUG_OUTPUT
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+                   printf("%08x ", output[m][c]>>16);
+#else
                    printf("%08x ", output[m][c]);
+#endif
 #endif
                }
 #if DEBUG_OUTPUT
@@ -594,6 +568,11 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                                                 int a, b;
                                                 c_actual:> a;
                                                 c_model :> b;
+
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+                                                b = b >>16;
+#endif
+
                                                 int diff = a-b;
                                                 if (diff<0) diff = -diff;
                                                 if(diff>max_diff)
@@ -637,32 +616,43 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
     debug_printf("Success: %d channels supported\n", channel_count);
 }
 
-void channel_count_test(){
+void channel_count_test(unsigned counts[], unsigned n){
     streaming chan c_4x_pdm_mic[4];
     streaming chan c_ds_output[4];
     chan c_model, c_actual;
     par {
         {
-            for(unsigned c=4;c<=16;c+=4){
-            //unsigned c=16;{
+            for(unsigned c=0; c<n;c++){
+                unsigned count=counts[c];
                 par{
-                    model(c_4x_pdm_mic, c, c_model);
-                    output(c_ds_output, c_actual, c);
-                    verifier(c_model, c_actual, c);
+                    model(c_4x_pdm_mic, count, c_model);
+                    output(c_ds_output, c_actual, count);
+                    verifier(c_model, c_actual, count);
                 }
             }
-            debug_printf("All done\n");
-            _Exit(0);
+            if(counts[n-1] == 16){
+                debug_printf("All done\n");
+                _Exit(0);
+            }
         }
         decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
         decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
         decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2]);
         decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3]);
+        while(1);
      }
 }
 
 int main(){
-    channel_count_test();
-
+    par{
+        on tile[0]:{
+            unsigned counts[2]= {4, 16};
+            channel_count_test(counts, 2);
+        }
+        on tile[1]:{
+            unsigned counts[2]= {8, 12};
+            channel_count_test(counts, 2);
+        }
+    }
     return 0;
 }

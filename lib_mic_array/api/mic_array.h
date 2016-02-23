@@ -7,11 +7,9 @@
 #include "fir_coefs.h"
 #include "mic_array_frame.h"
 
-
 #ifndef HIRES_MAX_DELAY
     #define HIRES_MAX_DELAY 256
 #endif
-
 
 /** PDM Microphone Interface component.
  *
@@ -29,7 +27,6 @@ void pdm_rx(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend ?c_4x_pdm_mic_1);
-
 
 /** High resolution delay component.
  *

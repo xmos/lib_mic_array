@@ -37,15 +37,10 @@
 .xtacommand "analyse endpoints input_7_1_ep input_0_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-#ifndef DC_OFFSET_SAMPLE_SIGNAL_ENABLE
-	#define DC_OFFSET_SAMPLE_SIGNAL_ENABLE 	63   	//This is the sample number at which point the signal will be enabled
-#endif
-
 #ifndef DC_OFFSET_DIVIDER_LOG2
 	#define DC_OFFSET_DIVIDER_LOG2			12		//controls the rate of convergance of the dynamic DC offset
-													//higher settings are faster but more unstable.
+												    //higher settings are faster but more unstable.
 #endif
-
 
 #define SECOND_STAGE_COEF_COUNT 		16		//This must reflect the implementation in decimate_to_pcm_4ch_fir_impl
 #define THIRD_STAGE_COEFS_PER_STAGE 	32		//This must reflect the implementation in third_stage_fir_impl
@@ -106,7 +101,6 @@
 #define S_THIRD_STAGE_SIZE				(16)
 
 //////////////////////////////////////////////////////////////////////////////////////
-
 
 #define S_OUTPUT_STORAGE (S_THIRD_STAGE+S_THIRD_STAGE_SIZE)
 #define S_D_OUTPUT_STORAGE_01 0
@@ -209,6 +203,23 @@
 	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
 	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]}
 
+/*
+#define INPUT_TO_OFFSET_NEW() \
+	ldd r1, r0, sp[somthing];\
+	{ldw r1, r1[r0];add r0, r0, 1}\
+	{ldw r1, sp[S_C_INPUT]; set dp, r1};
+	{in r0, res[r1]};\
+	{stw r0, dp[0]};\
+	{stw r0, dp[20]; in r0, res[r1]};\
+	{stw r0, dp[40]; ldaw dp, dp[60]};\
+	{stw r0, dp[0]; in r0, res[r1]};\
+	{stw r0, dp[20]};\
+	{stw r0, dp[40];in r0, res[r1];\
+	{stw r0, dp[60]; ldaw dp, dp[60]};\
+	{stw r0, dp[20]}
+*/
+
+
 
 //setup divider by N registers (coefs, data, accumulators)
 //must avoid r0 and r1 for persistant state as they will be clobbered by INPUT_TO_OFFSET
@@ -307,26 +318,54 @@
 	{bitrev r6, r6; sub r7, r7, r5};\
 	{shr r6, r6, r7}
 
-//r4 is the address of the S_FRAME_OFFSET_SECTION
-//r6 is the AUDIO_POINTER_INDEX
-#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
-		ldw r7, r4[POINTER];\
-		std r1, r0, r7[r6];\
-		{ldc r0, 2<<MAX_FRAME_SIZE_LOG2};\
-		ldaw r7, r7[r0];\
-		std r3, r2, r7[r6]
-
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
-#define SAVE_SAMPLES_NORMAL(POINTER)\
-    	{ldc r5, 4<<MAX_FRAME_SIZE_LOG2};\
-    	{ldw r7, r4[POINTER]};\
-    	{ldaw r7, r7[r6]};\
-		{stw r0, r7[0];add r7, r7, r5};\
-		{stw r1, r7[0];add r7, r7, r5};\
-		{stw r2, r7[0];add r7, r7, r5};\
-		{stw r3, r7[0]}
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
+		{mkmsk r7, 16; shr r0, r0, 16};\
+		{andnot r1, r7; andnot r3, r7};\
+		{add r0, r1, r0; ldw r7, r4[POINTER]};\
+		stw r0, r7[r6];\
+		{ldc r0, 1<<MAX_FRAME_SIZE_LOG2};\
+		{shr r2, r2, 16; add r6, r6, r0};\
+		{add r3, r3, r2};\
+		stw r3, r7[r6]
+#else
+	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
+			ldw r7, r4[POINTER];\
+			std r1, r0, r7[r6];\
+			{ldc r0, 2<<MAX_FRAME_SIZE_LOG2};\
+			ldaw r7, r7[r0];\
+			std r3, r2, r7[r6]
+#endif
+
+//r4 is the address of the S_FRAME_OFFSET_SECTION
+//r6 is the AUDIO_POINTER_INDEX
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+	#define SAVE_SAMPLES_NORMAL(POINTER)\
+	    	{ldc r5, 1<<(MAX_FRAME_SIZE_LOG2)};\
+	    	{add r8, r6, r5; add r5, r5, r5};\
+	    	{ldw r7, r4[POINTER]};\
+	    	{shr r0, r0, 16; shr r1, r1, 16};\
+	    	{shr r2, r2, 16; shr r3, r3, 16};\
+			st16 r0, r7[r6];\
+			st16 r1, r7[r8];\
+	    	{add r6, r6, r5; add r8, r8, r5};\
+			st16 r2, r7[r6];\
+			st16 r3, r7[r8]
+
+#else
+	#define SAVE_SAMPLES_NORMAL(POINTER)\
+	    	{ldc r5, 4<<(MAX_FRAME_SIZE_LOG2)};\
+	    	{ldw r7, r4[POINTER]};\
+	    	{ldaw r7, r7[r6]};\
+			{stw r0, r7[0];add r7, r7, r5};\
+			{stw r1, r7[0];add r7, r7, r5};\
+			{stw r2, r7[0];add r7, r7, r5};\
+			{stw r3, r7[0]}
+#endif
+
 
 .globl	decimate_to_pcm_4ch
 .align	8
@@ -712,10 +751,10 @@ dc_offset_removal_complete:
 		save_to_frame_complete_0:
 
 		ldw r5, r4[S_FRAME_0_INDEX]
-		add r5, r5, 1
+		{add r5, r5, 1;ldw r6, r4[S_OVERLAPPING_FRAMES]}
 		stw r5, r4[S_FRAME_0_INDEX]
 
-		ldw r6, r4[S_OVERLAPPING_FRAMES]
+
 		bt r6, overlapping_frames
 		no_overlapping_frames:
 
@@ -787,10 +826,10 @@ dc_offset_removal_complete:
 			save_to_frame_complete_1:
 
 			ldw r5, r4[S_FRAME_1_INDEX]
-			add r5, r5, 1
+			{add r5, r5, 1;ldw r6, r4[S_FRAME_SIZE_LOG2]}
 			stw r5, r4[S_FRAME_1_INDEX]
 
-			ldw r6, r4[S_FRAME_SIZE_LOG2]
+
 			{shr r5, r5, r6; ldc r6, 0}
 			bf r5, do_the_rest;
 			at_the_end_of_the_overlapping_half_frame:
@@ -900,7 +939,7 @@ divide_by_four:
 
 	ldw r8, sp[S_CHAN_COUNT]
 	{dualentsp 1; eq r9, r8, 4}
-	ldaw r11, cp[g_second_stage_fir]
+	ldaw r11, cp[g_second_stage_fir]		//------------------------------------------------------------------------------------------------------------ This needs fixing
 
 	{bt r9, decimate_to_pcm_4ch_0; eq r9, r8, 3}
 	{bt r9, decimate_to_pcm_4ch_1; eq r9, r8, 2}

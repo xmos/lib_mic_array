@@ -4,5 +4,4 @@
 
 #define MAX_FRAME_SIZE_LOG2 4
 
-
 #endif /* MIC_ARRAY_CONF_H_ */

@@ -10,6 +10,7 @@ lib_mic_array change log
   * Now use a 64-bit accumulator for DC offset removal
   * Consolidated generators into a single python generator
   * Produced output frequency response graphs
+  * Added 16 bit output mode
 
 1.0.0
 -----
