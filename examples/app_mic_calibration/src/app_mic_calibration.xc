@@ -9,7 +9,6 @@
 #include <string.h>
 #include <xclib.h>
 
-#include "fir_decimator.h"
 #include "mic_array.h"
 
 on tile[0]: in port p_pdm_clk             = XS1_PORT_1E;

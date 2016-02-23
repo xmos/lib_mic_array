@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "debug_print.h"
+#include <stdio.h>
 static int pseudo_random(unsigned &x){
     crc32(x, -1, 0xEB31D82E);
+    x=INT_MAX;
     return (int)x;
 }
 
@@ -32,7 +34,7 @@ static unsafe void add_to_filter(int * unsafe data, const unsigned length,
     else
         n=n+1;
 }
-static unsafe int filter(int * unsafe coefs, int * unsafe data, const unsigned length,
+static unsafe int filter(const int * unsafe coefs, int * unsafe data, const unsigned length,
         const int val, unsigned &n){
 
     long long y = 0;
@@ -160,7 +162,7 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
             int output[16][COUNT<<MAX_FRAME_SIZE_LOG2];
             memset(second_stage_data, 0, sizeof(int)*16*16);
             memset(third_stage_data, 0, sizeof(int)*32*DF*16);
-            memset(output, 0, sizeof(int)*(COUNT<<MAX_FRAME_SIZE_LOG2)*16);
+            memset(output, 0xffffffff, sizeof(int)*(COUNT<<MAX_FRAME_SIZE_LOG2)*16);
             memset(second_stage_n, 0, sizeof(unsigned)*16);
             memset(third_stage_n, 0, sizeof(unsigned)*16);
             int val[16];
@@ -261,9 +263,12 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                 if (c<(COUNT<<frame_size_log2)-2) {
                     for(unsigned m=0;m<channel_count;m++){
 
+
                         int v = apply_fir_comp(val[reorder_channels[m]], fir_comp);
                         if(gain_comp_enabled)
                             v = apply_gain_comp(v, gain_comp[m]);
+
+
 
                         unsigned index = 0;
                         if(frame_size_log2)
@@ -288,6 +293,7 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                             }
                         }
 
+                       // printf("output[%d][%d]=%08x\n",m, c+2, v);
                         output[m][c+2] = v;
                     }
                 }
@@ -299,10 +305,19 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                 }
             }
 
+#define DEBUG_MODEL  0
+#define DEBUG_OUTPUT 0
+
             for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
                 for(unsigned m=0;m<channel_count;m++){
                     c_model <: output[m][c];
+#if DEBUG_MODEL
+                    printf("%08x ", output[m][c]);
+#endif
                 }
+#if DEBUG_MODEL
+                printf("\n");
+#endif
             }
         }
     }
@@ -470,7 +485,13 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
            for(unsigned c=0;c<COUNT<<frame_size_log2;c++){
                for(unsigned m=0;m<channel_count;m++){
                    c_actual <: output[m][c];
+#if DEBUG_OUTPUT
+                   printf("%08x ", output[m][c]);
+#endif
                }
+#if DEBUG_OUTPUT
+               printf("\n");
+#endif
            }
         }
     }
@@ -478,7 +499,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
 
 #pragma unsafe arrays
 static void send_settings(chanend  c_chan,
-        const int * unsafe fir, int * unsafe debug_fir, unsigned df, int fir_comp,
+        const int * unsafe fir, const int * unsafe debug_fir, unsigned df, int fir_comp,
         unsigned frame_size_log2, unsigned index_bit_reversal, unsigned  gain_comp_enabled,
         unsigned gain[16], unsigned windowing_enabled,
         e_decimator_buffering_type buf_type){
@@ -512,7 +533,7 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                 g_third_stage_div_8_fir,
                 g_third_stage_div_12_fir,
         };
-        int * unsafe decimation_fir_debug_lut[5] = {
+        const int * unsafe decimation_fir_debug_lut[5] = {
                 fir3_div_2_debug,
                 fir3_div_4_debug,
                 fir3_div_6_debug,
@@ -535,7 +556,7 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
 
             for(unsigned decimation_index = 0; decimation_index < 5;decimation_index++){
                 const int * unsafe fir = decimation_fir_lut[decimation_index];
-                int * unsafe debug_fir = decimation_fir_debug_lut[decimation_index];
+                const int * unsafe debug_fir = decimation_fir_debug_lut[decimation_index];
                 unsigned df = decimation_factor_lut[decimation_index];
 
                 for(unsigned fir_comp_index=0; fir_comp_index<4;fir_comp_index++){
@@ -581,19 +602,20 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                                         }
 
                                         if(max_diff < 16){
-
+                                            test++;
                                         } else{
-                                            debug_printf("%4d ", test++);
-                                            debug_printf("df: %2d ", df);
-                                            debug_printf("fir_comp: 0x%08x ", fir_comp);
-                                            debug_printf("frame_size_log2: %d ", frame_size_log2);
-                                            debug_printf("index_bit_reversal: %d ", index_bit_reversal);
-                                            debug_printf("windowing_enabled: %d ", windowing_enabled);
-                                            debug_printf("gain_comp_enabled: %d ", gain_comp_enabled);
-                                            debug_printf("e_decimator_buffering_type: %d ", buf_type);
-                                            debug_printf(" FAIL\n");
+                                            printf("%4d ", test++);
+                                            printf("df: %2d ", df);
+                                            printf("fir_comp: 0x%08x ", fir_comp);
+                                            printf("frame_size_log2: %d ", frame_size_log2);
+                                            printf("index_bit_reversal: %d ", index_bit_reversal);
+                                            printf("windowing_enabled: %d ", windowing_enabled);
+                                            printf("gain_comp_enabled: %d ", gain_comp_enabled);
+                                            printf("e_decimator_buffering_type: %d ", buf_type);
+                                            printf(" FAIL\n");
                                             delay_milliseconds(50);
                                             _Exit(1);
+
                                         }
                                     }
                                 }
@@ -622,6 +644,7 @@ void channel_count_test(){
     par {
         {
             for(unsigned c=4;c<=16;c+=4){
+            //unsigned c=16;{
                 par{
                     model(c_4x_pdm_mic, c, c_model);
                     output(c_ds_output, c_actual, c);

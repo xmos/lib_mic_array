@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include "debug_print.h"
 
-#include "fir_decimator.h"
 #include "mic_array.h"
 #include "mic_array_board_support.h"
 

@@ -46,7 +46,7 @@ void test_output(streaming chanend c_ds_output[2],
         unsigned buffer;     //buffer index
         memset(audio, sizeof(frame_audio), 0);
 
-        unsigned gain = 8;
+        unsigned gain = 256;
 
             decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
             decimator_config dc[2] = {

@@ -23,20 +23,34 @@ typedef struct {
 
 /** Complex number in Cartesian coordinates.*/
 typedef struct {
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+    int16_t re;     /**<The real component. */
+    int16_t im;     /**<The imaginary component. */
+#else
     int32_t re;     /**<The real component. */
     int32_t im;     /**<The imaginary component. */
+#endif
 } complex;
 
 /** Complex number in Polar coordinates.*/
 typedef struct {
+    #if MIC_ARRAY_WORD_LENGTH_SHORT
     int32_t hyp;        /**<The hypotenuse component. */
     int32_t theta;      /**<The angle component. */
+#else
+    int32_t hyp;        /**<The hypotenuse component. */
+    int32_t theta;      /**<The angle component. */
+#endif
 } polar;
 
 /** A frame of raw audio.*/
 typedef struct {
     long long alignment;
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+    int16_t data[MIC_ARRAY_NUM_MICS][1<<MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
+#else
     int32_t data[MIC_ARRAY_NUM_MICS][1<<MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
+#endif
     s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
 } frame_audio;
 

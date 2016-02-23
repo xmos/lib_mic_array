@@ -152,9 +152,9 @@ void test_frontend(){
                printf("Error!");
                exit(1);
            }
-           unsigned count = 3720000/8;
+           unsigned count = 3072000/8;
 
-           fprintf(fptr,"%f\n", count);
+           fprintf(fptr,"%d\n", count);
            fprintf(fptr,"%f\n", TEST_FREQUENCY);
            fprintf(fptr,"%d\n", count);
 
@@ -172,6 +172,7 @@ void test_frontend(){
                printf("%d\n", j);
            }
            fclose(move(fptr));
+           _Exit(1);
        }
     }
 

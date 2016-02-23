@@ -28,6 +28,7 @@ void test(){
         {
 #define SINE_LENGTH 64
 #define INPUT_SAMPLES (SINE_LENGTH*8)
+#if 0
             int one_khz_sine[INPUT_SAMPLES] = { 12345678, 38547105, 64744586,
                     90934177, 117111932, 143273910, 169416170, 195534777,
                     221625795, 247685297, 273709358, 299694058, 325635485,
@@ -142,15 +143,16 @@ void test(){
                     -66242821, -40053231, -13855749
 
             };
-/*
-            int actual_dc_offset = 12345678;
+#else
+            int one_khz_sine[INPUT_SAMPLES];
+            int actual_dc_offset = 0;
             for(unsigned i=0;i<INPUT_SAMPLES;i++)
                 one_khz_sine[i] = (int)((double)(INT_MAX-actual_dc_offset)
                         *sin((double)i*3.1415926535*2.0 / (double)INPUT_SAMPLES) + actual_dc_offset);
             for(unsigned i=0;i<INPUT_SAMPLES;i++){
                 printf("%d,\n", one_khz_sine[i]);
             }
-            */
+#endif
             while(1){
                 for(unsigned i=0;i<INPUT_SAMPLES;i++){
                     c_pdm_to_dec <: one_khz_sine[i];
@@ -178,7 +180,7 @@ void test(){
                 unsigned head = 0;
 
                 int prev_x = 0;
-
+                _Exit(1);
                 unsigned count = 0;
                 while(1){
                     frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 1, buffer, audio, dcc);

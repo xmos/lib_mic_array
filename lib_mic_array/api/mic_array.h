@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include <limits.h>
-#include "fir_decimator.h"
+#include "fir_coefs.h"
 #include "mic_array_frame.h"
 
 

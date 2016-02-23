@@ -6,7 +6,6 @@
 #include <xclib.h>
 #include "debug_print.h"
 
-#include "fir_decimator.h"
 #include "mic_array.h"
 #include "mic_array_board_support.h"
 
@@ -86,7 +85,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
         unsigned buffer;
         memset(audio, sizeof(frame_audio), 0);
 
-        unsigned gain = 16;
+        unsigned gain = 8;
         unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
         unsigned dir = 0;
         set_dir(lb, dir, delay);

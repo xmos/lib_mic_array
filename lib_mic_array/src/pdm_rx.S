@@ -24,7 +24,7 @@
 #define CH6 6
 #define CH7 7
 
-#define STACKWORDS 32
+#define STACKWORDS 16
 
 #define FIR_BLOCK(P) \
 	{ld8u b, p[c]; add a, a, b};\
@@ -44,6 +44,29 @@
 	{out res[C], a; ldc c, I}
 
 
+.globl	pdm_rx_asm_debug
+.align	8
+.type	pdm_rx_asm_debug,@function
+.cc_top pdm_rx_asm_debug.function
+pdm_rx_asm_debug:
+.cfi_startproc
+.issue_mode dual
+  bu pdm_rx_asm
+
+	.cc_bottom pdm_rx_asm_debug.function
+	.set	pdm_rx_asm_debug.nstackwords, 0 $M pdm_rx_asm.nstackwords
+	.globl	pdm_rx_asm_debug.nstackwords
+	.set	pdm_rx_asm_debug.maxcores, 1 $M pdm_rx_asm.maxcores
+	.globl	pdm_rx_asm_debug.maxcores
+	.set	pdm_rx_asm_debug.maxtimers,0
+	.globl	pdm_rx_asm_debug.maxtimers
+	.set	pdm_rx_asm_debug.maxchanends,0
+	.globl	pdm_rx_asm_debug.maxchanends
+.Lpdm_rx_asm_debug_tmp:
+	.size	pdm_rx_asm_debug, .Lpdm_rx_asm_debug_tmp-pdm_rx_asm_debug
+	.cfi_endproc
+
+
 .cc_top pdm_rx_asm.function
 .globl	pdm_rx_asm
 .align	4
@@ -52,6 +75,7 @@ pdm_rx_asm://(
         //in buffered port:32 p_pdm_mics,
         //streaming chanend c,
         //streaming chanend ?d,
+
 
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
@@ -182,28 +206,5 @@ pdm_rx_8ch_loop:
 	.set	pdm_rx_asm.maxchanends,0
 	.globl	pdm_rx_asm.maxchanends
 
-
-	.cc_top pdm_rx_hires_delay.function
-.globl	pdm_rx_hires_delay
-.align	4
-.type	pdm_rx_hires_delay,@function
-pdm_rx_hires_delay:
-.issue_mode dual
-	DUALENTSP_lu6 STACKWORDS
-	{ecallf r0;ecallt r0}
-	retsp 0
-.pdm_rx_hires_delay_tmp:
-	.size	pdm_rx_hires_delay, .pdm_rx_hires_delay_tmp-pdm_rx_hires_delay
-	.align	4
-	.cc_bottom pdm_rx_hires_delay.function
-
-	.set	pdm_rx_hires_delay.nstackwords, 0
-	.globl	pdm_rx_hires_delay.nstackwords
-	.set	pdm_rx_hires_delay.maxcores,1
-	.globl	pdm_rx_hires_delay.maxcores
-	.set	pdm_rx_hires_delay.maxtimers,0
-	.globl	pdm_rx_hires_delay.maxtimers
-	.set	pdm_rx_hires_delay.maxchanends,0
-	.globl	pdm_rx_hires_delay.maxchanends
 
 

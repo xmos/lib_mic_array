@@ -133,21 +133,29 @@ void low_pass_filter_s(long long lpf[], int mag[], unsigned array_length, unsign
     }
 }
 
-
 int vad_single_channel(unsigned mag[], unsigned long long lpf[], vad_state &v, unsigned channel){
 
     unsigned long long energy = 0;
-    for(unsigned i=1;i<32;i++){
-        energy += ((long long)mag[i]);
+    for(unsigned i=1;i<FFT_N/2;i++){
+        unsigned noise = lpf[i]>>34;
+        if(noise < mag[i]){
+            energy += ((long long)mag[i] - (long long)noise);
+        }        
     }
-    unsigned e = energy/32;
-    unsigned shift = 8;
+
+    unsigned e = energy/(FFT_N/2);
+    unsigned shift = 12;
     unsigned long long h = (unsigned long long)energy;
     h <<= (32 - shift);
-    v.energy_lpf[channel]  = v.energy_lpf[channel]  - (v.energy_lpf[channel] >> shift) + h;
-    unsigned o =v.energy_lpf[channel] >> (32+5);
 
-    int thresh = e>o;
+    v.energy_lpf[channel]  = v.energy_lpf[channel]  - (v.energy_lpf[channel] >> shift) + h;
+    unsigned o =v.energy_lpf[channel] >> (32+8);
+
+
+    xscope_int(0, e);
+    xscope_int(1, o);
+
+    int thresh = e>(2*o);
     if(thresh){
         v.hang_over = 20;
         return 1;
@@ -168,6 +176,7 @@ void vad(unsigned mag[MIC_ARRAY_NUM_MICS][FFT_N/2], unsigned long long lpf[], va
 void noise_red(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
 
+    printf("Running\n");
     unsigned buffer ;     //buffer index
     frame_complex comp[4];
     memset(comp, 0, sizeof(frame_complex)*4);
@@ -215,21 +224,6 @@ void noise_red(streaming chanend c_ds_output[2],
         while(1){
            frame_complex * current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
 
-
-               unsigned c=32;
-
-               for(unsigned i=0;i<FFT_N;i++){
-                   int d = current->data[0][i].re;
-                   if(d<0) d=-d;
-                   unsigned t = clz(d);
-                   if(t<c)
-                       c=t;
-               }
-
-               for(unsigned i=0;i<FFT_N;i++){
-                   current->data[0][i].re<<=(c-2);
-               }
-
            for(unsigned i=0;i<4;i++){
                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
                lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
@@ -242,32 +236,24 @@ void noise_red(streaming chanend c_ds_output[2],
 
            int is_voice = vad_single_channel(mag, lpf, vad, 0);
 
+           is_voice = 1;
            if(is_voice){
                lb.set_led_brightness(11, 255);
            } else {
                lb.set_led_brightness(11, 0);
            }
+
            low_pass_filter_u(lpf, mag, FFT_N/2, shift);
 
-           //frequency->data[0][0].re = 0;      //remove dc offset
-           //frequency->data[0][0].im = 0;      //remove highest frequency bin, i think??
            if(enabled){
-               if(1){
-#define PLOT_FREQ 0
-#if PLOT_FREQ
-                   xscope_int(0, 0);
-                   xscope_int(1, 0);
-#endif
+               if(is_voice){
                    for(unsigned i=1; i<FFT_N/2-2;i++){
                        unsigned current_mag = mag[i];
                        unsigned noise_mag = (lpf[i]>>32);
-#if PLOT_FREQ
-                       xscope_int(0, noise_mag);
-                       xscope_int(1, current_mag);
-                       delay_microseconds(5);
-#endif
-                       if(current_mag > noise_mag*2){
-                           unsigned output = current_mag - noise_mag*2;
+
+                      unsigned scaled_noise = noise_mag;
+                       if(current_mag > scaled_noise){
+                           unsigned output = current_mag - scaled_noise;
                            if((current_mag>>FLOOR) < output){   //suppression limiting
                                int re = frequency->data[0][i].re;
                                int im = frequency->data[0][i].im;
@@ -283,12 +269,9 @@ void noise_red(streaming chanend c_ds_output[2],
                            frequency->data[0][i].im >>= (FLOOR);
                        }
                    }
-#if PLOT_FREQ
-               xscope_int(0, 0);
-               xscope_int(1, 0);
-#endif
-               } else {
-#define NOISE_ATTEN 5
+               }
+               else {
+                   #define NOISE_ATTEN 5
                    for(unsigned i=1; i<FFT_N/2-2;i++){
                        frequency->data[0][i].re >>= (NOISE_ATTEN);
                        frequency->data[0][i].im >>= (NOISE_ATTEN);
@@ -326,8 +309,8 @@ void noise_red(streaming chanend c_ds_output[2],
            }
 
            for(unsigned i=0;i<FFT_N/2;i++){
-               p[i].re =  frequency->data[0][i].re>>(c-3);
-               p[i].im =  frequency->data[0][i].im>>(c-3);
+               p[i].re =  frequency->data[0][i].re;
+               p[i].im =  frequency->data[0][i].im;
            }
 
            output_frame(c_audio, proc_buffer, p, head, window);

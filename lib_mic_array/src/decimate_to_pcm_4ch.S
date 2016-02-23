@@ -452,15 +452,18 @@ get_frame_pointer:
 	non_overlapping:
 	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
+	    saving_non_overlapping_metadata_pointer:
 		stw r1, r11[S_METADATA_POINTER_0]
 		bu setup_phase_counters
 
 	overlapping:
 	    {in r1, res[r2];}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
+	    saving_overlapping_metadata_pointer_1:
 		stw r1, r11[S_METADATA_POINTER_1]
 	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
+	    saving_overlapping_metadata_pointer_0:
 		stw r1, r11[S_METADATA_POINTER_0]
 
 setup_phase_counters:
@@ -724,6 +727,7 @@ dc_offset_removal_complete:
 			stw r6, r4[S_FRAME_0_INDEX]
 
 			write_the_current_frames_metadata:
+
 			ldd r7, r6, r4[S_D_FRAME_MIN_MAX_0]
 	        ldw r5, r4[S_METADATA_POINTER_0]
 	        std r7, r6, r5[0];
@@ -792,6 +796,7 @@ dc_offset_removal_complete:
 			at_the_end_of_the_overlapping_half_frame:
 
 				//set the metadata
+
 				ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
 		        ldw r5, r4[S_METADATA_POINTER_1]
 		        std r7, r6, r5[0];
@@ -816,6 +821,9 @@ dc_offset_removal_complete:
 				std r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_1]
 				ldd r3, r5, r4[S_D_FRAME_MIN_MAX_0]
 				std r3, r5, r4[S_D_FRAME_MIN_MAX_1]
+
+		        ldw r5, r4[S_METADATA_POINTER_0]
+		        stw r5, r4[S_METADATA_POINTER_1]
 
 		        {in r3, res[r6]; ldc r0, 0}
 		        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}

@@ -456,7 +456,7 @@ following settings through ``decimator_config_common``:
   these decimation factors as follows:
 
   ======================== ===================== ======== ========== =============
-  output_decimation_factor decimate_to_pcm_4x    PDM_rx   PDM clock  Sample rate
+   decimation_factor        decimate_to_pcm_4x    PDM_rx   PDM clock  Sample rate
   ======================== ===================== ======== ========== =============
   2                        8 x                   8 x      3.072 MHz  48 KHz
   4                        16 x                  8 x      3.072 MHz  24 KHz

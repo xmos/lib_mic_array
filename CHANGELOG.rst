@@ -8,6 +8,8 @@ lib_mic_array change log
   * Mute first 32 samples to allow DC offset to adapt before outputting signal
   * Fixed XTA scripte to ensure timing is being met
   * Now use a 64-bit accumulator for DC offset removal
+  * Consolidated generators into a single python generator
+  * Produced output frequency response graphs
 
 1.0.0
 -----

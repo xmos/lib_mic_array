@@ -234,6 +234,7 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2c/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/doc/pdf}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.xc.compiler.input.1911594639" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
@@ -594,6 +595,7 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2c/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/doc/pdf}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.c.compiler.input.c.1905632432" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
@@ -961,6 +963,7 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/clang&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}\target/include/c++/v1&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2c/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/doc/pdf}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.1428568131" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>
