@@ -37,7 +37,6 @@ def THDN(signal, sample_rate, filename):
     i = argmax(abs(f))
 
     #This will be exact if the frequency under test falls into the middle of an fft bin 
-    print filename
     print 'Frequency: %f Hz' % (sample_rate * (i / len(windowed)))
     lowermin, uppermin = find_range(abs(f), i)
     f[lowermin: uppermin] = 0
@@ -82,6 +81,7 @@ if files:
 
             for s in signals:
                 if len(s[0])>0:
+                    #verify that all the outputs happened
                     print len(s[0])
                     THDN(s[0], s[1], filename)
         #except:

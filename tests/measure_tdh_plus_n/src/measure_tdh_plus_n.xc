@@ -21,7 +21,7 @@ int data[4*THIRD_STAGE_COEFS_PER_STAGE*12] = {0};
 #define TEST_FRONTEND               0
 
 #define FILE_IO                     0
-#define OUTPUT_BACKEND_INPUT        0
+#define OUTPUT_BACKEND_INPUT        1
 #define OUTPUT_BACKEND_OUTPUT       1
 
 #define OUTPUT_FRONTEND_INPUT       0
