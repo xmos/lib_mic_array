@@ -1,6 +1,20 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
 	.section	.dp.data,"awd",@progbits
 	.text
+
+.xtacommand "analyse endpoints pdm_rx_4ch_loop_ep pdm_rx_4ch_loop_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+.xtacommand "analyse endpoints pdm_rx_8ch_loop_ep pdm_rx_8ch_loop_ep","", __FILE__, __LINE__
+.xtacommand "set required - 2604 ns","", __FILE__, __LINE__
+
+
+
+
+
+
+
+
+
 #define temp_one 			 r0
 #define c_one                r1
 #define c_two                r2
@@ -207,4 +221,71 @@ pdm_rx_8ch_loop:
 	.globl	pdm_rx_asm.maxchanends
 
 
+#define EPT_MARCO(ID, PASS) \
+.cc_top cc_a ## ID ## _ ## PASS,input_ ## ID ## _ ## PASS ;\
+	.ascii	"";\
+	.byte	0;\
+	.long	0;\
+	.long	input_ ## ID ## _ ## PASS;\
+.cc_bottom cc_a ## ID ## _ ## PASS
+
+	.section	.xtaendpoint,"",@progbits
+.Lentries_start0:
+	.long	.Lentries_end0-.Lentries_start0
+	.long	1
+	.ascii	""
+    .byte	0
+
+	.ascii	"pdm_rx_4ch_loop_ep"
+	.byte	0
+	.ascii	""
+	.byte	0
+	.long	0
+	.long	.Laddr_end0 -.Laddr_start0
+	.Laddr_start0:
+	.cc_top cc_0 ,pdm_rx_4ch_loop
+	.long	pdm_rx_4ch_loop
+	.byte	0
+	.cc_bottom cc_0
+	.Laddr_end0 :
+
+	.ascii	"pdm_rx_8ch_loop_ep"
+	.byte	0
+	.ascii	""
+	.byte	0
+	.long	0
+	.long	.Laddr_end1 -.Laddr_start1
+	.Laddr_start1:
+	.cc_top cc_1 ,pdm_rx_8ch_loop
+	.long	pdm_rx_8ch_loop
+	.byte	0
+	.cc_bottom cc_1
+	.Laddr_end1 :
+.Laddr_end9:
+
+.Lentries_end0:
+
+	.section	.xtaendpointtable,"",@progbits
+.Lentries_start1:
+	.long	.Lentries_end1-.Lentries_start1
+	.long	0
+	.ascii	""
+	.byte	0
+
+.cc_top cc_a0,pdm_rx_4ch_loop
+	.ascii	""
+	.byte	0
+	.long	0
+	.long	pdm_rx_4ch_loop
+.cc_bottom cc_a0
+
+.cc_top cc_a1,pdm_rx_8ch_loop
+	.ascii	""
+	.byte	0
+	.long	0
+	.long	pdm_rx_8ch_loop
+.cc_bottom cc_a1
+
+
+.Lentries_end1:
 

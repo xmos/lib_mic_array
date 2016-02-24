@@ -366,7 +366,6 @@
 			{stw r3, r7[0]}
 #endif
 
-
 .globl	decimate_to_pcm_4ch
 .align	8
 .type	decimate_to_pcm_4ch,@function
