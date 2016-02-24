@@ -8,6 +8,7 @@ def do_backend_test(length, frame_count, testlevel):
     args = xmostest.getargs()
     if not args.remote_resourcer:
         # Abort the test
+        print 'remote resourcer not avaliable'
         return
 
     binary = 'test_fir_model/bin/COUNT{fc}_{len}/test_fir_model_COUNT{fc}_{len}.xe'.format(fc=frame_count, len=length)

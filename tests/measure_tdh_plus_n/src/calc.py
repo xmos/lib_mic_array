@@ -1,5 +1,6 @@
 from __future__ import division
 import sys
+import re
 from scipy.signal import blackmanharris
 from numpy.fft import rfft, irfft
 from numpy import argmax, sqrt, mean, absolute, arange, log10
@@ -49,30 +50,40 @@ def THDN(signal, sample_rate, filename):
     print "THD+N:     %.12f%% or %.12f dB" % (THDN * 100, 20 * log10(THDN))
 
 def load(filename):
-    signal = []
-    sample_rate= 0.0
-    frequency_under_test = 0.0
-    sample_count = 0
-    
-    line_number = 0
+    signals = []
+    line_number = []
+    for c in range(16):
+        signal = []
+        sample_rate= 0.0
+        frequency_under_test = 0.0
+        signals.append([signal, sample_rate, frequency_under_test])
+        line_number.append(0)
+
     for line in open(filename,'r').readlines():
-      if line_number == 0:
-        sample_rate = float(line)
-      elif line_number == 1:
-        frequency_under_test = float(line)
-      elif line_number == 2:
-        sample_count = int(line)
-      else:
-        signal.append(float(line))
-      line_number = line_number + 1
-    return signal, sample_rate
+        if line.startswith("<Record Type=\""):
+            n = re.findall('-*\d+', line)
+            chan = int(n[0])
+            value = int(n[4])
+
+            if(line_number[chan] ==0):
+                signals[chan][1] = float(value)
+            elif line_number[chan] == 1:
+                signals[chan][2]  = float(value)
+            else:
+                signals[chan][0].append(float(value))
+            line_number[chan] += 1
+    return signals
     
 files = sys.argv[1:]
 if files:
     for filename in files:
        # try:
-            signal, sample_rate = load(filename)
-            THDN(signal, sample_rate, filename)
+            signals = load(filename)
+
+            for s in signals:
+                if len(s[0])>0:
+                    print len(s[0])
+                    THDN(s[0], s[1], filename)
         #except:
        #    print 'Couldn\'t analyze "' + filename + '"'
        # print ''

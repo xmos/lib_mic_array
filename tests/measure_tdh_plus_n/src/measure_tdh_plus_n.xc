@@ -47,11 +47,9 @@ void test_backend(){
             }
             fprintf(fptr,"%f\n", SAMPLE_RATE);
             fprintf(fptr,"%f\n", TEST_FREQUENCY);
-            fprintf(fptr,"%d\n", SAMPLE_COUNT);
     #else
             xscope_int(3, SAMPLE_RATE);
             xscope_int(3, TEST_FREQUENCY);
-            xscope_int(3, SAMPLE_COUNT);
     #endif
 #endif
             unsigned i=0;
@@ -116,11 +114,9 @@ void test_backend(){
                     }
                     fprintf(fptr,"%f\n", SAMPLE_RATE/(4.0*(double)divider));
                     fprintf(fptr,"%f\n", TEST_FREQUENCY);
-                    fprintf(fptr,"%d\n", count);
     #else
                     xscope_int(4+div_index,  SAMPLE_RATE/(4.0*(double)divider));
                     xscope_int(4+div_index, TEST_FREQUENCY);
-                    xscope_int(4+div_index, count);
     #endif
 #endif
 
@@ -178,11 +174,9 @@ void create_DSD_source(streaming chanend c_not_a_port){
                     }
                     fprintf(fptr,"%f\n", PDM_SAMPLE_RATE);
                     fprintf(fptr,"%f\n", TEST_FREQUENCY);
-                    fprintf(fptr,"%d\n", count);
     #else
                     xscope_int(2, PDM_SAMPLE_RATE);
                     xscope_int(2, TEST_FREQUENCY);
-                    xscope_int(2, count);
     #endif
 #endif
 
@@ -240,11 +234,9 @@ void test_frontend(){
            }
            fprintf(fptr,"%d\n", count);
            fprintf(fptr,"%f\n", TEST_FREQUENCY);
-           fprintf(fptr,"%d\n", count);
     #else
            xscope_int(1, count);
            xscope_int(1, TEST_FREQUENCY);
-           xscope_int(1, count);
     #endif
 #endif
            for(unsigned i=0;i<64;i++){
