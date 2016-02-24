@@ -19,9 +19,9 @@
     <Probe name="frontend output" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
     <Probe name="frontend input" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
     <Probe name="backend input" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-    <Probe name="backend output div2" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-    <Probe name="backend output div4" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-    <Probe name="backend output div6" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-    <Probe name="backend output div8" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-    <Probe name="backend output div12" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <Probe name="div2 backend output" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <Probe name="div4 backend output" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <Probe name="div6 backend output" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <Probe name="div8 backend output" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <Probe name="div12 backend output" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
 </xSCOPEconfig>
