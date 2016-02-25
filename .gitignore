@@ -28,3 +28,4 @@ lib_mic_array/doc/pdf/index.pdf
 tests/test_fir_model/trace.xstr
 tests/test_results.csv
 *.fir_coefs
+examples/AN00221_freq_domain_example/doc/pdf/AN00218.pdf

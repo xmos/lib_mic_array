@@ -784,49 +784,49 @@ High resolution delay task
 
 
 .. _figfirst_stage:
-.. figure:: first_stage.eps
+.. figure:: first_stage.pdf
             :width: 70%
                     
             First stage FIR magnitude response.
 
 
 .. _figsecond_stage:
-.. figure:: second_stage.eps
+.. figure:: second_stage.pdf
             :width: 70%
                     
             Second stage FIR magnitude response.
 
 
 .. _figthird_stage_div_2:
-.. figure:: third_stage_div_2.eps
+.. figure:: third_stage_div_2.pdf
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 2.
 
 
 .. _figthird_stage_div_4:
-.. figure:: third_stage_div_4.eps
+.. figure:: third_stage_div_4.pdf
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 4.
 
 
 .. _figthird_stage_div_6:
-.. figure:: third_stage_div_6.eps
+.. figure:: third_stage_div_6.pdf
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 6.
 
 
 .. _figthird_stage_div_8:
-.. figure:: third_stage_div_8.eps
+.. figure:: third_stage_div_8.pdf
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 8.
 
 
 .. _figthird_stage_div_12:
-.. figure:: third_stage_div_12.eps
+.. figure:: third_stage_div_12.pdf
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 12.
