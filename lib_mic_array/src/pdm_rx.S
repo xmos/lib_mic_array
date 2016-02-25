@@ -7,14 +7,6 @@
 .xtacommand "analyse endpoints pdm_rx_8ch_loop_ep pdm_rx_8ch_loop_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-
-
-
-
-
-
-
-
 #define temp_one 			 r0
 #define c_one                r1
 #define c_two                r2
@@ -27,7 +19,7 @@
 #define c			     	 r9
 #define p                 	 r10
 #define t                 	 r11
-#define unused3              r11
+#define temp_three           r11
 
 #define CH0 0
 #define CH1 1
@@ -57,7 +49,6 @@
 #define OUTPUT(I, C)\
 	{out res[C], a; ldc c, I}
 
-
 .globl	pdm_rx_asm_debug
 .align	8
 .type	pdm_rx_asm_debug,@function
@@ -80,7 +71,6 @@ pdm_rx_asm_debug:
 	.size	pdm_rx_asm_debug, .Lpdm_rx_asm_debug_tmp-pdm_rx_asm_debug
 	.cfi_endproc
 
-
 .cc_top pdm_rx_asm.function
 .globl	pdm_rx_asm
 .align	4
@@ -89,7 +79,6 @@ pdm_rx_asm://(
         //in buffered port:32 p_pdm_mics,
         //streaming chanend c,
         //streaming chanend ?d,
-
 
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
@@ -181,11 +170,11 @@ pdm_rx_8ch_loop:
 	FIR();
 	{mov temp_two, a; ldc c, CH6}
 	FIR();
-	{out res[c_one], temp_one}
-	OUTPUT(CH7, c_one)	//output unused0 then this to c_one
+	{mov temp_three, a; ldc c, CH7}
 	FIR();
-	{out res[c_two], temp_two}	//TODO move the output of channel one to here to synchronise the threads
-								// 		use unused3 as a temp for this
+	{out res[c_one], temp_one}
+	{out res[c_two], temp_two}
+	{out res[c_one], temp_three}
 	OUTPUT(CH0, c_two)
 
 	ldd a, b, p[4]

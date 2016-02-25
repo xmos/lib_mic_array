@@ -29,6 +29,7 @@ The microphone array library has the following features:
   - DC bias removal,
   - Up to 3.072MHz input sample rate,
   - High resolution (1.3 microsecond) microphone specific delay lines.
+  - Every task requires only a 62.5 MIPS core to run.
 
 Components
 ...........
