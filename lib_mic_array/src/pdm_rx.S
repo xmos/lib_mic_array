@@ -85,7 +85,13 @@ pdm_rx_asm://(
 
 	stw r0, sp[15]
 
+#ifdef TEST_MODE
 	ldc t, 0
+#else
+	ldc t, 0x5555
+	shl t, t, 16; mov c, t
+	add t, t, c
+#endif
 	std t, t, sp[0]
 	std t, t, sp[1]
 	std t, t, sp[2]
