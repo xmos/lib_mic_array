@@ -10,14 +10,11 @@ int data[4*THIRD_STAGE_COEFS_PER_STAGE*2] = {0};
 frame_audio audio[2];
 
 int dc_elim_model(int x, int &prev_x, long long & y){
-    long long X = (long long)x;
-    long long prev_X = (long long)prev_x;
-
-    long long t = X - prev_X;
-    y = y - (y>>13);
-    y = y + (t<<16);
+    y = y - (y>>8);
+    y = y - prev_x;
+    y = y + x;
     prev_x = x;
-    return y>>16;
+    return (y>>8);
 }
 
 void test(){
@@ -149,9 +146,7 @@ void test(){
             for(unsigned i=0;i<INPUT_SAMPLES;i++)
                 one_khz_sine[i] = (int)((double)(INT_MAX-actual_dc_offset)
                         *sin((double)i*3.1415926535*2.0 / (double)INPUT_SAMPLES) + actual_dc_offset);
-            for(unsigned i=0;i<INPUT_SAMPLES;i++){
-                printf("%d,\n", one_khz_sine[i]);
-            }
+
 #endif
             while(1){
                 for(unsigned i=0;i<INPUT_SAMPLES;i++){
@@ -180,7 +175,6 @@ void test(){
                 unsigned head = 0;
 
                 int prev_x = 0;
-                _Exit(1);
                 unsigned count = 0;
                 while(1){
                     frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 1, buffer, audio, dcc);

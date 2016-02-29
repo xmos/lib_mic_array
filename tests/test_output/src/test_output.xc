@@ -37,16 +37,18 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-frame_audio audio[2];
 
 void test_output(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
 
+    frame_audio audio[2];
+
+    printf("starting\n");
     unsafe{
         unsigned buffer;     //buffer index
         memset(audio, sizeof(frame_audio), 0);
 
-        unsigned gain = 256;
+        unsigned gain = 48;
 
             decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
             decimator_config dc[2] = {
@@ -56,7 +58,7 @@ void test_output(streaming chanend c_ds_output[2],
             decimator_configure(c_ds_output, 2, dc);
 
         decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
-
+        unsigned c=0;
         while(1){
 
             frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
@@ -90,8 +92,15 @@ void test_output(streaming chanend c_ds_output[2],
             output *= gain;
             c_audio <: output;
             c_audio <: output;
+
             for(unsigned i=0;i<7;i++)
                 xscope_int(i, current->data[i][0]);
+
+            c++;
+            if(c==4096)
+                _Exit(1);
+
+
         }
     }
 }

@@ -37,11 +37,6 @@
 .xtacommand "analyse endpoints input_7_1_ep input_0_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-#ifndef DC_OFFSET_DIVIDER_LOG2
-	#define DC_OFFSET_DIVIDER_LOG2			12		//controls the rate of convergance of the dynamic DC offset
-												    //higher settings are faster but more unstable.
-#endif
-
 #define SECOND_STAGE_COEF_COUNT 		16		//This must reflect the implementation in decimate_to_pcm_4ch_fir_impl
 #define THIRD_STAGE_COEFS_PER_STAGE 	32		//This must reflect the implementation in third_stage_fir_impl
 #define THIRD_STAGE_COEFS_PER_ROW 		63		//This must reflect the implementation in third_stage_fir_impl
@@ -203,23 +198,6 @@
 	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
 	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]}
 
-/*
-#define INPUT_TO_OFFSET_NEW() \
-	ldd r1, r0, sp[somthing];\
-	{ldw r1, r1[r0];add r0, r0, 1}\
-	{ldw r1, sp[S_C_INPUT]; set dp, r1};
-	{in r0, res[r1]};\
-	{stw r0, dp[0]};\
-	{stw r0, dp[20]; in r0, res[r1]};\
-	{stw r0, dp[40]; ldaw dp, dp[60]};\
-	{stw r0, dp[0]; in r0, res[r1]};\
-	{stw r0, dp[20]};\
-	{stw r0, dp[40];in r0, res[r1];\
-	{stw r0, dp[60]; ldaw dp, dp[60]};\
-	{stw r0, dp[20]}
-*/
-
-
 
 //setup divider by N registers (coefs, data, accumulators)
 //must avoid r0 and r1 for persistant state as they will be clobbered by INPUT_TO_OFFSET
@@ -262,26 +240,25 @@
 	std r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
 	std r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]
 
+#define DC_OFFSET_LOG2 8
 
-#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER, DC_OFFSET_LOG2) \
+#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
 	ldd r6, r5, r4[PREV_Y];\
-	ldw r7, sp[DC_OFFSET_LOG2];\
-	ashr r9, r6, r7;\
+	ldc r7, DC_OFFSET_LOG2;\
 	lextract r8, r6, r5, r7, 32;\
+	ashr r9, r8, 32;\
 	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
     lsub r11, r6, r6, r9, r11; \
-    {ldw r7, r4[PREV_X]};\
-    ashr r9, REGISTER, 32;\
-    ashr r10, r7, 32;\
-    lsub r11, r8, REGISTER, r7, r4; 	comment(same here) \
-    lsub r11, r9, r9, r10, r11;\
-    {ldc r10, 16};\
-    lextract r9, r9, r8, r10, 32;\
-    {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
+    {ldw r8, r4[PREV_X]};\
+    {stw REGISTER, r4[PREV_X]};\
+    ashr r9, r8, 32;\
     lsub r11, r5, r5, r8, r4; 		comment(same here) \
-    lsub r11, r6, r6, r9, r11;\
+    lsub r11, r6, r6, r9, r11; \
+    ashr r9, REGISTER, 32;\
+    ladd r11, r5, r5, REGISTER, r4; 		comment(same here) \
+    ladd r11, r6, r6, r9, r11; \
 	std r6, r5, r4[PREV_Y];\
-	lextract REGISTER, r6, r5, r10, 32
+	lextract REGISTER, r6, r5, r7, 32
 
 //r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
 #define APPLY_WINDOW_FN(P)\
@@ -395,7 +372,7 @@ decimate_to_pcm_4ch:
 	std r1, r1, r0[S_D_PREV_Y_2]
 	std r1, r1, r0[S_D_PREV_Y_3]
 	ldw r1, sp[S_DC_OFFSET_SAMPLE_NO]
-	ldc r1, 3 // This cotrols the rate of convergence of the DC offset
+	ldc r1, 8 // This cotrols the rate of convergence of the DC offset
 			  // for the initial sample. It has little effect, i.e. don't change it.
 	ldw r1, sp[S_DC_OFFSET_LOG2_CH0]
 	ldw r1, sp[S_DC_OFFSET_LOG2_CH1]
@@ -638,16 +615,19 @@ post_process:
 	ldaw r4, sp[S_SETTINGS_OFFSET]
 	ldw r4, r4[S_DC_OFFSET_REMOVAL_ENABLED]
 	bf r4, dc_offset_removal_complete
+
+
 		ldaw r4, sp[S_DC_ELIMINATE]
 		dc_offset_removal_ch0:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0, S_DC_OFFSET_LOG2_CH0);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0);
 		dc_offset_removal_ch1:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, r1, S_DC_OFFSET_LOG2_CH1);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, r1);
 		dc_offset_removal_ch2:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, r2, S_DC_OFFSET_LOG2_CH2);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, r2);
 		dc_offset_removal_ch3:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3, S_DC_OFFSET_LOG2_CH3);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3);
 
+/*
 		ldc r10, 12
 		ldd r5, r6, r4[S_D_DC_01]
 		ashr r7, r5, r10
@@ -673,7 +653,7 @@ post_process:
 		maccs r11, r8, r8, r8
 		{clz r10, r10; clz r11, r11}
 		std r10, r11, sp[S_D_DC_OFFSET_LOG2_CH23]
-
+*/
 dc_offset_removal_complete:
 
 #define COMP(REG)\
@@ -1091,10 +1071,6 @@ decimate_to_pcm_4ch_fir_impl:
 
 .cfi_endproc
 
-
-
-
-
 //This is for testing the DC offset elimination
 //void dc_eliminate_tester(int &x, long long &y)
 .globl	dc_eliminate_tester
@@ -1113,7 +1089,7 @@ dc_eliminate_tester:
 
 	ldw r2, r0[0]
 	mov r4, r1
-	DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r2, 0); //TODO setup the last arg
+	DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r2); //TODO setup the last arg
 	stw r2, r0[0]
 
 	ldd r4, r5, sp[2]
