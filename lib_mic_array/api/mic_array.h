@@ -7,8 +7,8 @@
 #include "fir_coefs.h"
 #include "mic_array_frame.h"
 
-#ifndef HIRES_MAX_DELAY
-    #define HIRES_MAX_DELAY 256
+#ifndef MIC_ARRAY_HIRES_MAX_DELAY
+    #define MIC_ARRAY_HIRES_MAX_DELAY 256
 #endif
 
 /** PDM Microphone Interface component.
@@ -23,7 +23,7 @@
  *  \param c_4x_pdm_mic_1    The channel where the decimated PDM of microphones 4-7 will
  *                           be outputted. This can be null for 4 channel output.
  */
-void pdm_rx(
+void mic_array_pdm_rx(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend ?c_4x_pdm_mic_1);
@@ -41,7 +41,7 @@ void pdm_rx(
  *  \param c_cmd                   The channel connecting the application to this task used for
  *                                 setting the delays.
  */
-void hires_delay(
+void mic_array_hires_delay(
         streaming chanend c_from_pdm_frontend[],
         streaming chanend c_to_decimator[],
         unsigned n,
@@ -56,7 +56,7 @@ void hires_delay(
  *  \param delays         An array of the delays to be set. These must all be less than HIRES_MAX_DELAY.
  *  \param num_channels   The number of microphones. This is must be the same as the delays array.
  */
-void hires_delay_set_taps(streaming chanend c_cmd, unsigned delays[], unsigned num_channels);
+void mic_array_hires_delay_set_taps(streaming chanend c_cmd, unsigned delays[], unsigned num_channels);
 
 /** Four Channel decimator buffering type.
  *
@@ -94,11 +94,11 @@ typedef struct {
 
     unsigned number_of_frame_buffers;  /**< The count of frames used between the decimators and the application. */
 
-} decimator_config_common;
+} mic_array_decimator_config_common;
 
 typedef struct {
 
-    decimator_config_common * unsafe dcc;
+    mic_array_decimator_config_common * unsafe dcc;
 
     int * unsafe data;    /**< The data for the FIR decimator */
 
@@ -106,7 +106,7 @@ typedef struct {
 
     unsigned channel_count; /**< The count of enabled channels (0->4).  */
 
-} decimator_config;
+} mic_array_decimator_config;
 
 /** Four Channel Decimation component.
  *
@@ -121,7 +121,7 @@ typedef struct {
  *  \param c_frame_output            The channel used to transfer data and control information between
  *                                   the client of this task and this task.
  */
-void decimate_to_pcm_4ch(
+void mic_array_decimate_to_pcm_4ch(
         streaming chanend c_from_pdm_interface,
         streaming chanend c_frame_output);
 
@@ -137,12 +137,14 @@ void decimate_to_pcm_4ch(
  *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
  *  \param buffer            The buffer index. Always points to the index that is accessible to
  *                           the application (initialized internally)
- *  \param f_audio           An array of audio frames.
- *  \param dcc               The structure cointaining the decimator configuration.
+ *  \param audio             An array of audio frames.
+ *  \param dc                The array cointaining the decimator configuration for each decimator.
  *
  */
-void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-        unsigned &buffer, frame_audio f_audio[], decimator_config_common &dcc);
+void mic_array_init_time_domain_frame(
+        streaming chanend c_from_decimator[], unsigned decimator_count,
+        unsigned &buffer, mic_array_frame_time_domain audio[],
+        mic_array_decimator_config dc[]);
 
 
 /** Four Channel Decimation raw audio frame exchange function.
@@ -155,14 +157,15 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
  *                           the decimate_to_pcm_4ch() tasks.
  *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
  *  \param buffer            The buffer index (Used internally)
- *  \param f_audio           An array of audio frames.
- *  \param dcc               The structure cointaining the decimator configuration.
+ *  \param audio             An array of audio frames.
+ *  \param dc                The array cointaining the decimator configuration for each decimator.
  *
  *  \returns                 A pointer to the frame now owned by the application. That is, the most
  *                           recently written samples.
  */
-frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-       unsigned &buffer, frame_audio * alias f_audio, decimator_config_common &dcc);
+mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
+         streaming chanend c_from_decimator[], unsigned decimator_count,
+        unsigned &buffer, mic_array_frame_time_domain * alias audio, mic_array_decimator_config dc[]);
 
 /** Four Channel Decimation initializer for complex frames.
  *
@@ -170,17 +173,17 @@ frame_audio * alias decimator_get_next_audio_frame(streaming chanend c_from_deci
  *  will be a real time requirement on this task, i.e. this task must call
  *  decimator_get_next_complex_frame() at the output sample rate multiplied by the frame size.
  *
- *  \param c_from_decimator  The channels used to transfer pointers between the application and
- *                           the decimate_to_pcm_4ch() tasks.
- *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
- *  \param buffer            The buffer index. Always points to the index that is accessible to
- *                           the application (initialized internally)
- *  \param f_complex         An array of complex frames.
- *  \param dcc               The structure cointaining the decimator configuration.
+ *  \param c_from_decimator   The channels used to transfer pointers between the application and
+ *                            the decimate_to_pcm_4ch() tasks.
+ *  \param decimator_count    The count of decimate_to_pcm_4ch() tasks.
+ *  \param buffer             The buffer index. Always points to the index that is accessible to
+ *                            the application (initialized internally)
+ *  \param f_fft_preprocessed An array of complex frames.
+ *  \param dc                 The array cointaining the decimator configuration for each decimator.
  *
  */
-void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex f_complex[], decimator_config_common &dcc);
+void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
+     unsigned &buffer, mic_array_frame_fft_preprocessed f_fft_preprocessed[], mic_array_decimator_config dc[]);
 
 /** Four Channel Decimation complex frame exchange function.
  *
@@ -188,18 +191,20 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
  *  application. It returns a pointer to the most recently written frame. At the point the oldest
  *  frame is assumed out of scope to the application.
  *
- *  \param c_from_decimator  The channels used to transfer pointers between the application and
- *                           the decimate_to_pcm_4ch() tasks.
- *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
- *  \param buffer            The buffer index (Used internally)
- *  \param f_complex         An array of complex frames.
- *  \param dcc               The structure cointaining the decimator configuration.
+ *  \param c_from_decimator   The channels used to transfer pointers between the application and
+ *                            the decimate_to_pcm_4ch() tasks.
+ *  \param decimator_count    The count of decimate_to_pcm_4ch() tasks.
+ *  \param buffer             The buffer index (Used internally)
+ *  \param f_fft_preprocessed An array of complex frames.
+ *  \param dc                 The array cointaining the decimator configuration for each decimator.
  *
- *  \returns                 A pointer to the frame now owned by the application. That is, the most
- *                           recently written samples.
+ *  \returns                  A pointer to the frame now owned by the application. That is, the most
+ *                            recently written samples.
  */
-frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex * alias f_complex, decimator_config_common &dcc);
+mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_frame(
+        streaming chanend c_from_decimator[], unsigned decimator_count,
+     unsigned &buffer, mic_array_frame_fft_preprocessed * alias f_fft_preprocessed,
+     mic_array_decimator_config dc[]);
 
 
 /** Decimator configuration
@@ -210,9 +215,11 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
  *  \param c_from_decimator  The channels used to transfer pointers between the application and
  *                           the decimate_to_pcm_4ch() task.
  *  \param decimator_count   The count of decimate_to_pcm_4ch() tasks.
- *  \param dc                The configuration for each decimator.
+ *  \param dc                The array cointaining the decimator configuration for each decimator.
  */
-void decimator_configure(streaming chanend c_from_decimator[], unsigned decimator_count,
-        decimator_config dc[]);
+void mic_array_decimator_configure(
+        streaming chanend c_from_decimator[],
+        unsigned decimator_count,
+        mic_array_decimator_config dc[]);
 
 #endif /* MIC_ARRAY_H_ */

@@ -42,7 +42,7 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-#define FFT_N (1<<MAX_FRAME_SIZE_LOG2)
+#define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
 
 void output_frame(chanend c_audio, int proc_buffer[4][FFT_N/2], lib_dsp_fft_complex_t p[FFT_N],
         unsigned &head, int * window){
@@ -95,7 +95,7 @@ typedef struct {
     int noise_gain;
 } agc_state;
 
-void compute_freq_magnitude_single_channel(frame_frequency * f, unsigned mag[], unsigned ch){
+void compute_freq_magnitude_single_channel(mic_array_frame_frequency_domain * f, unsigned mag[], unsigned ch){
     for(unsigned i=0;i<FFT_N/2;i++){
         int re = f->data[ch][i].re;
         int im = f->data[ch][i].im;
@@ -103,7 +103,7 @@ void compute_freq_magnitude_single_channel(frame_frequency * f, unsigned mag[], 
     }
 }
 
-void compute_freq_magnitude(frame_frequency * f, unsigned mag[MIC_ARRAY_NUM_MICS][FFT_N/2]){
+void compute_freq_magnitude(mic_array_frame_frequency_domain * f, unsigned mag[MIC_ARRAY_NUM_MICS][FFT_N/2]){
     for(unsigned ch=0;ch<MIC_ARRAY_NUM_MICS;ch++){
         compute_freq_magnitude_single_channel(f, mag[ch], ch);
     }
@@ -178,8 +178,8 @@ void noise_red(streaming chanend c_ds_output[2],
 
     printf("Running\n");
     unsigned buffer ;     //buffer index
-    frame_complex comp[4];
-    memset(comp, 0, sizeof(frame_complex)*4);
+    mic_array_frame_fft_preprocessed comp[4];
+    memset(comp, 0, sizeof(mic_array_frame_fft_preprocessed)*4);
     lib_dsp_fft_complex_t p[FFT_N];
     int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++){
@@ -187,26 +187,26 @@ void noise_red(streaming chanend c_ds_output[2],
     }
 
     unsafe{
-        decimator_config_common dcc = {
-                MAX_FRAME_SIZE_LOG2,
+        mic_array_decimator_config_common dcc = {
+                MIC_ARRAY_MAX_FRAME_SIZE_LOG2,
                 1,
                 1,
                 window,
                 DF,
                 g_third_stage_div_2_fir,
                 0,
-                0,
+                FIR_COMPENSATOR_DIV_2,
                 DECIMATOR_HALF_FRAME_OVERLAP,
                 4
         };
-        decimator_config dc[2] = {
+        mic_array_decimator_config dc[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
 
-        decimator_configure(c_ds_output, 2, dc);
+        mic_array_decimator_configure(c_ds_output, 2, dc);
 
-        decimator_init_complex_frame(c_ds_output, 2, buffer, comp, dcc);
+        mic_array_init_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
         int proc_buffer[4][FFT_N/2];
 
@@ -222,13 +222,14 @@ void noise_red(streaming chanend c_ds_output[2],
         memset(&vad, 0, sizeof(vad));
         unsigned shift = 9;
         while(1){
-           frame_complex * current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
+            mic_array_frame_fft_preprocessed * current =
+                    mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
            for(unsigned i=0;i<4;i++){
                lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
                lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
            }
-           frame_frequency * frequency = (frame_frequency *)current;
+           mic_array_frame_frequency_domain * frequency = (mic_array_frame_frequency_domain *)current;
 
            unsigned mag[FFT_N/2];
 
@@ -444,9 +445,9 @@ int main(){
             par{
                 decouple(c_audio, c_decoupled);
                 button_and_led_server(lb, 1, leds, p_buttons);
-                pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+                mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
                 noise_red(c_ds_output, lb[0], c_audio);
             }
         }

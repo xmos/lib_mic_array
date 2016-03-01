@@ -54,7 +54,7 @@ void generate_backend_input(streaming chanend c_pdm_to_dec){
 
 void get_backend_output(streaming chanend c_ds_output[1]){
 
-    frame_audio audio[2];
+    mic_array_frame_time_domain audio[2];
     unsafe{
         unsigned divider_lut[5] = {2, 4, 6, 8, 12};
         const int * unsafe coef_lut[5] = {
@@ -82,17 +82,17 @@ void get_backend_output(streaming chanend c_ds_output[1]){
             xscope_int(4+div_index, TEST_FREQUENCY);
 #endif
 
-            decimator_config_common dcc = {0, 0, 0, 0, divider, coef_lut[div_index], 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2  };
-            decimator_config dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX },4 }};
-            decimator_configure(c_ds_output, 1, dc);
-            decimator_init_audio_frame(c_ds_output, 1 , buffer, audio, dcc);
+            mic_array_decimator_config_common dcc = {0, 0, 0, 0, divider, coef_lut[div_index], 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2  };
+            mic_array_decimator_config dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX },4 }};
+            mic_array_decimator_configure(c_ds_output, 1, dc);
+            mic_array_init_time_domain_frame(c_ds_output, 1 , buffer, audio, dc);
 
             //first wait until the filter delay has passed
             for(unsigned i=0;i<64;i++)
-                decimator_get_next_audio_frame(c_ds_output, 1, buffer, audio, dcc);
+                mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc);
 
             for(unsigned i=0;i<count;i++){
-                frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 1, buffer, audio, dcc);
+                mic_array_frame_time_domain *current = mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc);
 #if OUTPUT_BACKEND_OUTPUT
                 delay_microseconds(240);
                 xscope_int(4+div_index, current->data[0][0]);
@@ -206,7 +206,7 @@ void test_backend(){
     streaming chan c_ds_output[1];
     par {
         generate_backend_input(c_pdm_to_dec);
-        decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0]);
         get_backend_output(c_ds_output);
     }
 }
@@ -218,7 +218,7 @@ void test_all(){
     par {
         create_DSD_source(c_not_a_port);
         pdm_rx_debug(c_not_a_port, c_4x_pdm_mic_0, null);
-        decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
         get_backend_output(c_ds_output);
     }
 }

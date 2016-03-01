@@ -4,6 +4,14 @@
 
 #include "mic_array_conf.h"
 
+#ifndef MIC_ARRAY_MAX_FRAME_SIZE_LOG2
+	#error MIC_ARRAY_MAX_FRAME_SIZE_LOG2 is not defined in mic_array_conf.h
+#endif
+
+#ifndef MIC_ARRAY_DC_OFFSET_LOG2
+	#define MIC_ARRAY_DC_OFFSET_LOG2 8
+#endif
+
 .xtacommand "analyse endpoints input_0_0_ep input_1_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 .xtacommand "analyse endpoints input_1_0_ep input_2_0_ep","", __FILE__, __LINE__
@@ -37,7 +45,7 @@
 .xtacommand "analyse endpoints input_7_1_ep input_0_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 
-#define SECOND_STAGE_COEF_COUNT 		16		//This must reflect the implementation in decimate_to_pcm_4ch_fir_impl
+#define SECOND_STAGE_COEF_COUNT 		16		//This must reflect the implementation in mic_array_decimate_to_pcm_4ch_fir_impl
 #define THIRD_STAGE_COEFS_PER_STAGE 	32		//This must reflect the implementation in third_stage_fir_impl
 #define THIRD_STAGE_COEFS_PER_ROW 		63		//This must reflect the implementation in third_stage_fir_impl
 #define MAX_DECIMATION_FACTOR      		12
@@ -234,11 +242,10 @@
 	std r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
 	std r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]
 
-#define DC_OFFSET_LOG2 7
 
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
 	ldd r6, r5, r4[PREV_Y];\
-	ldc r7, DC_OFFSET_LOG2;\
+	ldc r7, MIC_ARRAY_DC_OFFSET_LOG2;\
 	ashr r9, r6, r7;\
 	lextract r8, r6, r5, r7, 32;\
 	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
@@ -296,7 +303,7 @@
 		{andnot r1, r7; andnot r3, r7};\
 		{add r0, r1, r0; ldw r7, r4[POINTER]};\
 		stw r0, r7[r6];\
-		{ldc r0, 1<<MAX_FRAME_SIZE_LOG2};\
+		{ldc r0, 1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2};\
 		{shr r2, r2, 16; add r6, r6, r0};\
 		{add r3, r3, r2};\
 		stw r3, r7[r6]
@@ -307,7 +314,7 @@
 			{shr r6, r6, r7};\
 			ldw r7, r4[POINTER];\
 			std r1, r0, r7[r6];\
-			{ldc r0, 2<<MAX_FRAME_SIZE_LOG2};\
+			{ldc r0, 2<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2};\
 			ldaw r7, r7[r0];\
 			std r3, r2, r7[r6]
 #endif
@@ -317,7 +324,7 @@
 #if MIC_ARRAY_WORD_LENGTH_SHORT
 	#if 1
 	#define SAVE_SAMPLES_NORMAL(POINTER)\
-	    	{ldc r5, 1<<(MAX_FRAME_SIZE_LOG2)};\
+	    	{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
 	    	{add r8, r6, r5; add r5, r5, r5};\
 	    	{ldw r7, r4[POINTER]};\
 	    	{shr r0, r0, 16; shr r1, r1, 16};\
@@ -329,7 +336,7 @@
 			st16 r3, r7[r8]
 	#else
 	#define SAVE_SAMPLES_NORMAL(POINTER)\
-	    	{ldc r5, 1<<(MAX_FRAME_SIZE_LOG2)};\
+	    	{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
 	    	{add r7, r6, r5; add r5, r5, r5};\
 	    	{ldw r11, sp[S_CHAN_COUNT]; add r8, r6, r5};\
 	    	{add r9, r7, r5; ldc r5, 4};\
@@ -345,7 +352,7 @@
 #else
 	#if 1
 	#define SAVE_SAMPLES_NORMAL(POINTER)\
-	    	{ldc r5, 4<<(MAX_FRAME_SIZE_LOG2)};\
+	    	{ldc r5, 4<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
 	    	{ldw r7, r4[POINTER]};\
 	    	{ldaw r7, r7[r6]};\
 			{stw r0, r7[0];add r7, r7, r5};\
@@ -354,7 +361,7 @@
 			{stw r3, r7[0]}
 	#else
 	#define SAVE_SAMPLES_NORMAL(POINTER)\
-	    	{ldc r5, 1<<(MAX_FRAME_SIZE_LOG2)};\
+	    	{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
 	    	{add r7, r6, r5; add r5, r5, r5};\
 	    	{ldw r11, sp[S_CHAN_COUNT]; add r8, r6, r5};\
 	    	{add r9, r7, r5; ldc r5, 4};\
@@ -368,11 +375,11 @@
 
 #endif
 
-.globl	decimate_to_pcm_4ch
+.globl	mic_array_decimate_to_pcm_4ch
 .align	8
-.type	decimate_to_pcm_4ch,@function
-.cc_top decimate_to_pcm_4ch.function
-decimate_to_pcm_4ch:
+.type	mic_array_decimate_to_pcm_4ch,@function
+.cc_top mic_array_decimate_to_pcm_4ch.function
+mic_array_decimate_to_pcm_4ch:
 .cfi_startproc
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
@@ -596,17 +603,17 @@ input_7_1:
 	bl divide_by_four
 	bu input_0_0
 
-	.cc_bottom decimate_to_pcm_4ch.function
-	.set	decimate_to_pcm_4ch.nstackwords, STACKWORDS
-	.globl	decimate_to_pcm_4ch.nstackwords
-	.set	decimate_to_pcm_4ch.maxcores,1
-	.globl	decimate_to_pcm_4ch.maxcores
-	.set	decimate_to_pcm_4ch.maxtimers,0
-	.globl	decimate_to_pcm_4ch.maxtimers
-	.set	decimate_to_pcm_4ch.maxchanends,0
-	.globl	decimate_to_pcm_4ch.maxchanends
-.Ldecimate_to_pcm_4ch_tmp:
-	.size	decimate_to_pcm_4ch, .Ldecimate_to_pcm_4ch_tmp-decimate_to_pcm_4ch
+	.cc_bottom mic_array_decimate_to_pcm_4ch.function
+	.set	mic_array_decimate_to_pcm_4ch.nstackwords, STACKWORDS
+	.globl	mic_array_decimate_to_pcm_4ch.nstackwords
+	.set	mic_array_decimate_to_pcm_4ch.maxcores,1
+	.globl	mic_array_decimate_to_pcm_4ch.maxcores
+	.set	mic_array_decimate_to_pcm_4ch.maxtimers,0
+	.globl	mic_array_decimate_to_pcm_4ch.maxtimers
+	.set	mic_array_decimate_to_pcm_4ch.maxchanends,0
+	.globl	mic_array_decimate_to_pcm_4ch.maxchanends
+.Lmic_array_decimate_to_pcm_4ch_tmp:
+	.size	mic_array_decimate_to_pcm_4ch, .Lmic_array_decimate_to_pcm_4ch_tmp-mic_array_decimate_to_pcm_4ch
 	.cfi_endproc
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -913,24 +920,24 @@ divide_by_four:
 	{dualentsp 1; eq r9, r8, 4}
 	ldaw r11, cp[g_second_stage_fir]		//------------------------------------------------------------------------------------------------------------ This needs fixing
 
-	{bt r9, decimate_to_pcm_4ch_0; eq r9, r8, 3}
-	{bt r9, decimate_to_pcm_4ch_1; eq r9, r8, 2}
-	{bt r9, decimate_to_pcm_4ch_2; eq r9, r8, 1}
-	{bt r9, decimate_to_pcm_4ch_3;}
+	{bt r9, mic_array_decimate_to_pcm_4ch_0; eq r9, r8, 3}
+	{bt r9, mic_array_decimate_to_pcm_4ch_1; eq r9, r8, 2}
+	{bt r9, mic_array_decimate_to_pcm_4ch_2; eq r9, r8, 1}
+	{bt r9, mic_array_decimate_to_pcm_4ch_3;}
 	bu divide_by_four_complete
 
 	//r11 = coefs, r10 = pointer to where to put result, r7 = data, r6 = THIRD_STAGE_COEFS_PER_STAGE*sizeof(int)
-decimate_to_pcm_4ch_0:
-	{bl decimate_to_pcm_4ch_fir_impl ; }// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+mic_array_decimate_to_pcm_4ch_0:
+	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; }// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
-decimate_to_pcm_4ch_1:
-	{bl decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+mic_array_decimate_to_pcm_4ch_1:
+	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
-decimate_to_pcm_4ch_2:
-	{bl decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+mic_array_decimate_to_pcm_4ch_2:
+	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
-decimate_to_pcm_4ch_3:
-	{bl decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+mic_array_decimate_to_pcm_4ch_3:
+	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	stw r0, r10[0]
 
 divide_by_four_complete:
@@ -1006,11 +1013,11 @@ third_stage_fir_impl:
 
 ////This is the actual implementation of the second stage FIR
 
-.globl	decimate_to_pcm_4ch_fir_impl
+.globl	mic_array_decimate_to_pcm_4ch_fir_impl
 .align	8
-.type	decimate_to_pcm_4ch_fir_impl,@function
-.cc_top decimate_to_pcm_4ch_fir_impl.function
-decimate_to_pcm_4ch_fir_impl:
+.type	mic_array_decimate_to_pcm_4ch_fir_impl,@function
+.cc_top mic_array_decimate_to_pcm_4ch_fir_impl.function
+mic_array_decimate_to_pcm_4ch_fir_impl:
 	.cfi_startproc
 	.issue_mode dual
 
@@ -1050,17 +1057,17 @@ decimate_to_pcm_4ch_fir_impl:
 	maccs r0, r1, r5, r2
 
 	retsp 0
-	.cc_bottom decimate_to_pcm_4ch_fir_impl.function
-	.set	decimate_to_pcm_4ch_fir_impl.nstackwords, 0
-	.globl	decimate_to_pcm_4ch_fir_impl.nstackwords
-	.set	decimate_to_pcm_4ch_fir_impl.maxcores,1
-	.globl	decimate_to_pcm_4ch_fir_impl.maxcores
-	.set	decimate_to_pcm_4ch_fir_impl.maxtimers,0
-	.globl	decimate_to_pcm_4ch_fir_impl.maxtimers
-	.set	decimate_to_pcm_4ch_fir_impl.maxchanends,0
-	.globl	decimate_to_pcm_4ch_fir_impl.maxchanends
-.Ldecimate_to_pcm_4ch_fir_impl_tmp:
-	.size	decimate_to_pcm_4ch_fir_impl, .Ldecimate_to_pcm_4ch_fir_impl_tmp-decimate_to_pcm_4ch_fir_impl
+	.cc_bottom mic_array_decimate_to_pcm_4ch_fir_impl.function
+	.set	mic_array_decimate_to_pcm_4ch_fir_impl.nstackwords, 0
+	.globl	mic_array_decimate_to_pcm_4ch_fir_impl.nstackwords
+	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxcores,1
+	.globl	mic_array_decimate_to_pcm_4ch_fir_impl.maxcores
+	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxtimers,0
+	.globl	mic_array_decimate_to_pcm_4ch_fir_impl.maxtimers
+	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxchanends,0
+	.globl	mic_array_decimate_to_pcm_4ch_fir_impl.maxchanends
+.Lmic_array_decimate_to_pcm_4ch_fir_impl_tmp:
+	.size	mic_array_decimate_to_pcm_4ch_fir_impl, .Lmic_array_decimate_to_pcm_4ch_fir_impl_tmp-mic_array_decimate_to_pcm_4ch_fir_impl
 
 .cfi_endproc
 

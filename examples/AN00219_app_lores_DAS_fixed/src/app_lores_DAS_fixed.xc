@@ -83,36 +83,40 @@ static void set_dir(client interface led_button_if lb,
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-frame_audio audio[2];
 
 void lores_DAS_fixed(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio) {
 
     unsafe{
         unsigned buffer = 1;     // buffer index
-        memset(audio, sizeof(frame_audio), 0);
+
+        mic_array_frame_time_domain audio[2];    //double buffered
 
         #define MAX_DELAY 16
         unsigned gain = 8;
-        unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
+        unsigned delay[7];
         int delay_buffer[MAX_DELAY][7];
-        memset(delay_buffer, sizeof(int)*8*8, 0);
+        memset(delay_buffer, 0, sizeof(int)*MAX_DELAY*7);
         unsigned delay_head = 0;
         unsigned dir = 0;
         set_dir(lb, dir, delay);
 
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
-        decimator_config dc[2] = {
+        mic_array_decimator_config_common dcc = {0, 1, 0, 0, DF,
+               g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
+               DECIMATOR_NO_FRAME_OVERLAP, 2};
+        mic_array_decimator_config dc[2] = {
           {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
           {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
-        decimator_configure(c_ds_output, 2, dc);
 
-        decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+        mic_array_decimator_configure(c_ds_output, 2, dc);
+
+        mic_array_init_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
         while(1){
 
-            frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+            mic_array_frame_time_domain *  current =
+                               mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
             // Copy the current sample to the delay buffer
             for(unsigned i=0;i<7;i++)
@@ -280,9 +284,9 @@ int main() {
 
             par {
                 button_and_led_server(lb, 1, leds, p_buttons);
-                pdm_rx(p_pdm_mics, c_4x_pdm_mic[0], c_4x_pdm_mic[1]);
-                decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
-                decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
+                mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic[0], c_4x_pdm_mic[1]);
+                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
+                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
                 lores_DAS_fixed(c_ds_output, lb[0], c_audio);
             }
         }

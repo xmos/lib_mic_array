@@ -116,7 +116,6 @@ void test4ch_frontend(){
 }
 
 int data[4*THIRD_STAGE_COEFS_PER_STAGE*2] = {0};
-frame_audio audio[2];
 void test4ch_backend(){
 
     streaming chan c_pdm_to_dec;
@@ -170,18 +169,19 @@ void test4ch_backend(){
             }
             _Exit(0);
         }
-        decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0]);
         {
             unsafe{
+                mic_array_frame_time_domain audio[2];
                 unsigned buffer;
-                decimator_config_common dcc = {0, 0, 0, 0, 2, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2  };
-                decimator_config dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX },4 }};
-                decimator_configure(c_ds_output, 1, dc);
-                decimator_init_audio_frame(c_ds_output, 1 , buffer, audio, dcc);
+                mic_array_decimator_config_common dcc = {0, 0, 0, 0, 2, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2  };
+                mic_array_decimator_config dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX },4 }};
+                mic_array_decimator_configure(c_ds_output, 1, dc);
+                mic_array_init_time_domain_frame(c_ds_output, 1 , buffer, audio, dc);
 
                 int last_seen = -1;
                 while(1){
-                    frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 1, buffer, audio, dcc);
+                    mic_array_frame_time_domain *current = mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc);
 
                     int all_zero = 1;
                     int active_channel = -1;

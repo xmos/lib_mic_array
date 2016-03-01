@@ -1,17 +1,17 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
-#ifndef PCM_FRAME_H_
-#define PCM_FRAME_H_
+#ifndef MIC_ARRAY_FRAME_H_
+#define MIC_ARRAY_FRAME_H_
 
 #include <stdint.h>
 #include "mic_array_conf.h"
 
 #ifndef MIC_ARRAY_NUM_MICS
+    #warning Count of microphones not defined in mic_array_conf.h, defaulting to 16
     #define MIC_ARRAY_NUM_MICS 16
 #endif
 
+//Frames of frequency domain audio always have even number of channels, this rounds up.
 #define MIC_ARRAY_NUM_FREQ_CHANNELS ((MIC_ARRAY_NUM_MICS + 1)/2)
-
-
 
 //This must have an even number of words
 typedef struct {
@@ -30,49 +30,32 @@ typedef struct {
     int32_t re;     /**<The real component. */
     int32_t im;     /**<The imaginary component. */
 #endif
-} complex;
-
-/** Complex number in Polar coordinates.*/
-typedef struct {
-#if MIC_ARRAY_WORD_LENGTH_SHORT
-    int32_t hyp;        /**<The hypotenuse component. */
-    int32_t theta;      /**<The angle component. */
-#else
-    int32_t hyp;        /**<The hypotenuse component. */
-    int32_t theta;      /**<The angle component. */
-#endif
-} polar;
+} s_complex;
 
 /** A frame of raw audio.*/
 typedef struct {
     long long alignment;
 #if MIC_ARRAY_WORD_LENGTH_SHORT
-    int16_t data[MIC_ARRAY_NUM_MICS][1<<MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
+    int16_t data[MIC_ARRAY_NUM_MICS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
 #else
-    int32_t data[MIC_ARRAY_NUM_MICS][1<<MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
+    int32_t data[MIC_ARRAY_NUM_MICS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
 #endif
     s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
-} frame_audio;
+} mic_array_frame_time_domain;
 
 /** A frame of frequency domain audio in Cartesian coordinates.*/
 typedef struct {
     long long alignment;
-    complex data[MIC_ARRAY_NUM_FREQ_CHANNELS][1<<MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Cartesian)*/
+    s_complex data[MIC_ARRAY_NUM_FREQ_CHANNELS*2][1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2-1)]; /**< Complex audio data (Cartesian)*/
     s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
-} frame_complex;
+} mic_array_frame_frequency_domain;
 
-/** A frame of frequency domain audio in Cartesian coordinates.*/
+/** A frame of audio preprocessed for direct insertion into an FFT.*/
 typedef struct {
     long long alignment;
-    complex data[MIC_ARRAY_NUM_FREQ_CHANNELS*2][1<<(MAX_FRAME_SIZE_LOG2-1)]; /**< Complex audio data (Cartesian)*/
+    s_complex data[MIC_ARRAY_NUM_FREQ_CHANNELS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Cartesian)*/
     s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
-} frame_frequency;
+} mic_array_frame_fft_preprocessed;
 
-/** A frame of frequency domain audio in Polar coordinates.*/
-typedef struct {
-    long long alignment;
-    polar data[MIC_ARRAY_NUM_FREQ_CHANNELS][1<<MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Polar)*/
-    s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
-} frame_polar;
 
-#endif /* PCM_FRAME_H_ */
+#endif /* MIC_ARRAY_FRAME_H_ */

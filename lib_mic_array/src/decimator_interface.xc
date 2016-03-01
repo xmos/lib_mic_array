@@ -9,11 +9,14 @@
 #include "xassert.h"
 #endif
 
-void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-        unsigned &buffer, frame_audio audio[], decimator_config_common &dcc){
-   // memset(audio[0].metadata, 0, dcc.number_of_frame_buffers*sizeof(s_metadata));
+void mic_array_init_time_domain_frame(
+        streaming chanend c_from_decimator[], unsigned decimator_count,
+        unsigned &buffer, mic_array_frame_time_domain audio[],
+        mic_array_decimator_config dc[]){
+
     unsigned frames=1;
-    e_decimator_buffering_type buffering_type = dcc.buffering_type;
+    e_decimator_buffering_type buffering_type;
+    unsafe {buffering_type = dc[0].dcc->buffering_type;}
 
     if (buffering_type == DECIMATOR_NO_FRAME_OVERLAP){
         frames = 1;
@@ -52,9 +55,9 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
 
- frame_audio * alias decimator_get_next_audio_frame(
+mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
          streaming chanend c_from_decimator[], unsigned decimator_count,
-        unsigned &buffer, frame_audio * alias audio, decimator_config_common &dcc){
+        unsigned &buffer, mic_array_frame_time_domain * alias audio, mic_array_decimator_config dc[]){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -88,9 +91,12 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
         schkct(c_from_decimator[i], 8);
 
     unsigned index;
-    unsigned buffer_count = dcc.number_of_frame_buffers;
-
-    e_decimator_buffering_type buffering_type = dcc.buffering_type;
+    unsigned buffer_count;
+    e_decimator_buffering_type buffering_type;
+    unsafe {
+        buffering_type = dc[0].dcc->buffering_type;
+        buffer_count = dc[0].dcc->number_of_frame_buffers;
+    }
     if(buffering_type == DECIMATOR_NO_FRAME_OVERLAP)
         index = buffer + buffer_count - 1;
     else
@@ -105,11 +111,12 @@ void decimator_init_audio_frame(streaming chanend c_from_decimator[], unsigned d
     return &audio[index];
 }
 
-void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex f_audio[], decimator_config_common &dcc){
-    // memset(f_audio[0].metadata, 0, dcc.number_of_frame_buffers*sizeof(s_metadata));
+void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
+     unsigned &buffer, mic_array_frame_fft_preprocessed f_fft_preprocessed[], mic_array_decimator_config dc[]){
+
      unsigned frames;
-     e_decimator_buffering_type buffering_type = dcc.buffering_type;
+     e_decimator_buffering_type buffering_type;
+     unsafe {buffering_type = dc[0].dcc->buffering_type;}
 
      if (buffering_type == DECIMATOR_NO_FRAME_OVERLAP){
          frames = 1;
@@ -129,9 +136,9 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
      for(unsigned f=0;f<frames;f++){
          unsafe {
              for(unsigned i=0;i<decimator_count;i++)
-                c_from_decimator[i] <: (complex * unsafe)(f_audio[f].data[i*2]);
+                c_from_decimator[i] <: (s_complex * unsafe)(f_fft_preprocessed[f].data[i*2]);
              for(unsigned i=0;i<decimator_count;i++)
-                c_from_decimator[i] <: (s_metadata * unsafe)&f_audio[f].metadata[i];
+                c_from_decimator[i] <: (s_metadata * unsafe)&f_fft_preprocessed[f].metadata[i];
          }
      }
      for(unsigned i=0;i<decimator_count;i++)
@@ -140,8 +147,10 @@ void decimator_init_complex_frame(streaming chanend c_from_decimator[], unsigned
      buffer = frames;
 }
 
-frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, frame_complex * alias f_complex, decimator_config_common &dcc){
+mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_frame(
+        streaming chanend c_from_decimator[], unsigned decimator_count,
+     unsigned &buffer, mic_array_frame_fft_preprocessed * alias f_fft_preprocessed,
+     mic_array_decimator_config dc[]){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -160,17 +169,21 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
          soutct(c_from_decimator[i], EXCHANGE_BUFFERS);
      unsafe {
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (complex * unsafe)(f_complex[buffer].data[i*2]);
+            c_from_decimator[i] <: (s_complex * unsafe)(f_fft_preprocessed[buffer].data[i*2]);
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (s_metadata * unsafe)&f_complex[buffer].metadata[i];
+            c_from_decimator[i] <: (s_metadata * unsafe)&f_fft_preprocessed[buffer].metadata[i];
      }
 
      for(unsigned i=0;i<decimator_count;i++)
          schkct(c_from_decimator[i], 8);
 
      unsigned index;
-     unsigned buffer_count = dcc.number_of_frame_buffers;
-     e_decimator_buffering_type buffering_type = dcc.buffering_type;
+     unsigned buffer_count;
+     e_decimator_buffering_type buffering_type;
+     unsafe {
+         buffering_type = dc[0].dcc->buffering_type;
+         buffer_count = dc[0].dcc->number_of_frame_buffers;
+     }
      if(buffering_type == DECIMATOR_NO_FRAME_OVERLAP)
          index = buffer + buffer_count - 1;
      else
@@ -183,12 +196,13 @@ frame_complex * alias decimator_get_next_complex_frame(streaming chanend c_from_
      if(buffer == buffer_count)
          buffer = 0;
 
-     return &f_complex[index];
+     return &f_fft_preprocessed[index];
 }
 
-void decimator_configure(streaming chanend c_from_decimator[], unsigned decimator_count,
-        decimator_config dc[]){
-
+void mic_array_decimator_configure(
+        streaming chanend c_from_decimator[],
+        unsigned decimator_count,
+        mic_array_decimator_config dc[]){
 
      //TODO check the frame_size_log_2 is in bounds
     for(unsigned i=0;i<decimator_count;i++)
@@ -199,7 +213,7 @@ void decimator_configure(streaming chanend c_from_decimator[], unsigned decimato
 
      unsafe {
          for(unsigned i=0;i<decimator_count;i++)
-             c_from_decimator[i] <: (decimator_config * unsafe)&dc[i];
+             c_from_decimator[i] <: (mic_array_decimator_config * unsafe)&dc[i];
      }
 }
 

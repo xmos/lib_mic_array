@@ -15,7 +15,7 @@ on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
-#define FFT_N (1<<MAX_FRAME_SIZE_LOG2)
+#define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
@@ -27,15 +27,15 @@ int your_favourite_window_function(unsigned i, unsigned window_length){
 void freq_domain_example(streaming chanend c_ds_output[2]){
 
     unsigned buffer ;
-    frame_complex comp[3];
+    mic_array_frame_fft_preprocessed comp[3];
 
     int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++)
          window[i] = your_favourite_window_function(i, FFT_N);
 
     unsafe{
-        decimator_config_common dcc = {
-                MAX_FRAME_SIZE_LOG2,
+        mic_array_decimator_config_common dcc = {
+                MIC_ARRAY_MAX_FRAME_SIZE_LOG2,
                 1,
                 1,
                 window,
@@ -47,19 +47,19 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
                 4
         };
 
-        decimator_config dc[2] = {
+        mic_array_decimator_config dc[2] = {
                 {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
 
-        decimator_configure(c_ds_output, 2, dc);
+        mic_array_decimator_configure(c_ds_output, 2, dc);
 
-        decimator_init_complex_frame(c_ds_output, 2, buffer, comp, dcc);
+        mic_array_init_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
         while(1){
 
            //Recieve the preprocessed frames ready for the FFT
-           frame_complex * current = decimator_get_next_complex_frame(c_ds_output, 2, buffer, comp, dcc);
+            mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
            for(unsigned i=0;i<4;i++){
                //Apply one FFT to two channels at a time
@@ -70,7 +70,7 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
            }
 
            //Now we can address the output as a frequency frame(i.e. 8 complex channels of length FFT_N/2)
-           frame_frequency * frequency = (frame_frequency *)current;
+           mic_array_frame_frequency_domain * frequency = (mic_array_frame_frequency_domain *)current;
 
            //Now to get back to the time domain
            unsigned channel = 0;
@@ -104,9 +104,9 @@ int main(){
     start_clock(pdmclk);
 
     par{
-        pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-        decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-        decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+        mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
         freq_domain_example(c_ds_output);
         par(int i=0;i<4;i++)while(1);
     }

@@ -5,8 +5,7 @@
 #include <xs1.h>
 #include <stdlib.h>
 
-#define CHANNELS 8
-#define S_CHANS ((CHANNELS + 3)/4)
+#define S_CHANS ((MIC_ARRAY_NUM_MICS + 3)/4)
 
 static unsigned make_id(unsigned sample_number, unsigned chan_number){
     return (sample_number&0xfffffff) + (chan_number<<28);
@@ -20,7 +19,7 @@ static void unmake_id(unsigned id, unsigned &sample_number, unsigned &chan_numbe
 void producer(streaming chanend c_from_pdm_frontend[]){
     unsigned i=0;
     while(1){
-        for(unsigned ch=0;ch < CHANNELS/S_CHANS;ch++){
+        for(unsigned ch=0;ch < MIC_ARRAY_NUM_MICS/S_CHANS;ch++){
             for(unsigned c=0;c<S_CHANS;c++){
 
                 c_from_pdm_frontend[c] <: make_id(i, c*4 + ch);
@@ -38,8 +37,8 @@ static unsigned pseudo_random(unsigned &x){
 void test(streaming chanend c_to_decimator[],
         streaming chanend c_cmd){
     unsigned sample = 0;
-    unsigned set_delays[CHANNELS] = {0, 0, 0, 0, 0, 0, 0, 0};
-    unsigned real_delays[CHANNELS] = {0, 0, 0, 0, 0, 0, 0, 0};
+    unsigned set_delays[MIC_ARRAY_NUM_MICS] = {0, 0, 0, 0, 0, 0, 0, 0};
+    unsigned real_delays[MIC_ARRAY_NUM_MICS] = {0, 0, 0, 0, 0, 0, 0, 0};
     unsigned x=0x12345678;
 
 #define PASS_CONDITION 512
@@ -47,12 +46,12 @@ void test(streaming chanend c_to_decimator[],
     unsigned successes = 0;
 
     while(1){
-        hires_delay_set_taps(c_cmd, set_delays, CHANNELS);
+        mic_array_hires_delay_set_taps(c_cmd, set_delays, MIC_ARRAY_NUM_MICS);
         int correct = 0;
         while(!correct){
-            unsigned result[CHANNELS] = {0};
+            unsigned result[MIC_ARRAY_NUM_MICS] = {0};
             unsigned id;
-            for(unsigned ch=0;ch < CHANNELS/S_CHANS;ch++){
+            for(unsigned ch=0;ch < MIC_ARRAY_NUM_MICS/S_CHANS;ch++){
                 for(unsigned c=0;c<S_CHANS;c++){
                     c_to_decimator[c] :> id;
                     unsigned s, n;
@@ -61,7 +60,7 @@ void test(streaming chanend c_to_decimator[],
                 }
             }
             correct = 1;
-            for(unsigned ch=0;ch<CHANNELS;ch++)
+            for(unsigned ch=0;ch<MIC_ARRAY_NUM_MICS;ch++)
                 correct &= (result[ch] == (sample - real_delays[ch]));
 
             sample++;
@@ -79,14 +78,14 @@ void test(streaming chanend c_to_decimator[],
             _Exit(0);
         }
 
-        for(unsigned ch=0;ch<CHANNELS;ch++)
+        for(unsigned ch=0;ch<MIC_ARRAY_NUM_MICS;ch++)
             set_delays[ch] = (pseudo_random(x)&0xfff)%(sample+1);
 
-        for(unsigned ch=0;ch<CHANNELS;ch++){
-            if(set_delays[ch] < HIRES_MAX_DELAY){
+        for(unsigned ch=0;ch<MIC_ARRAY_NUM_MICS;ch++){
+            if(set_delays[ch] < MIC_ARRAY_HIRES_MAX_DELAY){
                 real_delays[ch] = set_delays[ch];
             } else {
-                real_delays[ch] = HIRES_MAX_DELAY-1;
+                real_delays[ch] = MIC_ARRAY_HIRES_MAX_DELAY-1;
             }
         }
     }
@@ -99,7 +98,7 @@ int main(){
     par {
         producer(c_from_pdm_frontend);
         test(c_to_decimator, c_cmd);
-        hires_delay(c_from_pdm_frontend, c_to_decimator, S_CHANS, c_cmd);
+        mic_array_hires_delay(c_from_pdm_frontend, c_to_decimator, S_CHANS, c_cmd);
     }
     return 0;
 }

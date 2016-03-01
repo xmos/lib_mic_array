@@ -249,13 +249,13 @@ Frames
 ------
 
 The four channel decimators (``pdm_rx()``) output frames of either *simple audio* or
-*FFT ready audio* prepared for an FFT. The define ``MAX_FRAME_SIZE_LOG2``
+*FFT ready audio* prepared for an FFT. The define ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``
 (found in ``mic_array_conf.h``) should be used to allocate the arrays to
 store the frames. This means that all frames structures will allocate
 enough memory to allow for a frame size of two to the power of
-``MAX_FRAME_SIZE_LOG2`` regardless of the size used in the
+``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` regardless of the size used in the
 ``decimator_config_common``. It is recommended that the ``frame_size_log2``
-field of ``decimator_config_common`` is always set to ``MAX_FRAME_SIZE_LOG2``.
+field of ``decimator_config_common`` is always set to ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``.
 Equally, the define ``MIC_ARRAY_NUM_MICS`` is used for allocating the memory
 for the frame structure. This must be set to a multiple of 4.
 
@@ -266,7 +266,7 @@ Simple audio
 
 If *simple audio* output is used (``index_bit_reversal`` is set to 0), then
 data is stored into arrays of length two to the power of
-``MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log_2`` 
+``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log_2`` 
 entries contain valid data. The first index of the ``data`` element of
 ``frame_audio`` is used to address the channel and the second index is
 used for the sample number with zero being the oldest sample.
@@ -310,7 +310,7 @@ FFT ready audio
 If *FFT ready audio* output is used (``index_bit_reversal`` is set to 1),
 then the data is stored in frames that are designed to be processed with an
 FFT. The data is stored in arrays of length two to the power of
-``MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log2`` 
+``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log2`` 
 entries contain valid data, each element storing a real and an imaginary
 part. The data is stored in a bit reversed order (ie, the oldest element is
 at index 0b0000....0000, the next oldest is at element 0b1000...0000, the
@@ -413,10 +413,10 @@ processing by an DIT FFT.
 An application that uses ``lib_mic_array`` must define the header file
 ``mic_array_conf.h``. This header must define:
 
-   * MAX_FRAME_SIZE_LOG2
+   * MIC_ARRAY_MAX_FRAME_SIZE_LOG2
 
      This defines the maximum frame size (log 2) that the application could request to use.
-     The application may request frame sizes from 0 to ``MAX_FRAME_SIZE_LOG2``. 
+     The application may request frame sizes from 0 to ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``. 
      This should be kept small as it governs the memory required for 
      a frame.
 
@@ -424,17 +424,27 @@ An application that uses ``lib_mic_array`` must define the header file
 
      This defines the number of microphones in use. It is used for allocating memory in the
 	 frame structures. 
+
+   * MIC_ARRAY_WORD_LENGTH_SHORT
+
+     This defines the number of microphones in use. It is used for allocating memory in the
+	 frame structures. 
+
+   * ffffffffffffffffff
+
+     This defines the number of microphones in use. It is used for allocating memory in the
+	 frame structures. 
      
 Optionally, ``mic_array_conf.h`` may define
 
-   * DC_OFFSET_DIVIDER_LOG2
+   * MIC_ARRAY_DC_OFFSET_LOG2
 
      The DC offset is removed with a high pass filter. ``DC_OFFSET_DIVIDER_LOG2``
 	 can be used to control the responsiveness of the filter vs the cut off frequency.
 	 The default is 13, but setting this will override it. The value must not exceed 31.
 	 See :ref:`section_dc` DC offset removal for further explanation.
 
-   * HIRES_MAX_DELAY
+   * MIC_ARRAY_HIRES_MAX_DELAY
 
      This defines the length of the high resolution delay lines. This should be set to a power
 	 of two for efficiency. The default is 256. Increasing values will result in increasing memory
@@ -454,7 +464,7 @@ microphones it interfaces to. The application has the option to control the
 following settings through ``decimator_config_common``:
 
 * ``frame_size_log2``: This sets the frame size to a power of two. A frame will contain 
-  2 to the power of frame_size_log2 samples of each channel. Set this to a maximum of ``MAX_FRAME_SIZE_LOG2``.
+  2 to the power of frame_size_log2 samples of each channel. Set this to a maximum of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``.
   
 * ``apply_dc_offset_removal``: This controls if the DC offset removal should be enabled
   or not. Set to non-zero to enable, or ``0`` to not apply DC offset removal.
@@ -772,17 +782,17 @@ API
 Creating an PDM microphone interface instance
 .............................................
 
-.. doxygenfunction:: pdm_rx
+.. doxygenfunction:: mic_array_pdm_rx
 
 |newpage|
 
 PDM microphone processing
 .........................
 
-.. doxygenfunction:: decimate_to_pcm_4ch
-.. doxygenfunction:: decimator_configure
-.. doxygenstruct:: decimator_config_common
-.. doxygenstruct:: decimator_config
+.. doxygenfunction:: mic_array_decimate_to_pcm_4ch
+.. doxygenfunction:: mic_array_decimator_configure
+.. doxygenstruct:: mic_array_decimator_config_common
+.. doxygenstruct:: mic_array_decimator_config
 
 |newpage|
 
@@ -790,25 +800,26 @@ PCM frame interfacing
 .....................
 
 .. doxygenenum:: e_decimator_buffering_type
-.. doxygenfunction:: decimator_init_audio_frame
-.. doxygenfunction:: decimator_get_next_audio_frame
-.. doxygenfunction:: decimator_init_complex_frame
-.. doxygenfunction:: decimator_get_next_complex_frame
+.. doxygenfunction:: mic_array_init_time_domain_frame
+.. doxygenfunction:: mic_array_get_next_time_domain_frame
+.. doxygenfunction:: mic_array_init_frequency_domain_frame
+.. doxygenfunction:: mic_array_get_next_frequency_domain_frame
 
 |newpage|
 
 Frame types
 ...........
 
-.. doxygenstruct:: complex
-.. doxygenstruct:: frame_audio
-.. doxygenstruct:: frame_complex
+.. doxygenstruct:: s_complex
+.. doxygenstruct:: mic_array_frame_time_domain
+.. doxygenstruct:: mic_array_frame_frequency_domain
+.. doxygenstruct:: mic_array_frame_fft_preprocessed
 
 High resolution delay task
 ..........................
 
-.. doxygenfunction:: hires_delay
-.. doxygenfunction:: hires_delay_set_taps
+.. doxygenfunction:: mic_array_hires_delay
+.. doxygenfunction:: mic_array_hires_delay_set_taps
 
 |newpage|
 |appendix|

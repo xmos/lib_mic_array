@@ -76,33 +76,35 @@ static void set_dir(client interface led_button_if lb,
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-frame_audio audio[2];
 #include <stdio.h>
 void hires_DAS_fixed(streaming chanend c_ds_output[2],
         streaming chanend c_cmd,
         client interface led_button_if lb, chanend c_audio) {
     unsafe {
+        mic_array_frame_time_domain audio[2];    //double buffered
         unsigned buffer;
-        memset(audio, sizeof(frame_audio), 0);
 
         unsigned gain = 8;
-        unsigned delay[7] = {0, 0, 0, 0, 0, 0, 0};
+        unsigned delay[7];
         unsigned dir = 0;
         set_dir(lb, dir, delay);
 
-        decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
-        decimator_config dc[2] = {
+        mic_array_decimator_config_common dcc = {0, 1, 0, 0, DF,
+                g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
+                DECIMATOR_NO_FRAME_OVERLAP, 2};
+        mic_array_decimator_config dc[2] = {
           {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
           {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
 
-        decimator_configure(c_ds_output, 2, dc);
+        mic_array_decimator_configure(c_ds_output, 2, dc);
 
-        decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+        mic_array_init_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
         while(1) {
 
-            frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+            mic_array_frame_time_domain *  current =
+                                mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
             // light the LED for the current directionction
 
@@ -125,7 +127,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                               printf("delay[%d] = %d\n", i, delay[i]);
                             printf("\n");
 
-                            hires_delay_set_taps(c_cmd, delay, 7);
+                            mic_array_hires_delay_set_taps(c_cmd, delay, 7);
                             break;
 
                         case 1:
@@ -150,7 +152,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                               printf("delay[%d] = %d\n", i, delay[i]);
                             printf("\n");
 
-                            hires_delay_set_taps(c_cmd, delay, 7);
+                            mic_array_hires_delay_set_taps(c_cmd, delay, 7);
                             break;
                         }
                     }
@@ -291,10 +293,10 @@ int main() {
             par {
                 button_and_led_server(lb, 1, leds, p_buttons);
 
-                pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
-                hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
-                decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
-                decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+                mic_array_pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
+                mic_array_hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
+                mic_array_decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
+                mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
                 hires_DAS_fixed(c_ds_output, c_cmd, lb[0], c_audio);
             }
         }

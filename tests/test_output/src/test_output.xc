@@ -41,30 +41,33 @@ int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 void test_output(streaming chanend c_ds_output[2],
         client interface led_button_if lb, chanend c_audio){
 
-    frame_audio audio[2];
+    mic_array_frame_time_domain audio[2];
 
     printf("Output test started\n");
     unsafe{
         unsigned buffer;     //buffer index
-        memset(audio, sizeof(frame_audio), 0);
+        memset(audio, sizeof(mic_array_frame_time_domain), 0);
 
         unsigned gain = 8;
 
-            decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2, DECIMATOR_NO_FRAME_OVERLAP, 2};
-            decimator_config dc[2] = {
+        mic_array_decimator_config_common dcc = {0, 1, 0, 0, DF,
+                g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
+                DECIMATOR_NO_FRAME_OVERLAP, 2};
+        mic_array_decimator_config dc[2] = {
                     {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                     {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
             };
-            decimator_configure(c_ds_output, 2, dc);
+        mic_array_decimator_configure(c_ds_output, 2, dc);
 
-        decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+        mic_array_init_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
+
         unsigned c=0;
         timer t;
         unsigned now, then;
         t :> then;
         while(1){
 
-            frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+            mic_array_frame_time_domain *  current = mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
             select {
                 case lb.button_event():{
@@ -198,9 +201,9 @@ int main(){
 
             par{
                 button_and_led_server(lb, 1, leds, p_buttons);
-                pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-                decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+                mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
                 test_output(c_ds_output, lb[0], c_audio);
                 par(int i=0;i<3;i++)while(1);
             }

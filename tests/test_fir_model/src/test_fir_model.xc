@@ -95,10 +95,10 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
     unsigned second_stage_n[16] = {0};
     unsigned third_stage_n[16] = {0};
 
-    int window[1<<(MAX_FRAME_SIZE_LOG2-1)];
+    int window[1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2-1)];
     {
         unsigned x=0x9876543;
-        for(unsigned i=0;i<(1<<(MAX_FRAME_SIZE_LOG2-1)); i++)
+        for(unsigned i=0;i<(1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2-1)); i++)
             window[i] = pseudo_random(x);
     }
 
@@ -136,10 +136,10 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
                 c_model :> windowing_enabled;
                 c_model :> buf_type;
             }
-            int output[16][COUNT<<MAX_FRAME_SIZE_LOG2];
+            int output[16][COUNT<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];
             memset(second_stage_data, 0, sizeof(int)*16*16);
             memset(third_stage_data, 0, sizeof(int)*32*DF*16);
-            memset(output, 0, sizeof(int)*(COUNT<<MAX_FRAME_SIZE_LOG2)*16);
+            memset(output, 0, sizeof(int)*(COUNT<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)*16);
             memset(second_stage_n, 0, sizeof(unsigned)*16);
             memset(third_stage_n, 0, sizeof(unsigned)*16);
             int val[16];
@@ -287,8 +287,8 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
 #pragma unsafe arrays
 void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel_count){
 
-    frame_audio audio[FRAME_COUNT];
-    frame_complex f_complex[FRAME_COUNT];
+    mic_array_frame_time_domain  audio[FRAME_COUNT];
+    mic_array_frame_fft_preprocessed f_complex[FRAME_COUNT];
 
     //FIXME this might cause weird crashes!! due to memory alignment
     int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
@@ -296,10 +296,10 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
     int data_2[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
     int data_3[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 
-    int window[1<<(MAX_FRAME_SIZE_LOG2-1)];
+    int window[1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2-1)];
     {
         unsigned x=0x9876543;
-        for(unsigned i=0;i<(1<<(MAX_FRAME_SIZE_LOG2-1)); i++)
+        for(unsigned i=0;i<(1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2-1)); i++)
             window[i] = pseudo_random(x);
     }
 
@@ -340,38 +340,38 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
             }
             unsigned buffer;
 
-            int output[16][COUNT<<MAX_FRAME_SIZE_LOG2];
+            int output[16][COUNT<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];
 
             memset(data_0, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
             memset(data_1, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
             memset(data_2, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
             memset(data_3, 0, sizeof(int)*4*THIRD_STAGE_COEFS_PER_STAGE*DF);
 
-            memset(audio, 0, sizeof(frame_audio)*FRAME_COUNT);
-            memset(f_complex, 0, sizeof(frame_complex)*FRAME_COUNT);
+            memset(audio, 0, sizeof(mic_array_frame_time_domain)*FRAME_COUNT);
+            memset(f_complex, 0, sizeof(mic_array_frame_fft_preprocessed)*FRAME_COUNT);
 
 
             if(index_bit_reversal){
-                    decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir,
+                mic_array_decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir,
                             gain_comp_enabled, fir_comp, buf_type, FRAME_COUNT};
 
                     if(windowing_enabled)
                         dcc.windowing_function = window;
 
-                    decimator_config dc[4] = {
+                    mic_array_decimator_config dc[4] = {
                             {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
                             {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4},
                             {&dcc, data_2, {gain_comp[8], gain_comp[9], gain_comp[10], gain_comp[11]}, 4},
                             {&dcc, data_3, {gain_comp[12], gain_comp[13], gain_comp[14], gain_comp[15]}, 4}
                     };
-                    decimator_configure(c_ds_output, channel_count/4, dc);
+                    mic_array_decimator_configure(c_ds_output, channel_count/4, dc);
 
-               decimator_init_complex_frame(c_ds_output,  channel_count/4, buffer, f_complex, dcc);
+                    mic_array_init_frequency_domain_frame(c_ds_output,  channel_count/4, buffer, f_complex, dc);
 
 
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
-                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output,  channel_count/4, buffer, f_complex, dcc);
+                       mic_array_frame_fft_preprocessed *  current = mic_array_get_next_frequency_domain_frame(c_ds_output,  channel_count/4, buffer, f_complex, dc);
                         for(unsigned f=0;f<(1<<frame_size_log2);f++){
                             unsigned ff = bitreverse(f, frame_size_log2);
                             unsigned index = (c<<frame_size_log2) + bitreverse(f, frame_size_log2);
@@ -383,7 +383,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                    }
                } else {
                    for(unsigned c=0;c<2*COUNT;c++){
-                        frame_complex *  current = decimator_get_next_complex_frame(c_ds_output,  channel_count/4, buffer, f_complex, dcc);
+                       mic_array_frame_fft_preprocessed *  current = mic_array_get_next_frequency_domain_frame(c_ds_output,  channel_count/4, buffer, f_complex, dc);
                         if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
                                 for(unsigned m=0;m<channel_count/2;m++){
@@ -405,25 +405,25 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                    }
                }
             } else {
-                    decimator_config_common dcc = {
+                mic_array_decimator_config_common dcc = {
                             frame_size_log2, 0, index_bit_reversal, 0, df, fir, gain_comp_enabled, fir_comp, buf_type, FRAME_COUNT};
 
                     if(windowing_enabled)
                         dcc.windowing_function = window;
 
-                    decimator_config dc[4] = {
+                    mic_array_decimator_config dc[4] = {
                             {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
                             {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4},
                             {&dcc, data_2, {gain_comp[8], gain_comp[9], gain_comp[10], gain_comp[11]}, 4},
                             {&dcc, data_3, {gain_comp[12], gain_comp[13], gain_comp[14], gain_comp[15]}, 4}
                     };
-                    decimator_configure(c_ds_output, channel_count/4, dc);
+                    mic_array_decimator_configure(c_ds_output, channel_count/4, dc);
 
-               decimator_init_audio_frame(c_ds_output, channel_count/4, buffer, audio, dcc);
+                    mic_array_init_time_domain_frame(c_ds_output, channel_count/4, buffer, audio, dc);
 
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
-                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, channel_count/4, buffer, audio, dcc);
+                       mic_array_frame_time_domain *  current = mic_array_get_next_time_domain_frame(c_ds_output, channel_count/4, buffer, audio, dc);
                         for(unsigned f=0;f<(1<<frame_size_log2);f++){
                             for(unsigned m=0;m<channel_count;m++){
                                 output[m][(c<<frame_size_log2) + f] = current->data[m][f];
@@ -432,7 +432,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                    }
                } else {
                    for(unsigned c=0;c<2*COUNT;c++){
-                        frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, channel_count/4, buffer, audio, dcc);
+                       mic_array_frame_time_domain *  current = mic_array_get_next_time_domain_frame(c_ds_output, channel_count/4, buffer, audio, dc);
                         if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
                                 unsigned index = (c<<(frame_size_log2-1)) + f - (1<<(frame_size_log2-1));
@@ -526,7 +526,7 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
 
         unsigned test = 0;
 
-        for(unsigned frame_size_log2 = 0;frame_size_log2<=MAX_FRAME_SIZE_LOG2;frame_size_log2++){
+        for(unsigned frame_size_log2 = 0;frame_size_log2<=MIC_ARRAY_MAX_FRAME_SIZE_LOG2;frame_size_log2++){
 
             for(unsigned decimation_index = 0; decimation_index < 5;decimation_index++){
                 const int * unsafe fir = decimation_fir_lut[decimation_index];
@@ -635,10 +635,10 @@ void channel_count_test(unsigned counts[], unsigned n){
                 _Exit(0);
             }
         }
-        decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2]);
-        decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3]);
         while(1);
      }
 }

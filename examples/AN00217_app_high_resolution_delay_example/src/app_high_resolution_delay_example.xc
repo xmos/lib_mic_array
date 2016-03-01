@@ -15,14 +15,14 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_2;
 
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-frame_audio audio[2];    //double buffered
-
 void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
 
     unsafe{
+        mic_array_frame_time_domain audio[2];    //double buffered
+
         unsigned buffer;
 
-            decimator_config_common dcc = {
+        mic_array_decimator_config_common dcc = {
                     0, // Frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
                     1, // DC offset elimination is turned on
                     0, // Index bit reversal is off
@@ -30,11 +30,12 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
                     DF,// The decimation factor is set to 6
                     g_third_stage_div_6_fir, // This corresponds to a 16kHz output hence this coef array is used
                     0, // Gain compensation is turned off
-                    0, // FIR compensation is turned off
+                    FIR_COMPENSATOR_DIV_6, // FIR compensation is set to the corresponding coefficients
                     DECIMATOR_NO_FRAME_OVERLAP, // Frame overlapping is turned off
                     2  // There are 2 buffers in the audio array
             };
-            decimator_config dc[2] = {
+
+        mic_array_decimator_config dc[2] = {
                     {
                             &dcc,
                             data_0,     // The storage area for the output decimator
@@ -48,13 +49,14 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
                             4           // Enabled channel count (currently must be 4)
                     }
             };
-            decimator_configure(c_ds_output, 2, dc);
+        mic_array_decimator_configure(c_ds_output, 2, dc);
 
 
-        decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+        mic_array_init_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
         while(1){
-            frame_audio *current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+            mic_array_frame_time_domain *  current =
+                    mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
             // Buffer and audio should never be accessed.
 
@@ -63,7 +65,7 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
 
             // Update the delays. Delay values must be in range 0..HIRES_MAX_DELAY
             unsigned delays[7] = {0, 1, 2, 3, 4, 5, 6};
-            hires_delay_set_taps(c_cmd, delays, 7);
+            mic_array_hires_delay_set_taps(c_cmd, delays, 7);
         }
     }
 }
@@ -83,10 +85,10 @@ int main() {
             streaming chan c_cmd;
 
             par {
-                pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
-                hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
-                decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
-                decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+                mic_array_pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
+                mic_array_hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
+                mic_array_decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
+                mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
                 example(c_ds_output, c_cmd);
             }
         }
