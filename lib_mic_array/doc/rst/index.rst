@@ -188,11 +188,11 @@ connect to the PDM interface via streaming channels::
         return 0;
   }
 
-There is a further requirement that any application of a ``mic_array_decimate_to_pcm_4ch`` 
-task must be on the same tile as the ``mic_array_decimate_to_pcm_4ch`` task due to the sharaed
+There is a further requirement that any application of a ``mic_array_decimate_to_pcm_4ch()`` 
+task must be on the same tile as the ``mic_array_decimate_to_pcm_4ch()`` task due to the sharaed
 frame memory.
   
-As the PDM interface, ``mic_array_pdm_rx``, communicates over channels then the placement of it
+As the PDM interface ``mic_array_pdm_rx()`` communicates over channels then the placement of it
 is not restricted to the sme tile as the decimators.
 
 Additionally, the high resolution delay task can be inserted between the PDM interface 
@@ -219,7 +219,7 @@ and the decimators, similar to the above, it is done in the following fashion::
         par {
             mic_array_pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
 
-            hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
+            mic_array_hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
 
             mic_array_decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
             mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
@@ -235,16 +235,16 @@ Note, using the high resolution delay consumes an extra logical core.
 
 High resolution delay task
 --------------------------
-The high resolution delay task, ``hires_delay()``, is capable of implementing delays 
+The high resolution delay task, ``mic_array_hires_delay()``, is capable of implementing delays 
 with a resolution down to 1.3 microseconds(384kHz). It implements up to 16 delays lines of length 
-``HIRES_MAX_DELAY``, which has a default of 256. The delay line length can be overridden 
+``MIC_ARRAY_HIRES_MAX_DELAY``, which has a default of 256. The delay line length can be overridden 
 by redefining it in ``mic_array_conf.h``. Each delay line sample is clocked at the PDM clock
 rate divided by 8, that is, 384kHz for a 3.072MHz PDM clock and 352.8kHz for an PDM clock
 of 2.8224MHz. 
 
-By setting a positive delay of N samples on a channel then an input sample will take N extra 
+By setting a positive delay of ``N`` samples on a channel then an input sample will take N extra 
 clocks to propagate to the decimators. Setting of the taps is done through the function 
-``hires_delay_set_taps()`` which will do an atomic update of all the active delay lines tap 
+``mic_array_hires_delay_set_taps()`` which will do an atomic update of all the active delay lines tap 
 positions at once. The default delay on each channel is zero.
 
 
@@ -266,20 +266,20 @@ for the frame structure. This must be set to a multiple of 4.
 
 All frame types contain a two dimensional ``data`` array. 
 
-Simple audio
-............
+Time domain frames
+..................
 
-If *simple audio* output is used (``index_bit_reversal`` is set to 0), then
-data is stored into arrays of length two to the power of
-``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log_2`` 
-entries contain valid data. The first index of the ``data`` element of
-``frame_audio`` is used to address the channel and the second index is
-used for the sample number with zero being the oldest sample.
+If *time domain audio* output is used (``index_bit_reversal`` is set to 0), then
+data is stored into arrays in real time ordering. The arrays are of length two to the power of
+``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log_2``(see :ref:`section_api`) 
+entries contain valid data. All entries between two to the power of ``frame_size_log_2`` and
+two to the power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` are undefined. The first index of the ``data`` 
+element of the structure ``mic_array_frame_time_domain`` is used to address the channel and the second 
+index is used for the sample number with zero being the oldest sample.
 
-Frames are initialised by the application by a call to
-``decimator_init_audio_frame``. Pass it:
+Frames are initialised by the application with a call to ``mic_array_init_time_domain_frame()``. Pass it:
 
-* ``c_from_decimator``: An array of channels to the decimators
+* ``c_from_decimators``: An array of channels to the decimators
 
 * ``decimator_count``: A count of the number of decimators (the number of
   elements in the above array)
@@ -287,27 +287,14 @@ Frames are initialised by the application by a call to
 * ``buffer``: used internally to maintain ownership of the shared memory between  
   the application and the decimators.
 
-* ``f_audio``: the array of audio frames, one (or two) of which will be owned by the 
+* ``audio``: the array of audio frames, one (or two) of which will be owned by the 
   decimators at all times.
 
-* ``dcc``: the configuration to the decimators
+* ``dc``: the configuration array to the decimators
 
-
-Calls to ``decimator_get_next_audio_frame()`` should be made to retrieve
-subsequent audio frames.
-
-* ``c_from_decimator``: An array of channels to the decimators
-
-* ``decimator_count``: A count of the number of decimators (the number of
-  elements in the above array)
-
-* ``buffer``: used internally to share the frames between the application and 
-  deciamtors in a round robin fashion.
-
-* ``f_audio``: the array of audio frames, one (or two) of which will be owned by the 
-  decimators at all times.
-
-* ``dcc``: the configuration to the decimators
+Calls to ``mic_array_get_next_time_domain_frame()`` should be made to retrieve
+subsequent audio frames. These calls require the exact same parameters as 
+``mic_array_init_time_domain_frame()``.
 
 FFT ready audio
 ...............
@@ -325,7 +312,7 @@ store the odd channels. A postprocess function must be applied after the
 Decimate-in-Time(DIT) FFT in order to recover the frequency bins.
 
 Frames are initialised by the application by a call to
-``decimator_init_complex_frame``. Pass it:
+``mic_array_init_frequency_domain_frame()``. Pass it:
 
 * ``c_from_decimator``: An array of channels to the decimators
 
@@ -340,37 +327,24 @@ Frames are initialised by the application by a call to
 
 * ``dcc``: the configuration to the decimators
 
-Calls to ``decimator_get_next_complex_frame()`` should be made to retrieve
-subsequent audio frames.
-
-* ``c_from_decimator``: An array of channels to the decimators
-
-* ``decimator_count``: A count of the number of decimators (the number of
-  elements in the above array)
-
-* ``buffer``: used internally to share the frames between the application and 
-  deciamtors in a round robin fashion.
-
-* ``f_complex``: the array of audio frames, one (or two) of which will be owned by the 
-  decimators at all times.
-
-* ``dcc``: the configuration to the decimators
-
+Calls to ``mic_array_get_next_frequency_domain_frame()`` should be made to retrieve
+subsequent audio frames. These calls require the exact same parameters as 
+``mic_array_init_frequency_domain_frame()``.
 
 Using the decimators
 --------------------
 
 The decimators reduce the high rate PCM down to lower rate PCM. They also prepare the audio
-for subsequenct algorithms.
+for subsequenct algorithms, i.e. framing, windowing, etc.
 
 Setting up the decimators
 .........................
 
-All decimators attached to an application, via streaming channels, are configured 
-simultaneously with the ``decimator_configure()`` function. The parameters to the
-``decimator_configure()`` function are described in a :ref:`section_api`. To start the 
-frame exchange process ``decimator_init_audio_frame()`` or  ``decimator_init_complex_frame()`` 
-must be called. Now the decimators are running
+All decimators attach to an application via streaming channels and are configured 
+simultaneously with the ``mic_array_decimator_configure()`` function. The parameters to the
+``mic_array_decimator_configure()`` function are described in a :ref:`section_api`. To start the 
+frame exchange process ``mic_array_init_frequency_domain_frame()`` or  
+``mic_array_init_time_domain_frame()`` must be called. Now the decimators are running 
 and will be outputting frames at the rate given by their configuration.
 
   .. _figstatemachine:
@@ -386,7 +360,7 @@ Changing decimator configuration
 ................................
 
 Once the decimators are running the configuration of the decimators remain constant. If a change of configuration 
-is required then a call to ``decimator_configure()`` allows a complete reconfigure. This will 
+is required then a call to ``mic_array_decimator_configure()`` allows a complete reconfigure. This will 
 reconfigure and reset all attached decimators. The only configuration that will survive reconfiguration
 is the DC offset memory. It is assumed that the microphone specific DC offset 
 remains fairly constant between reconfigurations. 
@@ -449,7 +423,7 @@ Optionally, ``mic_array_conf.h`` may define
 	 The default is 13, but setting this will override it. The value must not exceed 31.
 	 See :ref:`section_dc` DC offset removal for further explanation.
 
-   * MIC_ARRAY_HIRES_MAX_DELAY
+   * MIC_ARRAY_MIC_ARRAY_HIRES_MAX_DELAY
 
      This defines the length of the high resolution delay lines. This should be set to a power
 	 of two for efficiency. The default is 256. Increasing values will result in increasing memory
@@ -462,7 +436,7 @@ The four channel decimator tasks are highly configurable tasks for outputting fr
 various sizes and formats. They can be used to produce frames suitable for time domain applications
 or pre-process the frames ready for an FFT for frequency domain applications. The four 
 channel decimators, ``mic_array_decimate_to_pcm_4ch()``, have a number of configuration options 
-controlled by the structure ``decimator_config`` through the function ``decimator_configure``. 
+controlled by the structure ``decimator_config`` through the function ``mic_array_decimator_configure``. 
 The decimators are controlled by two structures: ``decimator_config_common`` and ``decimator_config``, 
 where the former configuration is common to all microphones and the later is specific to the batch of 4
 microphones it interfaces to. The application has the option to control the
@@ -559,7 +533,7 @@ following settings through ``decimator_config_common``:
   first ``channel_count`` channels are enabled.
 
 The decimator configuration is applied, from the application, by calling
-the function ``decimator_configure`` with an array of chanends referring to
+the function ``mic_array_decimator_configure`` with an array of chanends referring to
 the decimators, a count of the number of decimators, and an array of
 decimator configurations.
 
@@ -683,11 +657,11 @@ of noise into the passband for all output sample rates.
   3072000             6                 16000                  6400         8000         0.37        -139.10
   3072000             8                 12000                  4800         6000         0.24        -136.60
   3072000             12                8000                   3200         4000         0.18        -133.07
-  2822400             2                 44100                  16758        22050        1.93        
-  2822400             4                 22050                  8820         11025        0.64        
-  2822400             6                 14700                  5880         7350         0.37        
-  2822400             8                 11025                  4410         5512.5       0.24        
-  2822400             12                7350                   2940         3675         0.18        
+  2822400             2                 44100                  16758        22050        1.93        -144.63
+  2822400             4                 22050                  8820         11025        0.64        -142.61
+  2822400             6                 14700                  5880         7350         0.37        -139.10
+  2822400             8                 11025                  4410         5512.5       0.24        -136.60
+  2822400             12                7350                   2940         3675         0.18        -133.07
   =================== ================= ====================== ============ ============ ========== =========
 
 The decimation is achieved by applying three poly-phase FIR filters sequentially. 
@@ -795,7 +769,7 @@ PDM microphone processing
 .........................
 
 .. doxygenfunction:: mic_array_decimate_to_pcm_4ch
-.. doxygenfunction:: mic_array_decimator_configure
+.. doxygenfunction:: mic_array_mic_array_decimator_configure
 .. doxygenstruct:: mic_array_decimator_config_common
 .. doxygenstruct:: mic_array_decimator_config
 
@@ -823,8 +797,8 @@ Frame types
 High resolution delay task
 ..........................
 
-.. doxygenfunction:: mic_array_hires_delay
-.. doxygenfunction:: mic_array_hires_delay_set_taps
+.. doxygenfunction:: mic_array_mic_array_hires_delay
+.. doxygenfunction:: mic_array_mic_array_hires_delay_set_taps
 
 |newpage|
 |appendix|
