@@ -255,7 +255,7 @@
     lsub r11, r5, r5, r8, r4; 		comment(same here) \
     lsub r11, r6, r6, r9, r11; \
     ashr r9, REGISTER, 32;\
-    ladd r11, r5, r5, REGISTER, r4; 		comment(same here) \
+    ladd r11, r5, r5, REGISTER, r4; comment(same here) \
     ladd r11, r6, r6, r9, r11; \
 	std r6, r5, r4[PREV_Y];\
 	lextract REGISTER, r6, r5, r7, 32
@@ -627,33 +627,6 @@ post_process:
 		dc_offset_removal_ch3:
 		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3);
 
-/*
-		ldc r10, 12
-		ldd r5, r6, r4[S_D_DC_01]
-		ashr r7, r5, r10
-		ashr r8, r6, r10
-		{sub r5, r5, r7; sub r6, r6, r8}
-		{add r5, r5, r1; add r6, r6, r0}
-		std r5, r6, r4[S_D_DC_01]
-		ldd r7, r8, r4[S_D_DC_23]
-		ashr r9, r7, r10
-		ashr r10, r6, r10
-		{sub r7, r7, r9; sub r8, r8, r10}
-		{add r7, r7, r3; add r8, r8, r2}
-		std r7, r8, r4[S_D_DC_23]
-
-		{ldc r11, 0; ldc r10, 0}
-		maccs r10, r5, r5, r5
-		maccs r11, r6, r6, r6
-		{clz r10, r10; clz r11, r11}
-		std r10, r11, sp[S_D_DC_OFFSET_LOG2_CH01]
-
-		{ldc r11, 0; ldc r10, 0}
-		maccs r10, r7, r7, r7
-		maccs r11, r8, r8, r8
-		{clz r10, r10; clz r11, r11}
-		std r10, r11, sp[S_D_DC_OFFSET_LOG2_CH23]
-*/
 dc_offset_removal_complete:
 
 #define COMP(REG)\
