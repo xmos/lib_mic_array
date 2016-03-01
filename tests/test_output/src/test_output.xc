@@ -58,7 +58,7 @@ void test_output(streaming chanend c_ds_output[2],
             decimator_configure(c_ds_output, 2, dc);
 
         decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
-        unsigned c=1;
+        unsigned c=0;
         timer t;
         unsigned now, then;
         t :> then;
@@ -98,9 +98,9 @@ void test_output(streaming chanend c_ds_output[2],
 
 #define SAMPLES 0xfffff
 
-            if((c%SAMPLES)==0){
+            if(c==(SAMPLES)){
                 t:> now;
-                printf("%f\n",((float)SAMPLES*100000000.0)/(float)(now- then));
+                printf("Sample rate: %f\n",((float)SAMPLES*100000000.0)/(float)(now- then));
                 then = now;
             }
             c++;
