@@ -7,16 +7,25 @@
 #include <xscope.h>
 
 int data[4*THIRD_STAGE_COEFS_PER_STAGE*2] = {0};
-frame_audio audio[2];
 
 int dc_elim_model(int x, int &prev_x, long long & y){
-    y = y - (y>>8);
-    y = y - prev_x;
-    y = y + x;
-    prev_x = x;
-    return (y>>8);
-}
+#define S 0
+#define N 8
+    long long X = x;
+    long long prev_X = prev_x;
 
+    y = y - (y>>8);
+
+    prev_X<<=32;
+    y = y - prev_X;
+
+    X<<=32;
+    y = y + X;
+
+    prev_x = x;
+    return (y>>(32-S));
+}
+#define DC_OFFSET 0xf123456
 void test(){
 
     streaming chan c_pdm_to_dec;
@@ -27,9 +36,10 @@ void test(){
 #define INPUT_SAMPLES (SINE_LENGTH*8)
 
             int one_khz_sine[INPUT_SAMPLES];
-            int actual_dc_offset = 0;
+            int actual_dc_offset = DC_OFFSET;
+
             for(unsigned i=0;i<INPUT_SAMPLES;i++){
-                one_khz_sine[i] = (int)((double)(INT_MAX-actual_dc_offset)
+                one_khz_sine[i] = (int)((double)(FIRST_STAGE_MAX_PASSBAND_OUTPUT-actual_dc_offset)
                         *sin((double)i*3.1415926535*2.0 / (double)INPUT_SAMPLES) + actual_dc_offset);
             }
 
@@ -48,8 +58,9 @@ void test(){
 
         {
             unsafe{
+                frame_audio audio[2];
                 unsigned buffer;
-                decimator_config_common dcc = {0, 1, 0, 0, 2, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2  };
+                decimator_config_common dcc = {0, 1, 0, 0, 2, g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2, DECIMATOR_NO_FRAME_OVERLAP, 2  };
                 decimator_config dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX },4 }};
                 decimator_configure(c_ds_output, 1, dc);
                 decimator_init_audio_frame(c_ds_output, 1 , buffer, audio, dcc);
@@ -81,7 +92,11 @@ void test(){
                     }
                     prev_x=x;
 
-                    if((count > 3)&&(sum == 0)){
+                    int abs_sum = sum;
+                    if(abs_sum < 0)
+                        abs_sum = -abs_sum;
+
+                    if((count > 30)&&(abs_sum < (SINE_LENGTH*2))){
                         printf("Success!\n");
                         _Exit(1);
                     }

@@ -110,20 +110,14 @@
 #define S_PREV_X_1						1
 #define S_PREV_X_2						2
 #define S_PREV_X_3						3
-#define S_DC_0							4
-#define S_DC_1							5
-#define S_DC_2							6
-#define S_DC_3							7
 
 #define S_D_PREV_X_01					0
 #define S_D_PREV_X_23					1
-#define S_D_DC_01						2
-#define S_D_DC_23						3
-#define S_D_PREV_Y_0 					4
-#define S_D_PREV_Y_1 					5
-#define S_D_PREV_Y_2 					6
-#define S_D_PREV_Y_3 					7
-#define DC_ELIMINATE_STACK_SIZE 		16
+#define S_D_PREV_Y_0 					2
+#define S_D_PREV_Y_1 					3
+#define S_D_PREV_Y_2 					4
+#define S_D_PREV_Y_3 					5
+#define DC_ELIMINATE_STACK_SIZE 		12
 
 //frame
 #define S_FRAME_OFFSET (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
@@ -240,25 +234,27 @@
 	std r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
 	std r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]
 
-#define DC_OFFSET_LOG2 8
+#define DC_OFFSET_LOG2 7
 
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
 	ldd r6, r5, r4[PREV_Y];\
 	ldc r7, DC_OFFSET_LOG2;\
+	ashr r9, r6, r7;\
 	lextract r8, r6, r5, r7, 32;\
-	ashr r9, r8, 32;\
 	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
     lsub r11, r6, r6, r9, r11; \
-    {ldw r8, r4[PREV_X]};\
-    {stw REGISTER, r4[PREV_X]};\
-    ashr r9, r8, 32;\
-    lsub r11, r5, r5, r8, r4; 		comment(same here) \
-    lsub r11, r6, r6, r9, r11; \
+    {ldw r7, r4[PREV_X]};\
     ashr r9, REGISTER, 32;\
-    ladd r11, r5, r5, REGISTER, r4; comment(same here) \
-    ladd r11, r6, r6, r9, r11; \
+    ashr r10, r7, 32;\
+    lsub r11, r8, REGISTER, r7, r4; 	comment(same here) \
+    lsub r11, r9, r9, r10, r11;\
+    {ldc r10, 16};\
+    lextract r9, r9, r8, r10, 32;\
+    {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
+    lsub r11, r5, r5, r8, r4; 		comment(same here) \
+    lsub r11, r6, r6, r9, r11;\
 	std r6, r5, r4[PREV_Y];\
-	lextract REGISTER, r6, r5, r7, 32
+	lextract REGISTER, r6, r5, r10, 32
 
 //r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
 #define APPLY_WINDOW_FN(P)\
@@ -288,18 +284,14 @@
 		bu done_windowing ## P;\
 	done_windowing ## P:
 
-//r4 is the address of the S_FRAME_OFFSET_SECTION
-//r6 is the AUDIO_POINTER_INDEX
-#define BITREV_INDEX()\
-	{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
-	{bitrev r6, r6; sub r7, r7, r5};\
-	{shr r6, r6, r7}
-
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #if MIC_ARRAY_WORD_LENGTH_SHORT
 	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
+		{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
+		{bitrev r6, r6; sub r7, r7, r5};\
+		{shr r6, r6, r7};\
 		{mkmsk r7, 16; shr r0, r0, 16};\
 		{andnot r1, r7; andnot r3, r7};\
 		{add r0, r1, r0; ldw r7, r4[POINTER]};\
@@ -310,6 +302,9 @@
 		stw r3, r7[r6]
 #else
 	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
+			{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
+			{bitrev r6, r6; sub r7, r7, r5};\
+			{shr r6, r6, r7};\
 			ldw r7, r4[POINTER];\
 			std r1, r0, r7[r6];\
 			{ldc r0, 2<<MAX_FRAME_SIZE_LOG2};\
@@ -320,6 +315,7 @@
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #if MIC_ARRAY_WORD_LENGTH_SHORT
+	#if 1
 	#define SAVE_SAMPLES_NORMAL(POINTER)\
 	    	{ldc r5, 1<<(MAX_FRAME_SIZE_LOG2)};\
 	    	{add r8, r6, r5; add r5, r5, r5};\
@@ -331,8 +327,23 @@
 	    	{add r6, r6, r5; add r8, r8, r5};\
 			st16 r2, r7[r6];\
 			st16 r3, r7[r8]
-
+	#else
+	#define SAVE_SAMPLES_NORMAL(POINTER)\
+	    	{ldc r5, 1<<(MAX_FRAME_SIZE_LOG2)};\
+	    	{add r7, r6, r5; add r5, r5, r5};\
+	    	{ldw r11, sp[S_CHAN_COUNT]; add r8, r6, r5};\
+	    	{add r9, r7, r5; ldc r5, 4};\
+	    	{sub r5, r5, r11;ldw r10, r4[POINTER]};\
+	    	{shr r0, r0, 16; shr r1, r1, 16};\
+	    	{shr r2, r2, 16; shr r3, r3, 16};\
+	    	{bru r5;};\
+			{st16 r3, r10[r9]};\
+			{st16 r2, r10[r8]};\
+			{st16 r1, r10[r7]};\
+			{st16 r0, r10[r6]}
+	#endif
 #else
+	#if 1
 	#define SAVE_SAMPLES_NORMAL(POINTER)\
 	    	{ldc r5, 4<<(MAX_FRAME_SIZE_LOG2)};\
 	    	{ldw r7, r4[POINTER]};\
@@ -341,6 +352,20 @@
 			{stw r1, r7[0];add r7, r7, r5};\
 			{stw r2, r7[0];add r7, r7, r5};\
 			{stw r3, r7[0]}
+	#else
+	#define SAVE_SAMPLES_NORMAL(POINTER)\
+	    	{ldc r5, 1<<(MAX_FRAME_SIZE_LOG2)};\
+	    	{add r7, r6, r5; add r5, r5, r5};\
+	    	{ldw r11, sp[S_CHAN_COUNT]; add r8, r6, r5};\
+	    	{add r9, r7, r5; ldc r5, 4};\
+	    	{sub r5, r5, r11;ldw r10, r4[POINTER]};\
+	    	{bru r5;};\
+			{stw r3, r10[r9]};\
+			{stw r2, r10[r8]};\
+			{stw r1, r10[r7]};\
+			{stw r0, r10[r6]}
+	#endif
+
 #endif
 
 .globl	decimate_to_pcm_4ch
@@ -616,7 +641,6 @@ post_process:
 	ldw r4, r4[S_DC_OFFSET_REMOVAL_ENABLED]
 	bf r4, dc_offset_removal_complete
 
-
 		ldaw r4, sp[S_DC_ELIMINATE]
 		dc_offset_removal_ch0:
 		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0);
@@ -643,8 +667,6 @@ dc_offset_removal_complete:
 	COMP(r1)
 	COMP(r2)
 	COMP(r3)
-
-	//Do RMS calculation here (long term)
 
 	gain_compensation:	// This always turns the volume down
 	ldaw r4, sp[S_SETTINGS_OFFSET]
@@ -698,7 +720,6 @@ dc_offset_removal_complete:
 				bu save_to_frame_complete_0
 			index_bitrev_order_0:
 				//TODO only save active channels
-				BITREV_INDEX();
 				SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0);
 		save_to_frame_complete_0:
 
@@ -773,7 +794,6 @@ dc_offset_removal_complete:
 					SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_1);
 					bu save_to_frame_complete_1
 				index_bitrev_order_1:
-					BITREV_INDEX();
 					SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_1);
 			save_to_frame_complete_1:
 

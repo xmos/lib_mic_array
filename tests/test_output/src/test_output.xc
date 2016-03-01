@@ -43,7 +43,7 @@ void test_output(streaming chanend c_ds_output[2],
 
     frame_audio audio[2];
 
-    printf("starting\n");
+    printf("Output test started\n");
     unsafe{
         unsigned buffer;     //buffer index
         memset(audio, sizeof(frame_audio), 0);
