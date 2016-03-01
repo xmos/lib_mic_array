@@ -178,6 +178,20 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
     }
 }
 
+void init_cs2100(client i2c_master_if i2c){
+
+    #define CS2100_DEVICE_CONFIG_1      0x03
+    #define CS2100_GLOBAL_CONFIG        0x05
+    #define CS2100_FUNC_CONFIG_1        0x16
+    #define CS2100_FUNC_CONFIG_2        0x17
+
+    i2c_regop_res_t res;
+    res = i2c.write_reg(0x9c>>1, CS2100_DEVICE_CONFIG_1, 0);
+    res = i2c.write_reg(0x9c>>1, CS2100_GLOBAL_CONFIG, 0);
+    res = i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_1, 0);
+    res = i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_2, 0);
+}
+
 #define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
 
@@ -188,6 +202,7 @@ void i2s_handler(server i2s_callback_if i2s,
                  client i2c_master_if i2c, chanend c_audio) {
   p_rst_shared <: 0xF;
 
+  init_cs2100(i2c);
   i2c_regop_res_t res;
   int i = 0x4A;
   uint8_t data = i2c.read_reg(i, 1, res);
@@ -207,9 +222,6 @@ void i2s_handler(server i2s_callback_if i2s,
   data = i2c.read_reg(i, 0x02, res);
   data &= ~1;
   res = i2c.write_reg(i, 0x02, data); // Power up
-
-#define CS2100_I2C_DEVICE_ADDR      (0x9c>>1)
-  res = i2c.write_reg(CS2100_I2C_DEVICE_ADDR, 0x3, 0); // Reset the PLL to use the aux out
 
   while (1) {
     select {
