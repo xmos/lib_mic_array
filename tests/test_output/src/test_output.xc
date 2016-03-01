@@ -48,7 +48,7 @@ void test_output(streaming chanend c_ds_output[2],
         unsigned buffer;     //buffer index
         memset(audio, sizeof(frame_audio), 0);
 
-        unsigned gain = 48;
+        unsigned gain = 8192;
 
             decimator_config_common dcc = {0, 1, 0, 0, DF, g_third_stage_div_2_fir, 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2};
             decimator_config dc[2] = {
@@ -58,7 +58,10 @@ void test_output(streaming chanend c_ds_output[2],
             decimator_configure(c_ds_output, 2, dc);
 
         decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
-        unsigned c=0;
+        unsigned c=1;
+        timer t;
+        unsigned now, then;
+        t :> then;
         while(1){
 
             frame_audio *  current = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
@@ -93,17 +96,28 @@ void test_output(streaming chanend c_ds_output[2],
             c_audio <: output;
             c_audio <: output;
 
-            for(unsigned i=0;i<7;i++)
-                xscope_int(i, current->data[i][0]);
+#define SAMPLES 0xfffff
 
+            if((c%SAMPLES)==0){
+                t:> now;
+                printf("%f\n",((float)SAMPLES*100000000.0)/(float)(now- then));
+                then = now;
+            }
             c++;
-            if(c==4096)
-                _Exit(1);
-
 
         }
     }
 }
+
+#define CS2100_DEVICE_CONTROL       0x02
+#define CS2100_DEVICE_CONFIG_1      0x03
+#define CS2100_GLOBAL_CONFIG        0x05
+#define CS2100_RATIO_1              0x06
+#define CS2100_RATIO_2              0x07
+#define CS2100_RATIO_3              0x08
+#define CS2100_RATIO_4              0x09
+#define CS2100_FUNC_CONFIG_1        0x16
+#define CS2100_FUNC_CONFIG_2        0x17
 
 #define OUTPUT_SAMPLE_RATE (96000/DF)
 #define MASTER_CLOCK_FREQUENCY 24576000
@@ -113,6 +127,11 @@ void i2s_handler(server i2s_callback_if i2s,
   p_rst_shared <: 0xF;
 
   i2c_regop_res_t res;
+  res = i2c.write_reg(0x9c>>1, CS2100_DEVICE_CONFIG_1, 0);
+  res = i2c.write_reg(0x9c>>1, CS2100_GLOBAL_CONFIG, 0);
+  res = i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_1, 0);
+  res = i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_2, 0);
+
   int i = 0x4A;
   uint8_t data = i2c.read_reg(i, 1, res);
 
