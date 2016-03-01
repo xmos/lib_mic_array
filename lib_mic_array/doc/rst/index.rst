@@ -9,39 +9,44 @@ implementation details of ``lib_mic_array``, but do not need to be understood to
 it effectively.
 
 Up to sixteen PDM microphones can be attached to each high channel count PDM
-interface(``pdm_rx()``). One to four processing tasks, ``decimate_to_pcm_4ch()``, 
+interface(``mic_array_pdm_rx()``). One to four processing tasks, ``mic_array_decimate_to_pcm_4ch()``, 
 each process up to four channels. For 1-4 channels the library requires two logical cores:
 
-  .. figure:: chan1-4.pdf
+  .. figure:: chan4.pdf
 	:width: 100%
 	    
 	One to four channel count PDM interface
 
 or for 5-8 channels three logical cores as shown below:
 
-  .. figure:: chan4-8.pdf
+  .. figure:: chan8.pdf
             :width: 100%
                     
             Five to eight count PDM interface
 
-9-12 channels requires 5 logical cores and 13-16 channels requires 6 logical cores.
-The left most task, ``pdm_rx()``, samples up to 8 microphones and filters the data to provide up to
+9-12 channels requires 5 logical cores and for 13-16 channels three six cores as shown below:
+
+  .. figure:: chan16.pdf
+            :width: 100%
+                    
+            Thirteen to sixteen count PDM interface
+
+The left most task, ``mic_array_pdm_rx()``, samples up to 8 microphones and filters the data to provide up to
 eight 384 KHz data streams, split in two streams of four channels. The processing thread
 decimates the signal to a user chosen sample rate (one of 48, 24, 16, 12,
-or 8 KHz). If more than 8 channels are required then another ``pdm_rx`` task can be created.
+or 8 KHz). If more than 8 channels are required then another ``mic_array_pdm_rx`` task can be created.
 After the decimation to the output sample rate the sequence of steps takes place:
 
-* Optionally, DC offset is eliminated on the each channel.
+* Any DC offset is eliminated on the each channel.
 
 * The gain is corrected so that a maximum signal on the PDM microphone
   corresponds to a maximum signal on the PCM signal.
 
-* Optionally, the individual gain of each microphone can be compensated.
-  This can be used to, at manufacture time, compensate any differences in
-  gains between the microphones in a system.
+* The individual gain of each microphone can be compensated.
+  This can be used to compensate any differences in gains between the microphones in a system.
 
-* Frames of data are generated (with a frame size of 1 to 2048 in powers of two).
-  Optionally, frames can be set to overlap by half a frame.
+* Frames of data are generated (with a frame size of 1 to 8192 in powers of two).
+  Frames can be set to overlap by half a frame.
 
 * An optional windowing function is applied to each frame.
 
@@ -55,14 +60,14 @@ beamforming. The task diagrams for 4 and 8 channel microphone arrays are given i
 :ref:`figfourchanhires` and :ref:`figeightchanhires` respectivly.
 
 .. _figfourchanhires:
-.. figure:: chan1-4hires.pdf
+.. figure:: chan4hires.pdf
 	:width: 100%
 	    
 	One to four channel count PDM interface with hires delay lines
 
 
 .. _figeightchanhires:
-.. figure:: chan4-8hires.pdf
+.. figure:: chan8hires.pdf
             :width: 100%
                     
             Five to eight count PDM interface with hires delay lines
@@ -173,21 +178,21 @@ connect to the PDM interface via streaming channels::
         start_clock(pdmclk);
     
         par {
-            pdm_rx(p_pdm_mics, c_pdm_to_dec[0], c_pdm_to_dec[1]);
+            mic_array_pdm_rx(p_pdm_mics, c_pdm_to_dec[0], c_pdm_to_dec[1]);
 
-            decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0]);
-            decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1]);
+            mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0]);
+            mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1]);
 
             application(c_ds_output);
         }
         return 0;
   }
 
-There is a further requirement that any application of a ``decimate_to_pcm_4ch`` 
-task must be on the same tile as the ``decimate_to_pcm_4ch`` task due to the sharaed
+There is a further requirement that any application of a ``mic_array_decimate_to_pcm_4ch`` 
+task must be on the same tile as the ``mic_array_decimate_to_pcm_4ch`` task due to the sharaed
 frame memory.
   
-As the PDM interface, ``pdm_rx``, communicates over channels then the placement of it
+As the PDM interface, ``mic_array_pdm_rx``, communicates over channels then the placement of it
 is not restricted to the sme tile as the decimators.
 
 Additionally, the high resolution delay task can be inserted between the PDM interface 
@@ -212,12 +217,12 @@ and the decimators, similar to the above, it is done in the following fashion::
         start_clock(pdmclk);
     
         par {
-            pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
+            mic_array_pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
 
             hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
 
-            decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
-            decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+            mic_array_decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
+            mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
 
             application(c_ds_output, c_cmd);
         }
@@ -248,7 +253,7 @@ See :ref:`section_api` for the API.
 Frames
 ------
 
-The four channel decimators (``pdm_rx()``) output frames of either *simple audio* or
+The four channel decimators (``mic_array_pdm_rx()``) output frames of either *simple audio* or
 *FFT ready audio* prepared for an FFT. The define ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``
 (found in ``mic_array_conf.h``) should be used to allocate the arrays to
 store the frames. This means that all frames structures will allocate
@@ -456,7 +461,7 @@ Four Channel Decimator
 The four channel decimator tasks are highly configurable tasks for outputting frames of 
 various sizes and formats. They can be used to produce frames suitable for time domain applications
 or pre-process the frames ready for an FFT for frequency domain applications. The four 
-channel decimators, ``decimate_to_pcm_4ch()``, have a number of configuration options 
+channel decimators, ``mic_array_decimate_to_pcm_4ch()``, have a number of configuration options 
 controlled by the structure ``decimator_config`` through the function ``decimator_configure``. 
 The decimators are controlled by two structures: ``decimator_config_common`` and ``decimator_config``, 
 where the former configuration is common to all microphones and the later is specific to the batch of 4
@@ -476,8 +481,8 @@ following settings through ``decimator_config_common``:
   these decimation factors as follows:
 
   ======================== ===================== ======== ========== =============
-   decimation_factor        decimate_to_pcm_4x    PDM_rx   PDM clock  Sample rate
-  ======================== ===================== ======== ========== =============
+   decimation_factor        decimate_to_pcm_4x    mic_array_pdm_rx   PDM clock  Sample rate
+  ======================== ===================== ======== ========== =======================
   2                        8 x                   8 x      3.072 MHz  48 KHz
   4                        16 x                  8 x      3.072 MHz  24 KHz
   6                        24 x                  8 x      3.072 MHz  16 KHz
