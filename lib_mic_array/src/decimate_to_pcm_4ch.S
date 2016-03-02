@@ -4,6 +4,8 @@
 
 #include "mic_array_conf.h"
 
+#define USE_SINGLE_CHAN_SAVING 0
+
 #ifndef MIC_ARRAY_MAX_FRAME_SIZE_LOG2
 	#error MIC_ARRAY_MAX_FRAME_SIZE_LOG2 is not defined in mic_array_conf.h
 #endif
@@ -288,7 +290,6 @@
 		{ldc r10, 0; ldc r11, 0};\
 		maccs r10, r11, r4, r3;\
 		lextract r3, r10, r11, r7, 32;\
-		bu done_windowing ## P;\
 	done_windowing ## P:
 
 
@@ -308,6 +309,7 @@
 		{add r3, r3, r2};\
 		stw r3, r7[r6]
 #else
+#if 1
 	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
 			{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
 			{bitrev r6, r6; sub r7, r7, r5};\
@@ -317,6 +319,18 @@
 			{ldc r0, 2<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2};\
 			ldaw r7, r7[r0];\
 			std r3, r2, r7[r6]
+#else
+	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
+			{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
+			{bitrev r6, r6; sub r7, r7, r5};\
+			{shr r6, r6, r7; ldw r11, sp[S_CHAN_COUNT]};\
+			{ldc r8, 2};\
+			{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+3)};\
+			{shl r8, r11, r8;ldw r7, r4[POINTER]};\
+			add r8, r7, r8;\
+			std r3, r2, r8[r6];\
+			std r1, r0, r7[r6]
+#endif
 #endif
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
@@ -722,18 +736,15 @@ dc_offset_removal_complete:
 		ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
 		bt r5, index_bitrev_order_0
 			index_normal_order_0:
-				//TODO only save active channels
 				SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0);
 				bu save_to_frame_complete_0
 			index_bitrev_order_0:
-				//TODO only save active channels
 				SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0);
 		save_to_frame_complete_0:
 
 		ldw r5, r4[S_FRAME_0_INDEX]
 		{add r5, r5, 1;ldw r6, r4[S_OVERLAPPING_FRAMES]}
 		stw r5, r4[S_FRAME_0_INDEX]
-
 
 		bt r6, overlapping_frames
 		no_overlapping_frames:
@@ -841,9 +852,9 @@ dc_offset_removal_complete:
 				std r3, r5, r4[S_D_FRAME_MIN_MAX_1]
 
 		        ldw r5, r4[S_METADATA_POINTER_0]
+		        {in r3, res[r6]; ldc r0, 0}
 		        stw r5, r4[S_METADATA_POINTER_1]
 
-		        {in r3, res[r6]; ldc r0, 0}
 		        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}
 
 		        get_the_new_metadata_pointer2:
@@ -861,13 +872,12 @@ dc_offset_removal_complete:
 	{ldw r0, r11[7]  ; nop}
 	{ldw r1, r11[9]	 ; nop}
 	{ldw r2, r11[11] ; ldc r3, 13}
-	{ldw r3, r11[r3] ; nop}
+	{ldw r3, r11[r3] ; ldc r10, 0}
 
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
 
-	ldc r10, 0
 	//set S_THIRD_STAGE_PHASE to 0
 	stw r10, r11[S_THIRD_STAGE_PHASE];
 	//reset accumulators
