@@ -5,10 +5,13 @@ lib_mic_array change log
 -----
 
   * Renamed all functions to match library structure
-  * Decimator interface functions now take the array of mic_array_decimator_config structure rather than mic_array_decimator_config_common
+  * Decimator interface functions now take the array of
+    mic_array_decimator_config structure rather than
+    mic_array_decimator_config_common
   * All defines renames to match library naming policy
   * DC offset simplified
-  * Added optional MIC_ARRAY_NUM_MICS define to save memory when using less than 16 microphones
+  * Added optional MIC_ARRAY_NUM_MICS define to save memory when using less than
+    16 microphones
 
 1.0.1
 -----
