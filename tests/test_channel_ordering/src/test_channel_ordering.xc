@@ -9,11 +9,6 @@ out port p_out  = XS1_PORT_8A;
 in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 clock pdmclk                    = XS1_CLKBLK_1;
 
-extern void pdm_rx_asm(
-        in buffered port:32 p_pdm_mics,
-        streaming chanend c_4x_pdm_mic_0,
-        streaming chanend ?c_4x_pdm_mic_1);
-
 void test8ch_frontend(){
     streaming chan c, d;
     par {
@@ -21,7 +16,7 @@ void test8ch_frontend(){
             configure_clock_ref(pdmclk, 10);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
-            pdm_rx_asm(p_pdm_mics, c, d);
+            mic_array_pdm_rx(p_pdm_mics, c, d);
         }
         {
             p_out <: 0;
@@ -72,7 +67,7 @@ void test4ch_frontend(){
             configure_clock_ref(pdmclk, 10);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
-            pdm_rx_asm(p_pdm_mics, c, null);
+            mic_array_pdm_rx(p_pdm_mics, c, null);
         }
         {
             p_out <: 0;
