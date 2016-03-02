@@ -9,9 +9,6 @@ lib_mic_array change log
   * All defines renames to match library naming policy
   * DC offset simplified
   * Added optional MIC_ARRAY_NUM_MICS define to save memory when using less than 16 microphones
-  * 
-
-
 
 1.0.1
 -----
