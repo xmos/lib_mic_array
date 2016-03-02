@@ -190,7 +190,7 @@ def generate_first_stage(header, body, points):
     body.write("};\n\n")
     total_abs_sum = total_abs_sum + max_for_block*2
 
-  print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0)) + ")"
+  #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0)) + ")"
   if abs(total_abs_sum - 2147483647.0) > 6:
     print "Warning: error in first stage too large"
 
@@ -244,7 +244,7 @@ def generate_second_stage(header, body, points):
     body.write("\t0x{:08x},\n".format(ctypes.c_uint(d_int).value))
   body.write("};\n\n")
 
-  print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647*2)) + ")"
+  #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647*2)) + ")"
   if abs(total_abs_sum - 2147483647*2) > 10:
     print "Warning: error in second stage too large"
 
@@ -324,7 +324,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
     body.write("};\n");
 
-    print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0*2.0)) + ")"
+    #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0*2.0)) + ")"
     if abs(total_abs_sum - 2147483647.0*2.0) > 32*divider:
       print "Warning: error in third stage too large"
 
@@ -371,9 +371,11 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
     plt.xlabel('Normalised Output Freq')
     plt.savefig("output_" + name +'.pdf', format='pdf', dpi=1000)
 
-    print str(48000*2*passband/divider) +" "+ str(48000*2*stopband/divider)
-    print str(44100*2*passband/divider) +" "+ str(44100*2*stopband/divider)
-
+    print "Filter name: " + name
+    print "Final stage divider: " + str(divider)
+    print "(3.072MHz) Passband:" + str(48000*2*passband/divider) + "Hz Stopband:"+ str(48000*2*stopband/divider) + "Hz"
+    print "(2.822MHz) Passband:" + str(44100*2*passband/divider) + "Hz Stopband:"+ str(44100*2*stopband/divider) + "Hz"
+    
     if 1.0/passband_max > 8.0:
       print "Error: Compensation factor is too large"
 
@@ -383,7 +385,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
     header.write("#define FIR_COMPENSATOR_" + name.upper() + " (" + str(int(comp_factor)) +")\n")
 
     header.write("\n")
-    print "ripple = " + str(20.0*numpy.log10(passband_min/passband_max)) +"\n"
+    print "Passband ripple = " + str(20.0*numpy.log10(passband_min/passband_max)) +" dB\n"
 
   return
 
