@@ -64,11 +64,16 @@ void test_output(streaming chanend c_ds_output[2],
         unsigned c=0;
         timer t;
         unsigned now, then;
+        mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
         t :> then;
+#define SAMPLES 0x3fff
+        for(unsigned i=0;i<SAMPLES;i++)
+            mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
+        t:> now;
+        printf("Sample rate of the microphone output: %f\n",((float)SAMPLES*100000000.0)/(float)(now- then));
+
         while(1){
-
             mic_array_frame_time_domain *  current = mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
-
             select {
                 case lb.button_event():{
                     unsigned button;
@@ -98,16 +103,6 @@ void test_output(streaming chanend c_ds_output[2],
             output *= gain;
             c_audio <: output;
             c_audio <: output;
-
-#define SAMPLES 0xfffff
-
-            if(c==(SAMPLES)){
-                t:> now;
-                printf("Sample rate: %f\n",((float)SAMPLES*100000000.0)/(float)(now- then));
-                then = now;
-            }
-            c++;
-
         }
     }
 }
@@ -154,6 +149,11 @@ void i2s_handler(server i2s_callback_if i2s,
   data &= ~1;
   res = i2c.write_reg(i, 0x02, data); // Power up
 
+  timer t;
+  unsigned now, then;
+  t:> then;
+
+  unsigned count = 0;
   while (1) {
     select {
     case i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
@@ -167,12 +167,53 @@ void i2s_handler(server i2s_callback_if i2s,
     case i2s.receive(size_t index, int32_t sample):
       break;
     case i2s.send(size_t index) -> int32_t sample:
-      c_audio:> sample;
+
+      if(count < SAMPLES){
+          count++;
+          if(count == SAMPLES){
+              t:> now;
+              printf("Sample rate of the i2s output: %f\n",((float)SAMPLES*100000000.0/2.0)/(float)(now- then));
+          }
+      } else {
+            c_audio:> sample;
+      }
       break;
     }
   }
 }
 
+
+void test_pdm_clock(){
+    unsigned time, now, then;
+    timer t;
+    t :> time;
+    t:> then;
+    int testing_mclk = 1;
+    p_pdm_mics:> int;
+    #define CLOCK_COUNT 1000000
+    while(testing_mclk){
+        select {
+            case t when timerafter(time + 100000000):> time:{
+                printf("Time out on PDM clock\n");
+                testing_mclk = 0;
+                break;
+            }
+            case p_pdm_mics:> int:{
+                testing_mclk++;
+                t :> time;
+                if(testing_mclk == CLOCK_COUNT){
+                    printf("PDM clock present: ");
+                    t:> now;
+                    unsigned elapsed =  (now - then);
+                    float t = (CLOCK_COUNT)/ (((float)elapsed*2)*10.0) * 1000.0;
+                    printf("%fMHz\n", t);
+                    testing_mclk = 0;
+                }
+                break;
+            }
+        }
+    }
+}
 int main(){
 
     i2s_callback_if i_i2s;
@@ -194,10 +235,13 @@ int main(){
 
             interface led_button_if lb[1];
 
+            test_pdm_clock();
+
             configure_clock_src_divide(pdmclk, p_mclk, 4);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
+
 
             par{
                 button_and_led_server(lb, 1, leds, p_buttons);
