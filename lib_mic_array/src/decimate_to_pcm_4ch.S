@@ -307,83 +307,81 @@
 		{add r3, r3, r2};\
 		stw r3, r7[r6]
 #else
-#if 1
 	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
 			{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
-			{bitrev r6, r6; sub r7, r7, r5};\
-			{shr r6, r6, r7};\
-			ldw r7, r4[POINTER];\
-			std r1, r0, r7[r6];\
-			{ldc r0, 2<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2};\
-			ldaw r7, r7[r0];\
-			std r3, r2, r7[r6]
-#else
-	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
-			{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
-			{bitrev r6, r6; sub r7, r7, r5};\
-			{shr r6, r6, r7; ldw r11, sp[S_CHAN_COUNT]};\
-			{ldc r8, 2};\
+			{bitrev r6, r6; ldc r8, 2};\
+			{sub r9, r7, r5;ldw r11, sp[S_CHAN_COUNT]};\
 			{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+3)};\
-			{shl r8, r11, r8;ldw r7, r4[POINTER]};\
-			add r8, r7, r8;\
+			{shl r8, r11, r8;ldw r7, r4[POINTER]  };\
+			{add r8, r7, r8;shr r6, r6, r9;};\
 			std r3, r2, r8[r6];\
 			std r1, r0, r7[r6]
-#endif
+
 #endif
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #if MIC_ARRAY_WORD_LENGTH_SHORT
-	#if 1
-	#define SAVE_SAMPLES_NORMAL(POINTER)\
-	    	{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
-	    	{add r8, r6, r5; add r5, r5, r5};\
-	    	{ldw r7, r4[POINTER]};\
-	    	{shr r0, r0, 16; shr r1, r1, 16};\
-	    	{shr r2, r2, 16; shr r3, r3, 16};\
-			st16 r0, r7[r6];\
-			st16 r1, r7[r8];\
-	    	{add r6, r6, r5; add r8, r8, r5};\
-			st16 r2, r7[r6];\
-			st16 r3, r7[r8]
-	#else
-	#define SAVE_SAMPLES_NORMAL(POINTER)\
-	    	{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
-	    	{add r7, r6, r5; add r5, r5, r5};\
-	    	{ldw r11, sp[S_CHAN_COUNT]; add r8, r6, r5};\
-	    	{add r9, r7, r5; ldc r5, 4};\
-	    	{sub r5, r5, r11;ldw r10, r4[POINTER]};\
-	    	{shr r0, r0, 16; shr r1, r1, 16};\
-	    	{shr r2, r2, 16; shr r3, r3, 16};\
-	    	{bru r5;};\
-			{st16 r3, r10[r9]};\
-			{st16 r2, r10[r8]};\
-			{st16 r1, r10[r7]};\
-			{st16 r0, r10[r6]}
-	#endif
+	#define SAVE_SAMPLES_NORMAL(POINTER, N)\
+		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
+    	{add r7, r6, r5; ldw r8, r4[POINTER]};\
+    	{ldw r11, sp[S_CHAN_COUNT]; add r5, r5, r5};\
+		{eq r10, r11, 4;  nop };\
+		{shr r0, r0, 16; shr r1, r1, 16};\
+		{shr r2, r2, 16; shr r3, r3, 16};\
+		{bf r10, not_four ## N; eq r10, r11, 3};\
+		st16 r1, r8[r7];\
+		st16 r0, r8[r6];\
+		{add r7, r7, r5; add r6, r6, r5};\
+		st16 r3, r8[r7];\
+		st16 r2, r8[r6];\
+		bu done ## N;\
+		not_four ## N:;\
+		{bf r10, not_three ## N; eq r10, r11, 2};\
+		st16 r1, r8[r7];\
+		st16 r0, r8[r6];\
+		{nop; add r6, r6, r5};\
+		st16 r2, r8[r6];\
+		bu done ## N;\
+		not_three ## N:;\
+		{bf r10, not_two ## N; eq r10, r11, 1};\
+		st16 r1, r8[r7];\
+		st16 r0, r8[r6];\
+		bu done ## N;\
+		not_two ## N:;\
+		{bf r10, done ## N; eq r10, r11, 0};\
+		st16 r0, r8[r6];\
+		done ## N:
+
 #else
-	#if 1
-	#define SAVE_SAMPLES_NORMAL(POINTER)\
-	    	{ldc r5, 4<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
-	    	{ldw r7, r4[POINTER]};\
-	    	{ldaw r7, r7[r6]};\
-			{stw r0, r7[0];add r7, r7, r5};\
-			{stw r1, r7[0];add r7, r7, r5};\
-			{stw r2, r7[0];add r7, r7, r5};\
-			{stw r3, r7[0]}
-	#else
-	#define SAVE_SAMPLES_NORMAL(POINTER)\
-	    	{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
-	    	{add r7, r6, r5; add r5, r5, r5};\
-	    	{ldw r11, sp[S_CHAN_COUNT]; add r8, r6, r5};\
-	    	{add r9, r7, r5; ldc r5, 4};\
-	    	{sub r5, r5, r11;ldw r10, r4[POINTER]};\
-	    	{bru r5;};\
-			{stw r3, r10[r9]};\
-			{stw r2, r10[r8]};\
-			{stw r1, r10[r7]};\
-			{stw r0, r10[r6]}
-	#endif
+	#define SAVE_SAMPLES_NORMAL(POINTER, N)\
+		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
+    	{add r7, r6, r5; ldw r8, r4[POINTER]};\
+    	{ldw r11, sp[S_CHAN_COUNT]; add r5, r5, r5};\
+		{eq r10, r11, 4;  nop };\
+		{bf r10, not_four ## N; eq r10, r11, 3};\
+		stw r1, r8[r7];\
+		stw r0, r8[r6];\
+		{add r7, r7, r5; add r6, r6, r5};\
+		stw r3, r8[r7];\
+		stw r2, r8[r6];\
+		bu done ## N;\
+		not_four ## N:;\
+		{bf r10, not_three ## N; eq r10, r11, 2};\
+		stw r1, r8[r7];\
+		stw r0, r8[r6];\
+		{nop; add r6, r6, r5};\
+		stw r2, r8[r6];\
+		bu done ## N;\
+		not_three ## N:;\
+		{bf r10, not_two ## N; eq r10, r11, 1};\
+		stw r1, r8[r7];\
+		stw r0, r8[r6];\
+		bu done ## N;\
+		not_two ## N:;\
+		{bf r10, done ## N; eq r10, r11, 0};\
+		stw r0, r8[r6];\
+		done ## N:
 
 #endif
 
@@ -757,7 +755,7 @@ dc_offset_removal_complete:
 		ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
 		bt r5, index_bitrev_order_0
 			index_normal_order_0:
-				SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0);
+				SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0, 0);
 				bu save_to_frame_complete_0
 			index_bitrev_order_0:
 				SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0);
@@ -830,7 +828,7 @@ dc_offset_removal_complete:
 			ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
 			bt r5, index_bitrev_order_1
 				index_normal_order_1:
-					SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_1);
+					SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_1, 1);
 					bu save_to_frame_complete_1
 				index_bitrev_order_1:
 					SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_1);
