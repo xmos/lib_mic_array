@@ -89,9 +89,10 @@ void lores_DAS_fixed(streaming chanend c_ds_output[DECIMATOR_COUNT],
         client interface led_button_if lb, chanend c_audio) {
 
     unsafe{
-        unsigned buffer = 1;     // buffer index
+        unsigned buffer;
+        memset(data, 0, 8*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR*sizeof(int));
 
-        mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];    //double buffered
+        mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];
 
         #define MAX_DELAY 16
         unsigned gain = 8;

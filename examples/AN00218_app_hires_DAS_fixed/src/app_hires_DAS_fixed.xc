@@ -82,8 +82,9 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
         streaming chanend c_cmd,
         client interface led_button_if lb, chanend c_audio) {
     unsafe {
-        mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];    //double buffered
+        mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];
         unsigned buffer;
+        memset(data, 0, 8*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR*sizeof(int));
 
         unsigned gain = 8;
         unsigned delay[7];

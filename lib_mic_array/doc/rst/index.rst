@@ -589,10 +589,10 @@ end up in the binary.
 A typical code structure will contain the following::
 
   unsigned buffer;
-  decimator_init_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+  mic_array_init_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
   while(1){
-    frame_audio *  latest_frame = decimator_get_next_audio_frame(c_ds_output, 2, buffer, audio, dcc);
+    mic_array_frame_time_domain *  latest_frame = mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
   }
 	

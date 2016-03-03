@@ -1,6 +1,7 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
 #include <platform.h>
 #include <xs1.h>
+#include <string.h>
 
 #include "mic_array.h"
 
@@ -23,6 +24,8 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
         mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];
 
         unsigned buffer;    //No need to initialize this.
+        memset(data, 0, DECIMATOR_COUNT*DECIMATOR_CH_COUNT*
+                THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR*sizeof(int));
 
         mic_array_decimator_config_common dcc = {
                 0, // Frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
