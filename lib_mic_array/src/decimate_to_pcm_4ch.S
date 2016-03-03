@@ -244,7 +244,6 @@
 	std r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
 	std r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]
 
-
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
 	ldd r6, r5, r4[PREV_Y];\
 	ldc r7, MIC_ARRAY_DC_OFFSET_LOG2;\
@@ -277,8 +276,8 @@
 		{bf r5, skip ## P ; mov r4, r6};\
 			sub r4, r8, r6;\
 		skip ## P:;\
-		{ldw r4, r9[r4]};\
 		{ldc r10, 0; ldc r11, 0};\
+		{ldw r4, r9[r4]};\
 		maccs r10, r11, r4, r0;\
 		lextract r0, r10, r11, r7, 32;\
 		{ldc r10, 0; ldc r11, 0};\
@@ -291,7 +290,6 @@
 		maccs r10, r11, r4, r3;\
 		lextract r3, r10, r11, r7, 32;\
 	done_windowing ## P:
-
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
@@ -711,6 +709,29 @@ dc_offset_removal_complete:
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
 
+	zero_unused_channels:
+	{ldw r4, sp[S_CHAN_COUNT];}
+	eq r5, r4, 4
+	bt r5, zero_channels_complete
+	{ldc r3, 0; eq r5, r4, 3}
+	bt r5, zero_channels_complete
+	{ldc r2, 0; eq r5, r4, 2}
+	bt r5, zero_channels_complete
+	{ldc r1, 0; eq r5, r4, 1}
+	bt r5, zero_channels_complete
+	ldc r0, 0
+	zero_channels_complete:
+
+	/*
+	ldw r4, sp[S_CHAN_COUNT];
+	bru r5
+	ldc r3, 0
+	ldc r2, 0
+	ldc r1, 0
+	ldc r0, 0
+	*/
+
+
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
@@ -831,14 +852,15 @@ dc_offset_removal_complete:
 		        std r7, r6, r5[0];
 		        ldw r3, r4[S_FRAME_NUMBER]
 		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
-		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 
 				ldw r6, sp[S_C_OUTPUT]
 				outct res[r6], 8 //WARNING: do not change this
-				inct r3, res[r6]
 
-		        eq r5, r3, EXCHANGE_BUFFERS		//if the incomming token is EXCHANGE_BUFFERS then do that
-		        {bt r5, flip_the_frames; eq r5, r3, CONFIGURE_DECIMATOR}	//if the incomming token is CONFIGURE_DECIMATOR then do that
+		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+				inct r11, res[r6]
+
+		        eq r5, r11, EXCHANGE_BUFFERS		//if the incomming token is EXCHANGE_BUFFERS then do that
+		        {bt r5, flip_the_frames; eq r5, r11, CONFIGURE_DECIMATOR}	//if the incomming token is CONFIGURE_DECIMATOR then do that
 
 				ldap r11, configure
 				stw r11, sp[0]
