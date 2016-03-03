@@ -76,6 +76,42 @@ Higher channel counts are simple extensions of the above task diagrams.
 All tasks requires a 62.5 MIPS core to run correctly, therefore, all eight cores can be
 used simultaneously without timing problems developing within ``lib_mic_array``.
 
+Typical memory usage
+--------------------
+
+The memory usage of ``lib_mic_array`` is mostly dependent on the desired output rates and 
+the maximum number of channels. As lower output rates require greater decimation from the 
+input PDM their memory requirements are proportionally greater also. Below we give the approximate
+memory usage against the decimation factor of the final stage divider. 
+
+  =================== =============== ==========================
+   Decimation factor   Channel count   Approx memory usage (kB)
+  =================== =============== ==========================
+   2					4 				12.1
+   2					8 				14.1
+   2					12 				16.1
+   2					16				18.1
+   4					4 				13.1
+   4					8 				16.1
+   4					12 				19.1
+   4					16				21.1
+   6					4 				14.1
+   6					8 				18.1
+   6					12 				22.1
+   6					16				26.1
+   8					4 				15.1
+   8					8 				20.1
+   8					12 				25.1
+   8					16				30.1
+   12					4 				17.1
+   12					8 				24.1
+   12					12 				31.1
+   12					16				38.1
+  =================== =============== ==========================
+  
+These valuse should be use as a guide as actual memory usage may vary slightly.
+
+
 Hardware characteristics
 ------------------------
 
