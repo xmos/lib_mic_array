@@ -87,26 +87,26 @@ memory usage against the decimation factor of the final stage divider.
   =================== =============== ==========================
    Decimation factor   Channel count   Approx memory usage (kB)
   =================== =============== ==========================
-   2					4 				12.1
-   2					8 				14.1
-   2					12 				16.1
-   2					16				18.1
-   4					4 				13.1
-   4					8 				16.1
-   4					12 				19.1
-   4					16				21.1
-   6					4 				14.1
-   6					8 				18.1
-   6					12 				22.1
-   6					16				26.1
-   8					4 				15.1
-   8					8 				20.1
-   8					12 				25.1
-   8					16				30.1
-   12					4 				17.1
-   12					8 				24.1
-   12					12 				31.1
-   12					16				38.1
+   2                   4               12.1
+   2                   8               14.1
+   2                   12              16.1
+   2                   16              18.1
+   4                   4               13.1
+   4                   8               16.1
+   4                   12              19.1
+   4                   16              21.1
+   6                   4               14.1
+   6                   8               18.1
+   6                   12              22.1
+   6                   16              26.1
+   8                   4               15.1
+   8                   8               20.1
+   8                   12              25.1
+   8                   16              30.1
+   12                  4               17.1
+   12                  8               24.1
+   12                  12              31.1
+   12                  16              38.1
   =================== =============== ==========================
   
 These valuse should be use as a guide as actual memory usage may vary slightly.
@@ -333,12 +333,14 @@ Time domain frames
 ..................
 
 If *time domain audio* output is used (``index_bit_reversal`` is set to 0), then
-data is stored into arrays in real time ordering. The arrays are of length two to the power of
-``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log_2``(see :ref:`section_api`) 
-entries contain valid data. All entries between two to the power of ``frame_size_log_2`` and
-two to the power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` are undefined. The first index of the ``data`` 
-element of the structure ``mic_array_frame_time_domain`` is used to address the channel and the second 
-index is used for the sample number with zero being the oldest sample.
+data is stored into arrays in real time ordering. The arrays are of length two to 
+the power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` where the first two to the power 
+of ``frame_size_log2`` (see :ref:`section_api`) entries contain valid data. All 
+entries between two to the power of ``frame_size_log2`` and two to the power 
+of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` are undefined. The first index of the ``data`` 
+element of the structure ``mic_array_frame_time_domain`` is used to address the 
+channel and the second index is used for the sample number with zero being the 
+oldest sample.
 
 Frames are initialised by the application with a call to ``mic_array_init_time_domain_frame()``. Pass it:
 
@@ -494,17 +496,17 @@ following settings through ``decimator_config_common``:
   are 2, 4, 6, 8, 12, 16. Common sample rates can be achieved by using
   these decimation factors as follows:
 
-  ======================== ===================== ======== ========== =============
+  ======================== ===================== ================= ========== ==============
   output_decimation_factor decimate_to_pcm_4x    mic_array_pdm_rx   PDM clock  Sample rate
-  ======================== ===================== ======== ========== =======================
-  2                        8 x                   8 x      3.072 MHz  48 KHz
-  4                        16 x                  8 x      3.072 MHz  24 KHz
-  6                        24 x                  8 x      3.072 MHz  16 KHz
-  8                        32 x                  8 x      3.072 MHz  12 KHz
-  12                       48 x                  8 x      3.072 MHz  8 KHz
-  2                        8 x                   8 x      2.8224 MHz 44.1 KHz
-  4                        16 x                  8 x      2.8224 MHz 22.05 KHz
-  ======================== ===================== ======== ========== =============
+  ======================== ===================== ================= ========== ==============
+  2                        8 x                   8 x               3.072 MHz   48 KHz
+  4                        16 x                  8 x               3.072 MHz   24 KHz
+  6                        24 x                  8 x               3.072 MHz   16 KHz
+  8                        32 x                  8 x               3.072 MHz   12 KHz
+  12                       48 x                  8 x               3.072 MHz   8 KHz
+  2                        8 x                   8 x               2.8224 MHz  44.1 KHz
+  4                        16 x                  8 x               2.8224 MHz  22.05 KHz
+  ======================== ===================== ================= ========== ==============
   
 * ``coefs``: This is a pointer to an array of arrays containing the
   coefficients for the final stage of decimation. Set this to
@@ -618,13 +620,12 @@ FIR memory
 For each decimator a block of memory must be allocated for storing FIR data. The size of the data 
 block must be::
   
-  4 channels * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
+  Number of channels * THIRD_STAGE_COEFS_PER_STAGE(32) * Decimation factor * sizeof(int)
 
 bytes. The data must also be double word aligned. For example, if the decimation factor was set to 
 ``DECIMATION_FACTOR`` and two decimators were in use, then the memory allocation for the FIR memory would look like::
 
-  int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR] = {0};
-  int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR] = {0};
+  int data[CHANNELS][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
 The FIR memory must also be initialized in order to prevent a spurious click during startup. 
 Normally initializing to all zeros is sufficient.
@@ -656,9 +657,9 @@ relation::
 
   Y[n] = Y[n-1] * alpha + x[n] - x[n-1]
 
-Where ``alpha`` is defined as ``1 - 2^DC_OFFSET_DIVIDER_LOG2``. Increasing ``DC_OFFSET_DIVIDER_LOG2``
+Where ``alpha`` is defined as ``1 - 2^MIC_ARRAY_DC_OFFSET_LOG2``. Increasing ``MIC_ARRAY_DC_OFFSET_LOG2``
 will increase the stability of the filter and decrease the cut off point at the cost of slow settling
-time. Decreasing ``DC_OFFSET_DIVIDER_LOG2`` will increase the cut off point of the filter. 
+time. Decreasing ``MIC_ARRAY_DC_OFFSET_LOG2`` will increase the cut off point of the filter. 
  
 
 Signal Characteristics
@@ -684,8 +685,6 @@ Stopband
 This specifies the start frequency to the input Nyquest sample rate that the input signal shoul 
 be attenuated over.
 
-
-
 The output signal has been decimated from the original PDM in such a way to introduce no more then -80dB 
 of noise into the passband for all output sample rates.
 
@@ -710,10 +709,14 @@ magnitude responses of the first to third stages are given as :ref:`figthird_sta
 through to :ref:`figthird_stage_div_12` in the appendix. The first stage and second stage 
 can be viewed in :ref:`figfirst_stage` and :ref:`figsecond_stage`.
 
+The phase delay of the default filters is 18 output clock cycles. This can be shorterned by either using a minimum phase 
+FIR as the final stage decimation FIR and/or by reducing the number of taps on the final stage decimation FIR. 
+
+
 Advanced filter design
 ......................
 
-The above table has been generated to provide 100dB of signal to noise for all decimation factors
+The above table has been generated to provide 80dB of stopband attenuation for all decimation factors
 whilst maintaining a fairly flat passband and wide bandwidth. However for a given specification 
 the filter characteristics can be optimised to reduce latency, increase passband, lower the 
 passband ripple and increase the signal to noise ratio. For example, in a system where a 16kHz
@@ -787,11 +790,6 @@ in ``lib_mic_array`` would be::
   #define FIR_COMPENSATOR_MY_FILTER ((int)((double)(INT_MAX>>4) * FIRST_STAGE_SCALE_FACTOR * SECOND_STAGE_SCALE_FACTOR * MY_FILTER_SCALE_FACTOR))
   extern const int g_third_stage_my_filter_fir[126];
 
-Following the execution for ``fir_fesidn.py``, the coefficients generated (``*.fir_coefs``) have to be 
-converted into ``fir_coefs.xc`` and``fir_decimator.h`` by running ``java -jar Generator.jar``. This takes 
-the raw coefficients and preprocesses them to maximise the dynamic range and efficiency within the compiled 
-application.
-
 
 .. _section_api:
 
@@ -809,7 +807,7 @@ PDM microphone processing
 .........................
 
 .. doxygenfunction:: mic_array_decimate_to_pcm_4ch
-.. doxygenfunction:: mic_array_mic_array_decimator_configure
+.. doxygenfunction:: mic_array_decimator_configure
 .. doxygenstruct:: mic_array_decimator_config_common
 .. doxygenstruct:: mic_array_decimator_config
 
@@ -837,8 +835,8 @@ Frame types
 High resolution delay task
 ..........................
 
-.. doxygenfunction:: mic_array_mic_array_hires_delay
-.. doxygenfunction:: mic_array_mic_array_hires_delay_set_taps
+.. doxygenfunction:: mic_array_hires_delay
+.. doxygenfunction:: mic_array_hires_delay_set_taps
 
 |newpage|
 |appendix|
@@ -891,6 +889,46 @@ High resolution delay task
             :width: 70%
                     
             Third stage FIR magnitude response for a divide of 12.
+
+
+
+.. _figouput_div_2:
+.. figure:: output_div_2.pdf
+            :width: 70%
+                    
+            Final frequency response for a divide of 2.
+
+
+
+.. _figouput_div_4:
+.. figure:: output_div_4.pdf
+            :width: 70%
+                    
+            Final frequency response for a divide of 4.
+
+
+
+.. _figouput_div_6:
+.. figure:: output_div_6.pdf
+            :width: 70%
+                    
+            Final frequency response for a divide of 6.
+
+
+
+.. _figouput_div_8:
+.. figure:: output_div_8.pdf
+            :width: 70%
+                    
+            Final frequency response for a divide of 8.
+
+
+
+.. _figouput_div_12:
+.. figure:: output_div_12.pdf
+            :width: 70%
+                    
+            Final frequency response for a divide of 12.
 
 				
 |newpage|
