@@ -286,6 +286,33 @@ positions at once. The default delay on each channel is zero.
 
 See :ref:`section_api` for the API.
 
+
+Accessing the samples
+---------------------
+Samples are accessed in the form of frames. A frame is returned from the decimators in either the time 
+domain format, ``mic_array_frame_time_domain``, or in the FFT ready format, 
+``mic_array_frame_fft_preprocessed``.
+
+Time domain frames contain a single two dimensional array, ``data``,with the first dimension being the 
+channel ID and the second dimension being the sample number. Samples are ordered ``0`` as the oldest 
+sample and increasing number being newer.
+
+FFT ready frames contain a single two dimensional array, ``data``. The data is packed into the array by 
+even channels going into the real entries and odd channels going into the imaginary entries. Samples
+are inserted into the array in an index bit-reversed order. This results in frames that are ready for direct
+processing by an DIT FFT.
+
+  .. _figmemory:
+  .. figure:: memory_layout.pdf
+	:width: 70%
+	    
+	Memory layout of simple audio and complex frames.
+
+Frames in the ``mic_array_frame_fft_preprocessed`` are not intended to be directly accessed by a user. Instead
+when the frame has been processed by the FFT and cast to a ``mic_array_frame_frequency_domain`` then the
+data can be manipulated.
+	
+
 Frames
 ------
 
@@ -395,31 +422,11 @@ function calls respect the control flow given in :ref:`figstatemachine`.
 Changing decimator configuration
 ................................
 
-Once the decimators are running the configuration of the decimators remain constant. If a change of configuration 
+Once the decimators are running the configuration of the decimators remains constant. If a change of configuration 
 is required then a call to ``mic_array_decimator_configure()`` allows a complete reconfigure. This will 
 reconfigure and reset all attached decimators. The only configuration that will survive reconfiguration
 is the DC offset memory. It is assumed that the microphone specific DC offset 
 remains fairly constant between reconfigurations. 
-
-Accessing the samples
----------------------
-Samples are accessed in the form of frames. A frame is either in the simple audio format, ``frame_audio``,
-or in the frequency domain format, ``frame_complex``. 
-
-Simple audio frames contain a single two dimensional array, ``data``,
-with the first index being the channel ID and the second dimension being the sample number. Samples are ordered 
-``0`` as the oldest sample and increasing number being the newer.
-
-Complex audio frames contain a single two dimensional array, ``data``. The data is packed into the array by 
-even channels going into the real entries and odd channels going into the imaginary entries. Samples
-are inserted into the array in an index bit-reversed order. This results in frames that are ready for direct
-processing by an DIT FFT.
-
-  .. _figmemory:
-  .. figure:: memory_layout.pdf
-	:width: 70%
-	    
-	Memory layout of simple audio and complex frames.
 
   
 ``mic_array_conf.h``
@@ -439,16 +446,6 @@ An application that uses ``lib_mic_array`` must define the header file
 
      This defines the number of microphones in use. It is used for allocating memory in the
 	 frame structures. 
-
-   * MIC_ARRAY_WORD_LENGTH_SHORT
-
-     This defines the number of microphones in use. It is used for allocating memory in the
-	 frame structures. 
-
-   * ffffffffffffffffff
-
-     This defines the number of microphones in use. It is used for allocating memory in the
-	 frame structures. 
      
 Optionally, ``mic_array_conf.h`` may define
 
@@ -464,6 +461,13 @@ Optionally, ``mic_array_conf.h`` may define
      This defines the length of the high resolution delay lines. This should be set to a power
 	 of two for efficiency. The default is 256. Increasing values will result in increasing memory
 	 usage.
+
+   * MIC_ARRAY_WORD_LENGTH_SHORT
+
+     If this define is set to non-zero then this configures the output word length to be a 16 bit 
+	 short otherwise its left as 32 bit word length output. All internal processing will be done at
+	 32 bits, only during the write to frame memory will the truncation happen.
+	 
 	 
 Four Channel Decimator
 ----------------------
@@ -491,7 +495,7 @@ following settings through ``decimator_config_common``:
   these decimation factors as follows:
 
   ======================== ===================== ======== ========== =============
-   decimation_factor        decimate_to_pcm_4x    mic_array_pdm_rx   PDM clock  Sample rate
+  output_decimation_factor decimate_to_pcm_4x    mic_array_pdm_rx   PDM clock  Sample rate
   ======================== ===================== ======== ========== =======================
   2                        8 x                   8 x      3.072 MHz  48 KHz
   4                        16 x                  8 x      3.072 MHz  24 KHz
@@ -504,14 +508,14 @@ following settings through ``decimator_config_common``:
   
 * ``coefs``: This is a pointer to an array of arrays containing the
   coefficients for the final stage of decimation. Set this to
-  ``FIR_LUT(d)`` where ``d`` is the ``fir_decimation_factor``; ``FIR_LUT()``
+  ``FIR_LUT(d)`` where ``d`` is the ``output_decimation_factor``; ``FIR_LUT()``
   is defined in ``fir_decimator.h``.
   If you wish to supply your own FIR coefficients; the array
-  should have the same number of entries as ``fir_decimation_factor``.
+  should have the same number of entries as ``output_decimation_factor``.
   
 * ``fir_gain_compensation`` single value to compensate the gain of all the
   previous decimators. This must be set to a value that depends on the
-  ``fir_decimation_factor`` as follows:
+  ``output_decimation_factor`` as follows:
   
   ======================== =======================
   output_decimation_factor fir_gain_compression
@@ -556,7 +560,7 @@ following settings through ``decimator_config_common``:
   
 * ``data``: This is the memory used to save the FIR samples. It must be an
   array of size (4 channels x ``THIRD_STAGE_COEFS_PER_STAGE`` x ``sizeof(int)`` x
-  ``fir_decimation_factor`` bytes).
+  ``output_decimation_factor`` bytes).
   
 * ``mic_gain_compensation``: This is an array with four elements specifying
   the relative compensation to apply to each microphone. Unity gain is
@@ -685,20 +689,20 @@ be attenuated over.
 The output signal has been decimated from the original PDM in such a way to introduce no more then -80dB 
 of noise into the passband for all output sample rates.
 
-  =================== ================= ====================== ============ ============ ========== =========
-  PDM Sample Rate(Hz) decimation_factor Output sample rate(Hz) Passband(Hz) Stopband(Hz) Ripple(dB) THD+N(dB)
-  =================== ================= ====================== ============ ============ ========== =========
-  3072000             2                 48000                  18240        24000        1.93        -144.63
-  3072000             4                 24000                  9600         12000        0.64        -142.61
-  3072000             6                 16000                  6400         8000         0.37        -139.10
-  3072000             8                 12000                  4800         6000         0.24        -136.60
-  3072000             12                8000                   3200         4000         0.18        -133.07
-  2822400             2                 44100                  16758        22050        1.93        -144.63
-  2822400             4                 22050                  8820         11025        0.64        -142.61
-  2822400             6                 14700                  5880         7350         0.37        -139.10
-  2822400             8                 11025                  4410         5512.5       0.24        -136.60
-  2822400             12                7350                   2940         3675         0.18        -133.07
-  =================== ================= ====================== ============ ============ ========== =========
+  =================== ======================== ====================== ============ ============ ========== ==========
+  PDM Sample Rate(Hz) output_decimation_factor Output sample rate(Hz) Passband(Hz) Stopband(Hz) Ripple(dB) THD+N(dB)
+  =================== ======================== ====================== ============ ============ ========== ==========
+  3072000             2                         48000                  18240        24000        1.93        -144.63
+  3072000             4                         24000                  9600         12000        0.64        -142.61
+  3072000             6                         16000                  6400         8000         0.37        -139.10
+  3072000             8                         12000                  4800         6000         0.24        -136.60
+  3072000             12                        8000                   3200         4000         0.18        -133.07
+  2822400             2                         44100                  16758        22050        1.93        -144.63
+  2822400             4                         22050                  8820         11025        0.64        -142.61
+  2822400             6                         14700                  5880         7350         0.37        -139.10
+  2822400             8                         11025                  4410         5512.5       0.24        -136.60
+  2822400             12                        7350                   2940         3675         0.18        -133.07
+  =================== ======================== ====================== ============ ============ ========== ==========
 
 The decimation is achieved by applying three poly-phase FIR filters sequentially. 
 The design of these filters can be viewed in the python script ``fir_design.py``. The default 
