@@ -13,7 +13,9 @@
 #include "i2s.h"
 
 //If the decimation factor is changed the the coefs array of decimator_config must also be changed.
-#define DF 2    //Decimation Factor
+#define DECIMATION_FACTOR   2   //Corresponds to a 48kHz output sample rate
+#define DECIMATOR_COUNT     2   //8 channels requires 2 decimators
+#define FRAME_BUFFER_COUNT  2   //The minimum of 2 will suffice for this example
 
 on tile[0]:p_leds leds = DEFAULT_INIT;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
@@ -74,14 +76,13 @@ static void set_dir(client interface led_button_if lb,
     }
 }
 
-int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-#include <stdio.h>
+int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
+
 void hires_DAS_fixed(streaming chanend c_ds_output[2],
         streaming chanend c_cmd,
         client interface led_button_if lb, chanend c_audio) {
     unsafe {
-        mic_array_frame_time_domain audio[2];    //double buffered
+        mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];    //double buffered
         unsigned buffer;
 
         unsigned gain = 8;
@@ -89,22 +90,22 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
         unsigned dir = 0;
         set_dir(lb, dir, delay);
 
-        mic_array_decimator_config_common dcc = {0, 1, 0, 0, DF,
-                g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
-                DECIMATOR_NO_FRAME_OVERLAP, 2};
+        mic_array_decimator_config_common dcc = {0, 1, 0, 0, DECIMATION_FACTOR,
+               g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
+               DECIMATOR_NO_FRAME_OVERLAP, FRAME_BUFFER_COUNT};
         mic_array_decimator_config dc[2] = {
-          {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-          {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+          {&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
+          {&dcc, data[4], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
 
-        mic_array_decimator_configure(c_ds_output, 2, dc);
+        mic_array_decimator_configure(c_ds_output, DECIMATOR_COUNT, dc);
 
-        mic_array_init_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
+        mic_array_init_time_domain_frame(c_ds_output, DECIMATOR_COUNT, buffer, audio, dc);
 
         while(1) {
 
             mic_array_frame_time_domain *  current =
-                                mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
+                               mic_array_get_next_time_domain_frame(c_ds_output, DECIMATOR_COUNT, buffer, audio, dc);
 
             // light the LED for the current directionction
 
@@ -122,10 +123,10 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                                 dir = 5;
                             set_dir(lb, dir, delay);
 
-                            printf("dir %d\n", dir+1);
+                            debug_printf("dir %d\n", dir+1);
                             for(unsigned i=0;i<7;i++)
-                              printf("delay[%d] = %d\n", i, delay[i]);
-                            printf("\n");
+                                debug_printf("delay[%d] = %d\n", i, delay[i]);
+                            debug_printf("\n");
 
                             mic_array_hires_delay_set_taps(c_cmd, delay, 7);
                             break;
@@ -147,10 +148,10 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                                 dir = 0;
                             set_dir(lb, dir, delay);
 
-                            printf("dir %d\n", dir+1);
+                            debug_printf("dir %d\n", dir+1);
                             for(unsigned i=0;i<7;i++)
-                              printf("delay[%d] = %d\n", i, delay[i]);
-                            printf("\n");
+                                debug_printf("delay[%d] = %d\n", i, delay[i]);
+                            debug_printf("\n");
 
                             mic_array_hires_delay_set_taps(c_cmd, delay, 7);
                             break;
@@ -194,7 +195,7 @@ void init_cs2100(client i2c_master_if i2c){
     res = i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_2, 0);
 }
 
-#define OUTPUT_SAMPLE_RATE (96000/DF)
+#define OUTPUT_SAMPLE_RATE (96000/DECIMATION_FACTOR)
 #define MASTER_CLOCK_FREQUENCY 24576000
 
 //on tile[1] : out port p_pll_clk                 = XS1_PORT_4D;
