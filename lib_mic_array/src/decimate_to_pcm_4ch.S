@@ -54,7 +54,6 @@
 
 //derived defines
 #define SECOND_STAGE_BUFFER_SIZE		(SECOND_STAGE_COEF_COUNT*2)
-//#define SECOND_STAGE_BUFFER_SIZE		(SECOND_STAGE_COEF_COUNT*2 - 4)		//TODO
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -78,7 +77,9 @@
 #define S_DC_OFFSET_SAMPLE_NO   8
 
 #define S_FIR_GAIN_COMP     	9
-#define S_STORAGE_SIZE 			10
+#define S_SIG_BITS_MASK     	10
+#define S_NOT_YET_USED     		11
+#define S_STORAGE_SIZE 			12
 
 //////////////////////////////////////////////////////////////////////////////////////
 //this address must be double word aligned
@@ -539,21 +540,21 @@ confirm_init_complete:
 	outct res[r4], 8 //WARNING: do not change this
 
 input_0_0:
-	INPUT_TO_OFFSET(15)
+	INPUT_TO_OFFSET_12_15(15)
 	divide_by_n_0_0:
 	DIVIDE_BY_N_0()
 
 input_1_0:
-	INPUT_TO_OFFSET(14)
+	INPUT_TO_OFFSET_12_15(14)
 	divide_by_n_0_1:
 	N_DIVIDE_BY_N_1()
 
 input_2_0:
-	INPUT_TO_OFFSET(13)
+	INPUT_TO_OFFSET_12_15(13)
 	bl post_process
 
 input_3_0:
-	INPUT_TO_OFFSET(12)
+	INPUT_TO_OFFSET_12_15(12)
 	ldaw r7, dp[12]
 	bl divide_by_four
 
@@ -722,6 +723,22 @@ dc_offset_removal_complete:
 	ldc r0, 0
 	zero_channels_complete:
 
+
+	{clz r4, r0;		ldw	r11, sp[S_SIG_BITS_MASK]}
+	{neg r5, r0;		clz r6, r1 }
+	{clz r5, r5;		neg r7, r1 }
+	{add r4, r5, r4;	clz r7, r7 }
+	{mkmsk r4, r4;      add r6, r6, r7}
+	{and r11, r11, r4;   mkmsk r6, r6}
+	{clz r4, r1;		and r11, r11, r6}
+	{neg r5, r1;		clz r6, r2 }
+	{clz r5, r5;		neg r7, r2 }
+	{add r4, r5, r4;	clz r7, r7 }
+	{mkmsk r4, r4;      add r6, r6, r7}
+	{and r11, r11, r4;   mkmsk r6, r6}
+	{	nop			;	and r11, r11, r6}
+	{stw r11, sp[S_SIG_BITS_MASK] }
+
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
@@ -846,7 +863,7 @@ dc_offset_removal_complete:
 				ldw r6, sp[S_C_OUTPUT]
 				outct res[r6], 8 //WARNING: do not change this
 
-		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+//		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 				inct r11, res[r6]
 
 		        eq r5, r11, EXCHANGE_BUFFERS		//if the incomming token is EXCHANGE_BUFFERS then do that
