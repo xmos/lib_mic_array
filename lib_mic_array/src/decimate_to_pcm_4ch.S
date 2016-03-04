@@ -296,16 +296,18 @@
 #if MIC_ARRAY_WORD_LENGTH_SHORT
 	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
 		{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
-		{bitrev r6, r6; sub r7, r7, r5};\
-		{shr r6, r6, r7};\
-		{mkmsk r7, 16; shr r0, r0, 16};\
-		{andnot r1, r7; andnot r3, r7};\
-		{add r0, r1, r0; ldw r7, r4[POINTER]};\
-		stw r0, r7[r6];\
-		{ldc r0, 1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2};\
-		{shr r2, r2, 16; add r6, r6, r0};\
-		{add r3, r3, r2};\
-		stw r3, r7[r6]
+		{bitrev r6, r6; ldc r8, 2};\
+		{sub r9, r7, r5;ldw r11, sp[S_CHAN_COUNT]};\
+		{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+2)};\
+		{shl r8, r11, r8;ldw r7, r4[POINTER]  };\
+		{add r8, r7, r8;shr r6, r6, r9;};\
+		{shr r0, r0, 16; shr r1, r1, 16};\
+		{shr r2, r2, 16; shr r3, r3, 16};\
+		{shl r1, r1, 16; shl r3, r3, 16};\
+		{add r1, r1, r0; add r3, r3, r2};\
+		stw r3, r8[r6];\
+		stw r1, r7[r6]
+
 #else
 	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
 			{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
@@ -720,16 +722,6 @@ dc_offset_removal_complete:
 	ldc r0, 0
 	zero_channels_complete:
 
-	/*
-	ldw r4, sp[S_CHAN_COUNT];
-	bru r5
-	ldc r3, 0
-	ldc r2, 0
-	ldc r1, 0
-	ldc r0, 0
-	*/
-
-
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
@@ -844,13 +836,13 @@ dc_offset_removal_complete:
 			at_the_end_of_the_overlapping_half_frame:
 
 				//set the metadata
-
+/*
 				ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
 		        ldw r5, r4[S_METADATA_POINTER_1]
 		        std r7, r6, r5[0];
 		        ldw r3, r4[S_FRAME_NUMBER]
 		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
-
+*/
 				ldw r6, sp[S_C_OUTPUT]
 				outct res[r6], 8 //WARNING: do not change this
 
