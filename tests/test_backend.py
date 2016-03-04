@@ -26,7 +26,7 @@ def do_backend_test(length, frame_count, testlevel):
 
     run_job = xmostest.run_on_xcore(resources['analysis_device_1'],
                                     binary,
-                                    tester=tester)
+                                    tester=tester, timeout=3600)
 
     xmostest.complete_all_jobs()
 
