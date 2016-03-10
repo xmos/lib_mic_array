@@ -1,13 +1,12 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
-#include <xscope.h>
 #include <platform.h>
 #include <xs1.h>
 #include <string.h>
 #include <xclib.h>
-#include "debug_print.h"
 
 #include "mic_array.h"
 #include "mic_array_board_support.h"
+#include "debug_print.h"
 
 #include "i2c.h"
 #include "i2s.h"
@@ -29,7 +28,6 @@ out buffered port:32 p_i2s_dout[1]  = on tile[1]: {XS1_PORT_1P};
 in port p_mclk_in1                  = on tile[1]: XS1_PORT_1O;
 out buffered port:32 p_bclk         = on tile[1]: XS1_PORT_1M;
 out buffered port:32 p_lrclk        = on tile[1]: XS1_PORT_1N;
-out port p_pll_sync                 = on tile[1]: XS1_PORT_4D;
 port p_i2c                          = on tile[1]: XS1_PORT_4E; // Bit 0: SCLK, Bit 1: SDA
 port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST_N, Bit 1: ETH_RST_N
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
@@ -174,10 +172,6 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
 
             c_audio <: output;
             c_audio <: output;
-		for(unsigned i=0;i<7;i++)
-           	 xscope_int(i, current->data[i][0]);
-
-
         }
     }
 }
@@ -196,10 +190,10 @@ void init_cs2100(client i2c_master_if i2c){
     res = i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_2, 0);
 }
 
-#define OUTPUT_SAMPLE_RATE (96000/DECIMATION_FACTOR)
+#define MASTER_TO_PDM_CLOCK_DIVIDER 4
 #define MASTER_CLOCK_FREQUENCY 24576000
-
-//on tile[1] : out port p_pll_clk                 = XS1_PORT_4D;
+#define PDM_CLOCK_FREQUENCY (MASTER_CLOCK_FREQUENCY/(2*MASTER_TO_PDM_CLOCK_DIVIDER))
+#define OUTPUT_SAMPLE_RATE (PDM_CLOCK_FREQUENCY/(32*DECIMATION_FACTOR))
 
 [[distributable]]
 void i2s_handler(server i2s_callback_if i2s,
@@ -254,22 +248,6 @@ int main() {
     i2c_master_if i_i2c[1];
     chan c_audio;
     par {
-        on tile[1]:
-        {
-            timer t;
-            unsigned now;
-            t:> now;
-            unsigned step = 1666666;
-            while(1){
-                t when timerafter(now):> int;
-                now += step;
-              //  p_pll_clk <: 0xf;
-                t when timerafter(now):> int;
-                now += step;
-              //  p_pll_clk <: 0;
-            }
-        }
-
         on tile[1]: {
           configure_clock_src(mclk, p_mclk_in1);
           start_clock(mclk);
@@ -280,7 +258,7 @@ int main() {
         on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], c_audio);
 
         on tile[0]: {
-            configure_clock_src_divide(pdmclk, p_mclk, 4);
+            configure_clock_src_divide(pdmclk, p_mclk, MASTER_TO_PDM_CLOCK_DIVIDER);
             configure_port_clock_output(p_pdm_clk, pdmclk);
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
@@ -301,6 +279,7 @@ int main() {
                 mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
                 hires_DAS_fixed(c_ds_output, c_cmd, lb[0], c_audio);
             }
+            stop_clock(pdmclk);
         }
     }
 

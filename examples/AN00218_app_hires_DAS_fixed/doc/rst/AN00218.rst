@@ -5,52 +5,152 @@
 Overview
 --------
 
+Introduction
+............
+
 This demo application shows a simple Delay and Sum (DAS) bemformer in high resolution mode. 
-It shows the setup of the I2S for audio output via the DAC and very simple processing of
+It shows the setup of the |I2S| for audio output via the DAC and very simple processing of
 multi-channel audio frames to produce a single channel output based on a simple single steering direction.
 
+Block diagram
+.............
 
-The simple hires delay and sum example
---------------------------------------
+.. figure:: block_diagram.pdf
+   :width: 80%
 
-The example in this note uses the microphone array library and shows a simple program
-that interfaces to to the PDM microphones, decimates the PDM and finally packs it into frames.
+   Application block diagram
 
-To start using the microphone array library library, you need to add ``lib_mic_array`` to
-your ``Makefile``::
+How to use lib_mic_array with high resolution delay lines
+---------------------------------------------------------
 
-        USED_MODULES = ... lib_mic_array ...
+The Makefile
+............
 
-You can then access the microphone array library functions in your source code via
-the ``mic_array.h`` header file:
+To start using the high resolution delay lines, you need to add ``lib_mic_array`` to you Makefile::
+
+  USED_MODULES = .. lib_mic_array ...
+
+This demo also uses the logging library (``lib_logging``) for the ``debug_printf``
+function. This is a faster, but more limited version of the C-Standard Library
+``printf`` function. So the Makefile also includes::
+
+  USED_MODULES = .. lib_logging ..
+
+The logging library is configurable at compile-time allowing calls to
+``debug_printf()`` to be easily enabled or disabled. For the prints to
+be enabled it is necessary to add the following to the compile flags::
+
+  XCC_FLAGS = .. -DDEBUG_PRINT_ENABLE=1 ..
+
+Includes
+........
+
+This application requires the system headers that defines XMOS xCORE specific
+defines for declaring and initialising hardware:
+
+.. literalinclude:: app_hires_DAS_fixed.xc
+   :start-on: include <platform.h>
+   :end-on: include <xclib.h>
+
+The microphone array library functions are defined in ``lib_mic_array.h``. This header must
+be included in your code to use the library. The support functions for the board are defined in
+``mic_array_board_support.h`` and the logging functions are provided by ``debug_print.h``.
 
 .. literalinclude:: app_hires_DAS_fixed.xc
    :start-on: include "mic_array.h"
-   :end-before: include "mic_array_board_support.h"
+   :end-on: include "debug_print.h"
 
+Also required is support for |I2S| and |I2C| through the headers:
+   
+.. literalinclude:: app_hires_DAS_fixed.xc
+   :start-on: include "i2c.h"
+   :end-on: include "i2s.h"
+
+Allocating hardware resources
+.............................
+
+An PDM microphone requires a clock and a data pin. For eight PDM mocrophones a single clock can be shared
+ between all microphones and the data can be sampled on a single 8 bit port. On an xCORE the pins are
+controlled by ``ports``. The application therefore declares one 1-bit port and one 8-bit port:
+
+.. literalinclude:: app_hires_DAS_fixed.xc
+   :start-on: in port p_pdm_clk
+   :end-on: in buffered port:32 p_pdm_mics
+
+To generate the PDM clock a 24.576MHz master clock is divided by 8 using a clock block. These two hardware
+resources are declared with:
+
+.. literalinclude:: app_hires_DAS_fixed.xc
+   :start-on: in port p_mclk 
+   :end-on:  clock pdmclk      
+
+and are configured with:
+
+.. literalinclude:: app_hires_DAS_fixed.xc
+   :start-on: configure_clock_src_divide(pdmclk
+   :end-on:  start_clock(pdmclk);     
+
+The result begin a 3.072MHz PDM clock is used for clocking the microphone data into the xCORE. Additionally, 
+the leds and buttons are declared by
+   
+.. literalinclude:: app_hires_DAS_fixed.xc
+   :start-on: p_leds leds
+   :end-on:  in port p_buttons
+   
+And the |I2S| is declared with:
+ 
+.. literalinclude:: app_hires_DAS_fixed.xc
+   :start-on: p_i2s_dout[1]
+   :end-on:  clock bclk
+ 
 Demo Hardware Setup
 -------------------
 
-	#. Connect the xTAG-2 or xTAG-3 to Microphone Array Ref Design v1.
-	#. Connect the xTAG-2 or xTAG-3 USB connector to the USB connector on your development PC using a USB cable. 
-	#. Connect the Microphone Array Ref Design v1 to your development PC using another USB cable. 
-	#. Connect the Microphone Array Ref Design v1 to your headphones.
+To run the demo, connect a USB cable to power the Microphone Array Ref Design v1
+and plug the xTAG to the board and connect the xTAG USB cable to your
+development machine. You will also need to connect headphones to the audio jack.
+
+TODO
+
+|newpage|
 
 Launching the demo application
 ------------------------------
 
-Once the application source code is imported into the tools you can then build the project
-which will generate the binary file required to run the demo application.
+Once the demo example has been built either from the command line using xmake or
+via the build mechanism of xTIMEcomposer studio it can be executed on the Microphone Array Ref Design v1.
 
-Once the application has been built you need to download the application binary
-code onto the Microphone Array Ref Design v1. Here you use the tools to load the application 
-over JTAG onto the xCORE multicore microcontroller.
+Once built there will be a ``bin/`` directory within the project which contains
+the binary for the xCORE device. The xCORE binary has a XMOS standard .xe extension.
 
-Then click **Run**.
+Launching from the command line
+...............................
 
-Alternatively, from the command line build the application, by doing a call to ``xmake``, then 
-run using ``xrun --xscope app_hires_DAS_fixed.xe``. The output of the microphones should
-be heard through your headphones.
+From the command line you use the ``xrun`` tool to download and run the code
+on the xCORE device::
+
+  xrun --xscope bin/app_hires_DAS_fixed.xe
+
+Once this command has executed the application will be running on the
+Microphone Array Ref Design v1.
+
+Launching from xTIMEcomposer Studio
+...................................
+
+From xTIMEcomposer Studio use the run mechanism to download code to xCORE device.
+Select the xCORE binary from the ``bin/`` directory, right click and go to Run
+Configurations. Double click on xCORE application to create a new run configuration,
+enable the xSCOPE I/O mode in the dialog box and then
+select Run.
+
+Once this command has executed the application will be running on the
+Microphone Array Ref Design v1.
+
+Running the application
+.......................
+
+Once the application is started using either of the above methods there will
+be the output of the microphones through the headphones.
 
 Buttons ``A`` and ``D`` rotate the direction of the beam which is indicated by the LEDs.
 Buttons ``B`` and ``C`` decrease and increase the gain on the output signal respectively.
@@ -70,7 +170,7 @@ the application.
 
 .. literalinclude:: app_hires_DAS_fixed.xc
    :start-on: streaming chan c_pdm_to_hires[2];
-   :end-on: hires_DAS_fixed
+   :end-on: stop_clock(pdmclk);
 
 Note that the decimators have to be on the same tile as the application due to shared frame memory.	
 Finally, there needs to be a channel between the ``hires_delay`` and the application in order to issue
@@ -87,10 +187,9 @@ block must be::
 bytes. The data must also be double word aligned. For example:
 
 .. literalinclude:: app_hires_DAS_fixed.xc
-   :start-on: int data_0
-   :end-on: int data_1
-
-Also the frame memory must also be a double word aligned array of length of at least 2.   
+   :start-on: int data
+   :end-on: int data
+  
 Note that on the xCORE-200 all global arrays are guaranteed to be double-word aligned.
 
 Configuration
@@ -125,7 +224,7 @@ Updating the delays
 -------------------
 
 The high resolution delay task is initially set to delay by a zero 384kHz clock cycles. Each channel can 
-be delayed by up to HIRES_MAX_DELAY (default 32) samples at a sample rate of 384kHz. Setting of the taps
+be delayed by up to ``HIRES_MAX_DELAY`` (default 256) samples at a sample rate of 384kHz. Setting of the taps
 is done through the function ``hires_delay_set_taps();`` which will do an atomic update of all the 
 active delay lines tap positions at once.
 
@@ -146,7 +245,13 @@ References
 
     http://www.xmos.com/support/libraries/lib_mic_array
 
-  * AN00162 - Using the I2S library
+  * XMOS |I2C| Library
+
+    http://www.xmos.com/support/libraries/lib_i2c
+
+  * XMOS |I2S| Library
+
+    http://www.xmos.com/support/libraries/lib_i2s
 
 |newpage|
 

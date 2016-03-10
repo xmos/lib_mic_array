@@ -5,7 +5,28 @@
 Overview
 --------
 
+Introduction
+............
+
 This demo application shows how to interface to the microphone array in high resolution mode.
+
+Block diagram
+.............
+
+.. figure:: images/block_diagram.*
+   :width: 80%
+
+   Application block diagram
+
+The application uses a many logical cores running in parallel in order to implement all the tasks required
+to capture the PDM audio, process it and transfer it to an application for further processing.
+
+
+How to use high resolution delays with ``lib_mic_array``
+--------------------------------------------------------
+
+
+
 
 |newpage|
 
