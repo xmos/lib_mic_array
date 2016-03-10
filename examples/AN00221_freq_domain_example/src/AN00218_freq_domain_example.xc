@@ -17,8 +17,7 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 #define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
 
-int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
-int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+int data[8][THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 
 int your_favourite_window_function(unsigned i, unsigned window_length){
     return INT_MAX; //Boxcar
@@ -48,8 +47,8 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
         };
 
         mic_array_decimator_config dc[2] = {
-                {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+                {&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
+                {&dcc, data[4], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
 
         mic_array_decimator_configure(c_ds_output, 2, dc);
