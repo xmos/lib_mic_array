@@ -299,14 +299,12 @@ Samples are accessed in the form of frames. A frame is returned from the decimat
 domain format, ``mic_array_frame_time_domain``, or in the FFT ready format, 
 ``mic_array_frame_fft_preprocessed``.
 
-Time domain frames contain a single two dimensional array, ``data``,with the first dimension being the 
+Time domain frames contain a single two-dimensional array, ``data``,with the first dimension being the 
 channel ID and the second dimension being the sample number. Samples are ordered ``0`` as the oldest 
 sample and increasing number being newer.
 
-FFT ready frames contain a single two dimensional array, ``data``. The data is packed into the array by 
-even channels going into the real entries and odd channels going into the imaginary entries. Samples
-are inserted into the array in an index bit-reversed order. This results in frames that are ready for direct
-processing by an DIT FFT.
+FFT ready frames also contain a single two-dimensional array, ``data``. The data is preprocessed by the decimators
+in such a way that the frames that are ready for direct processing by an DIT FFT.
 
   .. _figmemory:
   .. figure:: memory_layout.pdf
@@ -322,7 +320,7 @@ data can be manipulated.
 Frames
 ------
 
-The four channel decimators (``mic_array_pdm_rx()``) output frames of either *simple audio* or
+The four channel decimators (``mic_array_pdm_rx()``) output frames of either *time domain audio* or
 *FFT ready audio* prepared for an FFT. The define ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``
 (found in ``mic_array_conf.h``) should be used to allocate the arrays to
 store the frames. This means that all frames structures will allocate
@@ -333,27 +331,28 @@ field of ``decimator_config_common`` is always set to ``MIC_ARRAY_MAX_FRAME_SIZE
 Equally, the define ``MIC_ARRAY_NUM_MICS`` is used for allocating the memory
 for the frame structure. This must be set to a multiple of 4.
 
-All frame types contain a two dimensional ``data`` array. 
+All frame types contain a two-dimensional ``data`` array. 
+
+For simplicity of reading ``M`` will represent two to the power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` and
+``F`` will represent two to the power of ``frame_size_log2``.
 
 Time domain frames
 ..................
 
 If *time domain audio* output is used (``index_bit_reversal`` is set to 0), then
-data is stored into arrays in real time ordering. The arrays are of length two to 
-the power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` where the first two to the power 
-of ``frame_size_log2`` (see :ref:`section_api`) entries contain valid data. All 
-entries between two to the power of ``frame_size_log2`` and two to the power 
-of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` are undefined. The first index of the ``data`` 
+data is stored into arrays in real time ordering. The arrays are of length ``M`` where 
+the first ``F`` (see :ref:`section_api`) entries contain valid data. All 
+entries between ``F`` and ``M`` are undefined. The first index of the ``data`` 
 element of the structure ``mic_array_frame_time_domain`` is used to address the 
 channel and the second index is used for the sample number with zero being the 
 oldest sample.
 
 Frames are initialised by the application with a call to ``mic_array_init_time_domain_frame()``. Pass it:
 
-* ``c_from_decimators``: An array of channels to the decimators
+* ``c_from_decimators``: An array of channels to the decimators.
 
 * ``decimator_count``: A count of the number of decimators (the number of
-  elements in the above array)
+  elements in the above array).
 
 * ``buffer``: used internally to maintain ownership of the shared memory between  
   the application and the decimators.
@@ -361,7 +360,7 @@ Frames are initialised by the application with a call to ``mic_array_init_time_d
 * ``audio``: the array of audio frames, one (or two) of which will be owned by the 
   decimators at all times.
 
-* ``dc``: the configuration array to the decimators
+* ``dc``: the configuration array to the decimators.
 
 Calls to ``mic_array_get_next_time_domain_frame()`` should be made to retrieve
 subsequent audio frames. These calls require the exact same parameters as 
@@ -372,15 +371,14 @@ FFT ready audio
 
 If *FFT ready audio* output is used (``index_bit_reversal`` is set to 1),
 then the data is stored in frames that are designed to be processed with an
-FFT. The data is stored in arrays of length two to the power of
-``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` where the first two to the power of ``frame_size_log2`` 
+FFT. The data is stored in arrays of length ``M`` where the first two ``F`` 
 entries contain valid data, each element storing a real and an imaginary
 part. The data is stored in a bit reversed order (ie, the oldest element is
 at index 0b0000....0000, the next oldest is at element 0b1000...0000, the
 next one at element 0b0100...0000, etc up to element 0b1111...1111), and
 the real elements store the even channels, whereas the imaginary elements
 store the odd channels. A postprocess function must be applied after the
-Decimate-in-Time(DIT) FFT in order to recover the frequency bins.
+Decimate-in-Time (DIT) FFT in order to recover the frequency bins.
 
 Frames are initialised by the application by a call to
 ``mic_array_init_frequency_domain_frame()``. Pass it:
@@ -388,7 +386,7 @@ Frames are initialised by the application by a call to
 * ``c_from_decimator``: An array of channels to the decimators
 
 * ``decimator_count``: A count of the number of decimators (the number of
-  elements in the above array)
+  elements in the above array).
 
 * ``buffer``: used internally to maintain ownership of the shared memory between  
   the application and the decimators.
@@ -396,7 +394,7 @@ Frames are initialised by the application by a call to
 * ``f_complex``: the array of complex frames, one (or two) of which will be owned by the 
   decimators at all times.
 
-* ``dcc``: the configuration to the decimators
+* ``dcc``: the configuration to the decimators.
 
 Calls to ``mic_array_get_next_frequency_domain_frame()`` should be made to retrieve
 subsequent audio frames. These calls require the exact same parameters as 
@@ -426,6 +424,8 @@ and will be outputting frames at the rate given by their configuration.
 
 The configuration of the decimators can be changed at any time so long as the 
 function calls respect the control flow given in :ref:`figstatemachine`.
+Mixing of time and frequency domain functions is not supported without first calling
+``mic_array_decimator_configure()``.
 
 Changing decimator configuration
 ................................
@@ -454,7 +454,7 @@ An application that uses ``lib_mic_array`` must define the header file
 
      This defines the number of microphones in use. It is used for allocating memory in the
 	 frame structures. 
-     
+
 Optionally, ``mic_array_conf.h`` may define
 
    * MIC_ARRAY_DC_OFFSET_LOG2
@@ -484,7 +484,7 @@ The four channel decimator tasks are highly configurable tasks for outputting fr
 various sizes and formats. They can be used to produce frames suitable for time domain applications
 or pre-process the frames ready for an FFT for frequency domain applications. The four 
 channel decimators, ``mic_array_decimate_to_pcm_4ch()``, have a number of configuration options 
-controlled by the structure ``decimator_config`` through the function ``mic_array_decimator_configure``. 
+controlled by the structure ``decimator_config`` through the function ``mic_array_decimator_configure()``. 
 The decimators are controlled by two structures: ``decimator_config_common`` and ``decimator_config``, 
 where the former configuration is common to all microphones and the later is specific to the batch of 4
 microphones it interfaces to. The application has the option to control the
@@ -497,22 +497,24 @@ following settings through ``decimator_config_common``:
   or not. Set to non-zero to enable, or ``0`` to not apply DC offset removal.
   
 * ``output_decimation_factor``: This specifies the decimation factor to apply to the PDM input
-  after a 8x decimtor and 4x decimator has already been applied, i.e. for s 3.072MHz PDM clock the 
-  ``output_decimation_factor`` will apply to a 96kHz sample rate. The default valid values
-  are 2, 4, 6, 8, 12, 16. Common sample rates can be achieved by using
+  after an 8x decimtor and 4x decimator has already been applied, i.e. for s 3.072MHz PDM clock the 
+  ``output_decimation_factor`` will apply to a 96kHz sample rate. The valid values
+  are 2, 4, 6, 8 and 12. Common sample rates can be achieved by using
   these decimation factors as follows:
 
-  ======================== ===================== ================= ========== ==============
-  output_decimation_factor decimate_to_pcm_4x    mic_array_pdm_rx   PDM clock  Sample rate
-  ======================== ===================== ================= ========== ==============
-  2                        8 x                   8 x               3.072 MHz   48 KHz
-  4                        16 x                  8 x               3.072 MHz   24 KHz
-  6                        24 x                  8 x               3.072 MHz   16 KHz
-  8                        32 x                  8 x               3.072 MHz   12 KHz
-  12                       48 x                  8 x               3.072 MHz   8 KHz
-  2                        8 x                   8 x               2.8224 MHz  44.1 KHz
-  4                        16 x                  8 x               2.8224 MHz  22.05 KHz
-  ======================== ===================== ================= ========== ==============
+  ======================== ========== ==============
+  output_decimation_factor PDM clock  Sample rate
+  ======================== ========== ==============
+  2                        3.072 MHz   48 KHz
+  4                        3.072 MHz   24 KHz
+  6                        3.072 MHz   16 KHz
+  8                        3.072 MHz   12 KHz
+  12                       3.072 MHz   8 KHz
+  2                        2.8224 MHz  44.1 KHz
+  4                        2.8224 MHz  22.05 KHz
+  ======================== ========== ==============
+  
+  For other decimation factors see :ref:`section_advanced`.
   
 * ``coefs``: This is a pointer to an array of arrays containing the
   coefficients for the final stage of decimation. Set this to
@@ -521,12 +523,12 @@ following settings through ``decimator_config_common``:
   If you wish to supply your own FIR coefficients; the array
   should have the same number of entries as ``output_decimation_factor``.
   
-* ``fir_gain_compensation`` single value to compensate the gain of all the
+* ``fir_gain_compensation``: single value to compensate the gain of all the
   previous decimators. This must be set to a value that depends on the
   ``output_decimation_factor`` as follows:
   
   ======================== =======================
-  output_decimation_factor fir_gain_compression
+  output_decimation_factor fir_gain_compensation
   ======================== =======================
   2                         FIR_COMPENSATOR_DIV_2
   4                         FIR_COMPENSATOR_DIV_4
@@ -535,8 +537,8 @@ following settings through ``decimator_config_common``:
   12                        FIR_COMPENSATOR_DIV_12
   ======================== =======================
   
-  If you wish to supply your own, this is a fixed point number in 5.27 format. And to apply
-  a unity gain the set to ``0``.
+  If you wish to supply your own, this is a fixed point number in 5.27 format. To apply
+  a unity gain set to ``0``.
   
 * ``apply_mic_gain_compensation``: Set this to ``1`` if microphone gain compensation is 
   required. The compensation applied is controlled through the
@@ -556,11 +558,14 @@ following settings through ``decimator_config_common``:
   complex numbers, in such a way that a single complex FFT operates on two
   microphones in parallel.
 
-* ``buffering_type`` is used to specify half frame overlapping or sequential 
-  frames.
+* ``buffering_type``: ``DECIMATOR_HALF_FRAME_OVERLAP`` is used to specify half frame overlapping or sequential 
+  frames is selected with ``DECIMATOR_NO_FRAME_OVERLAP``.
 
-* ``number_of_frame_buffers`` is used to specify the umber of frames used by the 
-  application plus decimators.
+* ``number_of_frame_buffers``: is used to specify the number of frames used by the 
+  application plus decimators. This number should be at least two when ``DECIMATOR_NO_FRAME_OVERLAP``
+  is in effect or three when ``DECIMATOR_HALF_FRAME_OVERLAP`` is in effect. This is due to the double 
+  buffered nature of the decimators, i.e. the decimators are writing to (one or two) frames whilst 
+  the application is using at least one. 
 
 ``decimator_config`` configures the per-channel information:
 
@@ -580,18 +585,19 @@ following settings through ``decimator_config_common``:
   this to 4 to enable all channels. If set to a value less than 4, only the
   first ``channel_count`` channels are enabled.
 
-The decimator configuration is applied, from the application, by calling
-the function ``mic_array_decimator_configure`` with an array of chanends referring to
+The decimator configuration is applied by calling
+the function ``mic_array_decimator_configure()`` with an array of chanends referring to
 the decimators, a count of the number of decimators, and an array of
 decimator configurations.
 
-The output of the decimator is 32bit PCM audio at the requested sample rate. 
+The output of the decimator is 32-bit or 16-bit(MIC_ARRAY_WORD_LENGTH_SHORT != 0) PCM audio 
+at the requested sample rate.
  
 Intended usage model
 --------------------
 
 The library has been designed with the intention of being able to dynamically 
-change sample rates and other configurations, however, for minimal memory 
+change its configuration, however, for minimal memory 
 footprint choosing a single output rate means the fewest FIR coefficient 
 end up in the binary.
 A typical code structure will contain the following::
@@ -603,15 +609,6 @@ A typical code structure will contain the following::
     mic_array_frame_time_domain *  latest_frame = mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, audio, dc);
 
   }
-	
- 
-The ``buffer`` variable is not intended to be used by the application, it is an index used 
-by ``lib_mic_array`` for keeping track of ownership of the frame buffers. 
-The pointer to the latest frame, ``latest_frame``, is a pointer to a frame that the 
-application is allowed to access. When a frame buffer of size N is being used then, in non-frame 
-overlapping, mode the user has up to N-1 frames that can be accessed (one is always
-in the possession of the decimators). In half frame overlapping mode there would be N-2 
-frames available to the application as two are always in the possession of the decimators.
 
 When a reconfigure is performed then there will be a short interval (to flush the FIR data buffers)
 before the audio continues.
@@ -619,6 +616,17 @@ before the audio continues.
 Overlapping frames are supported so that frequency domain algorithms can be converted back into the 
 time domain without artifacts. See ``lib_dsp`` for FFT functions.
  
+The ``number_of_frame_buffers`` member of ``decimator_config_common`` is required so that a frame 
+buffer (array) can be used in a round-robin fashion. This means that the when the application calls 
+either ``mic_array_init_time_domain_frame()`` or ``mic_array_init_frequency_domain_frame()`` then 
+the ownership of one or two of the fames (depending on the overlapping scheme)
+will be passed to the decimators. When a decimator has finished writing the oldest frame it is 
+returned to the application and the next in line is sent to the decimators. This means that by declaring
+larger frame buffers and increasing ``number_of_frame_buffers`` then the application can have visibility
+of longer periods of time at the expense of memory.
+
+Due to the round-robin nature of the library the application must be finished with the data in the 
+oldest frame before the decimators need it again. This is the nature of real time audio processing.
 
 FIR memory
 ----------
@@ -626,15 +634,16 @@ FIR memory
 For each decimator a block of memory must be allocated for storing FIR data. The size of the data 
 block must be::
   
-  Number of channels * THIRD_STAGE_COEFS_PER_STAGE(32) * Decimation factor * sizeof(int)
+  Number of channels * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
 
 bytes. The data must also be double word aligned. For example, if the decimation factor was set to 
-``DECIMATION_FACTOR`` and two decimators were in use, then the memory allocation for the FIR memory would look like::
+``DECIMATION_FACTOR`` and two decimators were in use, then the memory allocation for the FIR memory 
+would look like::
 
   int data[CHANNELS][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
 The FIR memory must also be initialized in order to prevent a spurious click during startup. 
-Normally initializing to all zeros is sufficient.
+Normally initializing to all zeros is sufficient. Memset is a highly efficient way of doing this.
 
 Note, globally declared memory is always double word aligned.
 
@@ -648,7 +657,7 @@ Two stand alone applications showing the minimum code required to build a functi
 microphone array are given in ``AN00217_app_high_resolution_delay_example`` and in 
 ``AN00220_app_phase_aligned_example``. 
 
-A worked example of a fixed beam delay and sum beamformer given in the application
+A worked example of a fixed beam delay and sum beamformer is given in the application
 ``AN00219_app_lores_DAS_fixed``. Also examples of of how to set up high resolution delayed 
 sampling can be seen in the high resolution fixed beam delay and sum beamformer given 
 in the application ``AN00218_app_hires_DAS_fixed``. 
@@ -658,14 +667,14 @@ in the application ``AN00218_app_hires_DAS_fixed``.
 DC offset removal
 -----------------
 
-The DC offset removal is implemented as a single pole IIR high pass filer obeying the 
+The DC offset removal is implemented as a single pole IIR filer obeying the 
 relation::
 
   Y[n] = Y[n-1] * alpha + x[n] - x[n-1]
 
 Where ``alpha`` is defined as ``1 - 2^MIC_ARRAY_DC_OFFSET_LOG2``. Increasing ``MIC_ARRAY_DC_OFFSET_LOG2``
-will increase the stability of the filter and decrease the cut off point at the cost of slow settling
-time. Decreasing ``MIC_ARRAY_DC_OFFSET_LOG2`` will increase the cut off point of the filter. 
+will increase the stability of the filter and decrease the cut off point at the cost of increased 
+settling time. Decreasing ``MIC_ARRAY_DC_OFFSET_LOG2`` will increase the cut off point of the filter. 
  
 
 Signal Characteristics
@@ -673,12 +682,6 @@ Signal Characteristics
 
 Defination of terms
 ...................
-
-THD+N
-.....
-This is the total harmonic distortion plus the noise. It is the ratio of the the 
-
-In the below table the THD+N is measured with a 1kHz input signal over a bandwidth of 1Hz-24kHz.
 
 Passband
 ........
@@ -688,26 +691,44 @@ than 3dB.
 Stopband
 ........
 
-This specifies the start frequency to the input Nyquest sample rate that the input signal shoul 
+This specifies the start frequency to the input Nyquest sample rate that the input signal should 
 be attenuated over.
 
-The output signal has been decimated from the original PDM in such a way to introduce no more then -80dB 
+Characteristics
+...............
+
+The output signal has been decimated from the original PDM in such a way to introduce no more than -80dB 
 of noise into the passband for all output sample rates.
 
-  =================== ======================== ====================== ============ ============ ========== ==========
-  PDM Sample Rate(Hz) output_decimation_factor Output sample rate(Hz) Passband(Hz) Stopband(Hz) Ripple(dB) THD+N(dB)
-  =================== ======================== ====================== ============ ============ ========== ==========
-  3072000             2                         48000                  18240        24000        1.93        -144.63
-  3072000             4                         24000                  9600         12000        0.64        -142.61
-  3072000             6                         16000                  6400         8000         0.37        -139.10
-  3072000             8                         12000                  4800         6000         0.24        -136.60
-  3072000             12                        8000                   3200         4000         0.18        -133.07
-  2822400             2                         44100                  16758        22050        1.93        -144.63
-  2822400             4                         22050                  8820         11025        0.64        -142.61
-  2822400             6                         14700                  5880         7350         0.37        -139.10
-  2822400             8                         11025                  4410         5512.5       0.24        -136.60
-  2822400             12                        7350                   2940         3675         0.18        -133.07
-  =================== ======================== ====================== ============ ============ ========== ==========
+  ======================== =================== ======================
+  output_decimation_factor PDM Sample Rate(Hz) Output sample rate(Hz)
+  ======================== =================== ======================
+  2                         3072000             48000                 
+  4                         3072000             24000                 
+  6                         3072000             16000                 
+  8                         3072000             12000                 
+  12                        3072000             8000                  
+  2                         2822400             44100                 
+  4                         2822400             22050                  
+  6                         2822400             14700                  
+  8                         2822400             11025                  
+  12                        2822400             7350                   
+  ======================== =================== ======================
+
+  ======================== ============ ============ ========== ==========
+  output_decimation_factor Passband(Hz) Stopband(Hz) Ripple(dB) THD+N(dB)
+  ======================== ============ ============ ========== ==========
+  2                         18240        24000        1.93        -144.63
+  4                         9600         12000        0.64        -142.61
+  6                         6400         8000         0.37        -139.10
+  8                         4800         6000         0.24        -136.60
+  12                        3200         4000         0.18        -133.07
+  2                         16758        22050        1.93        -144.63
+  4                         8820         11025        0.64        -142.61
+  6                         5880         7350         0.37        -139.10
+  8                         4410         5512.5       0.24        -136.60
+  12                        2940         3675         0.18        -133.07
+  ======================== ============ ============ ========== ==========
 
 The decimation is achieved by applying three poly-phase FIR filters sequentially. 
 The design of these filters can be viewed in the python script ``fir_design.py``. The default 
@@ -715,10 +736,11 @@ magnitude responses of the first to third stages are given as :ref:`figthird_sta
 through to :ref:`figthird_stage_div_12` in the appendix. The first stage and second stage 
 can be viewed in :ref:`figfirst_stage` and :ref:`figsecond_stage`.
 
-The phase delay of the default filters is 18 output clock cycles. This can be shorterned by either using a minimum phase 
+The phase delay of the default filters is 18 output clock cycles. This can be shortened by either using a minimum phase 
 FIR as the final stage decimation FIR and/or by reducing the number of taps on the final stage decimation FIR. 
 
 
+.. _section_advanced:
 Advanced filter design
 ......................
 
@@ -733,16 +755,16 @@ filter.
 ``fir_design.py`` usage
 .......................
  
-In order generate custom filters the ``fir_design.py`` can be executed. The purpose of this file 
-is to design end generate the FIR coefficients for the three stages of decimation. ``fir_design.py`` 
-is a command line tool that takes a number of command line options to control each parameter of the
+In order generate custom filters the ``fir_design.py`` can be executed. The purpose of this script 
+is to design and generate the FIR coefficients for the three stages of decimation. ``fir_design.py`` 
+is a command line tool that takes a number of options to control each parameter of the
 filter design. As previously illustrated the PDM to PCM conversion is divided into three stages. 
 The overall noise floor is governed with the option ``--stopband-attenuation``. This should be a 
-positive number of decibels between 20 and 120. In the first stage of design the designer is able 
+positive number of decibels between 20 and 120. In the first stage the designer is able 
 to tune:
 
-* passband bandwidth(``--first-stage-pass-bw``) - The bandwidth of the passband, in kHz.
-* stopband bandwidth(``--first-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
+* passband bandwidth (``--first-stage-pass-bw``) - The bandwidth of the passband, in kHz.
+* stopband bandwidth (``--first-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
 
 These are illustrated in :ref:`figfirst`.
 
@@ -754,8 +776,8 @@ These are illustrated in :ref:`figfirst`.
 
 In the second stage the same options are available:
 
-* passband bandwidth(``--second-stage-pass-bw``) - The bandwidth of the passband, in kHz.
-* stopband bandwidth(``--second-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
+* passband bandwidth (``--second-stage-pass-bw``) - The bandwidth of the passband, in kHz.
+* stopband bandwidth (``--second-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
 
 These are illustrated in :ref:`figsecond`.
 
@@ -765,7 +787,7 @@ These are illustrated in :ref:`figsecond`.
 	    
 	Second stage design parameters.
 
-In the third stage the designer can provide custom decimation factors and pass and stop band parameters.
+In the third stage the designer can provide custom decimation factors in addition to the pass and stop band parameters.
 Also the delay of the filter can be controlled by tuning the number of taps to allocate for each phase of
 the poly-phase FIR (``--third-stage-num-taps``). The fewer the number of taps per phase then the shorter the
 delay of the filter but the harder the design will be to meet other criteria.
