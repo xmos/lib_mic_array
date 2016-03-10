@@ -177,17 +177,14 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
 }
 
 void init_cs2100(client i2c_master_if i2c){
-
     #define CS2100_DEVICE_CONFIG_1      0x03
     #define CS2100_GLOBAL_CONFIG        0x05
     #define CS2100_FUNC_CONFIG_1        0x16
     #define CS2100_FUNC_CONFIG_2        0x17
-
-    i2c_regop_res_t res;
-    res = i2c.write_reg(0x9c>>1, CS2100_DEVICE_CONFIG_1, 0);
-    res = i2c.write_reg(0x9c>>1, CS2100_GLOBAL_CONFIG, 0);
-    res = i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_1, 0);
-    res = i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_2, 0);
+    i2c.write_reg(0x9c>>1, CS2100_DEVICE_CONFIG_1, 0);
+    i2c.write_reg(0x9c>>1, CS2100_GLOBAL_CONFIG, 0);
+    i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_1, 0);
+    i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_2, 0);
 }
 
 #define MASTER_TO_PDM_CLOCK_DIVIDER 4

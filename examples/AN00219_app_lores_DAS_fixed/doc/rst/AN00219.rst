@@ -5,117 +5,226 @@
 Overview
 --------
 
-This demo application shows a simple Delay and Sum (DAS) beam-former. It shows the setup of the I2S for audio 
-output via the DAC and very simple processing of multi-channel audio frames to produce a single channel
-output based on a simple single steering direction.
+Introduction
+............
 
-The simple lores delay and sum example
---------------------------------------
+This demo application shows a simple Delay and Sum (DAS) bemformer. 
+It shows the setup of the |I2S| for audio output via the DAC and very simple processing of
+multi-channel audio frames to produce a single channel output based on a simple single steering direction.
 
-The example in this note uses the microphone array library and shows a simple program
-that interfaces to to the PDM microphones, decimates the PDM and finally packs it into frames.
+Block diagram
+.............
 
-To start using the microphone array library library, you need to add ``lib_mic_array`` to
-your ``Makefile``::
+.. figure:: block_diagram.pdf
+   :width: 80%
 
-        USED_MODULES = ... lib_mic_array ...
+   Application block diagram
 
-You can then access the microphone array library functions in your source code via
-the ``mic_array.h`` header file:
+How to use lib_mic_array 
+------------------------
+
+The Makefile
+............
+
+To start using the microphone array library, you need to add ``lib_mic_array`` to you Makefile::
+
+  USED_MODULES = .. lib_mic_array ...
+
+This demo also uses the logging library (``lib_logging``) for the ``debug_printf``
+function. This is a faster, but more limited version of the C-Standard Library
+``printf`` function. So the Makefile also includes::
+
+  USED_MODULES = .. lib_logging ..
+
+The logging library is configurable at compile-time allowing calls to
+``debug_printf()`` to be easily enabled or disabled. For the prints to
+be enabled it is necessary to add the following to the compile flags::
+
+  XCC_FLAGS = .. -DDEBUG_PRINT_ENABLE=1 ..
+
+Includes
+........
+
+This application requires the system headers that defines XMOS xCORE specific
+defines for declaring and initialising hardware:
+
+.. literalinclude:: app_lores_DAS_fixed.xc
+   :start-on: include <platform.h>
+   :end-on: include <xclib.h>
+
+The microphone array library functions are defined in ``lib_mic_array.h``. This header must
+be included in your code to use the library. The support functions for the board are defined in
+``mic_array_board_support.h`` and the logging functions are provided by ``debug_print.h``.
 
 .. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: include "mic_array.h"
-   :end-before: include "mic_array_board_support.h"
+   :end-on: include "debug_print.h"
 
+Also required is support for |I2S| and |I2C| through the headers:
+   
+.. literalinclude:: app_lores_DAS_fixed.xc
+   :start-on: include "i2c.h"
+   :end-on: include "i2s.h"
+
+Allocating hardware resources
+.............................
+
+A PDM microphone requires a clock and a data pin. For eight PDM mocrophones a single 
+clock can be shared between all microphones and the data can be sampled on a single 
+8 bit port. On an xCORE the pins are controlled by ``ports``. The application therefore 
+declares one 1-bit port and one 8-bit port:
+
+.. literalinclude:: app_lores_DAS_fixed.xc
+   :start-on: in port p_pdm_clk
+   :end-on: in buffered port:32 p_pdm_mics
+
+To generate the PDM clock a 24.576MHz master clock is divided by 8 using a clock block. These two hardware
+resources are declared with:
+
+.. literalinclude:: app_lores_DAS_fixed.xc
+   :start-on: in port p_mclk 
+   :end-on:  clock pdmclk      
+
+and are configured with:
+
+.. literalinclude:: app_lores_DAS_fixed.xc
+   :start-on: configure_clock_src_divide(pdmclk
+   :end-on:  start_clock(pdmclk);     
+
+The result begin a 3.072MHz PDM clock is used for clocking the microphone data into the xCORE. Additionally, 
+the leds and buttons are declared by
+   
+.. literalinclude:: app_lores_DAS_fixed.xc
+   :start-on: p_leds leds
+   :end-on:  in port p_buttons
+   
+And the |I2S| is declared with:
+ 
+.. literalinclude:: app_lores_DAS_fixed.xc
+   :start-on: p_i2s_dout[1]
+   :end-on:  clock bclk
+ 
 Demo Hardware Setup
 -------------------
 
-	#. Connect the xTAG-2 or xTAG-3 to Microphone Array Ref Design v1.
-	#. Connect the xTAG-2 or xTAG-3 USB connector to the USB connector on your development PC using a USB cable. 
-	#. Connect the Microphone Array Ref Design v1 to your development PC using another USB cable. 
-	#. Connect the Microphone Array Ref Design v1 to your headphones.
+To run the demo, connect a USB cable to power the Microphone Array Ref Design v1
+and plug the xTAG to the board and connect the xTAG USB cable to your
+development machine. You will also need to connect headphones to the audio jack.
+
+TODO
+
+|newpage|
 
 Launching the demo application
 ------------------------------
 
-Once the application source code is imported into the tools you can then build the project
-which will generate the binary file required to run the demo application.
+Once the demo example has been built either from the command line using xmake or
+via the build mechanism of xTIMEcomposer studio it can be executed on the Microphone Array Ref Design v1.
 
-Once the application has been built you need to download the application binary
-code onto the Microphone Array Ref Design v1. Here you use the tools to load the application 
-over JTAG onto the xCORE multicore microcontroller.
+Once built there will be a ``bin/`` directory within the project which contains
+the binary for the xCORE device. The xCORE binary has a XMOS standard .xe extension.
 
-Then click **Run**.
+Launching from the command line
+...............................
 
-Alternatively, from the command line build the application, by doing a call to ``xmake``, then 
-run using ``xrun --xscope app_lores_DAS_fixed.xe``.  The output of the microphones should
-be heard through your headphones.
+From the command line you use the ``xrun`` tool to download and run the code
+on the xCORE device::
+
+  xrun --xscope bin/app_lores_DAS_fixed.xe
+
+Once this command has executed the application will be running on the
+Microphone Array Ref Design v1.
+
+Launching from xTIMEcomposer Studio
+...................................
+
+From xTIMEcomposer Studio use the run mechanism to download code to xCORE device.
+Select the xCORE binary from the ``bin/`` directory, right click and go to Run
+Configurations. Double click on xCORE application to create a new run configuration,
+enable the xSCOPE I/O mode in the dialog box and then
+select Run.
+
+Once this command has executed the application will be running on the
+Microphone Array Ref Design v1.
+
+Running the application
+.......................
+
+Once the application is started using either of the above methods there will
+be the output of the microphones through the headphones.
 
 Buttons ``A`` and ``D`` rotate the direction of the beam which is indicated by the LEDs.
 Buttons ``B`` and ``C`` decrease and increase the gain on the output signal respectively.
 
+|newpage|
+
 Task setup
 ----------
 
-The PDM microphones interface task and decimators have to be connected together
-and to the application (``lores_DAS_fixed()``). There needs to be one ``decimate_to_pcm_4ch()`` task per
-four channels that need processing. The PDM interface task, ``pdm_rx()`` can process 
-eight channels so only one is needed per eight channels. The PDM interface must be connected 
-to each of the decimators via a streaming channel. Finally, the decimators have to be 
-connected to the application. This gives the following task diagram:
+The PDM microphones interface task and the decimators have to be connected 
+together and to the application (``lores_DAS_fixed()``). There needs to be one 
+``mic_array_decimate_to_pcm_4ch()`` task per four channels that need processing. 
+The PDM interface task, ``mic_array_pdm_rx()`` can process eight channels so only 
+one is needed for this application. The PDM interface needs to be connected to the 
+decimators via two streaming channels. Finally, the decimators have to be connected to 
+the application.
 
 .. literalinclude:: app_lores_DAS_fixed.xc
-   :start-on: streaming chan c_4x_pdm_mic[2];
-   :end-on: lores_DAS_fixed
+   :start-on: streaming chan c_pdm_to_lores[2];
+   :end-before: stop_clock(pdmclk);
 
 Note that the decimators have to be on the same tile as the application due to shared frame memory.	
 
 Frame memory
 ------------
 
-For each decimator a block of memory must be allocated for storing FIR data. The size of the data 
-block must be:
+For each decimator an block of memory must be allocated for storing FIR data. The size of the data 
+block must be::
 
   Number of channels for that decimator * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
 
 bytes. The data must also be double word aligned. For example:
 
 .. literalinclude:: app_lores_DAS_fixed.xc
-   :start-on: int data_0
-   :end-on: int data_1
-
-Also the frame memory must also be a double word aligned array of length of at least 2.   
+   :start-on: int data[8]
+   :end-before: void lores_DAS_fixed
+  
 Note that on the xCORE-200 all global arrays are guaranteed to be double-word aligned.
 
 Configuration
 -------------
 
-Configuration for the example is achieved through:
+Configuration of the microphone array for the example is achieved through:
 
 .. literalinclude:: app_lores_DAS_fixed.xc
-   :start-on: decimator_config_common
-   :end-on: decimator_configure
+   :start-on: mic_array_decimator_config_common dcc =
+   :end-before:  mic_array_init_time_domain_frame
 
-All configuration options are enumerated in the Microphone array library. Once configured 
+All configuration options are described in the Microphone array library guide. Once configured 
 then the decimators require initialization via:
 
 .. literalinclude:: app_lores_DAS_fixed.xc
-   :start-on: decimator_init_audio_frame
+   :start-on: mic_array_init_time_domain_frame
    :end-before: while(1)
 
 The the decimators will start presenting samples in the form of frames that can be accessed with:
 
 .. literalinclude:: app_lores_DAS_fixed.xc
-   :start-on: decimator_get_next
-   :end-before: copy the current sample
+   :start-on: mic_array_frame_time_domain *  current =
+   :end-on: mic_array_get_next_time_domain_frame
 
-The return value of the above is a pointer to the frame that the application (``lores_DAS_fixed()``) is allowed 
-to access. The ``current`` structure contains the frame data in the ``data`` member. ``data`` is a 2D array
-with the first index denoting the channel number and the second index denoting the frame index. The frame
-index used 0 for the oldest samples and 2 to the power of ``dcc.frame_size_log2`` minus one as the newest
-samples.
+The return value of ``mic_array_get_next_time_domain_frame()`` is a pointer to the frame that 
+the application is allowed to access. The ``current`` frame contains the frame data in the 
+``data`` member. ``data`` is a 2D array with the first index denoting the channel number and 
+the second index denoting the frame index. The frame index used 0 for the oldest samples and 
+increasing indicies for newer samples.
 
-|newpage|
+Delay taps
+----------
+
+The delays on the microphones are calculated in a spread sheet included at the root folder of the application,
+``mic_array_das_beamformer_calcs.xls``. The beam is focused to a point of one meter away at an angle of
+thirty degrees from the plane of the microphone array in the direction indicated by the LEDs.
 
 References
 ----------
@@ -134,16 +243,22 @@ References
 
     http://www.xmos.com/support/libraries/lib_mic_array
 
-  * AN00162 - Using the I2S library
+  * XMOS |I2C| Library
 
+    http://www.xmos.com/support/libraries/lib_i2c
+
+  * XMOS |I2S| Library
+
+    http://www.xmos.com/support/libraries/lib_i2s
+
+	
 |newpage|
-
 
 Full source code listing
 ------------------------
 
 Source code for app_lores_DAS_fixed.xc
-..........................................
+......................................
 
 .. literalinclude:: app_lores_DAS_fixed.xc
   :largelisting:
