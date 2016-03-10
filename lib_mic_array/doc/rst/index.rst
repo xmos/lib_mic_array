@@ -9,7 +9,7 @@ implementation details of ``lib_mic_array``, but do not need to be understood to
 it effectively.
 
 Up to sixteen PDM microphones can be attached to each high channel count PDM
-interface(``mic_array_pdm_rx()``). One to four processing tasks, ``mic_array_decimate_to_pcm_4ch()``, 
+interface (``mic_array_pdm_rx()``). One to four processing tasks, ``mic_array_decimate_to_pcm_4ch()``, 
 each process up to four channels. For 1-4 channels the library requires two logical cores:
 
   .. figure:: chan4.pdf
@@ -24,6 +24,8 @@ or for 5-8 channels three logical cores as shown below:
                     
             Five to eight count PDM interface
 
+|newpage|
+
 9-12 channels requires 5 logical cores and for 13-16 channels three six cores as shown below:
 
   .. figure:: chan16.pdf
@@ -35,7 +37,7 @@ The left most task, ``mic_array_pdm_rx()``, samples up to 8 microphones and filt
 eight 384 KHz data streams, split in two streams of four channels. The processing thread
 decimates the signal to a user chosen sample rate (one of 48, 24, 16, 12,
 or 8 KHz). If more than 8 channels are required then another ``mic_array_pdm_rx`` task can be created.
-After the decimation to the output sample rate the sequence of steps takes place:
+After the decimation to the output sample rate the following steps takes place:
 
 * Any DC offset is eliminated on the each channel.
 
@@ -72,17 +74,19 @@ beamforming. The task diagrams for 4 and 8 channel microphone arrays are given i
                     
             Five to eight count PDM interface with hires delay lines
 
-Higher channel counts are simple extensions of the above task diagrams.
-All tasks requires a 62.5 MIPS core to run correctly, therefore, all eight cores can be
-used simultaneously without timing problems developing within ``lib_mic_array``.
+Higher channel counts are simple extensions of the above task diagrams. The high resolution delay task 
+requires a single extra core for up to 16 channels. All tasks requires a 62.5 MIPS core to run correctly, 
+therefore, all eight cores can be used simultaneously without timing problems developing
+ within ``lib_mic_array``.
 
 Typical memory usage
 --------------------
 
 The memory usage of ``lib_mic_array`` is mostly dependent on the desired output rates and 
 the maximum number of channels. As lower output rates require greater decimation from the 
-input PDM their memory requirements are proportionally greater also. Below we give the approximate
-memory usage against the decimation factor of the final stage divider. 
+input PDM their memory requirements are proportionally greater also. Below is a table of the 
+approximate memory usage against the channel count and decimation factor for each 
+final stage divider.
 
   =================== =============== ==========================
    Decimation factor   Channel count   Approx memory usage (kB)
@@ -134,16 +138,16 @@ connected to a single 8-bit port:
 The only port needed by the library is the 8-bit data port. The library
 assumes that the input port is clocked using the PDM clock, and the library
 does not know where the PDM clock comes from. If a clock block ``pdmclk``
-is clocked at a 3.072 MHz rate, and if we assume that the 8-bit port is
-``p_pdm_mics`` then the following statements will ensure that the PDM data
-port is clocked from the PDM clock::
+is clocked at a 3.072 MHz rate, and the 8-bit port is p_pdm_mics then 
+the following statements will ensure that the PDM data
+port is clocked by the PDM clock::
 
   configure_in_port(p_pdm_mics, pdmclk);
   start_clock(pdmclk);
 
 The input clock for the microphones can be generated in a multitude of
-ways. For example one can generate a 3.072 MHz clock on the board, or one
-can use the xCORE to divide down 12.288 MHz master clock. Or, if clock
+ways. For example, a 3.072MHz clock can be generated on the board, or the xCORE can
+divide down 12.288 MHz master clock. Or, if clock
 accuracy is not important, the internal 100 MHz reference can be divided down to provide an
 approximate clock.
 
@@ -178,7 +182,8 @@ to simple Voice User Interfaces (VUIs).
 PDM microphones
 ...............
 
-There is a maximum 28ms delay at startup during which the PDM microphones are in initialization.   
+PDM microphones typically have an initialization delay in the order of about 28ms. They also 
+typically have a DC offset. Both of these will be specified in the datasheet.
 
 Usage
 -----
@@ -229,10 +234,10 @@ task must be on the same tile as the ``mic_array_decimate_to_pcm_4ch()`` task du
 frame memory.
   
 As the PDM interface ``mic_array_pdm_rx()`` communicates over channels then the placement of it
-is not restricted to the sme tile as the decimators.
+is not restricted to the same tile as the decimators.
 
-Additionally, the high resolution delay task can be inserted between the PDM interface 
-and the decimators, similar to the above, it is done in the following fashion::
+Additionally, the high resolution delay task can be inserted between the PDM
+interface and the decimators in the following fashion::
 
   #include <mic_array.h>
   
@@ -272,17 +277,18 @@ Note, using the high resolution delay consumes an extra logical core.
 High resolution delay task
 --------------------------
 The high resolution delay task, ``mic_array_hires_delay()``, is capable of implementing delays 
-with a resolution down to 1.3 microseconds(384kHz). It implements up to 16 delays lines of length 
+with a resolution down to 2.3 microseconds (384kHz). It implements up to 16 delays lines of length 
 ``MIC_ARRAY_HIRES_MAX_DELAY``, which has a default of 256. The delay line length can be overridden 
 by redefining it in ``mic_array_conf.h``. Each delay line sample is clocked at the PDM clock
 rate divided by 8, that is, 384kHz for a 3.072MHz PDM clock and 352.8kHz for an PDM clock
-of 2.8224MHz. 
+of 2.8224MHz.
 
 By setting a positive delay of ``N`` samples on a channel then an input sample will take N extra 
 clocks to propagate to the decimators. Setting of the taps is done through the function 
 ``mic_array_hires_delay_set_taps()`` which will do an atomic update of all the active delay lines tap 
-positions at once. The default delay on each channel is zero.
-
+positions. The default delay on each channel is zero.
+When the high resolution delay task is in use the define ``MIC_ARRAY_HIRES_MAX_DELAY`` should be 
+minimised for the application specific requirements as longer delay lines require more memory.
 
 See :ref:`section_api` for the API.
 
