@@ -9,7 +9,6 @@ Summary
 This example demonstrates how to use the microphone array library with the high resolution delay lines 
 to capture samples from the microphone array. The example is designed to show up to 8 channel array processing.
 
-
 Required tools and libraries
 ............................
 
@@ -18,7 +17,7 @@ Required tools and libraries
 Required hardware
 .................
 
-The example requires the XMOS microphone array reference design v1.
+This is an example only with no hardware requirements.
 
 Prerequisites
 .............
@@ -35,4 +34,4 @@ Prerequisites
 
 .. [#] http://www.xmos.com/published/glossary
 
-  
+
