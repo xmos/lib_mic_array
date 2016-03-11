@@ -89,10 +89,10 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
         unsigned dir = 0;
         set_dir(lb, dir, delay);
 
-        mic_array_decimator_config_common dcc = {0, 1, 0, 0, DECIMATION_FACTOR,
+        mic_array_decimator_conf_common_t dcc = {0, 1, 0, 0, DECIMATION_FACTOR,
                g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
                DECIMATOR_NO_FRAME_OVERLAP, FRAME_BUFFER_COUNT};
-        mic_array_decimator_config dc[2] = {
+        mic_array_decimator_config_t dc[2] = {
           {&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
           {&dcc, data[4], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };

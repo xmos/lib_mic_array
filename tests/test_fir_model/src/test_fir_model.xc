@@ -43,7 +43,7 @@ static unsafe int filter(const int * unsafe coefs, int * unsafe data, const unsi
 }
 
 #pragma unsafe arrays
-int generate_tail_output_counter(unsigned fsl2, unsigned df, e_decimator_buffering_type buf_type){
+int generate_tail_output_counter(unsigned fsl2, unsigned df, mic_array_decimator_buffering_t buf_type){
     if(buf_type == DECIMATOR_NO_FRAME_OVERLAP){
         if(fsl2==0)
             return 0;
@@ -122,7 +122,7 @@ void model(streaming chanend c_4x_pdm_mic[4], unsigned channel_count, chanend c_
             unsigned gain_comp_enabled;
             unsigned gain_comp[16];
             unsigned windowing_enabled;
-            e_decimator_buffering_type buf_type;
+            mic_array_decimator_buffering_t buf_type;
             slave{
                 c_model :> fir;
                 c_model :> debug_fir;
@@ -324,7 +324,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
             unsigned gain_comp_enabled;
             unsigned gain_comp[16];
             unsigned windowing_enabled;
-            e_decimator_buffering_type buf_type;
+            mic_array_decimator_buffering_t buf_type;
             slave{
                 c_actual :> fir;
                 c_actual :> debug_fir;
@@ -352,13 +352,13 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
 
 
             if(index_bit_reversal){
-                mic_array_decimator_config_common dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir,
+                mic_array_decimator_conf_common_t dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir,
                             gain_comp_enabled, fir_comp, buf_type, FRAME_COUNT};
 
                     if(windowing_enabled)
                         dcc.windowing_function = window;
 
-                    mic_array_decimator_config dc[4] = {
+                    mic_array_decimator_config_t dc[4] = {
                             {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
                             {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4},
                             {&dcc, data_2, {gain_comp[8], gain_comp[9], gain_comp[10], gain_comp[11]}, 4},
@@ -405,13 +405,13 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                    }
                }
             } else {
-                mic_array_decimator_config_common dcc = {
+                mic_array_decimator_conf_common_t dcc = {
                             frame_size_log2, 0, index_bit_reversal, 0, df, fir, gain_comp_enabled, fir_comp, buf_type, FRAME_COUNT};
 
                     if(windowing_enabled)
                         dcc.windowing_function = window;
 
-                    mic_array_decimator_config dc[4] = {
+                    mic_array_decimator_config_t dc[4] = {
                             {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
                             {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4},
                             {&dcc, data_2, {gain_comp[8], gain_comp[9], gain_comp[10], gain_comp[11]}, 4},
@@ -476,7 +476,7 @@ static void send_settings(chanend  c_chan,
         const int * unsafe fir, const int * unsafe debug_fir, unsigned df, int fir_comp,
         unsigned frame_size_log2, unsigned index_bit_reversal, unsigned  gain_comp_enabled,
         unsigned gain[16], unsigned windowing_enabled,
-        e_decimator_buffering_type buf_type){
+        mic_array_decimator_buffering_t buf_type){
     unsafe{
         master {
             c_chan <: fir;
@@ -544,7 +544,7 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
 
                                 for(unsigned windowing_enabled=0;windowing_enabled<2; windowing_enabled++){
 
-                                    for(e_decimator_buffering_type buf_type = 0; buf_type<2; buf_type++){
+                                    for(mic_array_decimator_buffering_t buf_type = 0; buf_type<2; buf_type++){
                                         if((frame_size_log2 == 0) && (buf_type == DECIMATOR_HALF_FRAME_OVERLAP))
                                             continue;
 
@@ -590,7 +590,7 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                                             printf("index_bit_reversal: %d ", index_bit_reversal);
                                             printf("windowing_enabled: %d ", windowing_enabled);
                                             printf("gain_comp_enabled: %d ", gain_comp_enabled);
-                                            printf("e_decimator_buffering_type: %d ", buf_type);
+                                            printf("mic_array_decimator_buffering_t: %d ", buf_type);
                                             printf(" FAIL\n");
                                             delay_milliseconds(50);
                                             _Exit(1);

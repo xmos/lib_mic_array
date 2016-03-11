@@ -19,7 +19,7 @@ typedef struct {
     int32_t max;                /**<The maximum data value in this frame. UNUSED */
     unsigned frame_number;  	/**<The frame_number. UNUSED*/
     unsigned x;  		        /**<Padding. UNUSED*/
-} s_metadata;
+} mic_array_metadata_t;
 
 /** Complex number in Cartesian coordinates.*/
 typedef struct {
@@ -30,31 +30,31 @@ typedef struct {
     int32_t re;     /**<The real component. */
     int32_t im;     /**<The imaginary component. */
 #endif
-} s_complex;
+} mic_array_complex_t;
 
 /** A frame of raw audio.*/
 typedef struct {
-    long long alignment;
+    long long alignment; 		/**<Used to force double work alignment. */
 #if MIC_ARRAY_WORD_LENGTH_SHORT
     int16_t data[MIC_ARRAY_NUM_MICS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
 #else
     int32_t data[MIC_ARRAY_NUM_MICS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
 #endif
-    s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
+    mic_array_metadata_t metadata[2]; /**< Frame metadata (Used internally)*/
 } mic_array_frame_time_domain;
 
 /** A frame of frequency domain audio in Cartesian coordinates.*/
 typedef struct {
-    long long alignment;
-    s_complex data[MIC_ARRAY_NUM_FREQ_CHANNELS*2][1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2-1)]; /**< Complex audio data (Cartesian)*/
-    s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
+    long long alignment;		/**<Used to force double work alignment. */
+    mic_array_complex_t data[MIC_ARRAY_NUM_FREQ_CHANNELS*2][1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2-1)]; /**< Complex audio data (Cartesian)*/
+    mic_array_metadata_t metadata[2]; /**< Frame metadata (Used internally)*/
 } mic_array_frame_frequency_domain;
 
 /** A frame of audio preprocessed for direct insertion into an FFT.*/
 typedef struct {
-    long long alignment;
-    s_complex data[MIC_ARRAY_NUM_FREQ_CHANNELS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Cartesian)*/
-    s_metadata metadata[2]; /**< Frame metadata (Used internally)*/
+    long long alignment;		/**<Used to force double work alignment. */
+    mic_array_complex_t data[MIC_ARRAY_NUM_FREQ_CHANNELS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Cartesian)*/
+    mic_array_metadata_t metadata[2]; /**< Frame metadata (Used internally)*/
 } mic_array_frame_fft_preprocessed;
 
 

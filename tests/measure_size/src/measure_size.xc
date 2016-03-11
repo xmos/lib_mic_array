@@ -19,7 +19,7 @@ void example(streaming chanend c_ds_output[DECIMATOR_COUNT]) {
 
         unsigned buffer;
 
-        mic_array_decimator_config_common dcc = {
+        mic_array_decimator_conf_common_t dcc = {
                     0, // Frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
                     1, // DC offset elimination is turned on
                     0, // Index bit reversal is off
@@ -32,7 +32,7 @@ void example(streaming chanend c_ds_output[DECIMATOR_COUNT]) {
                     2  // There are 2 buffers in the audio array
             };
 
-        mic_array_decimator_config dc[DECIMATOR_COUNT];
+        mic_array_decimator_config_t dc[DECIMATOR_COUNT];
 
         for(unsigned i=0;i<DECIMATOR_COUNT;i++){
             dc[i].channel_count = 4;

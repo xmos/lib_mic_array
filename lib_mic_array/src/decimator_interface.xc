@@ -12,10 +12,10 @@
 void mic_array_init_time_domain_frame(
         streaming chanend c_from_decimator[], unsigned decimator_count,
         unsigned &buffer, mic_array_frame_time_domain audio[],
-        mic_array_decimator_config dc[]){
+        mic_array_decimator_config_t dc[]){
 
     unsigned frames=1;
-    e_decimator_buffering_type buffering_type;
+    mic_array_decimator_buffering_t buffering_type;
     unsafe {buffering_type = dc[0].dcc->buffering_type;}
 
     if (buffering_type == DECIMATOR_NO_FRAME_OVERLAP){
@@ -43,7 +43,7 @@ void mic_array_init_time_domain_frame(
 #endif
             }
             for(unsigned i=0;i<decimator_count;i++)
-               c_from_decimator[i] <: (s_metadata * unsafe)&audio[f].metadata[i];
+               c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&audio[f].metadata[i];
         }
     }
     for(unsigned i=0;i<decimator_count;i++)
@@ -57,7 +57,7 @@ void mic_array_init_time_domain_frame(
 
 mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
          streaming chanend c_from_decimator[], unsigned decimator_count,
-        unsigned &buffer, mic_array_frame_time_domain * alias audio, mic_array_decimator_config dc[]){
+        unsigned &buffer, mic_array_frame_time_domain * alias audio, mic_array_decimator_config_t dc[]){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -84,7 +84,7 @@ mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
 #endif
          }
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (s_metadata * unsafe)&audio[buffer].metadata[i];
+            c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&audio[buffer].metadata[i];
     }
 
     for(unsigned i=0;i<decimator_count;i++)
@@ -92,7 +92,7 @@ mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
 
     unsigned index;
     unsigned buffer_count;
-    e_decimator_buffering_type buffering_type;
+    mic_array_decimator_buffering_t buffering_type;
     unsafe {
         buffering_type = dc[0].dcc->buffering_type;
         buffer_count = dc[0].dcc->number_of_frame_buffers;
@@ -112,10 +112,10 @@ mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
 }
 
 void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
-     unsigned &buffer, mic_array_frame_fft_preprocessed f_fft_preprocessed[], mic_array_decimator_config dc[]){
+     unsigned &buffer, mic_array_frame_fft_preprocessed f_fft_preprocessed[], mic_array_decimator_config_t dc[]){
 
      unsigned frames;
-     e_decimator_buffering_type buffering_type;
+     mic_array_decimator_buffering_t buffering_type;
      unsafe {buffering_type = dc[0].dcc->buffering_type;}
 
      if (buffering_type == DECIMATOR_NO_FRAME_OVERLAP){
@@ -136,9 +136,9 @@ void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[],
      for(unsigned f=0;f<frames;f++){
          unsafe {
              for(unsigned i=0;i<decimator_count;i++)
-                c_from_decimator[i] <: (s_complex * unsafe)(f_fft_preprocessed[f].data[i*2]);
+                c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[f].data[i*2]);
              for(unsigned i=0;i<decimator_count;i++)
-                c_from_decimator[i] <: (s_metadata * unsafe)&f_fft_preprocessed[f].metadata[i];
+                c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&f_fft_preprocessed[f].metadata[i];
          }
      }
      for(unsigned i=0;i<decimator_count;i++)
@@ -150,7 +150,7 @@ void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[],
 mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_frame(
         streaming chanend c_from_decimator[], unsigned decimator_count,
      unsigned &buffer, mic_array_frame_fft_preprocessed * alias f_fft_preprocessed,
-     mic_array_decimator_config dc[]){
+     mic_array_decimator_config_t dc[]){
 #if DEBUG_MIC_ARRAY
      #pragma ordered
      select {
@@ -169,9 +169,9 @@ mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_fra
          soutct(c_from_decimator[i], EXCHANGE_BUFFERS);
      unsafe {
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (s_complex * unsafe)(f_fft_preprocessed[buffer].data[i*2]);
+            c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[buffer].data[i*2]);
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (s_metadata * unsafe)&f_fft_preprocessed[buffer].metadata[i];
+            c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&f_fft_preprocessed[buffer].metadata[i];
      }
 
      for(unsigned i=0;i<decimator_count;i++)
@@ -179,7 +179,7 @@ mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_fra
 
      unsigned index;
      unsigned buffer_count;
-     e_decimator_buffering_type buffering_type;
+     mic_array_decimator_buffering_t buffering_type;
      unsafe {
          buffering_type = dc[0].dcc->buffering_type;
          buffer_count = dc[0].dcc->number_of_frame_buffers;
@@ -202,7 +202,7 @@ mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_fra
 void mic_array_decimator_configure(
         streaming chanend c_from_decimator[],
         unsigned decimator_count,
-        mic_array_decimator_config dc[]){
+        mic_array_decimator_config_t dc[]){
 
      //TODO check the frame_size_log_2 is in bounds
     for(unsigned i=0;i<decimator_count;i++)
@@ -213,7 +213,7 @@ void mic_array_decimator_configure(
 
      unsafe {
          for(unsigned i=0;i<decimator_count;i++)
-             c_from_decimator[i] <: (mic_array_decimator_config * unsafe)&dc[i];
+             c_from_decimator[i] <: (mic_array_decimator_config_t * unsafe)&dc[i];
      }
 }
 

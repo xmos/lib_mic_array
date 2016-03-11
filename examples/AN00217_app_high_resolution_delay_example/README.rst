@@ -33,5 +33,3 @@ Prerequisites
    please see the XMOS Glossary [#]_.
 
 .. [#] http://www.xmos.com/published/glossary
-
-

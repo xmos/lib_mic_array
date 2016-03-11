@@ -77,7 +77,7 @@ beamforming. The task diagrams for 4 and 8 channel microphone arrays are given i
 Higher channel counts are simple extensions of the above task diagrams. The high resolution delay task 
 requires a single extra core for up to 16 channels. All tasks requires a 62.5 MIPS core to run correctly, 
 therefore, all eight cores can be used simultaneously without timing problems developing
- within ``lib_mic_array``.
+within ``lib_mic_array``.
 
 Typical memory usage
 --------------------
@@ -680,7 +680,7 @@ settling time. Decreasing ``MIC_ARRAY_DC_OFFSET_LOG2`` will increase the cut off
 Signal Characteristics
 ----------------------
 
-Defination of terms
+Definition of terms
 ...................
 
 Passband
@@ -741,6 +741,7 @@ FIR as the final stage decimation FIR and/or by reducing the number of taps on t
 
 
 .. _section_advanced:
+
 Advanced filter design
 ......................
 
@@ -792,12 +793,16 @@ Also the delay of the filter can be controlled by tuning the number of taps to a
 the poly-phase FIR (``--third-stage-num-taps``). The fewer the number of taps per phase then the shorter the
 delay of the filter but the harder the design will be to meet other criteria.
 
-To add a custom third stage filter ``--add-third-stage`` has to be called. It required the following arguments:
+To add a custom third stage filter ``--add-third-stage`` has to be called. It requires the following arguments:
 
-* decimation factor - the ratio of input samples to output samples
-* normalized output passband - This specifies where the passband ends.
-* normalized output stopband - This specified where the stopband starts.
-* name - This assigns a name to the custom filter.
+* decimation factor - the ratio of input samples to output samples.
+* normalized output passband - this specifies where the passband ends.
+* normalized output stopband - this specified where the stopband starts.
+* filter_name - this assigns a name to the custom filter.
+
+For example to add a third stage decimator called "my_filter" with a final stage decimation factor of 2, normalized 
+output passband of 0.4 and normalized output stopband of 0.5 then the argument ``--add-third-stage 2 0.4 0.5 my_filter``
+would need to be passed to the script.
 
 These are illustrated in figure :ref:`figthird`.
 
@@ -807,15 +812,16 @@ These are illustrated in figure :ref:`figthird`.
 	    
 	Third stage design parameters.
 
-The name is used to generate the defines and coefficient arrays used to implement the filter in ``lib_mic_array``.
+The filter name is used to generate the defines and coefficient arrays used to implement the filter in ``lib_mic_array``.
 The defines ``DECIMATION_FACTOR_ + (filter_name)`` and ``FIR_COMPENSATOR_ + (filter_name)`` will be generated to
-represent the filter designed. Additionally, the array ``const int g_third_stage_ + (filter_name) _fir[]`` will
+represent the filter designed. In the generated defines the name will be in all caps and the FIR coefficients array will 
+be in all lowercase. Additionally, the array ``const int g_third_stage_ + (filter_name) _fir[]`` will
 also be generated and will contain all the coefficients to implement the filter.
 For example, if ``fir_design.py`` was passed the option ``--add-third-stage 2 0.4 0.5 my_filter`` then available 
 in ``lib_mic_array`` would be::
  
   #define DECIMATION_FACTOR_MY_FILTER (2)
-  #define FIR_COMPENSATOR_MY_FILTER ((int)((double)(INT_MAX>>4) * FIRST_STAGE_SCALE_FACTOR * SECOND_STAGE_SCALE_FACTOR * MY_FILTER_SCALE_FACTOR))
+  #define FIR_COMPENSATOR_MY_FILTER (301451293)
   extern const int g_third_stage_my_filter_fir[126];
 
 
@@ -836,15 +842,15 @@ PDM microphone processing
 
 .. doxygenfunction:: mic_array_decimate_to_pcm_4ch
 .. doxygenfunction:: mic_array_decimator_configure
-.. doxygenstruct:: mic_array_decimator_config_common
-.. doxygenstruct:: mic_array_decimator_config
+.. doxygenstruct:: mic_array_decimator_config_t
+.. doxygenstruct:: mic_array_decimator_conf_common_t
 
 |newpage|
 
 PCM frame interfacing
 .....................
 
-.. doxygenenum:: e_decimator_buffering_type
+.. doxygenenum:: mic_array_decimator_buffering_t
 .. doxygenfunction:: mic_array_init_time_domain_frame
 .. doxygenfunction:: mic_array_get_next_time_domain_frame
 .. doxygenfunction:: mic_array_init_frequency_domain_frame
@@ -855,7 +861,7 @@ PCM frame interfacing
 Frame types
 ...........
 
-.. doxygenstruct:: s_complex
+.. doxygenstruct:: mic_array_complex_t
 .. doxygenstruct:: mic_array_frame_time_domain
 .. doxygenstruct:: mic_array_frame_frequency_domain
 .. doxygenstruct:: mic_array_frame_fft_preprocessed
@@ -964,6 +970,6 @@ High resolution delay task
 Known Issues
 ------------
 
-  * decimator_config channel count is tested for 4 channels per decimator, few than 4 is untested.
+  * decimator_config channel count is tested for 4 channels per decimator, fewer than 4 is untested.
 
 .. include:: ../../../CHANGELOG.rst

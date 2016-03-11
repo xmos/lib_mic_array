@@ -90,8 +90,8 @@ decimators via streaming channels. Finally, the decimators have to be connected 
 the application.
 
 .. literalinclude:: app_high_resolution_delay_example.xc
-   :start-on: streaming chan c_pdm_to_hires[2];
-   :end-before: stop_clock(pdmclk);
+   :start-on: streaming chan c_pdm_to_hires
+   :end-before: return 0;
 
 Note that the decimators have to be on the same tile as the application due to shared frame memory.	
 Also, there needs to be a channel between the ``mic_array_hires_delay`` and the application in 
@@ -108,8 +108,8 @@ block must be::
 bytes. The data must also be double word aligned. For example:
 
 .. literalinclude:: app_high_resolution_delay_example.xc
-   :start-on: int data[8]
-   :end-before: void hires_DAS_fixed
+   :start-on: int data[
+   :end-before: void example
   
 Note that on the xCORE-200 all global arrays are guaranteed to be double-word aligned.
 
@@ -119,7 +119,7 @@ Configuration
 Configuration of the microphone array for the example is achieved through:
 
 .. literalinclude:: app_high_resolution_delay_example.xc
-   :start-on: mic_array_decimator_config_common dcc =
+   :start-on: mic_array_decimator_conf_common_t dcc
    :end-before:  mic_array_init_time_domain_frame
 
 All configuration options are described in the Microphone array library guide. Once configured 

@@ -27,8 +27,7 @@ void example(streaming chanend c_ds_output[DECIMATOR_COUNT]) {
         memset(data, 0, DECIMATOR_COUNT*DECIMATOR_CH_COUNT*
                 THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR*sizeof(int));
 
-
-        mic_array_decimator_config_common dcc = {
+        mic_array_decimator_conf_common_t dcc = {
                 0, // Frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
                 1, // DC offset elimination is turned on
                 0, // Index bit reversal is off
@@ -41,7 +40,7 @@ void example(streaming chanend c_ds_output[DECIMATOR_COUNT]) {
                 FRAME_BUFFER_COUNT  // The number of buffers in the audio array
         };
 
-        mic_array_decimator_config dc[DECIMATOR_COUNT] = {
+        mic_array_decimator_config_t dc[DECIMATOR_COUNT] = {
             {
                     &dcc,
                     data[0],     // The storage area for the output decimator
@@ -62,7 +61,6 @@ void example(streaming chanend c_ds_output[DECIMATOR_COUNT]) {
         while(1){
             mic_array_frame_time_domain *  current =
                                 mic_array_get_next_time_domain_frame(c_ds_output, DECIMATOR_COUNT, buffer, audio, dc);
-
 
         }
     }

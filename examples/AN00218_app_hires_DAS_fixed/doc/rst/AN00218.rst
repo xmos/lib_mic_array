@@ -111,7 +111,11 @@ To run the demo, connect a USB cable to power the Microphone Array Ref Design v1
 and plug the xTAG to the board and connect the xTAG USB cable to your
 development machine. You will also need to connect headphones to the audio jack.
 
-TODO
+
+.. figure:: setup.jpg
+   :width: 80%
+
+   Hardware setup
 
 |newpage|
 
@@ -172,8 +176,8 @@ decimators via streaming channels. Finally, the decimators have to be connected 
 the application.
 
 .. literalinclude:: app_hires_DAS_fixed.xc
-   :start-on: streaming chan c_pdm_to_hires[2];
-   :end-before: stop_clock(pdmclk);
+   :start-on: streaming chan c_4x_pdm_mic
+   :end-before: return 0;
 
 Note that the decimators have to be on the same tile as the application due to shared frame memory.	
 Also, there needs to be a channel between the ``mic_array_hires_delay`` and the application in 
@@ -201,7 +205,7 @@ Configuration
 Configuration of the microphone array for the example is achieved through:
 
 .. literalinclude:: app_hires_DAS_fixed.xc
-   :start-on: mic_array_decimator_config_common dcc =
+   :start-on: mic_array_decimator_conf_common_t dcc =
    :end-before:  mic_array_init_time_domain_frame
 
 All configuration options are described in the Microphone array library guide. Once configured 

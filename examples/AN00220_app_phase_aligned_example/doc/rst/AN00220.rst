@@ -5,77 +5,97 @@
 Overview
 --------
 
+Introduction
+............
+
 This demo application shows the minimum code to interface to the microphone array.
 
-|newpage|
+Block diagram
+.............
 
-The microphone array phase-aligned capture example
---------------------------------------------------
+.. figure:: block_diagram.pdf
+   :width: 80%
 
-The example in this note uses the microphone array library and shows a simple program
-that interfaces to to the PDM microphones, decimates the PDM and finally packs it into frames.
+   Application block diagram
 
-To start using the microphone array library library, you need to add ``lib_mic_array`` to
-your ``Makefile``::
+How to use lib_mic_array 
+------------------------
 
-        USED_MODULES = ... lib_mic_array ...
+The Makefile
+............
 
-You can then access the microphone array library functions in your source code via
-the ``mic_array.h`` header file:
+To start using the  microphone array library you need to 
+add ``lib_mic_array`` to you Makefile::
+
+  USED_MODULES = .. lib_mic_array ...
+
+Includes
+........
+
+This application requires the system headers that defines XMOS xCORE specific
+defines for declaring and initialising hardware:
+
+.. literalinclude:: app_phase_aligned_example.xc
+   :start-on: include <platform.h>
+   :end-on: include <string.h>
+
+The microphone array library functions are defined in ``lib_mic_array.h``. This header must
+be included in your code to use the library. The support functions for the board are defined in
+``mic_array_board_support.h`` and the logging functions are provided by ``debug_print.h``.
 
 .. literalinclude:: app_phase_aligned_example.xc
    :start-on: include "mic_array.h"
-   :end-before: on tile
+   :end-before:  in port p_pdm_clk
 
-Demo Hardware Setup
--------------------
+Allocating hardware resources
+.............................
 
-	#. Connect the xTAG-2 or xTAG-3 to Microphone Array Ref Design v1.
-	#. Connect the xTAG-2 or xTAG-3 USB connector to the USB connector on your development PC using a USB cable. 
-	#. Connect the Microphone Array Ref Design v1 to your development PC using another USB cable. 
+A PDM microphone requires a clock and a data pin. For eight PDM mocrophones a single 
+clock can be shared between all microphones and the data can be sampled on a single 
+8 bit port. On an xCORE the pins are controlled by ``ports``. The application therefore 
+declares one 1-bit port and one 8-bit port:
 
-Launching the demo application
-------------------------------
+.. literalinclude:: app_phase_aligned_example.xc
+   :start-on: in port p_pdm_clk
+   :end-on: in buffered port:32 p_pdm_mics
 
-Once the application source code is imported into the tools you can then build the project
-which will generate the binary file required to run the demo application.
+To generate the PDM clock a 24.576MHz master clock is divided by 8 using a clock block. These two hardware
+resources are declared with:
 
-Once the application has been built you need to download the application binary
-code onto the Microphone Array Ref Design v1. Here you use the tools to load the application 
-over JTAG onto the xCORE multicore microcontroller.
+.. literalinclude:: app_phase_aligned_example.xc
+   :start-on: in port p_mclk 
+   :end-on:  clock pdmclk      
 
-Then click **Run**.
+and are configured with:
 
-Alternatively, from the command line build the application, by doing a call to ``xmake``, then 
-run using ``xrun app_phase_aligned_example.xe``. Nothing will happen.
+.. literalinclude:: app_phase_aligned_example.xc
+   :start-on: configure_clock_src_divide(pdmclk
+   :end-on:  start_clock(pdmclk);     
+
+The result begin a 3.072MHz PDM clock is used for clocking the microphone data into the xCORE.
+
 
 Task setup
 ----------
 
-The PDM microphones interface task and decimators have to be connected together
-and to the application (``example()``). There needs to be one ``decimate_to_pcm_4ch()`` task per
-four channels that need processing. The PDM interface task, ``pdm_rx()`` can process 
-eight channels so only one is needed per eight channels. The PDM interface must be connected 
-to each of the decimators via a streaming channel. Finally, the decimators have to be 
-connected to the application. This gives the following task diagram:
-
-  .. figure:: chan4-8.pdf
-	:width: 100%
-
-	Task diagram of the example
-
-Or represented in code as:
+The PDM microphones interface task and the decimators have to be connected 
+together and to the application (``example()``). There needs to be one 
+``mic_array_decimate_to_pcm_4ch()`` task per four channels that need processing. 
+The PDM interface task, ``mic_array_pdm_rx()`` can process eight channels so only 
+one is needed for this application. The PDM interface needs to be connected to the two 
+decimators via streaming channels. Finally, the decimators have to be connected to 
+the application.
 
 .. literalinclude:: app_phase_aligned_example.xc
-   :start-on: streaming chan c_pdm_to_dec[2];
-   :end-on: example(c_ds_output);
+   :start-on: streaming chan c_pdm_to_dec
+   :end-before: return 0;
 
 Note that the decimators have to be on the same tile as the application due to shared frame memory.	
 
 Frame memory
 ------------
 
-For each decimator a block of memory must be allocated for storing FIR data. The size of the data 
+For each decimator an block of memory must be allocated for storing FIR data. The size of the data 
 block must be::
 
   Number of channels for that decimator * THIRD_STAGE_COEFS_PER_STAGE * Decimation factor * sizeof(int)
@@ -83,44 +103,112 @@ block must be::
 bytes. The data must also be double word aligned. For example:
 
 .. literalinclude:: app_phase_aligned_example.xc
-   :start-on: int data_0
-   :end-on: int data_1
-
-Also the frame memory must also be a double word aligned array of length of at least 2.   
+   :start-on: int data[
+   :end-before: void example
+  
 Note that on the xCORE-200 all global arrays are guaranteed to be double-word aligned.
 
 Configuration
 -------------
 
-Configuration for the example is achieved through:
+Configuration of the microphone array for the example is achieved through:
 
 .. literalinclude:: app_phase_aligned_example.xc
-   :start-on: decimator_config_common
-   :end-on: decimator_configure
+   :start-on: mic_array_decimator_conf_common_t dcc
+   :end-before:  mic_array_init_time_domain_frame
 
-All configuration options are enumerated in the Microphone array library. Once configured 
+All configuration options are described in the Microphone array library guide. Once configured 
 then the decimators require initialization via:
 
 .. literalinclude:: app_phase_aligned_example.xc
-   :start-on: decimator_init_audio_frame
+   :start-on: mic_array_init_time_domain_frame
    :end-before: while(1)
 
 The the decimators will start presenting samples in the form of frames that can be accessed with:
 
 .. literalinclude:: app_phase_aligned_example.xc
-   :start-on: decimator_get_next
-   :end-before: Buffer and audio
+   :start-on: mic_array_frame_time_domain *  current =
+   :end-on: mic_array_get_next_time_domain_frame
 
-The return value of the above is a pointer to the frame that the application (``example()``) is allowed 
-to access. The ``current`` structure contains the frame data in the ``data`` member. ``data`` is a 2D array
-with the first index denoting the channel number and the second index denoting the frame index. The frame
-index used 0 for the oldest samples and 2 to the power of ``dcc.frame_size_log2`` minus one as the newest
-samples.
+The return value of ``mic_array_get_next_time_domain_frame()`` is a pointer to the frame that 
+the application is allowed to access. The ``current`` frame contains the frame data in the 
+``data`` member. ``data`` is a 2D array with the first index denoting the channel number and 
+the second index denoting the frame index. The frame index used 0 for the oldest samples and 
+increasing indicies for newer samples.
+
+Changing the sample rate
+........................
+
+The sample rate chane be change easily with the example code by modifying:
+
+.. literalinclude:: app_phase_aligned_example.xc
+   :start-on: #define DECIMATION_FACTOR
+   :end-before: #define DECIMATOR_COUNT 
+
+The supported ``DECIMATION_FACTORS`` that come as stadard from ``lib_mic_array`` are 2, 4, 6, 8 and 12. These
+correspond to 48kHz, 24kHz, 16kHz, 12kHz, 8kHz and 6kHz. In order to change the define successfully you must
+also ensure that the coefficients to the decimators are correct for the selected decimation factor.
+The coefficients are declared in the header ``fir_coefs.h`` which is included in ``mic_array.h``. The ``coefs``
+member of ``mic_array_decimator_config_common`` must match the ``output_decimation_factor`` member. Also,
+the FIR compensation must be made to match. For example, to change to 24kHz output, the config should look like::
+
+       mic_array_decimator_config_common dcc = {
+		   0, // Frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
+		   1, // DC offset elimination is turned on
+		   0, // Index bit reversal is off
+		   0, // No windowing function is being applied
+		   4,// The decimation factor is set to 6
+		   g_third_stage_div_4_fir, // This corresponds to a 24kHz output hence this coef array is used
+		   0, // Gain compensation is turned off
+		   FIR_COMPENSATOR_DIV_4, // FIR compensation is set to the corresponding coefficients
+		   DECIMATOR_NO_FRAME_OVERLAP, // Frame overlapping is turned off
+		   FRAME_BUFFER_COUNT  // The number of buffers in the audio array
+       };
+
+Changing the frame buffer count
+...............................
+
+The number of frame buffer in use can be modifide through the define 
+
+.. literalinclude:: app_phase_aligned_example.xc
+   :start-on: #define FRAME_BUFFER_COUNT  2
+   :end-before: #define DECIMATOR_CH_COUNT 4 
+   
+within this application. Increasing this would allow sample to be known for a longer period of time 
+before the memory is resued for the present samples at the cost of increased memory usage. 
 
 
-|appendix|
-|newpage|
+Changing the frame size
+.......................
 
+The length of a frame is always a power of two. The maximum allowed at run time is given by two to the
+power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``. At run time the length can be dynamically configured by
+setting the ``frame_size_log2`` member of ``mic_array_decimator_config_common``. 
+
+Changing the buffering type
+...........................
+
+The buffering type can be either ``DECIMATOR_NO_FRAME_OVERLAP`` or ``DECIMATOR_HALF_FRAME_OVERLAP``.
+This is configured through the ``buffering_type`` member of ``mic_array_decimator_config_common``. 
+In half frame overlap mode the rate that the ``mic_array_get_next_time_domain_frame()`` function must
+be serviced is doubled.
+
+Disabling the DC offset elimination
+...................................
+
+The DC offset elimination can be disbaled by configuring the ``mic_array_decimator_config_common`` with
+0 in the ``apply_dc_offset_removal`` member. Setting ``apply_dc_offset_removal`` to non-zero will enable
+it.
+
+Enabling microphone gain compensation
+.....................................
+
+To enable the microphone gain compensation first the ``apply_mic_gain_compensation`` member of 
+``mic_array_decimator_config_common`` must be set to non-zero. Then for each ``mic_array_decimator_config`` 
+structure used to configure a 4 channel decimator the array member ``mic_gain_compensation`` must be set.
+If the gain a microphone i is g\ :sub:`i`\, then the compensation factor should be 
+``INT_MAX`` / min(g\ :sub:`i`\) for each microphone i.
+	   
 References
 ----------
 
@@ -138,13 +226,14 @@ References
 
     http://www.xmos.com/support/libraries/lib_mic_array
 
+	
 |newpage|
 
 Full source code listing
 ------------------------
 
 Source code for app_phase_aligned_example.xc
-............................................
+....................................................
 
 .. literalinclude:: app_phase_aligned_example.xc
   :largelisting:

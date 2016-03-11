@@ -5,10 +5,10 @@
 
 #include "mic_array.h"
 
+on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
-on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
-on tile[0]: clock pdmclk                    = XS1_CLKBLK_2;
+on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 #define DECIMATION_FACTOR   6   //Corresponds to a 16kHz output sample rate
 #define DECIMATOR_COUNT     2   //8 channels requires 2 decimators
@@ -19,7 +19,7 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_2;
 int data[DECIMATOR_COUNT*DECIMATOR_CH_COUNT]
          [THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
-void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
+void example(streaming chanend c_ds_output[DECIMATOR_COUNT], streaming chanend c_cmd) {
     unsafe{
         mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];
 
@@ -27,7 +27,7 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
         memset(data, 0, DECIMATOR_COUNT*DECIMATOR_CH_COUNT*
                 THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR*sizeof(int));
 
-        mic_array_decimator_config_common dcc = {
+        mic_array_decimator_conf_common_t dcc = {
                 0, // Frame size log 2 is set to 0, i.e. one sample per channel will be present in each frame
                 1, // DC offset elimination is turned on
                 0, // Index bit reversal is off
@@ -40,7 +40,7 @@ void example(streaming chanend c_ds_output[2], streaming chanend c_cmd) {
                 FRAME_BUFFER_COUNT  // The number of buffers in the audio array
         };
 
-        mic_array_decimator_config dc[DECIMATOR_COUNT] = {
+        mic_array_decimator_config_t dc[DECIMATOR_COUNT] = {
             {
                     &dcc,
                     data[0],     // The storage area for the output decimator

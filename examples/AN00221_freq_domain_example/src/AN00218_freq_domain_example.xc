@@ -33,7 +33,7 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
          window[i] = your_favourite_window_function(i, FFT_N);
 
     unsafe{
-        mic_array_decimator_config_common dcc = {
+        mic_array_decimator_conf_common_t dcc = {
                 MIC_ARRAY_MAX_FRAME_SIZE_LOG2,
                 1,
                 1,
@@ -46,7 +46,7 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
                 4
         };
 
-        mic_array_decimator_config dc[2] = {
+        mic_array_decimator_config_t dc[2] = {
                 {&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
                 {&dcc, data[4], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
         };
