@@ -3,6 +3,7 @@
 #include <xs1.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "mic_array.h"
 
@@ -17,7 +18,7 @@ on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
 #define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
 
-int data[8][THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
+int data[8][THIRD_STAGE_COEFS_PER_STAGE*DF];
 
 int your_favourite_window_function(unsigned i, unsigned window_length){
     return INT_MAX; //Boxcar
@@ -31,6 +32,8 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
     int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++)
          window[i] = your_favourite_window_function(i, FFT_N);
+
+    memset(data, 0, 8*THIRD_STAGE_COEFS_PER_STAGE*DF*sizeof(int));
 
     unsafe{
         mic_array_decimator_conf_common_t dcc = {
@@ -62,10 +65,10 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
 
            for(unsigned i=0;i<4;i++){
                //Apply one FFT to two channels at a time
-               lib_dsp_fft_forward_complex((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
+               lib_dsp_fft_forward((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
 
                //Reconstruct the two independent frequency domain representations
-               lib_dsp_fft_reorder_two_real_inputs((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
+               lib_dsp_fft_split_spectrum((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
            }
 
            //Now we can address the output as a frequency frame(i.e. 8 complex channels of length FFT_N/2)
@@ -78,9 +81,9 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
                p[i].re =  frequency->data[channel][i].re;
                p[i].im =  frequency->data[channel][i].im;
            }
-           lib_dsp_fft_rebuild_one_real_input(p, FFT_N);
+           lib_dsp_fft_merge_spectra(p, FFT_N);
            lib_dsp_fft_bit_reverse(p, FFT_N);
-           lib_dsp_fft_inverse_complex(p, FFT_N, lib_dsp_sine_512);
+           lib_dsp_fft_inverse(p, FFT_N, lib_dsp_sine_512);
 
            //Now the p array is a time domain representation of the selected channel.
            //   -The imaginary component will be zero(or very close)
