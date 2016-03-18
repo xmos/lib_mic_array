@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+2.0.1
+-----
+
+  * Updated AN00221 to use new lib_dsp API for FFTs.
+
 2.0.0
 -----
 
