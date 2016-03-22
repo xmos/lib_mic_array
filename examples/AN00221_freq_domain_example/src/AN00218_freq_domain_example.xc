@@ -29,11 +29,11 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
     unsigned buffer ;
     mic_array_frame_fft_preprocessed comp[3];
 
+    memset(data, 0, sizeof(int)*8*THIRD_STAGE_COEFS_PER_STAGE*DF);
+
     int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++)
          window[i] = your_favourite_window_function(i, FFT_N);
-
-    memset(data, 0, 8*THIRD_STAGE_COEFS_PER_STAGE*DF*sizeof(int));
 
     unsafe{
         mic_array_decimator_conf_common_t dcc = {
@@ -63,7 +63,7 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
            //Recieve the preprocessed frames ready for the FFT
             mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
-           for(unsigned i=0;i<4;i++){
+           for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
                //Apply one FFT to two channels at a time
                lib_dsp_fft_forward((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
 
@@ -71,25 +71,49 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
                lib_dsp_fft_split_spectrum((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
            }
 
-           //Now we can address the output as a frequency frame(i.e. 8 complex channels of length FFT_N/2)
-           mic_array_frame_frequency_domain * frequency = (mic_array_frame_frequency_domain *)current;
 
-           //Now to get back to the time domain
-           unsigned channel = 0;
-           lib_dsp_fft_complex_t p[FFT_N];  //No need to zero this
-           for(unsigned i=0;i<FFT_N/2;i++){
-               p[i].re =  frequency->data[channel][i].re;
-               p[i].im =  frequency->data[channel][i].im;
+           mic_array_frame_frequency_domain * frequency = (mic_array_frame_frequency_domain*)current;
+
+           //Work in the frequency domain here
+
+
+           //For example, low pass filter of channel 0
+           //cut off: (Fs/FFT_N * 30) Hz = (48000/512*30) Hz = 2812.5Hz
+           for(unsigned i = 30; i < FFT_N/2; i++){
+               frequency->data[0][i].re = 0;
+               frequency->data[0][i].im = 0;
            }
+           //Don't forget the nyquest rate
+           frequency->data[0][0].im = 0;
+
+
+
+
+           //For example, high pass filter of channel 1
+           //cut off: (Fs/FFT_N * 30) Hz = (48000/512*30) Hz = 2812.5Hz
+           frequency->data[1][i].re = 0.0;
+           for(unsigned i = 1; i < 30; i++){
+               frequency->data[1][i].re = 0;
+               frequency->data[1][i].im = 0;
+           }
+
+
+           //Now to get channel 0 and channel 1 back to the time domain=
+
+           lib_dsp_fft_complex_t p[FFT_N];
+
+           memcpy(&p[0],       frequency->data[0], sizeof(lib_dsp_fft_complex_t)*FFT_N/2);
+           memcpy(&p[FFT_N/2], frequency->data[1], sizeof(lib_dsp_fft_complex_t)*FFT_N/2);
+
            lib_dsp_fft_merge_spectra(p, FFT_N);
            lib_dsp_fft_bit_reverse(p, FFT_N);
            lib_dsp_fft_inverse(p, FFT_N, lib_dsp_sine_512);
 
            //Now the p array is a time domain representation of the selected channel.
-           //   -The imaginary component will be zero(or very close)
-           //   -The real component will be the time domain representation.
+           //   -The imaginary component will be the channel 1 time domain representation.
+           //   -The real component will be the channel 0 time domain representation.
 
-           //Time to recombine the time domain frame with a bit of overlap-and-add.
+           //Recombine the time domain frame with a bit of overlap-and-add.
 
         }
     }
