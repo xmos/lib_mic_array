@@ -91,7 +91,7 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
 
            //For example, high pass filter of channel 1
            //cut off: (Fs/FFT_N * 30) Hz = (48000/512*30) Hz = 2812.5Hz
-           frequency->data[1][i].re = 0.0;
+           frequency->data[1][0].re = 0.0;
            for(unsigned i = 1; i < 30; i++){
                frequency->data[1][i].re = 0;
                frequency->data[1][i].im = 0;

@@ -16,8 +16,8 @@
 #define DECIMATOR_COUNT     2   //8 channels requires 2 decimators
 #define FRAME_BUFFER_COUNT  2   //The minimum of 2 will suffice for this example
 
-on tile[0]:p_leds leds = DEFAULT_INIT;
-on tile[0]:in port p_buttons =  XS1_PORT_4A;
+on tile[0]:mabs_led_ports_t leds = MIC_BOARD_SUPPORT_LED_PORTS;
+on tile[0]:in port p_buttons =  MIC_BOARD_SUPPORT_BUTTON_PORTS;
 
 on tile[0]: out port p_pdm_clk              = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
@@ -37,10 +37,10 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 // which can be found in the root directory of this app
 static const one_meter_thirty_degrees[6] = {0, 23, 66, 87, 66, 23};
 
-static void set_dir(client interface led_button_if lb,
+static void set_dir(client interface mabs_led_button_if lb,
                     unsigned dir, unsigned delay[]) {
 
-    for(unsigned i=0;i<13;i++)
+    for(unsigned i=0;i<MIC_BOARD_SUPPORT_LED_COUNT;i++)
         lb.set_led_brightness(i, 0);
     delay[0] = 43;
     for(unsigned i=0;i<6;i++)
@@ -48,28 +48,28 @@ static void set_dir(client interface led_button_if lb,
 
     switch(dir){
     case 0:
-        lb.set_led_brightness(0, 255);
-        lb.set_led_brightness(1, 255);
+        lb.set_led_brightness(0, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
+        lb.set_led_brightness(1, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
         break;
     case 1:
-        lb.set_led_brightness(2, 255);
-        lb.set_led_brightness(3, 255);
+        lb.set_led_brightness(2, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
+        lb.set_led_brightness(3, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
         break;
     case 2:
-        lb.set_led_brightness(4, 255);
-        lb.set_led_brightness(5, 255);
+        lb.set_led_brightness(4, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
+        lb.set_led_brightness(5, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
         break;
     case 3:
-        lb.set_led_brightness(6, 255);
-        lb.set_led_brightness(7, 255);
+        lb.set_led_brightness(6, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
+        lb.set_led_brightness(7, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
         break;
     case 4:
-        lb.set_led_brightness(8, 255);
-        lb.set_led_brightness(9, 255);
+        lb.set_led_brightness(8, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
+        lb.set_led_brightness(9, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
         break;
     case 5:
-        lb.set_led_brightness(10, 255);
-        lb.set_led_brightness(11, 255);
+        lb.set_led_brightness(10, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
+        lb.set_led_brightness(11, MIC_BOARD_SUPPORT_MAX_LED_BRIGHTNESS);
         break;
     }
 }
@@ -78,7 +78,7 @@ int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
 void hires_DAS_fixed(streaming chanend c_ds_output[2],
         streaming chanend c_cmd,
-        client interface led_button_if lb, chanend c_audio) {
+        client interface mabs_led_button_if lb, chanend c_audio) {
     unsafe {
         mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];
         unsigned buffer;
@@ -112,7 +112,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
             select {
                 case lb.button_event(): {
                     unsigned button;
-                    e_button_state pressed;
+                    mabs_button_state_t pressed;
                     lb.get_button_event(button, pressed);
                     if (pressed == BUTTON_PRESSED) {
                         switch(button) {
@@ -265,10 +265,10 @@ int main() {
             streaming chan c_ds_output[2];
             streaming chan c_cmd;
 
-            interface led_button_if lb[1];
+            interface mabs_led_button_if lb[1];
 
             par {
-                button_and_led_server(lb, 1, leds, p_buttons);
+                mabs_button_and_led_server(lb, 1, leds, p_buttons);
 
                 mic_array_pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
                 mic_array_hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);

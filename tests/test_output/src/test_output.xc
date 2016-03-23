@@ -17,7 +17,7 @@
 
 #define DF 2    //Decimation Factor
 
-on tile[0]:p_leds leds = DEFAULT_INIT;
+on tile[0]:mabs_led_ports_t leds = MIC_BOARD_SUPPORT_LED_PORTS;
 on tile[0]:in port p_buttons =  XS1_PORT_4A;
 
 on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
@@ -39,7 +39,7 @@ int data_0[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE*DF] = {0};
 
 void test_output(streaming chanend c_ds_output[2],
-        client interface led_button_if lb, chanend c_audio){
+        client interface mabs_led_button_if lb, chanend c_audio){
 
     mic_array_frame_time_domain audio[2];
 
@@ -50,7 +50,7 @@ void test_output(streaming chanend c_ds_output[2],
 
         unsigned gain = 8;
 
-        mic_array_decimator_conf_common_t dcc = {0, 1, 0, 0, DF,
+        mic_array_decimator_conf_common_t dcc = {MIC_ARRAY_MAX_FRAME_SIZE_LOG2, 1, 0, 0, DF,
                 g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
                 DECIMATOR_NO_FRAME_OVERLAP, 2};
         mic_array_decimator_config_t dc[2] = {
@@ -77,7 +77,7 @@ void test_output(streaming chanend c_ds_output[2],
             select {
                 case lb.button_event():{
                     unsigned button;
-                    e_button_state pressed;
+                    mabs_button_state_t pressed;
                     lb.get_button_event(button, pressed);
                     if(pressed == BUTTON_PRESSED){
                         switch(button){
@@ -99,10 +99,18 @@ void test_output(streaming chanend c_ds_output[2],
                 }
                 default:break;
             }
-            int output = current->data[0][0];
-            output *= gain;
-            c_audio <: output;
-            c_audio <: output;
+
+            for(int j=0;j<1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2;j++){
+                int output = current->data[0][j];
+                output *= gain;
+                c_audio <: output;
+                c_audio <: output;
+
+                for(unsigned i=0;i<7;i++){
+                    xscope_int(i, current->data[i][j]);
+                }
+
+            }
         }
     }
 }
@@ -233,7 +241,7 @@ int main(){
             streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
             streaming chan c_ds_output[2];
 
-            interface led_button_if lb[1];
+            interface mabs_led_button_if lb[1];
 
             test_pdm_clock();
 
@@ -244,7 +252,7 @@ int main(){
 
 
             par{
-                button_and_led_server(lb, 1, leds, p_buttons);
+                mabs_button_and_led_server(lb, 1, leds, p_buttons);
                 mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                 mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
                 mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
