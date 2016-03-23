@@ -54,9 +54,14 @@
             <Port Location="XS1_PORT_1N"  Name="PORT_I2S_LRCLK"/>
             <Port Location="XS1_PORT_1M"  Name="PORT_I2S_BCLK"/>
             <Port Location="XS1_PORT_1P"  Name="PORT_I2S_DAC0"/>
-            <Port Location="XS1_PORT_4E"  Name="PORT_I2C"/>
             <Port Location="XS1_PORT_16B" Name="PORT_MCLK_COUNT"/>    
    
+            <!-- I2C Bus --> 
+            <Port Location="XS1_PORT_4E"  Name="PORT_I2C"/>
+
+            <!-- Shared Reset --> 
+            <Port Location="XS1_PORT_4F"  Name="PORT_SHARED_RESET"/>
+
             <!-- Ethernet Ports -->   
             <Port Location="XS1_PORT_1A" Name="PORT_ETH_RXCLK"/>  
             <Port Location="XS1_PORT_4A" Name="PORT_ETH_RXD"/>  
