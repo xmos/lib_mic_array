@@ -135,9 +135,9 @@ connected to a single 8-bit port:
      * - *DQ_PDM*
        - The data from the PDM microphones on an 8 bit port.
        
-The only port needed by the library is the 8-bit data port. The library
-assumes that the input port is clocked using the PDM clock, and the library
-does not know where the PDM clock comes from. If a clock block ``pdmclk``
+The only port passed into the library is the 8-bit data port. The library
+assumes that the input port is clocked using the PDM clock and 
+requires no knowledge of PDM clock source. If a clock block ``pdmclk``
 is clocked at a 3.072 MHz rate, and the 8-bit port is p_pdm_mics then 
 the following statements will ensure that the PDM data
 port is clocked by the PDM clock::
