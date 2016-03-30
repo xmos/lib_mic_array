@@ -63,14 +63,26 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
            //Recieve the preprocessed frames ready for the FFT
             mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
+           lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
+
            for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+               // copy current->data[i] into tmp_data
+               lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[i], FFT_N); // convert into tmp buffer
+               //Apply one FFT to two channels at a time
+               lib_dsp_fft_forward(p, FFT_N, lib_dsp_sine_512);
+               //Reconstruct the two independent frequency domain representations
+               lib_dsp_fft_split_spectrum(p, FFT_N);
+               // copy tmp_data back into current->data[i]
+               lib_dsp_fft_long_to_short((lib_dsp_fft_complex_short_t*)current->data[i], p, FFT_N); // convert from tmp buffer
+#else
                //Apply one FFT to two channels at a time
                lib_dsp_fft_forward((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
 
                //Reconstruct the two independent frequency domain representations
                lib_dsp_fft_split_spectrum((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
+#endif
            }
-
 
            mic_array_frame_frequency_domain * frequency = (mic_array_frame_frequency_domain*)current;
 
@@ -87,8 +99,6 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
            frequency->data[0][0].im = 0;
 
 
-
-
            //For example, high pass filter of channel 1
            //cut off: (Fs/FFT_N * 30) Hz = (48000/512*30) Hz = 2812.5Hz
            frequency->data[1][0].re = 0.0;
@@ -99,11 +109,14 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
 
 
            //Now to get channel 0 and channel 1 back to the time domain=
-
-           lib_dsp_fft_complex_t p[FFT_N];
-
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+           // Note! frequency is an alias of current. current->data[0] has frequency->data[0] and frequency->data[1]
+           // So we can convert directly into p
+           lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[0], FFT_N); // convert into tmp buffer
+#else
            memcpy(&p[0],       frequency->data[0], sizeof(lib_dsp_fft_complex_t)*FFT_N/2);
            memcpy(&p[FFT_N/2], frequency->data[1], sizeof(lib_dsp_fft_complex_t)*FFT_N/2);
+#endif
 
            lib_dsp_fft_merge_spectra(p, FFT_N);
            lib_dsp_fft_bit_reverse(p, FFT_N);
