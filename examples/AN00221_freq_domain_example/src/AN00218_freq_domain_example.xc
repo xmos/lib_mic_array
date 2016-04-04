@@ -46,7 +46,7 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
                 0,
                 FIR_COMPENSATOR_DIV_2,
                 DECIMATOR_HALF_FRAME_OVERLAP,
-                4
+                3
         };
 
         mic_array_decimator_config_t dc[2] = {
@@ -67,14 +67,14 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
 
            for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
 #if MIC_ARRAY_WORD_LENGTH_SHORT
-               // copy current->data[i] into tmp_data
-               lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[i], FFT_N); // convert into tmp buffer
+               // convert current->data[i] into p
+               lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[i], FFT_N); 
                //Apply one FFT to two channels at a time
                lib_dsp_fft_forward(p, FFT_N, lib_dsp_sine_512);
                //Reconstruct the two independent frequency domain representations
                lib_dsp_fft_split_spectrum(p, FFT_N);
-               // copy tmp_data back into current->data[i]
-               lib_dsp_fft_long_to_short((lib_dsp_fft_complex_short_t*)current->data[i], p, FFT_N); // convert from tmp buffer
+               // convert p back into current->data[i]
+               lib_dsp_fft_long_to_short((lib_dsp_fft_complex_short_t*)current->data[i], p, FFT_N); 
 #else
                //Apply one FFT to two channels at a time
                lib_dsp_fft_forward((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
