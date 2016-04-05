@@ -4,32 +4,95 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "mic_array.h"
 
 #include "lib_dsp.h"
 
-#define DF 2    //Decimation Factor
+#include "i2c.h"
+#include "i2s.h"
+
+#include "xscope.h"
+
+#define DSP_ENABLED 0
+#define INPUT_FROM_HW 1
+
+
+#define DECIMATION_FACTOR   2   //Corresponds to a 48kHz output sample rate
+#define DECIMATOR_COUNT     2   //8 channels requires 2 decimators
+#define FRAME_BUFFER_COUNT  2   //The minimum of 2 will suffice for this example
 
 on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
+out buffered port:32 p_i2s_dout[1]  = on tile[1]: {XS1_PORT_1P};
+in port p_mclk_in1                  = on tile[1]: XS1_PORT_1O;
+out buffered port:32 p_bclk         = on tile[1]: XS1_PORT_1M;
+out buffered port:32 p_lrclk        = on tile[1]: XS1_PORT_1N;
+port p_i2c                          = on tile[1]: XS1_PORT_4E; // Bit 0: SCLK, Bit 1: SDA
+port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST_N, Bit 1: ETH_RST_N
+clock mclk                          = on tile[1]: XS1_CLKBLK_3;
+clock bclk                          = on tile[1]: XS1_CLKBLK_4;
+
+
+
 #define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
 
-int data[8][THIRD_STAGE_COEFS_PER_STAGE*DF];
+int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
+
+#define NUM_SIGNAL_ARRAYS 2
+
+
+typedef struct {
+    int32_t data[NUM_SIGNAL_ARRAYS][FFT_N];  
+} multichannel_audio_block_s;
+
+/**
+ The interface between the two tasks is a single transaction that swaps
+ the movable pointers. It has an argument that is a reference to a
+ movable pointer. Since it is a reference the server side of the
+ connection can update the argument.
+*/
+
+interface bufswap_i {
+  void swap(multichannel_audio_block_s * movable &x);
+};
+
+// make global to enforce 64 bit alignment
+multichannel_audio_block_s buffer0;
+multichannel_audio_block_s buffer1;
 
 int your_favourite_window_function(unsigned i, unsigned window_length){
     return INT_MAX; //Boxcar
 }
 
-void freq_domain_example(streaming chanend c_ds_output[2]){
+void generate_audio_data(lib_dsp_fft_complex_t buffer[FFT_N]) {
+  // points per cycle. divide by power of two to ensure signals fit into the FFT window
+  const int32_t ppc = 64;  // 750 Hz at 48kHz Fs 
+  //printf("Points Per Cycle is %d\n", ppc);
+  for(int32_t i=0; i<FFT_N; i++) {
+    // generate input signals
+
+    // Equation: x = 2pi * i/ppc = 2pi * ((i%ppc) / ppc))
+    q8_24 factor = ((i%ppc) << 24) / ppc; // factor is always < Q24(1)
+    q8_24 x = lib_dsp_math_multiply(PI2_Q8_24, factor, 24);
+
+    buffer[i].re = lib_dsp_math_sin(x);
+    //buffer[i].im = 0;
+    buffer[i].im = lib_dsp_math_cos(x);
+
+  }
+}
+
+void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_audio){
 
     unsigned buffer ;
     mic_array_frame_fft_preprocessed comp[3];
 
-    memset(data, 0, sizeof(int)*8*THIRD_STAGE_COEFS_PER_STAGE*DF);
+    memset(data, 0, sizeof(int)*8*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR);
 
     int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++)
@@ -39,9 +102,9 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
         mic_array_decimator_conf_common_t dcc = {
                 MIC_ARRAY_MAX_FRAME_SIZE_LOG2,
                 1,
-                1,
+                DSP_ENABLED, // bit reverse buffer if 1
                 window,
-                DF,
+                DECIMATION_FACTOR,
                 g_third_stage_div_2_fir,
                 0,
                 FIR_COMPENSATOR_DIV_2,
@@ -60,11 +123,13 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
 
         while(1){
 
-           //Recieve the preprocessed frames ready for the FFT
+            lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
+
+#if INPUT_FROM_HW
+            //Recieve the preprocessed frames ready for the FFT
             mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
-           lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
-
+#if DSP_ENABLED
            for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
 #if MIC_ARRAY_WORD_LENGTH_SHORT
                // convert current->data[i] into p
@@ -83,12 +148,9 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
                lib_dsp_fft_split_spectrum((lib_dsp_fft_complex_t*)current->data[i], FFT_N);
 #endif
            }
-
            mic_array_frame_frequency_domain * frequency = (mic_array_frame_frequency_domain*)current;
 
            //Work in the frequency domain here
-
-
            //For example, low pass filter of channel 0
            //cut off: (Fs/FFT_N * 30) Hz = (48000/512*30) Hz = 2812.5Hz
            for(unsigned i = 30; i < FFT_N/2; i++){
@@ -107,7 +169,6 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
                frequency->data[1][i].im = 0;
            }
 
-
            //Now to get channel 0 and channel 1 back to the time domain=
 #if MIC_ARRAY_WORD_LENGTH_SHORT
            // Note! frequency is an alias of current. current->data[0] has frequency->data[0] and frequency->data[1]
@@ -121,33 +182,196 @@ void freq_domain_example(streaming chanend c_ds_output[2]){
            lib_dsp_fft_merge_spectra(p, FFT_N);
            lib_dsp_fft_bit_reverse(p, FFT_N);
            lib_dsp_fft_inverse(p, FFT_N, lib_dsp_sine_512);
-
            //Now the p array is a time domain representation of the selected channel.
            //   -The imaginary component will be the channel 1 time domain representation.
            //   -The real component will be the channel 0 time domain representation.
 
            //Recombine the time domain frame with a bit of overlap-and-add.
+#else
+// pass the data on unmodified           
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+           // Note! frequency is an alias of current. current->data[0] has frequency->data[0] and frequency->data[1]
+           // So we can convert directly into p
+           lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[0], FFT_N); // convert into tmp buffer
+#else
+           memcpy(&p[0],       current->data[0], sizeof(lib_dsp_fft_complex_t)*FFT_N);
+           //memcpy(&p[FFT_N/2], frequency->data[1], sizeof(lib_dsp_fft_complex_t)*FFT_N/2);
+#endif
+#endif
+#else
+           generate_audio_data(p);
+#endif
 
+
+           // Send the audio data to another task for outputting over
+           for(unsigned i=0; i<FFT_N; i++) {
+             c_audio <: p[i].re;
+             c_audio <: p[i].im;
+           }
         }
     }
 }
+
+void init_cs2100(client i2c_master_if i2c){
+    #define CS2100_DEVICE_CONFIG_1      0x03
+    #define CS2100_GLOBAL_CONFIG        0x05
+    #define CS2100_FUNC_CONFIG_1        0x16
+    #define CS2100_FUNC_CONFIG_2        0x17
+    i2c.write_reg(0x9c>>1, CS2100_DEVICE_CONFIG_1, 0);
+    i2c.write_reg(0x9c>>1, CS2100_GLOBAL_CONFIG, 0);
+    i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_1, 0);
+    i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_2, 0);
+}
+
+#define MASTER_TO_PDM_CLOCK_DIVIDER 4
+#define MASTER_CLOCK_FREQUENCY 24576000
+#define PDM_CLOCK_FREQUENCY (MASTER_CLOCK_FREQUENCY/(2*MASTER_TO_PDM_CLOCK_DIVIDER))
+#define OUTPUT_SAMPLE_RATE (PDM_CLOCK_FREQUENCY/(32*DECIMATION_FACTOR))
+
+[[distributable]]
+void i2s_handler(server i2s_callback_if i2s,
+                 client i2c_master_if i2c, 
+                 client interface bufswap_i filler,
+                 multichannel_audio_block_s * initial_buffer) {
+  multichannel_audio_block_s * movable buffer = initial_buffer;
+  unsigned sample_idx=0;
+
+  p_rst_shared <: 0xF;
+
+  init_cs2100(i2c);
+  i2c_regop_res_t res;
+  int i = 0x4A;
+  uint8_t data = i2c.read_reg(i, 1, res);
+
+  data = i2c.read_reg(i, 0x02, res);
+  data |= 1;
+  res = i2c.write_reg(i, 0x02, data); // Power down
+
+  // Setting MCLKDIV2 high if using 24.576MHz.
+  data = i2c.read_reg(i, 0x03, res);
+  data |= 1;
+  res = i2c.write_reg(i, 0x03, data);
+
+  data = 0b01110000;
+  res = i2c.write_reg(i, 0x10, data);
+
+  data = i2c.read_reg(i, 0x02, res);
+  data &= ~1;
+  res = i2c.write_reg(i, 0x02, data); // Power up
+
+  while (1) {
+    select {
+    case i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
+      i2s_config.mode = I2S_MODE_LEFT_JUSTIFIED;
+      i2s_config.mclk_bclk_ratio = (MASTER_CLOCK_FREQUENCY/OUTPUT_SAMPLE_RATE)/64;
+      break;
+
+    case i2s.restart_check() -> i2s_restart_t restart:
+      restart = I2S_NO_RESTART;
+      break;
+
+    case i2s.receive(size_t index, int32_t sample):
+      break;
+
+    case i2s.send(size_t index) -> int32_t sample:
+      sample = buffer->data[index][sample_idx];
+      //xscope_int(index, sample);
+      if(index == 1) {
+        sample_idx++;
+      }
+      if(sample_idx>=FFT_N) {
+        // end of buffer reached.
+        sample_idx = 0;
+        filler.swap(buffer);
+      }
+      break;
+    }
+  }
+}
+
+
+void output_audio_dbuf_handler(server interface bufswap_i input,
+        multichannel_audio_block_s * initial_buffer,
+        streaming chanend c_audio) {
+  multichannel_audio_block_s * movable buffer = initial_buffer;
+  unsigned count = 0, sample_idx = 0, buffer_full=0;
+  //unsigned buffer_swapped_flag=1; 
+  int32_t sample;
+  while (1) {
+    // swap buffers
+    select {
+      case input.swap(multichannel_audio_block_s * movable &input_buf):
+        // Swapping uses the 'move' operator. This operator transfers the
+        // pointer to a new variable, setting the original variable to null.
+        // The 'display_buffer' variable is a reference, so updating it will
+        // update the pointer passed in by the other task.
+        multichannel_audio_block_s * movable tmp;
+        tmp = move(input_buf);
+        input_buf = move(buffer);
+        buffer = move(tmp);
+        //buffer_swapped_flag = 1;
+        buffer_full = 0;
+        //printf("Buffer swapped\n");
+        break;
+
+      // guarded select case will create back pressure. 
+      // I.e. c_audio will block until buffer is swapped
+      case !buffer_full => c_audio :> sample:
+        //if(sample_idx == 0 && !buffer_swapped_flag) {
+           //printf("Buffer overflow\n");
+        //};
+        unsigned channel_idx = count & 1;
+        buffer->data[channel_idx][sample_idx] = sample;
+        if(channel_idx==1) {
+          sample_idx++;
+        }
+        if(sample_idx>=FFT_N) {
+          sample_idx = 0;
+          buffer_full = 1;
+        }
+        count++;
+        //buffer_swapped_flag = 0;
+        break;
+    }
+  }
+}
+
 
 int main(){
 
     streaming chan c_4x_pdm_mic_0, c_4x_pdm_mic_1;
     streaming chan c_ds_output[2];
 
-    configure_clock_src_divide(pdmclk, p_mclk, 4);
-    configure_port_clock_output(p_pdm_clk, pdmclk);
-    configure_in_port(p_pdm_mics, pdmclk);
-    start_clock(pdmclk);
+    i2s_callback_if i_i2s;
+    i2c_master_if i_i2c[1];
+    streaming chan c_audio;
 
-    par{
-        mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
-        freq_domain_example(c_ds_output);
-        par(int i=0;i<4;i++)while(1);
+    interface bufswap_i bufswap;
+
+    par {
+      on tile[1]: {
+        configure_clock_src(mclk, p_mclk_in1);
+        start_clock(mclk);
+        i2s_master(i_i2s, p_i2s_dout, 1, null, 0, p_bclk, p_lrclk, bclk, mclk);
+      }
+
+      on tile[1]:  [[distribute]]i2c_master_single_port(i_i2c, 1, p_i2c, 100, 0, 1, 0);
+      on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], bufswap, &buffer0);
+      on tile[1]:  output_audio_dbuf_handler(bufswap, &buffer1, c_audio);
+      on tile[0]: {
+        configure_clock_src_divide(pdmclk, p_mclk, 4);
+        configure_port_clock_output(p_pdm_clk, pdmclk);
+        configure_in_port(p_pdm_mics, pdmclk);
+        start_clock(pdmclk);
+      
+        par{
+            mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
+            mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+            mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+            freq_domain_example(c_ds_output, c_audio);
+            par(int i=0;i<4;i++)while(1);
+        }
+      }
     }
     return 0;
 }
