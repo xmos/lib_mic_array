@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "mic_array.h"
 
@@ -15,13 +16,14 @@
 
 #include "xscope.h"
 
-#define DSP_ENABLED 0
+#define DSP_ENABLED 1
 #define INPUT_FROM_HW 1
+// MIC_ARRAY_WORD_LENGTH_SHORT 0 defined in mic_array_conf.h
 
 
 #define DECIMATION_FACTOR   2   //Corresponds to a 48kHz output sample rate
 #define DECIMATOR_COUNT     2   //8 channels requires 2 decimators
-#define FRAME_BUFFER_COUNT  2   //The minimum of 2 will suffice for this example
+#define NUM_FRAME_BUFFERS   3   //Triple buffer needed for overlapping frames
 
 on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
@@ -65,8 +67,10 @@ interface bufswap_i {
 multichannel_audio_block_s buffer0;
 multichannel_audio_block_s buffer1;
 
+
+//Hanning window
 int your_favourite_window_function(unsigned i, unsigned window_length){
-    return INT_MAX; //Boxcar
+    return((int)((double)INT_MAX*sqrt(0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(window_length-2))))));
 }
 
 void generate_audio_data(lib_dsp_fft_complex_t buffer[FFT_N]) {
@@ -87,12 +91,16 @@ void generate_audio_data(lib_dsp_fft_complex_t buffer[FFT_N]) {
   }
 }
 
+
 void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_audio){
 
     unsigned buffer ;
-    mic_array_frame_fft_preprocessed comp[3];
+    mic_array_frame_fft_preprocessed comp[NUM_FRAME_BUFFERS];
 
     memset(data, 0, sizeof(int)*8*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR);
+
+    int proc_buffer[2][NUM_FRAME_BUFFERS][FFT_N/2]; //Used for recombining time domain audio blocks after FFT/iFFT
+    unsigned head = 0;          //Keeps track of index of proc_buffer
 
     int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++)
@@ -109,7 +117,7 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
                 0,
                 FIR_COMPENSATOR_DIV_2,
                 DECIMATOR_HALF_FRAME_OVERLAP,
-                3
+                NUM_FRAME_BUFFERS
         };
 
         mic_array_decimator_config_t dc[2] = {
@@ -150,6 +158,8 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
            }
            mic_array_frame_frequency_domain * frequency = (mic_array_frame_frequency_domain*)current;
 
+
+/*
            //Work in the frequency domain here
            //For example, low pass filter of channel 0
            //cut off: (Fs/FFT_N * 30) Hz = (48000/512*30) Hz = 2812.5Hz
@@ -168,6 +178,7 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
                frequency->data[1][i].re = 0;
                frequency->data[1][i].im = 0;
            }
+*/
 
            //Now to get channel 0 and channel 1 back to the time domain=
 #if MIC_ARRAY_WORD_LENGTH_SHORT
@@ -186,7 +197,20 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
            //   -The imaginary component will be the channel 1 time domain representation.
            //   -The real component will be the channel 0 time domain representation.
 
-           //Recombine the time domain frame with a bit of overlap-and-add.
+
+           //apply the window function
+           for(unsigned i=0;i<FFT_N/2;i++){
+              long long t = (long long)window[i] * (long long)p[i].re;
+              p[i].re = (t>>31);
+              t = (long long)window[i] * (long long)p[i].im;
+              p[i].im = (t>>31);
+           }
+           for(unsigned i=FFT_N/2;i<FFT_N;i++){
+              long long t = (long long)window[FFT_N-1-i] * (long long)p[i].re;
+              p[i].re = (t>>31);
+              t = (long long)window[FFT_N-1-i] * (long long)p[i].im;
+              p[i].im = (t>>31);
+           }
 #else
 // pass the data on unmodified           
 #if MIC_ARRAY_WORD_LENGTH_SHORT
@@ -203,11 +227,24 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
 #endif
 
 
-           // Send the audio data to another task for outputting over
-           for(unsigned i=0; i<FFT_N; i++) {
-             c_audio <: p[i].re;
-             c_audio <: p[i].im;
+           //Recombine the time domain frame from overlapping output frames from windowed iFFT result
+           for(unsigned i=0;i<FFT_N / 2;i++){
+               proc_buffer[0][head][i] += p[i].re;
+               proc_buffer[0][(head+1)%NUM_FRAME_BUFFERS][i] = p[i+FFT_N/2].re;
+               proc_buffer[1][head][i] += p[i].im;
+               proc_buffer[1][(head+1)%NUM_FRAME_BUFFERS][i] = p[i+FFT_N/2].im;
            }
+
+           // Send the audio data to another task for outputting over
+           for(unsigned i=0; i<FFT_N / 2 ; i++) {
+             c_audio <: proc_buffer[0][head][i];
+             c_audio <: proc_buffer[1][head][i];
+           }
+
+           //Manage overlapping buffers
+           head++;
+           if(head == NUM_FRAME_BUFFERS)
+               head = 0;
         }
     }
 }
@@ -369,7 +406,7 @@ int main(){
             mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
             mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
             freq_domain_example(c_ds_output, c_audio);
-            par(int i=0;i<4;i++)while(1);
+            //par(int i=0;i<4;i++)while(1);
         }
       }
     }
