@@ -45,32 +45,38 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
 int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
-#define NUM_SIGNAL_ARRAYS 2
+#define NUM_SIGNAL_ARRAYS MIC_ARRAY_NUM_MICS/2
 
+#define NUM_OUTPUT_CHANNELS 2
 
 typedef struct {
-    int32_t data[NUM_SIGNAL_ARRAYS][FFT_N];  
+    int32_t data[NUM_OUTPUT_CHANNELS][FFT_N/2]; // FFT_N/2 due to overlapping
 } multichannel_audio_block_s;
 
+
 /**
- The interface between the two tasks is a single transaction that swaps
+ The interface between the two tasks is a single transaction that get_next_bufs
  the movable pointers. It has an argument that is a reference to a
  movable pointer. Since it is a reference the server side of the
  connection can update the argument.
 */
 
-interface bufswap_i {
-  void swap(multichannel_audio_block_s * movable &x);
+interface bufget_i {
+  void get_next_buf(multichannel_audio_block_s * unsafe &buf);
 };
 
 // make global to enforce 64 bit alignment
-multichannel_audio_block_s buffer0;
-multichannel_audio_block_s buffer1;
+multichannel_audio_block_s triple_buffer[3];
 
 
-//Hanning window
 int your_favourite_window_function(unsigned i, unsigned window_length){
-    return((int)((double)INT_MAX*sqrt(0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(window_length-2))))));
+    //Hanning function takes 10k memory which blows up the memory with FFT_N 4k
+    //TODO: Optimise using lib_dsp_math_sqrt and lib_dsp_math_cos.
+    //Hanning window
+    //return((int)((double)INT_MAX*sqrt(0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(window_length-2))))));
+
+    //Rectangular
+    return INT_MAX;
 }
 
 void generate_audio_data(lib_dsp_fft_complex_t buffer[FFT_N]) {
@@ -98,9 +104,6 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
     mic_array_frame_fft_preprocessed comp[NUM_FRAME_BUFFERS];
 
     memset(data, 0, sizeof(int)*8*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR);
-
-    int proc_buffer[2][NUM_FRAME_BUFFERS][FFT_N/2]; //Used for recombining time domain audio blocks after FFT/iFFT
-    unsigned head = 0;          //Keeps track of index of proc_buffer
 
     int window[FFT_N/2];
     for(unsigned i=0;i<FFT_N/2;i++)
@@ -226,7 +229,92 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
            generate_audio_data(p);
 #endif
 
+#if PARTIALLY_UNROLLED
+           for(unsigned i=0; i<FFT_N / 8 ; i+=8) { // partially unrolled loop
+             c_audio <: p[i].re;
+             c_audio <: p[i].im;
+             c_audio <: p[i+1].re;
+             c_audio <: p[i+1].im;
+             c_audio <: p[i+2].re;
+             c_audio <: p[i+2].im;
+             c_audio <: p[i+3].re;
+             c_audio <: p[i+3].im;
+             c_audio <: p[i+4].re;
+             c_audio <: p[i+4].im;
+             c_audio <: p[i+5].re;
+             c_audio <: p[i+5].im;
+             c_audio <: p[i+6].re;
+             c_audio <: p[i+6].im;
+             c_audio <: p[i+7].re;
+             c_audio <: p[i+7].im;
+           }
+#else
+           for(unsigned i=0; i<FFT_N ; i++) {
+             c_audio <: p[i].re; // output channel 0
+             c_audio <: p[i].im; // output channel 1
+           }
+#endif
+        }
+    }
+}
 
+
+void output_audio_dbuf_handler(server interface bufget_i input,
+        multichannel_audio_block_s triple_buffer[3],
+        streaming chanend c_audio) {
+
+  unsigned count = 0, sample_idx = 0, buffer_full=0;
+  //unsigned buffer_get_next_bufped_flag=1;
+  int32_t sample;
+
+  unsigned head = 0;          //Keeps track of index of proc_buffer
+
+unsafe {
+  while (1) {
+    // get_next_buf buffers
+    select {
+      case input.get_next_buf(multichannel_audio_block_s * unsafe &buf):
+        // pass ptr to previous buffer
+        if(head==0) {
+          buf = &triple_buffer[NUM_FRAME_BUFFERS-1];
+        } else {
+          buf = &triple_buffer[head-1];
+        }
+        //buffer_get_next_bufped_flag = 1;
+        buffer_full = 0;
+        break;
+
+      // guarded select case will create back pressure.
+      // I.e. c_audio will block until buffer is get_next_bufped
+      case !buffer_full => c_audio :> sample:
+        //if(sample_idx == 0 && !buffer_get_next_bufped_flag) {
+           //printf("Buffer overflow\n");
+        //};
+        unsigned channel_idx = count & 1;
+        if(sample_idx<FFT_N/2) {
+          // first half
+          triple_buffer[head].data[channel_idx][sample_idx] += sample;
+          //buffer->data[channel_idx][sample_idx] = sample;
+        } else {
+          // second half
+          triple_buffer[(head+1)%NUM_FRAME_BUFFERS].data[channel_idx][sample_idx-(FFT_N/2)] = sample;
+        }
+        //buffer->data[channel_idx][sample_idx] = sample;
+        if(channel_idx==1) {
+          sample_idx++;
+        }
+        if(sample_idx>=FFT_N) {
+          sample_idx = 0;
+          buffer_full = 1;
+          //Manage overlapping buffers
+          head++;
+          if(head == NUM_FRAME_BUFFERS)
+              head = 0;
+        }
+
+        count++;
+
+/*
            //Recombine the time domain frame from overlapping output frames from windowed iFFT result
            for(unsigned i=0;i<FFT_N / 2;i++){
                proc_buffer[0][head][i] += p[i].re;
@@ -241,12 +329,17 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
              c_audio <: proc_buffer[1][head][i];
            }
 
-           //Manage overlapping buffers
-           head++;
-           if(head == NUM_FRAME_BUFFERS)
-               head = 0;
-        }
+
+                     head++;
+          if(head == NUM_FRAME_BUFFERS)
+              head = 0;
+
+*/
+
+        break;
     }
+  }
+}
 }
 
 void init_cs2100(client i2c_master_if i2c){
@@ -265,12 +358,13 @@ void init_cs2100(client i2c_master_if i2c){
 #define PDM_CLOCK_FREQUENCY (MASTER_CLOCK_FREQUENCY/(2*MASTER_TO_PDM_CLOCK_DIVIDER))
 #define OUTPUT_SAMPLE_RATE (PDM_CLOCK_FREQUENCY/(32*DECIMATION_FACTOR))
 
+unsafe {
 [[distributable]]
 void i2s_handler(server i2s_callback_if i2s,
                  client i2c_master_if i2c, 
-                 client interface bufswap_i filler,
-                 multichannel_audio_block_s * initial_buffer) {
-  multichannel_audio_block_s * movable buffer = initial_buffer;
+                 client interface bufget_i filler
+                 ) {
+  multichannel_audio_block_s * unsafe buffer = 0; // invalid
   unsigned sample_idx=0;
 
   p_rst_shared <: 0xF;
@@ -311,66 +405,26 @@ void i2s_handler(server i2s_callback_if i2s,
       break;
 
     case i2s.send(size_t index) -> int32_t sample:
-      sample = buffer->data[index][sample_idx];
+      if(buffer) {
+         sample = buffer->data[index][sample_idx];
+         //printf("I2S send sample %d on channel %d\n",sample_idx,index);
+      } else { // buffer invalid
+         sample = 0;
+      }
       //xscope_int(index, sample);
       if(index == 1) {
         sample_idx++;
       }
-      if(sample_idx>=FFT_N) {
+      if(sample_idx>=FFT_N/2) {
         // end of buffer reached.
         sample_idx = 0;
-        filler.swap(buffer);
+        filler.get_next_buf(buffer);
+        //printf("I2S got next buffer at 0x%x\n", buffer);
       }
       break;
     }
   }
 }
-
-
-void output_audio_dbuf_handler(server interface bufswap_i input,
-        multichannel_audio_block_s * initial_buffer,
-        streaming chanend c_audio) {
-  multichannel_audio_block_s * movable buffer = initial_buffer;
-  unsigned count = 0, sample_idx = 0, buffer_full=0;
-  //unsigned buffer_swapped_flag=1; 
-  int32_t sample;
-  while (1) {
-    // swap buffers
-    select {
-      case input.swap(multichannel_audio_block_s * movable &input_buf):
-        // Swapping uses the 'move' operator. This operator transfers the
-        // pointer to a new variable, setting the original variable to null.
-        // The 'display_buffer' variable is a reference, so updating it will
-        // update the pointer passed in by the other task.
-        multichannel_audio_block_s * movable tmp;
-        tmp = move(input_buf);
-        input_buf = move(buffer);
-        buffer = move(tmp);
-        //buffer_swapped_flag = 1;
-        buffer_full = 0;
-        //printf("Buffer swapped\n");
-        break;
-
-      // guarded select case will create back pressure. 
-      // I.e. c_audio will block until buffer is swapped
-      case !buffer_full => c_audio :> sample:
-        //if(sample_idx == 0 && !buffer_swapped_flag) {
-           //printf("Buffer overflow\n");
-        //};
-        unsigned channel_idx = count & 1;
-        buffer->data[channel_idx][sample_idx] = sample;
-        if(channel_idx==1) {
-          sample_idx++;
-        }
-        if(sample_idx>=FFT_N) {
-          sample_idx = 0;
-          buffer_full = 1;
-        }
-        count++;
-        //buffer_swapped_flag = 0;
-        break;
-    }
-  }
 }
 
 
@@ -383,7 +437,7 @@ int main(){
     i2c_master_if i_i2c[1];
     streaming chan c_audio;
 
-    interface bufswap_i bufswap;
+    interface bufget_i bufget;
 
     par {
       on tile[1]: {
@@ -393,8 +447,8 @@ int main(){
       }
 
       on tile[1]:  [[distribute]]i2c_master_single_port(i_i2c, 1, p_i2c, 100, 0, 1, 0);
-      on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], bufswap, &buffer0);
-      on tile[1]:  output_audio_dbuf_handler(bufswap, &buffer1, c_audio);
+      on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], bufget);
+      on tile[1]:  output_audio_dbuf_handler(bufget, triple_buffer, c_audio);
       on tile[0]: {
         configure_clock_src_divide(pdmclk, p_mclk, 4);
         configure_port_clock_output(p_pdm_clk, pdmclk);
