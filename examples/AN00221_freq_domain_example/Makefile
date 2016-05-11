@@ -9,7 +9,7 @@ TARGET = XCORE-200-EXPLORER
 APP_NAME = AN00221_freq_domain_example
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_i2c lib_i2s lib_dsp lib_mic_array
+USED_MODULES = lib_i2c lib_i2s lib_dsp lib_mic_array lib_mic_array_board_support
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:

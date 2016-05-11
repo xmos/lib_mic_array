@@ -1,3 +1,4 @@
+
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
 #include <platform.h>
 #include <xs1.h>
@@ -8,6 +9,7 @@
 #include <math.h>
 
 #include "mic_array.h"
+#include "mic_array_board_support.h"
 
 #include "lib_dsp.h"
 
@@ -15,10 +17,6 @@
 #include "i2s.h"
 
 #include "xscope.h"
-
-#define DSP_ENABLED 1
-#define INPUT_FROM_HW 1
-// MIC_ARRAY_WORD_LENGTH_SHORT 0 defined in mic_array_conf.h
 
 
 #define DECIMATION_FACTOR   2   //Corresponds to a 48kHz output sample rate
@@ -44,8 +42,6 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 #define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
 
 int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
-
-#define NUM_SIGNAL_ARRAYS MIC_ARRAY_NUM_MICS/2
 
 #define NUM_OUTPUT_CHANNELS 2
 
@@ -109,11 +105,11 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
     for(unsigned i=0;i<FFT_N/2;i++)
          window[i] = your_favourite_window_function(i, FFT_N);
 
-    unsafe{
+    unsafe {
         mic_array_decimator_conf_common_t dcc = {
                 MIC_ARRAY_MAX_FRAME_SIZE_LOG2,
                 1,
-                DSP_ENABLED, // bit reverse buffer if 1
+                1, // bit reversed indexing for data in the buffer. Can be processed directly by lib_dsp_fft_forward
                 window,
                 DECIMATION_FACTOR,
                 g_third_stage_div_2_fir,
@@ -136,11 +132,9 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
 
             lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
 
-#if INPUT_FROM_HW
             //Recieve the preprocessed frames ready for the FFT
             mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
-#if DSP_ENABLED
            for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
 #if MIC_ARRAY_WORD_LENGTH_SHORT
                // convert current->data[i] into p
@@ -214,46 +208,11 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
               t = (long long)window[FFT_N-1-i] * (long long)p[i].im;
               p[i].im = (t>>31);
            }
-#else
-// pass the data on unmodified           
-#if MIC_ARRAY_WORD_LENGTH_SHORT
-           // Note! frequency is an alias of current. current->data[0] has frequency->data[0] and frequency->data[1]
-           // So we can convert directly into p
-           lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[0], FFT_N); // convert into tmp buffer
-#else
-           memcpy(&p[0],       current->data[0], sizeof(lib_dsp_fft_complex_t)*FFT_N);
-           //memcpy(&p[FFT_N/2], frequency->data[1], sizeof(lib_dsp_fft_complex_t)*FFT_N/2);
-#endif
-#endif
-#else
-           generate_audio_data(p);
-#endif
 
-#if PARTIALLY_UNROLLED
-           for(unsigned i=0; i<FFT_N / 8 ; i+=8) { // partially unrolled loop
-             c_audio <: p[i].re;
-             c_audio <: p[i].im;
-             c_audio <: p[i+1].re;
-             c_audio <: p[i+1].im;
-             c_audio <: p[i+2].re;
-             c_audio <: p[i+2].im;
-             c_audio <: p[i+3].re;
-             c_audio <: p[i+3].im;
-             c_audio <: p[i+4].re;
-             c_audio <: p[i+4].im;
-             c_audio <: p[i+5].re;
-             c_audio <: p[i+5].im;
-             c_audio <: p[i+6].re;
-             c_audio <: p[i+6].im;
-             c_audio <: p[i+7].re;
-             c_audio <: p[i+7].im;
-           }
-#else
            for(unsigned i=0; i<FFT_N ; i++) {
              c_audio <: p[i].re; // output channel 0
              c_audio <: p[i].im; // output channel 1
            }
-#endif
         }
     }
 }
@@ -313,29 +272,6 @@ unsafe {
         }
 
         count++;
-
-/*
-           //Recombine the time domain frame from overlapping output frames from windowed iFFT result
-           for(unsigned i=0;i<FFT_N / 2;i++){
-               proc_buffer[0][head][i] += p[i].re;
-               proc_buffer[0][(head+1)%NUM_FRAME_BUFFERS][i] = p[i+FFT_N/2].re;
-               proc_buffer[1][head][i] += p[i].im;
-               proc_buffer[1][(head+1)%NUM_FRAME_BUFFERS][i] = p[i+FFT_N/2].im;
-           }
-
-           // Send the audio data to another task for outputting over
-           for(unsigned i=0; i<FFT_N / 2 ; i++) {
-             c_audio <: proc_buffer[0][head][i];
-             c_audio <: proc_buffer[1][head][i];
-           }
-
-
-                     head++;
-          if(head == NUM_FRAME_BUFFERS)
-              head = 0;
-
-*/
-
         break;
     }
   }
@@ -369,7 +305,7 @@ void i2s_handler(server i2s_callback_if i2s,
 
   p_rst_shared <: 0xF;
 
-  init_cs2100(i2c);
+  mabs_init_pll(i2c, ETH_MIC_ARRAY);
   i2c_regop_res_t res;
   int i = 0x4A;
   uint8_t data = i2c.read_reg(i, 1, res);
