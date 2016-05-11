@@ -156,11 +156,16 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
            mic_array_frame_frequency_domain * frequency = (mic_array_frame_frequency_domain*)current;
 
 
-/*
-           //Work in the frequency domain here
+           /*
+            *Work in the frequency domain here:
+           */ 
+
            //For example, low pass filter of channel 0
-           //cut off: (Fs/FFT_N * 30) Hz = (48000/512*30) Hz = 2812.5Hz
-           for(unsigned i = 30; i < FFT_N/2; i++){
+           //cutoff Frequency = (Fs/FFT_N * cutoff_index)
+           //With cutoff_index = FFT_N/M:
+           //cut off Frequency = Fs/M
+           //e.g. Fs = 16kHz, M=4: cutoff frequency = 4kHz
+           for(unsigned i = FFT_N/4; i < FFT_N/2; i++){
                frequency->data[0][i].re = 0;
                frequency->data[0][i].im = 0;
            }
@@ -169,13 +174,12 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
 
 
            //For example, high pass filter of channel 1
-           //cut off: (Fs/FFT_N * 30) Hz = (48000/512*30) Hz = 2812.5Hz
-           frequency->data[1][0].re = 0.0;
-           for(unsigned i = 1; i < 30; i++){
+           //Same cutoff frequency as above
+           frequency->data[1][0].re = 0;
+           for(unsigned i = 1; i < FFT_N/4; i++){
                frequency->data[1][i].re = 0;
                frequency->data[1][i].im = 0;
            }
-*/
 
            //Now to get channel 0 and channel 1 back to the time domain=
 #if MIC_ARRAY_WORD_LENGTH_SHORT
