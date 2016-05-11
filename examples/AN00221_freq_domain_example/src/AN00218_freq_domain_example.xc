@@ -73,10 +73,10 @@ int your_favourite_window_function(unsigned i, unsigned window_length){
     //Hanning function takes 10k memory which blows up the memory with FFT_N 4k
     //TODO: Optimise using lib_dsp_math_sqrt and lib_dsp_math_cos.
     //Hanning window
-    //return((int)((double)INT_MAX*sqrt(0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(window_length-2))))));
+    return((int)((double)INT_MAX*sqrt(0.5*(1.0 - cos(2.0 * 3.14159265359*(double)i / (double)(window_length-2))))));
 
     //Rectangular
-    return INT_MAX;
+    //return INT_MAX;
 }
 
 void generate_audio_data(lib_dsp_fft_complex_t buffer[FFT_N]) {

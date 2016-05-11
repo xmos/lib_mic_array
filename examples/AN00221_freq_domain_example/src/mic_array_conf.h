@@ -12,5 +12,8 @@
 #endif 
 #define MIC_ARRAY_NUM_MICS 8
 
+#if MIC_ARRAY_MAX_FRAME_SIZE_LOG2 > 9
+#error "Max value for MIC_ARRAY_MAX_FRAME_SIZE_LOG2 is 9. There is no audio for more than 512 (1<<9) FFT points"
+#endif
 
 #endif /* MIC_ARRAY_CONF_H_ */
