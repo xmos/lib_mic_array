@@ -282,17 +282,6 @@ unsafe {
 }
 }
 
-void init_cs2100(client i2c_master_if i2c){
-    #define CS2100_DEVICE_CONFIG_1      0x03
-    #define CS2100_GLOBAL_CONFIG        0x05
-    #define CS2100_FUNC_CONFIG_1        0x16
-    #define CS2100_FUNC_CONFIG_2        0x17
-    i2c.write_reg(0x9c>>1, CS2100_DEVICE_CONFIG_1, 0);
-    i2c.write_reg(0x9c>>1, CS2100_GLOBAL_CONFIG, 0);
-    i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_1, 0);
-    i2c.write_reg(0x9c>>1, CS2100_FUNC_CONFIG_2, 0);
-}
-
 #define MASTER_TO_PDM_CLOCK_DIVIDER 4
 #define MASTER_CLOCK_FREQUENCY 24576000
 #define PDM_CLOCK_FREQUENCY (MASTER_CLOCK_FREQUENCY/(2*MASTER_TO_PDM_CLOCK_DIVIDER))
