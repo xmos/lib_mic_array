@@ -1,5 +1,5 @@
-
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
+
 #include <platform.h>
 #include <xs1.h>
 #include <stdlib.h>
@@ -94,6 +94,23 @@ void generate_audio_data(lib_dsp_fft_complex_t buffer[FFT_N]) {
 }
 
 
+void apply_window_function(lib_dsp_fft_complex_t p[], int window[]) {
+    //apply the window function
+    for(unsigned i=0;i<FFT_N/2;i++){
+       uint64_t t = (uint64_t)window[i] * (uint64_t)p[i].re;
+       p[i].re = (t>>31);
+       t = (uint64_t)window[i] * (uint64_t)p[i].im;
+       p[i].im = (t>>31);
+    }
+    for(unsigned i=FFT_N/2;i<FFT_N;i++){
+       uint64_t t = (uint64_t)window[FFT_N-1-i] * (uint64_t)p[i].re;
+       p[i].re = (t>>31);
+       t = (uint64_t)window[FFT_N-1-i] * (uint64_t)p[i].im;
+       p[i].im = (t>>31);
+    }
+}
+
+
 void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_audio){
 
     unsigned buffer ;
@@ -137,8 +154,10 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
 
            for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
 #if MIC_ARRAY_WORD_LENGTH_SHORT
+
                // convert current->data[i] into p
                lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[i], FFT_N); 
+
                //Apply one FFT to two channels at a time
                lib_dsp_fft_forward(p, FFT_N, lib_dsp_sine_512);
                //Reconstruct the two independent frequency domain representations
@@ -146,6 +165,7 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
                // convert p back into current->data[i]
                lib_dsp_fft_long_to_short((lib_dsp_fft_complex_short_t*)current->data[i], p, FFT_N); 
 #else
+               //apply_window_function((lib_dsp_fft_complex_t*)current->data[i], window);
                //Apply one FFT to two channels at a time
                lib_dsp_fft_forward((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
 
@@ -198,20 +218,7 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
            //   -The imaginary component will be the channel 1 time domain representation.
            //   -The real component will be the channel 0 time domain representation.
 
-
-           //apply the window function
-           for(unsigned i=0;i<FFT_N/2;i++){
-              long long t = (long long)window[i] * (long long)p[i].re;
-              p[i].re = (t>>31);
-              t = (long long)window[i] * (long long)p[i].im;
-              p[i].im = (t>>31);
-           }
-           for(unsigned i=FFT_N/2;i<FFT_N;i++){
-              long long t = (long long)window[FFT_N-1-i] * (long long)p[i].re;
-              p[i].re = (t>>31);
-              t = (long long)window[FFT_N-1-i] * (long long)p[i].im;
-              p[i].im = (t>>31);
-           }
+           apply_window_function(p, window);
 
            for(unsigned i=0; i<FFT_N ; i++) {
              c_audio <: p[i].re; // output channel 0
