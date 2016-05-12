@@ -121,15 +121,13 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
         mic_array_init_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
         while(1){
+           lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
 
-
-            //Recieve the preprocessed frames ready for the FFT
-            mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
+           //Receive the preprocessed frames ready for the FFT
+           mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
            for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
-               lib_dsp_fft_complex_t p[FFT_N];
 #if MIC_ARRAY_WORD_LENGTH_SHORT
-
                // convert current->data[i] into p
                lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[i], FFT_N); 
 
@@ -140,7 +138,6 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
                // convert p back into current->data[i]
                lib_dsp_fft_long_to_short((lib_dsp_fft_complex_short_t*)current->data[i], p, FFT_N); 
 #else
-               //apply_window_function((lib_dsp_fft_complex_t*)current->data[i], window);
                //Apply one FFT to two channels at a time
                lib_dsp_fft_forward((lib_dsp_fft_complex_t*)current->data[i], FFT_N, lib_dsp_sine_512);
 
@@ -176,7 +173,6 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
                frequency->data[1][i].im = 0;
            }
 
-           lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
            //Now to get channel 0 and channel 1 back to the time domain=
 #if MIC_ARRAY_WORD_LENGTH_SHORT
            // Note! frequency is an alias of current. current->data[0] has frequency->data[0] and frequency->data[1]
