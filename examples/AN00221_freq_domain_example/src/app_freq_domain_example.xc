@@ -69,18 +69,18 @@ multichannel_audio_block_s triple_buffer[3];
 //Data memory for the lib_mic_array decimation FIRs
 int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
-void apply_window_function(lib_dsp_fft_complex_t p[], int window[]) {
+void apply_window_function(lib_dsp_fft_complex_t p[], int window[], unsigned N) {
     //apply the window function
-    for(unsigned i=0;i<FFT_N/2;i++){
+    for(unsigned i=0;i<N/2;i++){
        uint64_t t = (uint64_t)window[i] * (uint64_t)p[i].re;
        p[i].re = (t>>31);
        t = (uint64_t)window[i] * (uint64_t)p[i].im;
        p[i].im = (t>>31);
     }
-    for(unsigned i=FFT_N/2;i<FFT_N;i++){
-       uint64_t t = (uint64_t)window[FFT_N-1-i] * (uint64_t)p[i].re;
+    for(unsigned i=N/2;i<N;i++){
+       uint64_t t = (uint64_t)window[N-1-i] * (uint64_t)p[i].re;
        p[i].re = (t>>31);
-       t = (uint64_t)window[FFT_N-1-i] * (uint64_t)p[i].im;
+       t = (uint64_t)window[N-1-i] * (uint64_t)p[i].im;
        p[i].im = (t>>31);
     }
 }
@@ -190,7 +190,7 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
            //   -The imaginary component will be the channel 1 time domain representation.
            //   -The real component will be the channel 0 time domain representation.
 
-           apply_window_function(p, window);
+           apply_window_function(p, window, FFT_N);
 
            for(unsigned i=0; i<FFT_N ; i++) {
              c_audio <: p[i].re; // output channel 0
