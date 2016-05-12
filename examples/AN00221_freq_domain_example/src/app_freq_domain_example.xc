@@ -8,26 +8,24 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "mic_array.h"
-#include "mic_array_board_support.h"
-
-#include "lib_dsp.h"
-
 #include "i2c.h"
 #include "i2s.h"
-
-#include "xscope.h"
-
+#include "mic_array.h"
+#include "mic_array_board_support.h"
+#include "lib_dsp.h"
 
 #define DECIMATION_FACTOR   2   //Corresponds to a 48kHz output sample rate
 #define DECIMATOR_COUNT     2   //8 channels requires 2 decimators
 #define NUM_FRAME_BUFFERS   3   //Triple buffer needed for overlapping frames
+#define NUM_OUTPUT_CHANNELS 2
 
+//Ports for the PDM microphones
 on tile[0]: in port p_pdm_clk               = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
 
+//Ports for the DAC and clocking
 out buffered port:32 p_i2s_dout[1]  = on tile[1]: {XS1_PORT_1P};
 in port p_mclk_in1                  = on tile[1]: XS1_PORT_1O;
 out buffered port:32 p_bclk         = on tile[1]: XS1_PORT_1M;
@@ -37,18 +35,13 @@ port p_rst_shared                   = on tile[1]: XS1_PORT_4F; // Bit 0: DAC_RST
 clock mclk                          = on tile[1]: XS1_CLKBLK_3;
 clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 
-
-
+//The number of bins in the FFT (defined in this case by
+// MIC_ARRAY_MAX_FRAME_SIZE_LOG2 given in mic_array_conf.h)
 #define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
-
-int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
-
-#define NUM_OUTPUT_CHANNELS 2
 
 typedef struct {
     int32_t data[NUM_OUTPUT_CHANNELS][FFT_N/2]; // FFT_N/2 due to overlapping
 } multichannel_audio_block_s;
-
 
 /**
  The interface between the two tasks is a single transaction that get_next_bufs
@@ -56,14 +49,9 @@ typedef struct {
  movable pointer. Since it is a reference the server side of the
  connection can update the argument.
 */
-
 interface bufget_i {
   void get_next_buf(multichannel_audio_block_s * unsafe &buf);
 };
-
-// make global to enforce 64 bit alignment
-multichannel_audio_block_s triple_buffer[3];
-
 
 int your_favourite_window_function(unsigned i, unsigned window_length){
     //Hanning function takes 10k memory which blows up the memory with FFT_N 4k
@@ -75,24 +63,11 @@ int your_favourite_window_function(unsigned i, unsigned window_length){
     //return INT_MAX;
 }
 
-void generate_audio_data(lib_dsp_fft_complex_t buffer[FFT_N]) {
-  // points per cycle. divide by power of two to ensure signals fit into the FFT window
-  const int32_t ppc = 64;  // 750 Hz at 48kHz Fs 
-  //printf("Points Per Cycle is %d\n", ppc);
-  for(int32_t i=0; i<FFT_N; i++) {
-    // generate input signals
+// make global to enforce 64 bit alignment
+multichannel_audio_block_s triple_buffer[3];
 
-    // Equation: x = 2pi * i/ppc = 2pi * ((i%ppc) / ppc))
-    q8_24 factor = ((i%ppc) << 24) / ppc; // factor is always < Q24(1)
-    q8_24 x = lib_dsp_math_multiply(PI2_Q8_24, factor, 24);
-
-    buffer[i].re = lib_dsp_math_sin(x);
-    //buffer[i].im = 0;
-    buffer[i].im = lib_dsp_math_cos(x);
-
-  }
-}
-
+//Data memory for the lib_mic_array decimation FIRs
+int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
 void apply_window_function(lib_dsp_fft_complex_t p[], int window[]) {
     //apply the window function
@@ -147,12 +122,12 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
 
         while(1){
 
-            lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
 
             //Recieve the preprocessed frames ready for the FFT
             mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
            for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
+               lib_dsp_fft_complex_t p[FFT_N];
 #if MIC_ARRAY_WORD_LENGTH_SHORT
 
                // convert current->data[i] into p
@@ -201,6 +176,7 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
                frequency->data[1][i].im = 0;
            }
 
+           lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
            //Now to get channel 0 and channel 1 back to the time domain=
 #if MIC_ARRAY_WORD_LENGTH_SHORT
            // Note! frequency is an alias of current. current->data[0] has frequency->data[0] and frequency->data[1]
