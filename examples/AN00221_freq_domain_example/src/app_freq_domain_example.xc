@@ -1,4 +1,5 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
+
 #include <platform.h>
 #include <xs1.h>
 #include <stdlib.h>
@@ -68,6 +69,23 @@ multichannel_audio_block_s triple_buffer[3];
 //Data memory for the lib_mic_array decimation FIRs
 int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
+void apply_window_function(lib_dsp_fft_complex_t p[], int window[], unsigned N) {
+    //apply the window function
+    for(unsigned i=0;i<N/2;i++){
+       uint64_t t = (uint64_t)window[i] * (uint64_t)p[i].re;
+       p[i].re = (t>>31);
+       t = (uint64_t)window[i] * (uint64_t)p[i].im;
+       p[i].im = (t>>31);
+    }
+    for(unsigned i=N/2;i<N;i++){
+       uint64_t t = (uint64_t)window[N-1-i] * (uint64_t)p[i].re;
+       p[i].re = (t>>31);
+       t = (uint64_t)window[N-1-i] * (uint64_t)p[i].im;
+       p[i].im = (t>>31);
+    }
+}
+
+
 void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_audio){
 
     unsigned buffer ;
@@ -103,16 +121,16 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
         mic_array_init_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
         while(1){
+           lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
 
-
-            //Recieve the preprocessed frames ready for the FFT
-            mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
+           //Receive the preprocessed frames ready for the FFT
+           mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
            for(unsigned i=0;i<MIC_ARRAY_NUM_FREQ_CHANNELS;i++){
-               lib_dsp_fft_complex_t p[FFT_N];
 #if MIC_ARRAY_WORD_LENGTH_SHORT
                // convert current->data[i] into p
                lib_dsp_fft_short_to_long(p, (lib_dsp_fft_complex_short_t*)current->data[i], FFT_N); 
+
                //Apply one FFT to two channels at a time
                lib_dsp_fft_forward(p, FFT_N, lib_dsp_sine_512);
                //Reconstruct the two independent frequency domain representations
@@ -155,7 +173,6 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
                frequency->data[1][i].im = 0;
            }
 
-           lib_dsp_fft_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
            //Now to get channel 0 and channel 1 back to the time domain=
 #if MIC_ARRAY_WORD_LENGTH_SHORT
            // Note! frequency is an alias of current. current->data[0] has frequency->data[0] and frequency->data[1]
@@ -173,20 +190,7 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
            //   -The imaginary component will be the channel 1 time domain representation.
            //   -The real component will be the channel 0 time domain representation.
 
-
-           //apply the window function
-           for(unsigned i=0;i<FFT_N/2;i++){
-              long long t = (long long)window[i] * (long long)p[i].re;
-              p[i].re = (t>>31);
-              t = (long long)window[i] * (long long)p[i].im;
-              p[i].im = (t>>31);
-           }
-           for(unsigned i=FFT_N/2;i<FFT_N;i++){
-              long long t = (long long)window[FFT_N-1-i] * (long long)p[i].re;
-              p[i].re = (t>>31);
-              t = (long long)window[FFT_N-1-i] * (long long)p[i].im;
-              p[i].im = (t>>31);
-           }
+           apply_window_function(p, window, FFT_N);
 
            for(unsigned i=0; i<FFT_N ; i++) {
              c_audio <: p[i].re; // output channel 0
