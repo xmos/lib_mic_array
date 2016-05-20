@@ -23,5 +23,6 @@
    <Probe name="mic_4" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
    <Probe name="mic_5" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
    <Probe name="mic_6" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+   <Probe name="mic_7" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
 
 </xSCOPEconfig>

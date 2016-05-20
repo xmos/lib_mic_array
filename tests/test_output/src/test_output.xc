@@ -8,7 +8,7 @@
 #include <string.h>
 #include <xclib.h>
 #include <stdint.h>
-
+#include <math.h>
 #include "mic_array.h"
 #include "mic_array_board_support.h"
 
@@ -106,7 +106,7 @@ void test_output(streaming chanend c_ds_output[2],
                 c_audio <: output;
                 c_audio <: output;
 
-                for(unsigned i=0;i<7;i++){
+                for(unsigned i=0;i<8;i++){
                     xscope_int(i, current->data[i][j]);
                 }
 
@@ -222,6 +222,20 @@ void test_pdm_clock(){
         }
     }
 }
+
+void sine_gen(streaming chanend c_sine){
+#define SINE_FREQ 1000
+#define LUT_SIZE (OUTPUT_SAMPLE_RATE / SINE_FREQ)
+
+    int sine[LUT_SIZE];
+    for(unsigned i=0;i<LUT_SIZE;i++)
+        sine[i] = (int)((float)INT_MAX * sin(2*3.141592654*(float)i/(float)LUT_SIZE));
+
+    while(1){
+        for(unsigned i=0;i<LUT_SIZE;i++) mic_array_send_sample(c_sine, sine[i]);
+    }
+}
+
 int main(){
 
     i2s_callback_if i_i2s;
@@ -250,14 +264,19 @@ int main(){
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
 
+            streaming chan c_internal_audio;
 
             par{
                 mabs_button_and_led_server(lb, 1, leds, p_buttons);
                 mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
                 mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
-                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
+                {
+                    mic_array_internal_audio_channels internal_channels[4];
+                    mic_array_init_far_end_channels(internal_channels, null, null, null, c_internal_audio);
+                    mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1], internal_channels);
+                }
                 test_output(c_ds_output, lb[0], c_audio);
-                par(int i=0;i<3;i++)while(1);
+                sine_gen(c_internal_audio);
             }
         }
     }

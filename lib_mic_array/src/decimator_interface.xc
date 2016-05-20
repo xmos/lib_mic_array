@@ -9,15 +9,14 @@
 #include "xassert.h"
 #endif
 
-void mic_array_init_far_end_channels(unsigned channels[4],
+void mic_array_init_far_end_channels(mic_array_internal_audio_channels ch[4],
         streaming chanend ?a, streaming chanend ?b,
-        streaming chanend ?c, streaming chanend ?d)
-{
+        streaming chanend ?c, streaming chanend ?d) {
     unsafe {
-        channels[0] = isnull(a) ? null : (unsigned)&a;
-        channels[1] = isnull(b) ? null : (unsigned)&b;
-        channels[2] = isnull(c) ? null : (unsigned)&c;
-        channels[3] = isnull(d) ? null : (unsigned)&d;
+        ch[0] = isnull(a) ? null : (unsigned)a;
+        ch[1] = isnull(b) ? null : (unsigned)b;
+        ch[2] = isnull(c) ? null : (unsigned)c;
+        ch[3] = isnull(d) ? null : (unsigned)d;
     }
 }
 

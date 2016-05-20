@@ -392,6 +392,20 @@
 
 #endif
 
+
+
+#define SETUP_INTERNAL_CHANNEL(ID)\
+		ldw r3, r2[ID];\
+		stw r3, sp[S_FAR_END_CHANNEL_## ID];\
+		bf r3, internal_channel_## ID ##_done;\
+			out res[r3], r3;\
+		    out res[r3], r3;\
+	        ldap r11, internal_channel_## ID ##_event_vector;\
+		    setv res[r3], r11;\
+		    eeu res[r3];\
+        internal_channel_## ID ##_done:
+
+
 .globl	mic_array_decimate_to_pcm_4ch
 .align	8
 .type	mic_array_decimate_to_pcm_4ch,@function
@@ -405,11 +419,22 @@ mic_array_decimate_to_pcm_4ch:
 	stw r0, r3[S_C_INPUT]
 	stw r1, r3[S_C_OUTPUT]
 
-    stw r2, sp[S_FAR_END_CHANNEL_3]
-    bf r2, chan_3_init_complete
-	    out res[r2], r2
-	    out res[r2], r2
-    chan_3_init_complete:
+	clre
+	//if r2 != 0 then store the internal channels to the stack
+	bf r2, no_internal_channels_in_use
+		SETUP_INTERNAL_CHANNEL(0)
+		SETUP_INTERNAL_CHANNEL(1)
+		SETUP_INTERNAL_CHANNEL(2)
+		SETUP_INTERNAL_CHANNEL(3)
+	bu internal_channel_setup_complete
+
+	no_internal_channels_in_use:
+		stw r2, sp[S_FAR_END_CHANNEL_0]
+		stw r2, sp[S_FAR_END_CHANNEL_1]
+		stw r2, sp[S_FAR_END_CHANNEL_2]
+		stw r2, sp[S_FAR_END_CHANNEL_3]
+
+	internal_channel_setup_complete:
 
 	//Set the dp to point to the data area for the second stage FIR
 	ldaw dp, sp[S_SECOND_STAGE_DATA]
@@ -720,20 +745,28 @@ dc_offset_removal_complete:
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
 
-// This is where we can load from a channel
-    ldw r4, sp[S_FAR_END_CHANNEL_3]
-	{bf r4, chan_3_done;clre}
-		chan_3_not_null:
-	    ldap r11, chan_3_ready
-		setv res[r4], r11
-		eeu res[r4]
-	    setsr 0x1
-	    clrsr 0x1
-		bu chan_3_done
-		chan_3_ready:
-		in r3, res[r4]	//input from the channel (to overwrite channel 3)
-		out res[r4], r3	//output another token to the channel to let it know we have more space
-	chan_3_done:
+
+internal_channel_overwrite_begin:
+		 setsr 0x1
+		 nop
+	    {bu internal_channel_overwrite_complete; clrsr 0x1}
+		internal_channel_0_event_vector:
+		get r11, ed
+		in r0, res[r11]	//input from the channel (to overwrite channel 3)
+		{out res[r11], r0; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
+		internal_channel_1_event_vector:
+		get r11, ed
+		in r1, res[r11]	//input from the channel (to overwrite channel 3)
+		{out res[r11], r1; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
+		internal_channel_2_event_vector:
+		get r11, ed
+		in r2, res[r11]	//input from the channel (to overwrite channel 3)
+		{out res[r11], r2; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
+		internal_channel_3_event_vector:
+		get r11, ed
+		in r3, res[r11]	//input from the channel (to overwrite channel 3)
+		{out res[r11], r3; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
+	internal_channel_overwrite_complete:
 
 /*
 	zero_unused_channels:
