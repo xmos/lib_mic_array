@@ -844,6 +844,8 @@ PDM microphone processing
 .. doxygenfunction:: mic_array_decimator_configure
 .. doxygenstruct:: mic_array_decimator_config_t
 .. doxygenstruct:: mic_array_decimator_conf_common_t
+.. doxygenfunction:: mic_array_init_far_end_channels
+.. doxygenfunction:: mic_array_send_sample
 
 |newpage|
 
