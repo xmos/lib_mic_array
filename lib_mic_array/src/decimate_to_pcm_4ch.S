@@ -79,7 +79,11 @@
 #define S_FIR_GAIN_COMP     	9
 #define S_SIG_BITS_MASK     	10
 #define S_NOT_YET_USED     		11
-#define S_STORAGE_SIZE 			12
+#define S_FAR_END_CHANNEL_0     12
+#define S_FAR_END_CHANNEL_1     13
+#define S_FAR_END_CHANNEL_2     14
+#define S_FAR_END_CHANNEL_3     15
+#define S_STORAGE_SIZE 			16
 
 //////////////////////////////////////////////////////////////////////////////////////
 //this address must be double word aligned
@@ -397,9 +401,15 @@ mic_array_decimate_to_pcm_4ch:
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 
-	ldaw r2, sp[S_STORAGE]
-	stw r0, r2[S_C_INPUT]
-	stw r1, r2[S_C_OUTPUT]
+	ldaw r3, sp[S_STORAGE]
+	stw r0, r3[S_C_INPUT]
+	stw r1, r3[S_C_OUTPUT]
+
+    stw r2, sp[S_FAR_END_CHANNEL_3]
+    bf r2, chan_3_init_complete
+	    out res[r2], r2
+	    out res[r2], r2
+    chan_3_init_complete:
 
 	//Set the dp to point to the data area for the second stage FIR
 	ldaw dp, sp[S_SECOND_STAGE_DATA]
@@ -710,6 +720,22 @@ dc_offset_removal_complete:
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
 
+// This is where we can load from a channel
+    ldw r4, sp[S_FAR_END_CHANNEL_3]
+	{bf r4, chan_3_done;clre}
+		chan_3_not_null:
+	    ldap r11, chan_3_ready
+		setv res[r4], r11
+		eeu res[r4]
+	    setsr 0x1
+	    clrsr 0x1
+		bu chan_3_done
+		chan_3_ready:
+		in r3, res[r4]	//input from the channel (to overwrite channel 3)
+		out res[r4], r3	//output another token to the channel to let it know we have more space
+	chan_3_done:
+
+/*
 	zero_unused_channels:
 	{ldw r4, sp[S_CHAN_COUNT];}
 	eq r5, r4, 4
@@ -738,7 +764,7 @@ dc_offset_removal_complete:
 	{and r11, r11, r4;   mkmsk r6, r6}
 	{	nop			;	and r11, r11, r6}
 	{stw r11, sp[S_SIG_BITS_MASK] }
-
+*/
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];

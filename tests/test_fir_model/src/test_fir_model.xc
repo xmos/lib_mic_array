@@ -635,10 +635,10 @@ void channel_count_test(unsigned counts[], unsigned n){
                 _Exit(0);
             }
         }
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2]);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3], MIC_ARRAY_NO_INTERNAL_CHANS);
         while(1);
      }
 }

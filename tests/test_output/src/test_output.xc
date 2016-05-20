@@ -254,8 +254,8 @@ int main(){
             par{
                 mabs_button_and_led_server(lb, 1, leds, p_buttons);
                 mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
-                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
-                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1]);
+                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+                mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_1, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
                 test_output(c_ds_output, lb[0], c_audio);
                 par(int i=0;i<3;i++)while(1);
             }

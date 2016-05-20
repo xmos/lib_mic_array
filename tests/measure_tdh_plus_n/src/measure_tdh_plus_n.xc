@@ -206,7 +206,7 @@ void test_backend(){
     streaming chan c_ds_output[1];
     par {
         generate_backend_input(c_pdm_to_dec);
-        mic_array_decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
         get_backend_output(c_ds_output);
     }
 }
@@ -218,7 +218,7 @@ void test_all(){
     par {
         create_DSD_source(c_not_a_port);
         pdm_rx_debug(c_not_a_port, c_4x_pdm_mic_0, null);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
         get_backend_output(c_ds_output);
     }
 }

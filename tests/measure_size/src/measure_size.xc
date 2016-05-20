@@ -60,7 +60,7 @@ int main(){
         mic_array_pdm_rx(p_pdm_mics0, c_pdm_to_dec[0], c_pdm_to_dec[1]);
         mic_array_pdm_rx(p_pdm_mics1, c_pdm_to_dec[2], c_pdm_to_dec[3]);
         par(int i=0;i<DECIMATOR_COUNT;i++)
-            mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[i], c_ds_output[i]);
+            mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[i], c_ds_output[i], MIC_ARRAY_NO_INTERNAL_CHANS);
         example(c_ds_output);
     }
     return 0;

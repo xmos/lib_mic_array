@@ -79,8 +79,8 @@ int main(){
 
             par{
                 mic_array_pdm_rx(p_pdm_mics, c_pdm_to_dec[0], c_pdm_to_dec[1]);
-                mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0]);
-                mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1]);
+                mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+                mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
                 example(c_ds_output);
             }
         }

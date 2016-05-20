@@ -11,6 +11,9 @@
     #define MIC_ARRAY_HIRES_MAX_DELAY 256
 #endif
 
+#define MIC_ARRAY_NO_INTERNAL_CHANS (0)
+
+
 /** PDM Microphone Interface component.
  *
  *  This task handles the interface to up to 8 PDM microphones whilst also decimating
@@ -113,6 +116,8 @@ typedef struct {
 
 } mic_array_decimator_config_t;
 
+typedef unsigned mic_array_internal_audio_channels;
+
 /** Four Channel Decimation component.
  *
  *  This task decimates the four channel input down to the desired output sample rate.
@@ -128,8 +133,36 @@ typedef struct {
  */
 void mic_array_decimate_to_pcm_4ch(
         streaming chanend c_from_pdm_interface,
-        streaming chanend c_frame_output);
+        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels);
 
+/** Far end channel connector.
+ *
+ *  This function allowed a connection to be established between a signal producer and the microphone
+ *  array. The sample rate of the producer and sample rate of the output of the microphone array must
+ *  match.
+ *
+ *  \param c_from_pdm_interface      The channel where the decimated PDM from pdm_rx task will be inputted.
+ *  \param c_frame_output            The channel used to transfer data and control information between
+ *                                   the client of this task and this task.
+ */
+void mic_array_init_far_end_channels(mic_array_internal_audio_channels internal_channels[4],
+        streaming chanend ?a, streaming chanend ?b,
+        streaming chanend ?c, streaming chanend ?d);
+
+/** This sends an audio sample to a decimator.
+ *
+ *  This function call sets up the four channel decimators. After this has been called there
+ *  will be a real time requirement on this task, i.e. this task must call
+ *  mic_array_get_next_time_domain_frame() at the output sample rate multiplied by the frame size.
+ *
+ *  \param c_to_decimator    The channel used to transfer audio sample beterrn the application and
+ *                           the decimators.
+ *  \param sample            The audio sample to be transfered.
+ *  \returns                 0 for success and 1 for failure. Failure may occour when the decimators
+ *                           are not yet running.
+ *
+ */
+int mic_array_send_sample( streaming chanend c_to_decimator, int sample);
 
 /** Four Channel Decimation initializer for raw audio frames.
  *

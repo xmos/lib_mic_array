@@ -9,6 +9,29 @@
 #include "xassert.h"
 #endif
 
+void mic_array_init_far_end_channels(unsigned channels[4],
+        streaming chanend ?a, streaming chanend ?b,
+        streaming chanend ?c, streaming chanend ?d)
+{
+    unsafe {
+        channels[0] = isnull(a) ? null : (unsigned)&a;
+        channels[1] = isnull(b) ? null : (unsigned)&b;
+        channels[2] = isnull(c) ? null : (unsigned)&c;
+        channels[3] = isnull(d) ? null : (unsigned)&d;
+    }
+}
+
+int mic_array_send_sample( streaming chanend c_to_decimator, int sample){
+    select {
+        case c_to_decimator :> int:{
+            c_to_decimator <: sample;
+            return 0;
+        }
+        default:
+            return 1;
+    }
+}
+
 void mic_array_init_time_domain_frame(
         streaming chanend c_from_decimator[], unsigned decimator_count,
         unsigned &buffer, mic_array_frame_time_domain audio[],
