@@ -405,6 +405,8 @@ Metadata
 ........
 
 Both types of frame will have metadata attached to them that records the frame number.
+The frame counter is a unsigned 32 bit counter. Care must be taken when using this counter
+for extended periods as it will wrap (at 48kHz the counter will wrap after ~24hrs).
 
 
 Using the decimators
