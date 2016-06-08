@@ -468,6 +468,12 @@ stack_init_loop:
 	std r2, r2, r1[r0]
 	{bt r0, stack_init_loop; sub r0, r0, 1}
 
+	ldc r3, 0
+	ldaw r4, sp[S_FRAME_OFFSET]
+	stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+
+
+
 take_config_from_application:
 	//get the pointer for the config over the output channel
 	ldw r0, sp[S_C_OUTPUT]
@@ -912,17 +918,18 @@ internal_channel_overwrite_begin:
 			at_the_end_of_the_overlapping_half_frame:
 
 				//set the metadata
-/*
+
 				ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
 		        ldw r5, r4[S_METADATA_POINTER_1]
 		        std r7, r6, r5[0];
 		        ldw r3, r4[S_FRAME_NUMBER]
 		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
-*/
+	            stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+
 				ldw r6, sp[S_C_OUTPUT]
 				outct res[r6], 8 //WARNING: do not change this
 
-//		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 				inct r11, res[r6]
 
 		        eq r5, r11, EXCHANGE_BUFFERS		//if the incomming token is EXCHANGE_BUFFERS then do that
@@ -933,6 +940,7 @@ internal_channel_overwrite_begin:
 				ldw lr, sp[0]
 				retsp 0
 
+.align 8
 				flip_the_frames:
 				ldd r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_0]
 				std r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_1]

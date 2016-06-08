@@ -17,7 +17,7 @@
 typedef struct {
     int32_t min;                /**<The minimum data value in this frame. UNUSED*/
     int32_t max;                /**<The maximum data value in this frame. UNUSED */
-    unsigned frame_number;  	/**<The frame_number. UNUSED*/
+    unsigned frame_number;  	/**<The frame number.*/
     unsigned x;  		        /**<Padding. UNUSED*/
 } mic_array_metadata_t;
 
