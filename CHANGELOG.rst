@@ -9,7 +9,6 @@ lib_mic_array change log
     mic_array.
   * Enabled the metadata which delivers the frame counter.
 
-
 2.0.1
 -----
 
