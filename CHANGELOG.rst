@@ -7,6 +7,8 @@ lib_mic_array change log
   * Added ability to route internal channels of the output rate of the mic_array
     to the mic_array so that they can benefit from the post processing of the
     mic_array.
+  * Enabled the metadata which delivers the frame counter.
+
 
 2.0.1
 -----

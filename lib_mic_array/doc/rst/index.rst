@@ -400,6 +400,13 @@ Calls to ``mic_array_get_next_frequency_domain_frame()`` should be made to retri
 subsequent audio frames. These calls require the exact same parameters as 
 ``mic_array_init_frequency_domain_frame()``.
 
+
+Metadata
+........
+
+Both types of frame will have metadata attached to them that records the frame number.
+
+
 Using the decimators
 --------------------
 
@@ -867,6 +874,7 @@ Frame types
 .. doxygenstruct:: mic_array_frame_time_domain
 .. doxygenstruct:: mic_array_frame_frequency_domain
 .. doxygenstruct:: mic_array_frame_fft_preprocessed
+.. doxygenstruct:: mic_array_metadata_t
 
 High resolution delay task
 ..........................
