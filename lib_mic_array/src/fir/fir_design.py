@@ -102,7 +102,7 @@ def plot_response(H, file_name):
 ###############################################################################
 
 
-def generate_stage(num_taps, bands, a, divider=1, num_frequency_points=2048):
+def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=2048, stopband_attenuation = 75.0):
   
   w = [1] * len(a)
 
@@ -113,14 +113,13 @@ def generate_stage(num_taps, bands, a, divider=1, num_frequency_points=2048):
 
   epsilon = 0.00000001
 
-  stopband_attenuation = 75.0
-
   while running:
     test_weight = (weight_min + weight_max)/2.0
     for i in range(0, len(a)-1):
       if a[i] != 0:
-        w[i] = test_weight
+        w[i] = test_weight*weights[i]
     try:
+      print w
       h = signal.remez(num_taps, bands, a, w)
       
       (_, H) = signal.freqz(h, worN=2048)
@@ -157,6 +156,7 @@ def generate_first_stage(header, body, points):
   sbw = args.first_stage_stop_bw/args.pdm_sample_rate
   nulls = 1.0/8.0
   a = [1, 0, 0, 0, 0]
+  w = [1, 1, 1, 1, 1]
 
   bands = [ 0,           pbw,
             nulls*1-sbw, nulls*1+sbw,
@@ -165,7 +165,7 @@ def generate_first_stage(header, body, points):
             nulls*4-sbw, 0.5]
 
   first_stage_response, coefs =  generate_stage( 
-    first_stage_num_taps, bands, a)
+    first_stage_num_taps, bands, a, w)
 
   #ensure the there is never any overflow 
   coefs /= sum(abs(coefs))
@@ -221,13 +221,14 @@ def generate_second_stage(header, body, points):
   sbw = args.second_stage_stop_bw/(args.pdm_sample_rate/8.0)
   nulls = 1.0/4.0
   a = [1, 0, 0]
+  w = [1, 1, 1]
 
   bands = [ 0,           pbw,
             nulls*1-sbw, nulls*1+sbw,
             nulls*2-sbw, 0.5]
 
   second_stage_response, coefs =  generate_stage( 
-    second_stage_num_taps, bands, a)
+    second_stage_num_taps, bands, a, w)
 
   #ensure the there is never any overflow 
   coefs /= sum(abs(coefs))
@@ -279,12 +280,17 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
     pbw = passband/divider
     sbw = stopband/divider
 
-    a = [1, 0]
+    a = [0.1, 1, 0]
+    w = [0.1, 1, 1]
 
-    bands = [0, pbw, sbw, 0.5]
+    thing1 = (00.0/48000.0)/divider
+    thing2 = (200.0/48000.0)/divider
+
+    bands = [0, 0, thing2, pbw, sbw, 0.5]
+
 
     third_stage_response, coefs =  generate_stage( 
-      coefs_per_phase*divider, bands, a)
+      coefs_per_phase*divider, bands, a, w, stopband_attenuation = 70)
 
     #ensure the there is never any overflow 
     coefs /= sum(abs(coefs))
@@ -386,7 +392,6 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
     header.write("\n")
     print "Passband ripple = " + str(20.0*numpy.log10(passband_min/passband_max)) +" dB\n"
-
   return
 
 ###############################################################################
