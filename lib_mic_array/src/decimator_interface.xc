@@ -73,6 +73,20 @@ void mic_array_init_time_domain_frame(
 
     buffer = frames;
 }
+#if DEBUG_MIC_ARRAY
+static void check_timing(streaming chanend c_from_decimator){
+    unsigned char val;
+        #pragma ordered
+        select {
+            //Note: only checking decimator 0 is fine as if one fails they all fail
+            case sinct_byref(c_from_decimator, val):{
+                fail("Timing not met: decimators not serviced in time");
+                break;
+            }
+            default:break;
+        }
+}
+#endif
 
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
@@ -80,15 +94,7 @@ mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
          streaming chanend c_from_decimator[], unsigned decimator_count,
         unsigned &buffer, mic_array_frame_time_domain * alias audio, mic_array_decimator_config_t dc[]){
 #if DEBUG_MIC_ARRAY
-    unsigned char val;
-     #pragma ordered
-     select {
-         case sinct_byref(c_from_decimator[0], val):{
-             fail("Timing not met: decimators not serviced in time");
-             break;
-         }
-         default:break;
-     }
+    check_timing(c_from_decimator[0]);
 #endif
 
      for(unsigned i=0;i<decimator_count;i++)
@@ -174,15 +180,7 @@ mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_fra
      unsigned &buffer, mic_array_frame_fft_preprocessed * alias f_fft_preprocessed,
      mic_array_decimator_config_t dc[]){
 #if DEBUG_MIC_ARRAY
-     unsigned char val;
-     #pragma ordered
-     select {
-         case sinct_byref(c_from_decimator[0], val):{
-             fail("Timing not met: decimators not serviced in time");
-             break;
-         }
-         default:break;
-     }
+    check_timing(c_from_decimator[0]);
 #endif
 
      for(unsigned i=0;i<decimator_count;i++)
