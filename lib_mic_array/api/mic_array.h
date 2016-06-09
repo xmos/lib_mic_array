@@ -199,6 +199,13 @@ void mic_array_init_time_domain_frame(
  *  This function handles the frame exchange between the mic_array_decimate_to_pcm_4ch() tasks and the
  *  application. It returns a pointer to the most recently written frame. After this point the oldest
  *  frame is assumed out of scope to the application.
+ *  Current behaviour: this function must be called before the decimators have produced the full frame
+ *  and are ready for exachange. If this function is not called in time then the PDM data will be dropped
+ *  until the frame is accepted from the decimators. Failure to meet timing can be detected by enabling
+ *  DEBUG_MIC_ARRAY in your makefile with -DDEBUG_MIC_ARRAY.
+ *  Future behaviour: if this function is not called before the frame has been produced by the decimators
+ *  then the frame is dropped. This can be detected with the frame_counter attached to the metadata of the
+ *  frame. Sequential frames will have frame_counters that increament by one.
  *
  *  \param c_from_decimators The channels used to transfer pointers between the application and
  *                           the mic_array_decimate_to_pcm_4ch() tasks.
@@ -238,6 +245,13 @@ void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimators[]
  *  This function handles the frame exchange between the mic_array_decimate_to_pcm_4ch() tasks and the
  *  application. It returns a pointer to the most recently written frame. After this point the oldest
  *  frame is assumed out of scope to the application.
+ *  Current behaviour: this function must be called before the decimators have produced the full frame
+ *  and are ready for exachange. If this function is not called in time then the PDM data will be dropped
+ *  until the frame is accepted from the decimators. Failure to meet timing can be detected by enabling
+ *  DEBUG_MIC_ARRAY in your makefile with -DDEBUG_MIC_ARRAY.
+ *  Future behaviour: if this function is not called before the frame has been produced by the decimators
+ *  then the frame is dropped. This can be detected with the frame_counter attached to the metadata of the
+ *  frame. Sequential frames will have frame_counters that increament by one.
  *
  *  \param c_from_decimators   The channels used to transfer pointers between the application and
  *                            the mic_array_decimate_to_pcm_4ch() tasks.
