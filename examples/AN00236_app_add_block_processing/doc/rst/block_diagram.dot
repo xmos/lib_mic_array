@@ -1,0 +1,29 @@
+digraph g {
+	
+	i2s_master [label="i2s_master()", color=blue];
+	i2c_master_single_port [label="i2c_master_single_port()", color=blue];
+	i2s_handler [label="i2s_handler()", color=blue]; 
+	button_and_led_server [label="button_and_led_server()", color=red];
+	mic_array_pdm_rx [label="mic_array_pdm_rx()", color=red]; 
+	mic_array_hires_delay [label="mic_array_hires_delay()", color=red]; 
+	mic_array_decimate_to_pcm_4ch1 [label="mic_array_decimate_to_pcm_4ch()", color=red]; 
+	mic_array_decimate_to_pcm_4ch0 [label="mic_array_decimate_to_pcm_4ch()", color=red]; 
+	hires_DAS_fixed [label="hires_DAS_fixed()", color=red]; 
+  
+	pdm_mic  [label="PDM Microphone", shape=box]; 
+	dac  [label="Audio DAC", shape=box]; 
+
+	pdm_mic -> mic_array_pdm_rx;
+	
+	mic_array_pdm_rx -> mic_array_hires_delay;
+	mic_array_hires_delay -> mic_array_decimate_to_pcm_4ch0;
+	mic_array_hires_delay -> mic_array_decimate_to_pcm_4ch1;
+
+	button_and_led_server -> hires_DAS_fixed;
+	mic_array_decimate_to_pcm_4ch0 -> hires_DAS_fixed;
+	mic_array_decimate_to_pcm_4ch1 -> hires_DAS_fixed;
+	hires_DAS_fixed -> i2s_handler;
+	i2s_handler -> i2s_master;
+	i2s_master -> dac;
+	i2c_master_single_port -> dac;
+}

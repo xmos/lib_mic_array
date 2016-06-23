@@ -1,0 +1,62 @@
+.. include:: ../../README.rst
+
+|newpage|
+
+Overview
+--------
+
+Introduction
+............
+
+This demo application takes samples from channel 0 of the summed stereo signal and channels them into a double buffer of configurable size. The output side of the double buffer is processed by a C function implemented in process_buffer.c. 
+Arbitrary block processing algorithms can be inserted in that C function. For example algorithms for keyword recognition.
+
+Refer to the AN00218 for additional information.
+
+Block diagram
+.............
+
+.. figure:: block_diagram.pdf
+   :width: 80%
+
+   Application block diagram
+
+
+References
+----------
+
+.. nopoints::
+
+  * XMOS Tools User Guide
+
+    http://www.xmos.com/published/xtimecomposer-user-guide
+
+  * XMOS xCORE Programming Guide
+
+    http://www.xmos.com/published/xmos-programming-guide
+
+  * XMOS Microphone Array Library
+
+    http://www.xmos.com/support/libraries/lib_mic_array
+
+  * XMOS |I2C| Library
+
+    http://www.xmos.com/support/libraries/lib_i2c
+
+  * XMOS |I2S| Library
+
+    http://www.xmos.com/support/libraries/lib_i2s
+
+	
+|newpage|
+
+Full source code listing
+------------------------
+
+Source code for app_add_block_processing.xc
+...........................................
+
+.. literalinclude:: app_add_block_processing.xc
+  :largelisting:
+
+|newpage|
