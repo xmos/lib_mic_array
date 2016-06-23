@@ -526,11 +526,10 @@ following settings through ``decimator_config_common``:
   For other decimation factors see :ref:`section_advanced`.
   
 * ``coefs``: This is a pointer to an array of arrays containing the
-  coefficients for the final stage of decimation. Set this to
-  ``FIR_LUT(d)`` where ``d`` is the ``output_decimation_factor``; ``FIR_LUT()``
-  is defined in ``fir_decimator.h``.
-  If you wish to supply your own FIR coefficients; the array
-  should have the same number of entries as ``output_decimation_factor``.
+  coefficients for the final stage of decimation. For the provided 
+  decimators set this to ``g_third_stage_div_X_fir`` where ``X`` is 
+  the ``output_decimation_factor``.
+  If you wish to supply your own FIR coefficients see :ref:`section_advanced`.
   
 * ``fir_gain_compensation``: single value to compensate the gain of all the
   previous decimators. This must be set to a value that depends on the
