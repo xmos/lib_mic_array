@@ -54,7 +54,7 @@ void test(){
 
         }
 
-        mic_array_decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_pdm_to_dec, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
 
         {
             unsafe{

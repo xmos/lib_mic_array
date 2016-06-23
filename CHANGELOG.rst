@@ -1,6 +1,16 @@
 lib_mic_array change log
 ========================
 
+3.0.0
+-----
+
+  * Added ability to route internal channels of the output rate of the mic_array
+    to the mic_array so that they can benefit from the post processing of the
+    mic_array.
+  * Enabled the metadata which delivers the frame counter.
+  * Tested and enabled the debug mode for detecting frame dropping. Enabled by
+    adding -DDEBUG_MIC_ARRAY to the Makefile.
+
 2.0.1
 -----
 

@@ -6,24 +6,17 @@ TARGET = XCORE-200-EXPLORER
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to
 # the project name
-APP_NAME = test_fir_model
+APP_NAME = test_frame_drop
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_logging lib_mic_array
+USED_MODULES = lib_mic_array lib_xassert
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:
 # XCC_XC_FLAGS, XCC_C_FLAGS, XCC_ASM_FLAGS, XCC_CPP_FLAGS
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-COMMON_FLAGS = -O2 -g -DDEBUG_PRINT_ENABLE=1 -report -Wno-timing
-
-XCC_FLAGS_COUNT4_LONG = $(COMMON_FLAGS) -DCOUNT=4 -DMIC_ARRAY_WORD_LENGTH_SHORT=0
-XCC_XC_FLAGS_COUNT4_LONG = 
-XCC_FLAGS_COUNT64_LONG = $(COMMON_FLAGS) -DCOUNT=64 -DMIC_ARRAY_WORD_LENGTH_SHORT=0
-XCC_FLAGS_COUNT4_SHORT = $(COMMON_FLAGS) -DCOUNT=4 -DMIC_ARRAY_WORD_LENGTH_SHORT=1
-XCC_FLAGS_COUNT64_SHORT = $(COMMON_FLAGS) -DCOUNT=64 -DMIC_ARRAY_WORD_LENGTH_SHORT=1
-
+XCC_FLAGS = -O2 -g -DDEBUG_MIC_ARRAY
 
 # The XCORE_ARM_PROJECT variable, if set to 1, configures this
 # project to create both xCORE and ARM binaries.

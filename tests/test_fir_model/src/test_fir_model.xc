@@ -351,6 +351,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
             memset(f_complex, 0, sizeof(mic_array_frame_fft_preprocessed)*FRAME_COUNT);
 
 
+        unsigned frame_number = 0;
             if(index_bit_reversal){
                 mic_array_decimator_conf_common_t dcc = {frame_size_log2, 0, index_bit_reversal, 0, df, fir,
                             gain_comp_enabled, fir_comp, buf_type, FRAME_COUNT};
@@ -372,7 +373,15 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
                        mic_array_frame_fft_preprocessed *  current = mic_array_get_next_frequency_domain_frame(c_ds_output,  channel_count/4, buffer, f_complex, dc);
-                        for(unsigned f=0;f<(1<<frame_size_log2);f++){
+
+                       for(unsigned md=0;md < channel_count/4;md++){
+                           if(current->metadata[md].frame_number != frame_number){
+                               printf("error 1\n");
+                           }
+                       }
+                       frame_number++;
+
+                       for(unsigned f=0;f<(1<<frame_size_log2);f++){
                             unsigned ff = bitreverse(f, frame_size_log2);
                             unsigned index = (c<<frame_size_log2) + bitreverse(f, frame_size_log2);
                             for(unsigned m=0;m<channel_count/2;m++){
@@ -384,7 +393,17 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                } else {
                    for(unsigned c=0;c<2*COUNT;c++){
                        mic_array_frame_fft_preprocessed *  current = mic_array_get_next_frequency_domain_frame(c_ds_output,  channel_count/4, buffer, f_complex, dc);
-                        if(c > 0){
+
+
+                       for(unsigned md=0;md < channel_count/4;md++){
+                           if(current->metadata[md].frame_number != frame_number){
+                               printf("error 2\n");
+                           }
+                       }
+                       frame_number++;
+
+
+                       if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
                                 for(unsigned m=0;m<channel_count/2;m++){
                                     //TODO compare to the previous buffer - if not windowing
@@ -424,7 +443,17 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                if(buf_type==DECIMATOR_NO_FRAME_OVERLAP){
                    for(unsigned c=0;c<COUNT;c++){
                        mic_array_frame_time_domain *  current = mic_array_get_next_time_domain_frame(c_ds_output, channel_count/4, buffer, audio, dc);
-                        for(unsigned f=0;f<(1<<frame_size_log2);f++){
+
+
+                       for(unsigned md=0;md < channel_count/4;md++){
+
+                           if(current->metadata[md].frame_number != frame_number){
+                               printf("error 3\n");
+                           }
+                       }
+                       frame_number++;
+
+                       for(unsigned f=0;f<(1<<frame_size_log2);f++){
                             for(unsigned m=0;m<channel_count;m++){
                                 output[m][(c<<frame_size_log2) + f] = current->data[m][f];
                             }
@@ -433,7 +462,16 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                } else {
                    for(unsigned c=0;c<2*COUNT;c++){
                        mic_array_frame_time_domain *  current = mic_array_get_next_time_domain_frame(c_ds_output, channel_count/4, buffer, audio, dc);
-                        if(c > 0){
+
+
+                       for(unsigned md=0;md < channel_count/4;md++){
+                           if(current->metadata[md].frame_number != frame_number){
+                               printf("error 4\n");
+                           }
+                       }
+                       frame_number++;
+
+                       if(c > 0){
                             for(unsigned f=0;f<(1<<(frame_size_log2-1));f++){
                                 unsigned index = (c<<(frame_size_log2-1)) + f - (1<<(frame_size_log2-1));
                                 for(unsigned m=0;m<channel_count;m++){
@@ -635,10 +673,10 @@ void channel_count_test(unsigned counts[], unsigned n){
                 _Exit(0);
             }
         }
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0]);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1]);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2]);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[2], c_ds_output[2], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[3], c_ds_output[3], MIC_ARRAY_NO_INTERNAL_CHANS);
         while(1);
      }
 }

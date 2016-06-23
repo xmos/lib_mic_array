@@ -113,7 +113,7 @@ int main(){
         }
 
         pdm_rx_debug(not_a_port, c_4x_pdm_mic_0, null);
-        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0]);
+        mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
         test_output(c_ds_output);
         par(int i=0;i<4;i++)while(1);
     }

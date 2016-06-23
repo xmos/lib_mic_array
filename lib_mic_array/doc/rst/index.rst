@@ -400,6 +400,15 @@ Calls to ``mic_array_get_next_frequency_domain_frame()`` should be made to retri
 subsequent audio frames. These calls require the exact same parameters as 
 ``mic_array_init_frequency_domain_frame()``.
 
+
+Metadata
+........
+
+Both types of frame will have metadata attached to them that records the frame number.
+The frame counter is a unsigned 32 bit counter. Care must be taken when using this counter
+for extended periods as it will wrap (at 48kHz the counter will wrap after ~24hrs). The 
+frame counter will increament every time a frame is accepted. 
+
 Using the decimators
 --------------------
 
@@ -844,6 +853,8 @@ PDM microphone processing
 .. doxygenfunction:: mic_array_decimator_configure
 .. doxygenstruct:: mic_array_decimator_config_t
 .. doxygenstruct:: mic_array_decimator_conf_common_t
+.. doxygenfunction:: mic_array_init_far_end_channels
+.. doxygenfunction:: mic_array_send_sample
 
 |newpage|
 
@@ -865,6 +876,7 @@ Frame types
 .. doxygenstruct:: mic_array_frame_time_domain
 .. doxygenstruct:: mic_array_frame_frequency_domain
 .. doxygenstruct:: mic_array_frame_fft_preprocessed
+.. doxygenstruct:: mic_array_metadata_t
 
 High resolution delay task
 ..........................

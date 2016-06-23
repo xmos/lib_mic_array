@@ -79,7 +79,11 @@
 #define S_FIR_GAIN_COMP     	9
 #define S_SIG_BITS_MASK     	10
 #define S_NOT_YET_USED     		11
-#define S_STORAGE_SIZE 			12
+#define S_FAR_END_CHANNEL_0     12
+#define S_FAR_END_CHANNEL_1     13
+#define S_FAR_END_CHANNEL_2     14
+#define S_FAR_END_CHANNEL_3     15
+#define S_STORAGE_SIZE 			16
 
 //////////////////////////////////////////////////////////////////////////////////////
 //this address must be double word aligned
@@ -388,6 +392,20 @@
 
 #endif
 
+
+
+#define SETUP_INTERNAL_CHANNEL(ID)\
+		ldw r3, r2[ID];\
+		stw r3, sp[S_FAR_END_CHANNEL_## ID];\
+		bf r3, internal_channel_## ID ##_done;\
+			out res[r3], r3;\
+		    out res[r3], r3;\
+	        ldap r11, internal_channel_## ID ##_event_vector;\
+		    setv res[r3], r11;\
+		    eeu res[r3];\
+        internal_channel_## ID ##_done:
+
+
 .globl	mic_array_decimate_to_pcm_4ch
 .align	8
 .type	mic_array_decimate_to_pcm_4ch,@function
@@ -397,9 +415,26 @@ mic_array_decimate_to_pcm_4ch:
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 
-	ldaw r2, sp[S_STORAGE]
-	stw r0, r2[S_C_INPUT]
-	stw r1, r2[S_C_OUTPUT]
+	ldaw r3, sp[S_STORAGE]
+	stw r0, r3[S_C_INPUT]
+	stw r1, r3[S_C_OUTPUT]
+
+	clre
+	//if r2 != 0 then store the internal channels to the stack
+	bf r2, no_internal_channels_in_use
+		SETUP_INTERNAL_CHANNEL(0)
+		SETUP_INTERNAL_CHANNEL(1)
+		SETUP_INTERNAL_CHANNEL(2)
+		SETUP_INTERNAL_CHANNEL(3)
+	bu internal_channel_setup_complete
+
+	no_internal_channels_in_use:
+		stw r2, sp[S_FAR_END_CHANNEL_0]
+		stw r2, sp[S_FAR_END_CHANNEL_1]
+		stw r2, sp[S_FAR_END_CHANNEL_2]
+		stw r2, sp[S_FAR_END_CHANNEL_3]
+
+	internal_channel_setup_complete:
 
 	//Set the dp to point to the data area for the second stage FIR
 	ldaw dp, sp[S_SECOND_STAGE_DATA]
@@ -432,6 +467,12 @@ configure:
 stack_init_loop:
 	std r2, r2, r1[r0]
 	{bt r0, stack_init_loop; sub r0, r0, 1}
+
+	ldc r3, 0
+	ldaw r4, sp[S_FRAME_OFFSET]
+	stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+
+
 
 take_config_from_application:
 	//get the pointer for the config over the output channel
@@ -710,6 +751,30 @@ dc_offset_removal_complete:
 		lextract r3, r8, r9, r7, 32
 	gain_comp_complete:
 
+
+internal_channel_overwrite_begin:
+		 setsr 0x1
+		 nop
+	    {bu internal_channel_overwrite_complete; clrsr 0x1}
+		internal_channel_0_event_vector:
+		get r11, ed
+		in r0, res[r11]	//input from the channel (to overwrite channel 3)
+		{out res[r11], r0; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
+		internal_channel_1_event_vector:
+		get r11, ed
+		in r1, res[r11]	//input from the channel (to overwrite channel 3)
+		{out res[r11], r1; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
+		internal_channel_2_event_vector:
+		get r11, ed
+		in r2, res[r11]	//input from the channel (to overwrite channel 3)
+		{out res[r11], r2; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
+		internal_channel_3_event_vector:
+		get r11, ed
+		in r3, res[r11]	//input from the channel (to overwrite channel 3)
+		{out res[r11], r3; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
+	internal_channel_overwrite_complete:
+
+/*
 	zero_unused_channels:
 	{ldw r4, sp[S_CHAN_COUNT];}
 	eq r5, r4, 4
@@ -738,7 +803,7 @@ dc_offset_removal_complete:
 	{and r11, r11, r4;   mkmsk r6, r6}
 	{	nop			;	and r11, r11, r6}
 	{stw r11, sp[S_SIG_BITS_MASK] }
-
+*/
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
@@ -853,17 +918,18 @@ dc_offset_removal_complete:
 			at_the_end_of_the_overlapping_half_frame:
 
 				//set the metadata
-/*
+
 				ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
 		        ldw r5, r4[S_METADATA_POINTER_1]
 		        std r7, r6, r5[0];
 		        ldw r3, r4[S_FRAME_NUMBER]
 		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
-*/
+	            stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+
 				ldw r6, sp[S_C_OUTPUT]
 				outct res[r6], 8 //WARNING: do not change this
 
-//		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
+		        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 				inct r11, res[r6]
 
 		        eq r5, r11, EXCHANGE_BUFFERS		//if the incomming token is EXCHANGE_BUFFERS then do that
@@ -874,6 +940,7 @@ dc_offset_removal_complete:
 				ldw lr, sp[0]
 				retsp 0
 
+.align 8
 				flip_the_frames:
 				ldd r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_0]
 				std r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_1]

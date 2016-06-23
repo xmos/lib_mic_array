@@ -83,8 +83,8 @@ int main() {
     par {
         mic_array_pdm_rx(p_pdm_mics, c_pdm_to_hires[0], c_pdm_to_hires[1]);
         mic_array_hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
-        mic_array_decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
-        mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+        mic_array_decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
         example(c_ds_output, c_cmd);
     }
 
