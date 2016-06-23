@@ -1,8 +1,8 @@
 .. |I2S| replace:: I\ :sup:`2`\ S
 .. |I2C| replace:: I\ :sup:`2`\ C
 
-Add Block Processing for Keyword Recognition
-============================================
+Add Block Processing of audio samples
+=====================================
 
 .. version:: 1.0.0
 
@@ -10,7 +10,8 @@ Summary
 -------
 
 This example is based on `AN00218: High Resolution Delay and Sum <https://www.xmos.com/support/appnotes/AN00218>`_.
-It adds the ability for block processing of audio data and configuration options for 16 kHz sample rate and 16 bit sample resolution.
+It adds the ability for block processing of audio data. This is useful e.g. for keyword recognition algorithms.
+sample rate (16 kHz, 48 kHz) and sample resolution (16 bit, 32 bit) are configurable.
 
 This document is a supplementary to AN00218.
 

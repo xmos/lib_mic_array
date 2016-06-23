@@ -16,9 +16,12 @@
 #include "mic_array_conf.h"
 
 //If the decimation factor is changed the the coefs array of decimator_config must also be changed.
-#define DECIMATION_FACTOR   6   //Corresponds to a 16kHz output sample rate
+
+// Default is 16 kHz sampling rate. Replace "6" with "2" to change to 48kHz.
+#define DECIMATION_FACTOR   6   
 #define FIR_COMPENSATOR FIR_COMPENSATOR_DIV_6
 #define THIRD_STAGE_DIV_FIR g_third_stage_div_6_fir
+
 #define DECIMATOR_COUNT     2   //8 channels requires 2 decimators
 #define FRAME_BUFFER_COUNT  2   //The minimum of 2 will suffice for this example
 #define I2S_MODE I2S_MODE_LEFT_JUSTIFIED

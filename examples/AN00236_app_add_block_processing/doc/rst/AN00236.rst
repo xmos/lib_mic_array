@@ -11,15 +11,50 @@ Introduction
 This demo application takes samples from channel 0 of the summed stereo signal and channels them into a double buffer of configurable size. The output side of the double buffer is processed by a C function implemented in process_buffer.c. 
 Arbitrary block processing algorithms can be inserted in that C function. For example algorithms for keyword recognition.
 
-Refer to the AN00218 for additional information.
+This document a supplement for AN00218. 
+It describes adding the functionality depicted in green in the `Block diagram`_:
+
+ - A double buffer which is filled with samples from the i2s_handler task.
+ - The output of the double is processed by the a function implemented in C: process_buffer
+ - The double buffer memory and control are implemented in the distributable task: double_buffer
+
+See `Source code for app_add_block_processing.xc`_.
+
+Please refer to the AN00218 for additional information.
 
 Block diagram
 .............
+
+.. _figure_1:
 
 .. figure:: block_diagram.pdf
    :width: 80%
 
    Application block diagram
+
+
+|newpage|
+
+Configuration
+.............
+
+The sample rate can be configured in app_add_block_processing.xc:
+
+.. literalinclude:: app_add_block_processing.xc
+   :start-on: // Default is 16 kHz sampling rate.
+   :end-on: #define THIRD_STAGE_DIV_FIR 
+
+The sample resolution can be configured in mic_array_conf.h:
+
+.. literalinclude:: mic_array_conf.h
+   :start-after: #define MIC_ARRAY_NUM_MICS 8
+   :end-before: #endif
+
+The buffer size can be configured in double_buffer.h:
+
+.. literalinclude:: double_buffer.h
+   :start-after: #include "mic_array_conf.h"
+   :end-before: #if MIC_ARRAY_WORD_LENGTH_SHORT
 
 
 References

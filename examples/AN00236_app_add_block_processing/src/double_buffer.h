@@ -4,7 +4,7 @@
 
 #include "mic_array_conf.h"
 
-#define BUF_SIZE           240
+#define BUF_SIZE           240  // 15 ms at 16 kHz
 
 #if MIC_ARRAY_WORD_LENGTH_SHORT
 #define BUFFER_TYPE int16_t
