@@ -10,6 +10,11 @@ lib_mic_array change log
   * Enabled the metadata which delivers the frame counter.
   * Tested and enabled the debug mode for detecting frame dropping. Enabled by
     adding -DDEBUG_MIC_ARRAY to the Makefile.
+  * Moved to using types from lib_dsp.
+
+  * Changes to dependencies:
+
+    - lib_dsp: Added dependency 3.0.0
 
 2.0.1
 -----
