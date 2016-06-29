@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include "mic_array_conf.h"
+#include "dsp_fft.h"
 
 #ifndef MIC_ARRAY_NUM_MICS
     #warning Count of microphones not defined in mic_array_conf.h, defaulting to 16
@@ -22,15 +23,11 @@ typedef struct {
 } mic_array_metadata_t;
 
 /** Complex number in Cartesian coordinates.*/
-typedef struct {
 #if MIC_ARRAY_WORD_LENGTH_SHORT
-    int16_t re;     /**<The real component. */
-    int16_t im;     /**<The imaginary component. */
+    typedef dsp_complex_short_t mic_array_complex_t;
 #else
-    int32_t re;     /**<The real component. */
-    int32_t im;     /**<The imaginary component. */
+    typedef dsp_complex_t mic_array_complex_t;
 #endif
-} mic_array_complex_t;
 
 /** A frame of raw audio.*/
 typedef struct {
