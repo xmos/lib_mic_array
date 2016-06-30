@@ -230,7 +230,7 @@ connect to the PDM interface via streaming channels::
   }
 
 There is a further requirement that any application of a ``mic_array_decimate_to_pcm_4ch()`` 
-task must be on the same tile as the ``mic_array_decimate_to_pcm_4ch()`` task due to the sharaed
+task must be on the same tile as the ``mic_array_decimate_to_pcm_4ch()`` task due to the shared
 frame memory.
   
 As the PDM interface ``mic_array_pdm_rx()`` communicates over channels then the placement of it
