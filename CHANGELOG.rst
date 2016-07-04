@@ -11,6 +11,8 @@ lib_mic_array change log
   * Tested and enabled the debug mode for detecting frame dropping. Enabled by
     adding -DDEBUG_MIC_ARRAY to the Makefile.
   * Moved to using types from lib_dsp.
+  * Bug fix in python FIR generator script resulting in excessive output ripple.
+  * Default FIR coefficients now optimised for 16kHz output sample rate.
 
   * Changes to dependencies:
 

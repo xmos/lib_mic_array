@@ -22,22 +22,22 @@ def parseArguments(third_stage_configs):
     parser.add_argument('--pdm-sample-rate', type=float, default=3072.0,
                         help='The sample rate (in kHz) of the PDM microphones',
                         metavar='kHz')
-    parser.add_argument('--stopband-attenuation', type=int, default=80,
+    parser.add_argument('--stopband-attenuation', type=int, default=62,
       help='The desired attenuation to apply to the stop band at each stage')
 
     parser.add_argument('--first-stage-pass-bw', type=float, default=16.0,
       help='The pass bandwidth (in kHz) of the first stage filter.'
                              ' Starts at 0Hz and ends at this frequency',
                         metavar='kHz')
-    parser.add_argument('--first-stage-stop-bw', type=float, default=100.0,
+    parser.add_argument('--first-stage-stop-bw', type=float, default=110.0,
       help='The stop bandwidth (in kHz) of the first stage filter.',
                         metavar='kHz')
 
-    parser.add_argument('--second-stage-pass-bw', type=float, default=16.0,
+    parser.add_argument('--second-stage-pass-bw', type=float, default=8,
       help='The pass bandwidth (in kHz) of the second stage filter.'
                              ' Starts at 0Hz and ends at this frequency',
                         metavar='kHz')
-    parser.add_argument('--second-stage-stop-bw', type=float, default=16.0,
+    parser.add_argument('--second-stage-stop-bw', type=float, default=8,
       help='The stop bandwidth (in kHz) of the second stage filter.',
                         metavar='kHz')
 
@@ -102,7 +102,7 @@ def plot_response(H, file_name):
 ###############################################################################
 
 
-def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=2048, stopband_attenuation = 75.0):
+def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=2048, stopband_attenuation = 65.0):
   
   w = [1] * len(a)
 
@@ -111,7 +111,7 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
 
   running = True
 
-  epsilon = 0.00000001
+  epsilon = 0.0000000001
 
   while running:
     test_weight = (weight_min + weight_max)/2.0
@@ -119,7 +119,6 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
       if a[i] != 0:
         w[i] = test_weight*weights[i]
     try:
-      print w
       h = signal.remez(num_taps, bands, a, w)
       
       (_, H) = signal.freqz(h, worN=2048)
@@ -139,7 +138,7 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
         return
       else:
         weight_min = test_weight
-
+    
   (_, H) = signal.freqz(h, worN=num_frequency_points)
   
   return H, h
@@ -280,8 +279,8 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
     pbw = passband/divider
     sbw = stopband/divider
 
-    a = [0.1, 1, 0]
-    w = [0.1, 1, 1]
+    a = [1, 1, 0]
+    w = [1, 1, 1]
 
     thing1 = (00.0/48000.0)/divider
     thing2 = (200.0/48000.0)/divider
@@ -290,7 +289,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
 
     third_stage_response, coefs =  generate_stage( 
-      coefs_per_phase*divider, bands, a, w, stopband_attenuation = 70)
+      coefs_per_phase*divider, bands, a, w)
 
     #ensure the there is never any overflow 
     coefs /= sum(abs(coefs))
@@ -400,10 +399,10 @@ if __name__ == "__main__":
   # Each entry generates a output
   third_stage_configs = [
       [2,  0.38, 0.50, "div_2", 32],
-      [4,  0.40, 0.50, "div_4", 32],
-      [6,  0.40, 0.50, "div_6", 32],
-      [8,  0.40, 0.50, "div_8", 32],
-      [12, 0.40, 0.50, "div_12", 32]
+      [4,  0.42, 0.52, "div_4", 32],
+      [6,  0.42, 0.52, "div_6", 32],
+      [8,  0.42, 0.52, "div_8", 32],
+      [12, 0.42, 0.52, "div_12", 32]
   ]
   args = parseArguments(third_stage_configs)
 

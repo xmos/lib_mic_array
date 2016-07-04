@@ -726,16 +726,16 @@ of noise into the passband for all output sample rates.
   ======================== ============ ============ ========== ==========
   output_decimation_factor Passband(Hz) Stopband(Hz) Ripple(dB) THD+N(dB)
   ======================== ============ ============ ========== ==========
-  2                         18240        24000        1.93        -144.63
-  4                         9600         12000        0.64        -142.61
-  6                         6400         8000         0.37        -139.10
-  8                         4800         6000         0.24        -136.60
-  12                        3200         4000         0.18        -133.07
-  2                         16758        22050        1.93        -144.63
-  4                         8820         11025        0.64        -142.61
-  6                         5880         7350         0.37        -139.10
-  8                         4410         5512.5       0.24        -136.60
-  12                        2940         3675         0.18        -133.07
+  2                         18240        24000        0.12        -144.63
+  4                         10080        12480        0.05        -142.61
+  6                         6720         8320         0.04        -139.10
+  8                         5040         6240         0.04        -136.60
+  12                        3360         4160         0.04        -133.07
+  2                         16758        22050        0.12        -144.63
+  4                         9261         11466        0.05        -142.61
+  6                         6174         7644         0.04        -139.10
+  8                         4630         5733         0.04        -136.60
+  12                        3087         3822         0.04        -133.07
   ======================== ============ ============ ========== ==========
 
 The decimation is achieved by applying three poly-phase FIR filters sequentially. 
@@ -753,13 +753,16 @@ FIR as the final stage decimation FIR and/or by reducing the number of taps on t
 Advanced filter design
 ......................
 
-The above table has been generated to provide 80dB of stopband attenuation for all decimation factors
+The above table has been generated to provide 65dB of stopband attenuation for all decimation factors
 whilst maintaining a fairly flat passband and wide bandwidth. However for a given specification 
 the filter characteristics can be optimised to reduce latency, increase passband, lower the 
 passband ripple and increase the signal to noise ratio. For example, in a system where a 16kHz
 output is required then limiting the passband to 8kHz would improve the other properties. Equally, 
 if the noise floor of the PDM microphone is 65dB then there is little advantage exceeding that in the
 filter. 
+
+Note, as of version 3.0.0 the default FIR coefficients are optimised for 16kHz output with a stopband 
+attenuation of 65dB. Read below to specify custom filter characteristics.
 
 ``fir_design.py`` usage
 .......................
