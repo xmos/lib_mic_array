@@ -87,7 +87,7 @@ void lores_DAS_fixed(streaming chanend c_ds_output[DECIMATOR_COUNT],
         mic_array_frame_time_domain audio[FRAME_BUFFER_COUNT];
 
         #define MAX_DELAY 16
-        unsigned gain = 8;
+        unsigned gain = (1<<16);
         unsigned delay[7];
         int delay_buffer[MAX_DELAY][7];
         memset(delay_buffer, 0, sizeof(int)*MAX_DELAY*7);
@@ -167,7 +167,9 @@ void lores_DAS_fixed(streaming chanend c_ds_output[DECIMATOR_COUNT],
             int output = 0;
             for(unsigned i=0;i<7;i++)
                 output += (delay_buffer[(delay_head - delay[i])%MAX_DELAY][i]>>3);
-            output *= gain;
+
+            output = ((int64_t)output * (int64_t)gain)>>16;
+
 
             // Update the center LED with a volume indicator
             unsigned value = output >> 20;
@@ -284,6 +286,7 @@ int main() {
                 mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
                 mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
                 lores_DAS_fixed(c_ds_output, lb[0], c_audio);
+                par(int i=0;i<3;i++)while(1);
             }
         }
     }
