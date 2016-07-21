@@ -484,6 +484,14 @@ Optionally, ``mic_array_conf.h`` may define
      If this define is set to non-zero then this configures the output word length to be a 16 bit 
 	 short otherwise its left as 32 bit word length output. All internal processing will be done at
 	 32 bits, only during the write to frame memory will the truncation happen.
+
+   * MIC_ARRAY_FIXED_GAIN
+
+     If this define will apply a fixed gain to the 64 bit output of the final stage decimation FIR. 
+	 The define should be set to an integer between -32 and +32. The define referes to the ammount that
+     the signal should be left shifted by with positive number increasing the signal and negative numbers
+     decreasing the signal. The use of this can cause distortion. There is no saturation logic included
+	 in	the gain control.
 	 
 	 
 Four Channel Decimator
