@@ -940,9 +940,9 @@ internal_channel_overwrite_begin:
 	ldd r5, r6, r11[S_D_THIRD_STAGE_CH1_ACC]
 	lextract r1, r5, r6, r7, 32
 	ldd r5, r6, r11[S_D_THIRD_STAGE_CH2_ACC]
-	lextract r3, r5, r6, r7, 32
+	lextract r2, r5, r6, r7, 32
 	ldd r5, r6, r11[S_D_THIRD_STAGE_CH3_ACC]
-	lextract r4, r5, r6, r7, 32
+	lextract r3, r5, r6, r7, 32
 
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
