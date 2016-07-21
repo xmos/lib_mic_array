@@ -142,9 +142,12 @@ void lores_DAS_fixed(streaming chanend c_ds_output[DECIMATOR_COUNT],
                             break;
 
                         case 2:
-                            if (gain == 0)
-                                gain = 5;
-                            gain = ((gain<<3) + gain)>>3;
+                            if (gain < 1)
+                                gain = 1;
+                            int new_gain = ((gain<<1) + gain)>>1;
+                            if (new_gain - gain == 0)
+                                new_gain++;
+                            gain = new_gain;
                             debug_printf("gain: %d\n", gain);
                             break;
 

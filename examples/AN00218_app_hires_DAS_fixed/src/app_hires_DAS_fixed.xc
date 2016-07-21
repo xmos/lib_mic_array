@@ -131,13 +131,17 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                             break;
 
                         case 1:
-                            if (gain > 0)
-                                gain--;
+                            gain = ((gain<<3) - gain)>>3;
                             debug_printf("gain: %d\n", gain);
                             break;
 
                         case 2:
-                            gain++;
+                            if (gain < 1)
+                                gain = 1;
+                            int new_gain = ((gain<<1) + gain)>>1;
+                            if (new_gain - gain == 0)
+                                new_gain++;
+                            gain = new_gain;
                             debug_printf("gain: %d\n", gain);
                             break;
 
