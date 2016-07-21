@@ -14,6 +14,10 @@
 	#define MIC_ARRAY_DC_OFFSET_LOG2 8
 #endif
 
+#ifndef MIC_ARRAY_FIXED_GAIN
+	#define MIC_ARRAY_FIXED_GAIN 		0  		//x 6.02db. Apply a fixed gain to the outputs
+#endif
+
 .xtacommand "analyse endpoints input_0_0_ep input_1_0_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 .xtacommand "analyse endpoints input_1_0_ep input_2_0_ep","", __FILE__, __LINE__
@@ -140,7 +144,7 @@
 #define S_D_FRAME_POINTER_AND_INDEX_1 4
 #define S_D_FRAME_MIN_MAX_0       	  5
 #define S_D_FRAME_MIN_MAX_1       	  6
-#define S_C_UNUSED				0
+#define S_FRAME_GAIN			0   //this is the current gain on the frame
 #define S_FRAME_SIZE_LOG2		1	//this is the current frame size log2
 #define S_FRAME_NUMBER			2	//should this be presistant between configs?
 #define S_OVERLAPPING_FRAMES    3	//0 for on overlap, 1 for overlapping
@@ -332,63 +336,25 @@
 	#define SAVE_SAMPLES_NORMAL(POINTER, N)\
 		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
     	{add r7, r6, r5; ldw r8, r4[POINTER]};\
-    	{ldw r11, sp[S_CHAN_COUNT]; add r5, r5, r5};\
-		{eq r10, r11, 4;  nop };\
+    	{add r5, r5, r5};\
 		{shr r0, r0, 16; shr r1, r1, 16};\
 		{shr r2, r2, 16; shr r3, r3, 16};\
-		{bf r10, not_four ## N; eq r10, r11, 3};\
 		st16 r1, r8[r7];\
 		st16 r0, r8[r6];\
 		{add r7, r7, r5; add r6, r6, r5};\
 		st16 r3, r8[r7];\
-		st16 r2, r8[r6];\
-		bu done ## N;\
-		not_four ## N:;\
-		{bf r10, not_three ## N; eq r10, r11, 2};\
-		st16 r1, r8[r7];\
-		st16 r0, r8[r6];\
-		{nop; add r6, r6, r5};\
-		st16 r2, r8[r6];\
-		bu done ## N;\
-		not_three ## N:;\
-		{bf r10, not_two ## N; eq r10, r11, 1};\
-		st16 r1, r8[r7];\
-		st16 r0, r8[r6];\
-		bu done ## N;\
-		not_two ## N:;\
-		{bf r10, done ## N; eq r10, r11, 0};\
-		st16 r0, r8[r6];\
-		done ## N:
+		st16 r2, r8[r6]
 
 #else
 	#define SAVE_SAMPLES_NORMAL(POINTER, N)\
 		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
     	{add r7, r6, r5; ldw r8, r4[POINTER]};\
-    	{ldw r11, sp[S_CHAN_COUNT]; add r5, r5, r5};\
-		{eq r10, r11, 4;  nop };\
-		{bf r10, not_four ## N; eq r10, r11, 3};\
+    	{add r5, r5, r5};\
 		stw r1, r8[r7];\
 		stw r0, r8[r6];\
 		{add r7, r7, r5; add r6, r6, r5};\
 		stw r3, r8[r7];\
-		stw r2, r8[r6];\
-		bu done ## N;\
-		not_four ## N:;\
-		{bf r10, not_three ## N; eq r10, r11, 2};\
-		stw r1, r8[r7];\
-		stw r0, r8[r6];\
-		{nop; add r6, r6, r5};\
-		stw r2, r8[r6];\
-		bu done ## N;\
-		not_three ## N:;\
-		{bf r10, not_two ## N; eq r10, r11, 1};\
-		stw r1, r8[r7];\
-		stw r0, r8[r6];\
-		bu done ## N;\
-		not_two ## N:;\
-		{bf r10, done ## N; eq r10, r11, 0};\
-		stw r0, r8[r6];\
-		done ## N:
+		stw r2, r8[r6]
 
 #endif
 
@@ -472,7 +438,9 @@ stack_init_loop:
 	ldaw r4, sp[S_FRAME_OFFSET]
 	stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 
-
+initialise_frame_gain:
+	ldc r10, MIC_ARRAY_FIXED_GAIN
+	stw r10, r4[S_FRAME_GAIN]
 
 take_config_from_application:
 	//get the pointer for the config over the output channel
@@ -774,7 +742,7 @@ internal_channel_overwrite_begin:
 		{out res[r11], r3; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
 	internal_channel_overwrite_complete:
 
-/*
+#if 0
 	zero_unused_channels:
 	{ldw r4, sp[S_CHAN_COUNT];}
 	eq r5, r4, 4
@@ -787,8 +755,9 @@ internal_channel_overwrite_begin:
 	bt r5, zero_channels_complete
 	ldc r0, 0
 	zero_channels_complete:
+#endif
 
-
+#if 0
 	{clz r4, r0;		ldw	r11, sp[S_SIG_BITS_MASK]}
 	{neg r5, r0;		clz r6, r1 }
 	{clz r5, r5;		neg r7, r1 }
@@ -803,7 +772,8 @@ internal_channel_overwrite_begin:
 	{and r11, r11, r4;   mkmsk r6, r6}
 	{	nop			;	and r11, r11, r6}
 	{stw r11, sp[S_SIG_BITS_MASK] }
-*/
+#endif
+
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
@@ -954,40 +924,44 @@ internal_channel_overwrite_begin:
 		        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}
 
 		        get_the_new_metadata_pointer2:
-		        {in r3, res[r6]}
-		        {stw r3, r4[S_METADATA_POINTER_0]}
+		        {in r5, res[r6];ldw r7, sp[S_C_OUTPUT]}
 				std r0, r0, r4[S_D_FRAME_MIN_MAX_0]  //reset the frame min and max to 0
-
-				ldw r4, sp[S_C_OUTPUT]
-				outct res[r4], 8 //WARNING: do not change this
+				{outct res[r7], 8; stw r5, r4[S_METADATA_POINTER_0]}//WARNING: do not change this
 
 	do_the_rest:
 	ldaw r11, sp[S_THIRD_STAGE]
+	ldaw r4, sp[S_FRAME_OFFSET]
 
 	//copy accumulators to store
-	{ldw r0, r11[7]  ; nop}
-	{ldw r1, r11[9]	 ; nop}
-	{ldw r2, r11[11] ; ldc r3, 13}
-	{ldw r3, r11[r3] ; ldc r10, 0}
+	{ldw r10, r4[S_FRAME_GAIN]; ldc r7, 32}
+	{sub r7, r7, r10; ldc r10, 0}
+	ldd r5, r6, r11[S_D_THIRD_STAGE_CH0_ACC]
+	lextract r0, r5, r6, r7, 32
+	ldd r5, r6, r11[S_D_THIRD_STAGE_CH1_ACC]
+	lextract r1, r5, r6, r7, 32
+	ldd r5, r6, r11[S_D_THIRD_STAGE_CH2_ACC]
+	lextract r3, r5, r6, r7, 32
+	ldd r5, r6, r11[S_D_THIRD_STAGE_CH3_ACC]
+	lextract r4, r5, r6, r7, 32
 
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
 
+	//increment S_THIRD_STAGE_COEFS_PHASE mod THIRD_STAGE_COEFS_PER_STAGE
+	{ldw r1, r11[S_THIRD_STAGE_COEFS_PHASE]; ldc r9, THIRD_STAGE_COEFS_PER_STAGE}
 	//set S_THIRD_STAGE_PHASE to 0
-	stw r10, r11[S_THIRD_STAGE_PHASE];
+	{add r1, r1, 1}
+	{stw r10, r11[S_THIRD_STAGE_PHASE];lsu r9, r1, r9}
 	//reset accumulators
+
 	std r10, r10, r11[S_D_THIRD_STAGE_CH0_ACC]
 	std r10, r10, r11[S_D_THIRD_STAGE_CH1_ACC]
+	mul r1, r1, r9
 	std r10, r10, r11[S_D_THIRD_STAGE_CH2_ACC]
 	std r10, r10, r11[S_D_THIRD_STAGE_CH3_ACC]
 
-	//increment S_THIRD_STAGE_COEFS_PHASE mod THIRD_STAGE_COEFS_PER_STAGE
-	ldw r10, r11[S_THIRD_STAGE_COEFS_PHASE]
-	{add r10, r10, 1; ldc r9, THIRD_STAGE_COEFS_PER_STAGE}
-	lsu r9, r10, r9
-	mul r10, r10, r9
-	stw r10, r11[S_THIRD_STAGE_COEFS_PHASE]
+	stw r1, r11[S_THIRD_STAGE_COEFS_PHASE]
 	retsp 0
 
 .cc_bottom post_process.function
