@@ -25,7 +25,7 @@ def parseArguments(third_stage_configs):
     parser.add_argument('--stopband-attenuation', type=int, default=62,
       help='The desired attenuation to apply to the stop band at each stage')
 
-    parser.add_argument('--first-stage-pass-bw', type=float, default=16.0,
+    parser.add_argument('--first-stage-pass-bw', type=float, default=42.0,
       help='The pass bandwidth (in kHz) of the first stage filter.'
                              ' Starts at 0Hz and ends at this frequency',
                         metavar='kHz')
