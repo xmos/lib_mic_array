@@ -1,7 +1,7 @@
 Efficient frequency domain audio processing
 ===========================================
 
-.. version:: 1.0.2
+.. version:: 1.0.3
 
 Summary
 -------

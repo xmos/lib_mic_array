@@ -4,7 +4,7 @@
 High Resolution Delay and Sum
 =============================
 
-.. version:: 1.0.2
+.. version:: 1.0.3
 
 Summary
 -------
