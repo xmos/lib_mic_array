@@ -84,7 +84,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
         unsigned buffer;
         memset(data, 0, 8*THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR*sizeof(int));
 
-        unsigned gain = 8;
+        unsigned gain = (1<<16);
         unsigned delay[7];
         unsigned dir = 0;
         set_dir(lb, dir, delay);
@@ -131,13 +131,17 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
                             break;
 
                         case 1:
-                            if (gain > 0)
-                                gain--;
+                            gain = ((gain<<3) - gain)>>3;
                             debug_printf("gain: %d\n", gain);
                             break;
 
                         case 2:
-                            gain++;
+                            if (gain < 1)
+                                gain = 1;
+                            int new_gain = ((gain<<1) + gain)>>1;
+                            if (new_gain - gain == 0)
+                                new_gain++;
+                            gain = new_gain;
                             debug_printf("gain: %d\n", gain);
                             break;
 
@@ -163,7 +167,7 @@ void hires_DAS_fixed(streaming chanend c_ds_output[2],
             int output = 0;
             for(unsigned i=0;i<7;i++)
                 output += (current->data[i][0]>>3);
-            output *= gain;
+            output = ((int64_t)output * (int64_t)gain)>>16;
 
             // Update the center LED with a volume indicator
             unsigned value = output >> 20;
