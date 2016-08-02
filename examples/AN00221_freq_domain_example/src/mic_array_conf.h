@@ -5,7 +5,6 @@
 #define MIC_ARRAY_WORD_LENGTH_SHORT 0 // 32 bit samples
 
 #if MIC_ARRAY_WORD_LENGTH_SHORT
-//#define MIC_ARRAY_MAX_FRAME_SIZE_LOG2 12 // 4k FFT. Builds but there is no audio.
 #define MIC_ARRAY_MAX_FRAME_SIZE_LOG2 9 // 512 FFT
 #else
 #define MIC_ARRAY_MAX_FRAME_SIZE_LOG2 9 // 512 FFT
