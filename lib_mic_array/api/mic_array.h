@@ -1,4 +1,4 @@
-// Copyright (c) 2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
 #ifndef MIC_ARRAY_H_
 #define MIC_ARRAY_H_
 
