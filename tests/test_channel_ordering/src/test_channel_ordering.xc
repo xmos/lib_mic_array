@@ -49,6 +49,7 @@ void test8ch_frontend(){
                     count++;
                 }
                 printf("Pin %d -> Channel ",ch);
+                //printf("*Channel %d -> Pin ",ch);
                 for(unsigned i=0;i<8;i++){
                     int diff =  vals[i]-initial;
                     if(diff)
@@ -98,6 +99,7 @@ void test4ch_frontend(){
                     count++;
                 }
                 printf("Pin %d -> Channel ",ch);
+                //printf("Channel %d -> Pin ",ch);
                 for(unsigned i=0;i<4;i++){
                     int diff =  vals[i]-initial;
                     if(diff)

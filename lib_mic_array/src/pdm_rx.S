@@ -126,7 +126,7 @@ pdm_rx_asm://(
 	ldc c, CH0
 	bt c_two, pdm_rx_8ch_loop
 
-	ldc c, 0
+	ldc c, CH0
 	.align 8
 pdm_rx_4ch_loop:
 
@@ -139,14 +139,14 @@ pdm_rx_4ch_loop:
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT(4, c_one)	//output c_one
+	OUTPUT(CH1, c_one)	//output c_one
 	FIR();
-	OUTPUT(2, c_one)	//output c_one
+	OUTPUT(CH2, c_one)	//output c_one
 	FIR();
-	{mov temp_one, a; ldc c, 6}
+	{mov temp_one, a; ldc c, CH3}
 	FIR();
 	{out res[c_one], temp_one}
-	OUTPUT(0, c_one)	//output unused0 then this to c_one
+	OUTPUT(CH0, c_one)	//output unused0 then this to c_one
 
 	ldd a, b, p[4]
 	std a, b, p[5]
