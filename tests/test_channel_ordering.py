@@ -22,4 +22,6 @@ def do_channel_ordering_test(test_name, testlevel):
 def runtest():
     do_channel_ordering_test("FRONTEND_8BIT_4CH", "smoke")
     do_channel_ordering_test("FRONTEND_8BIT_8CH", "smoke")
+    do_channel_ordering_test("FRONTEND_8BIT_4CH_CHANREORDER", "smoke")
+    do_channel_ordering_test("FRONTEND_8BIT_8CH_CHANREORDER", "smoke")
     do_channel_ordering_test("BACKEND", "smoke")

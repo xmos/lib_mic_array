@@ -464,7 +464,7 @@ An application that uses ``lib_mic_array`` must define the header file
      This defines the number of microphones in use. It is used for allocating memory in the
 	 frame structures. 
 
-Optionally, ``mic_array_conf.h`` may define
+Optionally, ``mic_array_conf.h`` may define:
 
    * MIC_ARRAY_DC_OFFSET_LOG2
 
@@ -485,15 +485,25 @@ Optionally, ``mic_array_conf.h`` may define
 	 short otherwise its left as 32 bit word length output. All internal processing will be done at
 	 32 bits, only during the write to frame memory will the truncation happen.
 
+   * Microphone to channel remapping
+
+     By default pin ``n`` is mapped to channel ``n`` for all the pins of the microphone input 
+     port. If a reordering of pins to channels is required then the ordering can be overridden 
+     with the define ``MIC_ARRAY_CHn`` and the pin``PINm`` where ``n`` and ``m`` are the channel 
+     number and pin number respectivly. For example, ``#define MIC_ARRAY_CH0 PIN2`` would map 
+     pin 2 of the microphone input port to channel 0. Any undefined channel are left as the default 
+     mapping.
+
    * MIC_ARRAY_FIXED_GAIN
 
      If this define will apply a fixed gain to the 64 bit output of the final stage decimation FIR. 
-	 The define should be set to an integer between -32 and +32. The define referes to the ammount that
-     the signal should be left shifted by with positive number increasing the signal and negative numbers
-     decreasing the signal. The use of this can cause distortion. There is no saturation logic included
-	 in	the gain control.
+     The define should be set to an integer between -32 and +32. The define referes to the 
+     ammount that the signal should be left shifted by with positive number increasing the 
+     signal and negative numbers decreasing the signal. The use of this can cause distortion. 
+     There is no saturation logic included in the gain control.
 	 
-	 
+
+
 Four Channel Decimator
 ----------------------
 
@@ -882,7 +892,6 @@ PCM frame interfacing
 Frame types
 ...........
 
-.. doxygenstruct:: mic_array_complex_t
 .. doxygenstruct:: mic_array_frame_time_domain
 .. doxygenstruct:: mic_array_frame_frequency_domain
 .. doxygenstruct:: mic_array_frame_fft_preprocessed

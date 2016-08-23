@@ -32,18 +32,33 @@
 #define PIN6 3
 #define PIN7 7
 
-//This mapping allows pins to be mapped to channels
-//First decimator
-#define CH0 PIN0
-#define CH1 PIN1
-#define CH2 PIN2
-#define CH3 PIN3
+#include "mic_array_conf.h"
 
-//Second decimator
-#define CH4 PIN4
-#define CH5 PIN5
-#define CH6 PIN6
-#define CH7 PIN7
+	//This mapping allows pins to be mapped to channels
+#ifndef MIC_ARRAY_CH0
+	#define MIC_ARRAY_CH0 PIN0
+#endif
+#ifndef MIC_ARRAY_CH1
+	#define MIC_ARRAY_CH1 PIN1
+#endif
+#ifndef MIC_ARRAY_CH2
+	#define MIC_ARRAY_CH2 PIN2
+#endif
+#ifndef MIC_ARRAY_CH3
+	#define MIC_ARRAY_CH3 PIN3
+#endif
+#ifndef MIC_ARRAY_CH4
+	#define MIC_ARRAY_CH4 PIN4
+#endif
+#ifndef MIC_ARRAY_CH5
+	#define MIC_ARRAY_CH5 PIN5
+#endif
+#ifndef MIC_ARRAY_CH6
+	#define MIC_ARRAY_CH6 PIN6
+#endif
+#ifndef MIC_ARRAY_CH7
+	#define MIC_ARRAY_CH7 PIN7
+#endif
 
 #define STACKWORDS 16
 
@@ -123,10 +138,10 @@ pdm_rx_asm://(
 
 	ldaw p, sp[0]
 
-	ldc c, CH0
+	ldc c,  MIC_ARRAY_CH0
 	bt c_two, pdm_rx_8ch_loop
 
-	ldc c, CH0
+	ldc c,  MIC_ARRAY_CH0
 	.align 8
 pdm_rx_4ch_loop:
 
@@ -139,14 +154,14 @@ pdm_rx_4ch_loop:
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT(CH1, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
 	FIR();
-	OUTPUT(CH2, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
 	FIR();
-	{mov temp_one, a; ldc c, CH3}
+	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
 	FIR();
 	{out res[c_one], temp_one}
-	OUTPUT(CH0, c_one)	//output unused0 then this to c_one
+	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
 
 	ldd a, b, p[4]
 	std a, b, p[5]
@@ -179,24 +194,24 @@ pdm_rx_8ch_loop:
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT(CH4, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH4, c_one)	//output c_one
 	FIR();
-	OUTPUT(CH1, c_two)	//output c_two
+	OUTPUT( MIC_ARRAY_CH1, c_two)	//output c_two
 	FIR();
-	OUTPUT(CH5, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH5, c_one)	//output c_one
 	FIR();
-	OUTPUT(CH2, c_two)	//output c_two
+	OUTPUT( MIC_ARRAY_CH2, c_two)	//output c_two
 	FIR();
-	{mov temp_one, a; ldc c, CH6}
+	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6}
 	FIR();
-	{mov temp_two, a; ldc c, CH3}
+	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3}
 	FIR();
-	{mov temp_three, a; ldc c, CH7}
+	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7}
 	FIR();
 	{out res[c_one], temp_one}
 	{out res[c_two], temp_two}
 	{out res[c_one], temp_three}
-	OUTPUT(CH0, c_two)
+	OUTPUT( MIC_ARRAY_CH0, c_two)
 
 	ldd a, b, p[4]
 	std a, b, p[5]
