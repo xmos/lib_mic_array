@@ -50,38 +50,45 @@ void test_output(streaming chanend c_ds_output[1]){
         memset(data, sizeof(int)*THIRD_STAGE_COEFS_PER_STAGE*8*DF, 0);
 
         for(unsigned index = 0; index < 5;index ++){
+            unsigned max_count = 0;
 
+            for(unsigned run = 0; run < 64;run ++){
+                mic_array_decimator_conf_common_t dcc = {0, 0, 0, 0, df[index],
+                        coefs[index], 0, comp[index],
+                        DECIMATOR_NO_FRAME_OVERLAP, 2};
+                mic_array_decimator_config_t dc[1] = {{&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}};
 
-            mic_array_decimator_conf_common_t dcc = {0, 0, 0, 0, df[index],
-                    coefs[index], 0, comp[index],
-                    DECIMATOR_NO_FRAME_OVERLAP, 2};
-            mic_array_decimator_config_t dc[1] = {{&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}};
+                mic_array_decimator_configure(c_ds_output, 1, dc);
 
-            mic_array_decimator_configure(c_ds_output, 1, dc);
+                mic_array_init_time_domain_frame(c_ds_output, 1, buffer, audio, dc);
 
-            mic_array_init_time_domain_frame(c_ds_output, 1, buffer, audio, dc);
+                int v;
+                for(unsigned i=0;i<64;i++)
+                    v = mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc)->data[0][0];
 
-            int v;
-            for(unsigned i=0;i<64;i++)
-                v = mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc)->data[0][0];
+                asm volatile("");
+                g_mem = 0xffffffff;
+                asm volatile("");
+                unsigned count = 0;
+                while(v<0){
+                    mic_array_frame_time_domain *  current = mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc);
+                    v = current->data[0][0];
+                    count++;
+                }
+                asm volatile("");
+                g_mem = 0;
+                asm volatile("");
+                for(unsigned i=0;i<64;i++)
+                    mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc)->data[0][0];
 
-            asm volatile("");
-            g_mem = 0xffffffff;
-            asm volatile("");
-            unsigned count = 0;
-            while(v<0){
-                mic_array_frame_time_domain *  current = mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc);
-                v = current->data[0][0];
-                count++;
+                if(count > max_count)
+                    max_count = count;
+
             }
-            asm volatile("");
-            g_mem = 0;
-            asm volatile("");
-            for(unsigned i=0;i<64;i++)
-                mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc)->data[0][0];
-            printf("%d Hz -> %3d samples phase delay\n", 96000/df[index], count);
+            printf("%d Hz -> %3d samples phase delay\n", 96000/df[index], max_count);
         }
     }
+    _Exit(1);
 }
 
 
