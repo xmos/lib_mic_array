@@ -81,13 +81,12 @@
 #define S_DC_OFFSET_SAMPLE_NO   8
 
 #define S_FIR_GAIN_COMP     	9
-#define S_SIG_BITS_MASK     	10
-#define S_NOT_YET_USED     		11
-#define S_FAR_END_CHANNEL_0     12
-#define S_FAR_END_CHANNEL_1     13
-#define S_FAR_END_CHANNEL_2     14
-#define S_FAR_END_CHANNEL_3     15
-#define S_STORAGE_SIZE 			16
+
+#define S_FAR_END_CHANNEL_0     10
+#define S_FAR_END_CHANNEL_1     11
+#define S_FAR_END_CHANNEL_2     12
+#define S_FAR_END_CHANNEL_3     13
+#define S_STORAGE_SIZE 			14
 
 //////////////////////////////////////////////////////////////////////////////////////
 //this address must be double word aligned
@@ -142,8 +141,8 @@
 #define S_FRAME_OFFSET (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
 #define S_D_FRAME_POINTER_AND_INDEX_0 3
 #define S_D_FRAME_POINTER_AND_INDEX_1 4
-#define S_D_FRAME_MIN_MAX_0       	  5
-#define S_D_FRAME_MIN_MAX_1       	  6
+#define S_D_FRAME_NO_OVERLAPPING      1
+#define S_D_METADATA_POINTERS 		  2
 #define S_FRAME_GAIN			0   //this is the current gain on the frame
 #define S_FRAME_SIZE_LOG2		1	//this is the current frame size log2
 #define S_FRAME_NUMBER			2	//should this be presistant between configs?
@@ -154,11 +153,7 @@
 #define S_FRAME_0_INDEX     	7	//index to write to the current frame
 #define S_FRAME_POINTER_1 		8	//pointer to the next frame
 #define S_FRAME_1_INDEX     	9	//index to write to the next frame
-#define S_FRAME_MIN_0				10   //must be double word aligned
-#define S_FRAME_MAX_0				11
-#define S_FRAME_MIN_1				12   //must be double word aligned
-#define S_FRAME_MAX_1				13
-#define FRAME_STACK_SIZE		14
+#define FRAME_STACK_SIZE		10
 
 #define S_MIC_CALIB_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)
 #define S_MIC_CALIB_0 		0
@@ -508,8 +503,6 @@ init_frame_index:
 	{sub r1, r1, 1; ldc r10, 1}
 	shl r1, r10, r1
 	stw r1, r11[S_FRAME_1_INDEX]
-	std r1, r1, r11[S_D_FRAME_MIN_MAX_0]
-	std r1, r1, r11[S_D_FRAME_MIN_MAX_1]
 
 get_frame_pointer:
 	ldw r2, sp[S_C_OUTPUT]
@@ -522,18 +515,25 @@ get_frame_pointer:
 	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
 	    saving_non_overlapping_metadata_pointer:
-		stw r1, r11[S_METADATA_POINTER_0]
+		{stw r1, r11[S_METADATA_POINTER_0];ldc r2, 0 }
+		std r2, r2, r1[0]	//init the sig bits
+		std r2, r2, r1[1]	//init the sig bits
 		bu setup_phase_counters
 
 	overlapping:
 	    {in r1, res[r2];}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
 	    saving_overlapping_metadata_pointer_1:
-		stw r1, r11[S_METADATA_POINTER_1]
+		{stw r1, r11[S_METADATA_POINTER_0]; ldc r3, 0}
+		std r3, r3, r1[0]	//init the sig bits
+		std r3, r3, r1[1]	//init the sig bits
+
 	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
 	    saving_overlapping_metadata_pointer_0:
-		stw r1, r11[S_METADATA_POINTER_0]
+		{stw r1, r11[S_METADATA_POINTER_1];ldc r2, 0 }
+		std r2, r2, r1[0]	//init the sig bits
+		std r2, r2, r1[1]	//init the sig bits
 
 setup_phase_counters:
 	ldaw r10, sp[S_THIRD_STAGE]
@@ -654,9 +654,65 @@ post_process:
 	{add r9, r10, 1; ldw r8, r11[S_THIRD_STAGE_PHASE_COUNT]}
 	{stw r9, r11[S_THIRD_STAGE_PHASE];eq r8, r8, r9}
 
-	bt r8, output_phase
-	bf r10, process_phase
+	bt r8, output_phase		//do this on phase S_THIRD_STAGE_PHASE_COUNT-1 (last phase)
+	{sub r10, r10, 1; bf r10, process_phase}	//do this on phase 0
+	{sub r10, r10, 1; bf r10, analytics0}		//do this on phase 1
 	retsp 0
+
+	analytics0:
+
+	ldaw r4, sp[S_OUTPUT_STORAGE];
+	ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01];
+	ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+
+	{ldc r4, 0; ldc r5, 0}
+	maccs r4, r5, r0, r0
+
+
+	ldaw r10, sp[S_FRAME_OFFSET]
+
+    ldd r9, r8, r10[S_D_METADATA_POINTERS]
+	ldw r10, r10[S_OVERLAPPING_FRAMES]
+
+	//copy r8 over r9 to stop
+	//exceptions in non-overlapping frames
+	{bt r10, update_sig_bits; ldc r11, 0}
+		mov r9, r8
+	update_sig_bits:
+
+	{lss r4, r0, r11;lss r5, r1, r11}
+	{bf r4, r0_done; mov r4, r0}
+	neg r4, r0
+	r0_done:
+	{bf r5, r1_done; mov r5, r1}
+	neg r5, r1
+	r1_done:
+
+	ldd r7, r6, r8[0]
+	{or r6, r6, r4; or r7, r7, r5}
+	std r7, r6, r8[0]
+
+	ldd r7, r6, r9[0]
+	{or r6, r6, r4; or r7, r7, r5}
+	std r7, r6, r9[0]
+
+	{lss r4, r2, r11;lss r5, r3, r11}
+	{bf r4, r2_done; mov r4, r2}
+	neg r4, r2
+	r2_done:
+	{bf r5, r3_done; mov r5, r3}
+	neg r5, r3
+	r3_done:
+
+	ldd r7, r6, r8[1]
+	{or r6, r6, r4; or r7, r7, r5}
+	std r7, r6, r8[1]
+
+	ldd r7, r6, r9[1]
+	{or r6, r6, r4; or r7, r7, r5}
+	std r7, r6, r9[1]
+	retsp 0
+
 
 	process_phase:
 	//r0, r1, r2, r3 are used as storage for the output of the 3rd stage FIR
@@ -742,38 +798,6 @@ internal_channel_overwrite_begin:
 		{out res[r11], r3; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
 	internal_channel_overwrite_complete:
 
-#if 0
-	zero_unused_channels:
-	{ldw r4, sp[S_CHAN_COUNT];}
-	eq r5, r4, 4
-	bt r5, zero_channels_complete
-	{ldc r3, 0; eq r5, r4, 3}
-	bt r5, zero_channels_complete
-	{ldc r2, 0; eq r5, r4, 2}
-	bt r5, zero_channels_complete
-	{ldc r1, 0; eq r5, r4, 1}
-	bt r5, zero_channels_complete
-	ldc r0, 0
-	zero_channels_complete:
-#endif
-
-#if 0
-	{clz r4, r0;		ldw	r11, sp[S_SIG_BITS_MASK]}
-	{neg r5, r0;		clz r6, r1 }
-	{clz r5, r5;		neg r7, r1 }
-	{add r4, r5, r4;	clz r7, r7 }
-	{mkmsk r4, r4;      add r6, r6, r7}
-	{and r11, r11, r4;   mkmsk r6, r6}
-	{clz r4, r1;		and r11, r11, r6}
-	{neg r5, r1;		clz r6, r2 }
-	{clz r5, r5;		neg r7, r2 }
-	{add r4, r5, r4;	clz r7, r7 }
-	{mkmsk r4, r4;      add r6, r6, r7}
-	{and r11, r11, r4;   mkmsk r6, r6}
-	{	nop			;	and r11, r11, r6}
-	{stw r11, sp[S_SIG_BITS_MASK] }
-#endif
-
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
@@ -821,11 +845,9 @@ internal_channel_overwrite_begin:
 
 			write_the_current_frames_metadata:
 
-			ldd r7, r6, r4[S_D_FRAME_MIN_MAX_0]
 	        ldw r5, r4[S_METADATA_POINTER_0]
-	        std r7, r6, r5[0];
 	        ldw r3, r4[S_FRAME_NUMBER]
-	        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
+	        {stw r3, r5[4]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
 	        stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 
 			exchange_buffers:
@@ -848,7 +870,8 @@ internal_channel_overwrite_begin:
 	        get_the_new_metadata_pointer:
 	        {in r3, res[r6]}
 	        {stw r3, r4[S_METADATA_POINTER_0]}
-			std r0, r0, r4[S_D_FRAME_MIN_MAX_0]  //reset the frame min and max to 0
+			std r0, r0, r3[0]	//set the frame sig bits to 0
+			std r0, r0, r3[1]  	//set the frame sig bits to 0
 
 			ldw r4, sp[S_C_OUTPUT]
 			outct res[r4], 8 //WARNING: do not change this
@@ -888,12 +911,9 @@ internal_channel_overwrite_begin:
 			at_the_end_of_the_overlapping_half_frame:
 
 				//set the metadata
-
-				ldd r7, r6, r4[S_D_FRAME_MIN_MAX_1]
-		        ldw r5, r4[S_METADATA_POINTER_1]
-		        std r7, r6, r5[0];
+		        ldw r5, r4[S_METADATA_POINTER_0]
 		        ldw r3, r4[S_FRAME_NUMBER]
-		        {stw r3, r5[2]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
+		        {stw r3, r5[4]; add r3, r3, 1}	//if metadata layout changes then this needs to change too
 	            stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 
 				ldw r6, sp[S_C_OUTPUT]
@@ -914,19 +934,18 @@ internal_channel_overwrite_begin:
 				flip_the_frames:
 				ldd r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_0]
 				std r3, r5, r4[S_D_FRAME_POINTER_AND_INDEX_1]
-				ldd r3, r5, r4[S_D_FRAME_MIN_MAX_0]
-				std r3, r5, r4[S_D_FRAME_MIN_MAX_1]
 
-		        ldw r5, r4[S_METADATA_POINTER_0]
+		        ldw r5, r4[S_METADATA_POINTER_1]
 		        {in r3, res[r6]; ldc r0, 0}
-		        stw r5, r4[S_METADATA_POINTER_1]
+		        stw r5, r4[S_METADATA_POINTER_0]
 
 		        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}
 
 		        get_the_new_metadata_pointer2:
 		        {in r5, res[r6];ldw r7, sp[S_C_OUTPUT]}
-				std r0, r0, r4[S_D_FRAME_MIN_MAX_0]  //reset the frame min and max to 0
-				{outct res[r7], 8; stw r5, r4[S_METADATA_POINTER_0]}//WARNING: do not change this
+				{outct res[r7], 8; stw r5, r4[S_METADATA_POINTER_1]}//WARNING: do not change this
+				std r0, r0, r5[0]  //reset the frame sig bits to 0
+				std r0, r0, r5[1]  //reset the frame sig bits to 0
 
 	do_the_rest:
 	ldaw r11, sp[S_THIRD_STAGE]

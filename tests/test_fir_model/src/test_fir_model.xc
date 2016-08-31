@@ -376,7 +376,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
 
                        for(unsigned md=0;md < channel_count/4;md++){
                            if(current->metadata[md].frame_number != frame_number){
-                               printf("error 1\n");
+                               printf("error 1: got frame %d expected %d\n", current->metadata[md].frame_number, frame_number);
                            }
                        }
                        frame_number++;
@@ -397,7 +397,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
 
                        for(unsigned md=0;md < channel_count/4;md++){
                            if(current->metadata[md].frame_number != frame_number){
-                               printf("error 2\n");
+                               printf("error 2: got frame %d expected %d\n", current->metadata[md].frame_number, frame_number);
                            }
                        }
                        frame_number++;
@@ -448,7 +448,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                        for(unsigned md=0;md < channel_count/4;md++){
 
                            if(current->metadata[md].frame_number != frame_number){
-                               printf("error 3\n");
+                               printf("error 3: got frame %d expected %d\n", current->metadata[md].frame_number, frame_number);
                            }
                        }
                        frame_number++;
@@ -466,7 +466,7 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
 
                        for(unsigned md=0;md < channel_count/4;md++){
                            if(current->metadata[md].frame_number != frame_number){
-                               printf("error 4\n");
+                               printf("error 4: got frame %d expected %d\n", current->metadata[md].frame_number, frame_number);
                            }
                        }
                        frame_number++;
@@ -606,7 +606,7 @@ void verifier(chanend c_model, chanend c_actual, unsigned channel_count){
                                                 int a, b;
                                                 c_actual:> a;
                                                 c_model :> b;
-
+                                               // printf("%d %d\n", a, b);
 #if MIC_ARRAY_WORD_LENGTH_SHORT
                                                 b = b >>16;
 #endif

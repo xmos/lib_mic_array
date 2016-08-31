@@ -16,10 +16,9 @@
 
 //This must have an even number of words
 typedef struct {
-    int32_t min;                /**<The minimum data value in this frame. UNUSED*/
-    int32_t max;                /**<The maximum data value in this frame. UNUSED */
-    unsigned frame_number;  	/**<The frame number.*/
-    unsigned x;  		        /**<Padding. UNUSED*/
+    unsigned sig_bits[4];                /**<A bit mask of the absolute values of all samples in a channel.*/
+    unsigned frame_number;  	         /**<The frame number.*/
+    unsigned x;  		                 /**<Padding. UNUSED*/
 } mic_array_metadata_t;
 
 /** Complex number in Cartesian coordinates.*/
@@ -37,7 +36,7 @@ typedef struct {
 #else
     int32_t data[MIC_ARRAY_NUM_MICS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
 #endif
-    mic_array_metadata_t metadata[2]; /**< Frame metadata (Used internally)*/
+    mic_array_metadata_t metadata[(MIC_ARRAY_NUM_MICS+3)/4]; /**< Frame metadata*/
 } mic_array_frame_time_domain;
 
 /** A frame of frequency domain audio in Cartesian coordinates.*/
