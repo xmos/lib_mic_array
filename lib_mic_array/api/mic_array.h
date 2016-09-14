@@ -14,7 +14,7 @@
 #define MIC_ARRAY_NO_INTERNAL_CHANS (0)
 
 
-/** PDM Microphone Interface component.
+/** PDM Microphone Interface component(8 bit ports).
  *
  *  This task handles the interface to up to 8 PDM microphones whilst also decimating
  *  the PDM data by a factor of 8. The output is sent via two channels to two receiving
@@ -28,6 +28,25 @@
  */
 void mic_array_pdm_rx(
         in buffered port:32 p_pdm_mics,
+        streaming chanend c_4x_pdm_mic_0,
+        streaming chanend ?c_4x_pdm_mic_1);
+
+/** PDM Microphone Interface component(4 bit ports).
+ *
+ *  This task handles the interface to up to 8 PDM microphones whilst also decimating
+ *  the PDM data by a factor of 8. The output is sent via two channels to two receiving
+ *  tasks.
+ *
+ *  \param p_pdm_mics0       A 4 bit wide port connected to the PDM microphones.
+ *  \param p_pdm_mics1       A 4 bit wide port connected to the PDM microphones.
+ *  \param c_4x_pdm_mic_0    The channel where the decimated PDM of microphones 0-3 will
+ *                           be outputted.
+ *  \param c_4x_pdm_mic_1    The channel where the decimated PDM of microphones 4-7 will
+ *                           be outputted. This can be null for 4 channel output.
+ */
+void mic_array_pdm_rx_4_bit(
+        in buffered port:32 p_pdm_mics0,
+        in buffered port:32 p_pdm_mics1,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend ?c_4x_pdm_mic_1);
 

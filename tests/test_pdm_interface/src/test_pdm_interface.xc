@@ -198,12 +198,154 @@ void test4ch(){
     }
 }
 
-int main(){
+extern void pdm_rx_4_bit_debug(
+        streaming chanend c_not_a_port0,
+        streaming chanend ?c_not_a_port1,
+        streaming chanend c_4x_pdm_mic_0,
+        streaming chanend ?c_4x_pdm_mic_1);
 
-#if CHANNELS == 4
-    test4ch();
+
+void test4ch_4bit(){
+
+    streaming chan c,  c_port0, c_port1;
+    par {
+        pdm_rx_4_bit_debug(c_port0, c_port1, c, null);
+        {
+            for(unsigned ch=0;ch<8;ch++){
+
+                //TODO
+            }
+        }
+        {
+            unsigned ch_to_mic[4] = {0, 1, 2, 3};
+
+            for(unsigned ch=0;ch<4;ch++){
+
+                int min_sat; //first get the full -ve scale response
+                int vals[4];
+
+                for(unsigned i=0;i<4;i++){
+                    c :> vals[i];
+                }
+
+                for(unsigned j=0;j<5;j++){
+                    for(unsigned i=0;i<4;i++){
+                        int v;
+                        c :> v;
+                        if (v!= vals[i])
+                            printf("Error: channels are not the same\n");
+                    }
+                }
+                unsigned m = ch_to_mic[ch];
+                min_sat = vals[m];
+                //then test each channel
+
+               for(unsigned o=0;o<8;o++){
+                   for(unsigned s=0;s<6;s++){
+                       for(unsigned i=0;i<4;i++)
+                           c :> vals[i];
+                       for(unsigned i=0;i<4;i++){
+                           if(m == i){
+                               unsigned index = (7-o + s*8);
+                               int d =  (vals[i] - min_sat)/2 - fir1_debug[index];
+                               if(d*d>1)
+                                   printf("Error: unexpected coefficient\n");
+                           } else {
+                               if((vals[i] - min_sat) != 0)
+                                   printf("Error: crosstalk detected\n");
+                           }
+                       }
+                   }
+                }
+            }
+            printf("Success!\n");
+            _Exit(0);
+        }
+    }
+}
+
+
+void test8ch_4bit(){
+
+    streaming chan c, d, c_port0, c_port1;
+    par {
+        pdm_rx_4_bit_debug(c_port0, c_port1, c, d);
+        {
+            for(unsigned ch=0;ch<8;ch++){
+
+                //TODO
+
+            }
+        }
+        {
+            unsigned ch_to_mic[8] = {0, 2, 4, 6, 1, 3, 5, 7};
+
+            for(unsigned ch=0;ch<8;ch++){
+
+                int min_sat; //first get the full -ve scale response
+                int vals[8];
+
+                for(unsigned i=0;i<4;i++){
+                    c :> vals[i*2];
+                    d :> vals[i*2+1];
+                }
+
+                for(unsigned j=0;j<5;j++){
+                    for(unsigned i=0;i<4;i++){
+                        int v;
+                        c :> v;
+                        if (v!= vals[i*2])
+                            printf("Error: channels are not the same\n");
+                        d :> v;
+                        if (v!= vals[i*2+1])
+                            printf("Error: channels are not the same\n");
+                    }
+                }
+                unsigned m = ch_to_mic[ch];
+                min_sat = vals[m];
+                //then test each channel
+
+               for(unsigned o=0;o<8;o++){
+                   for(unsigned s=0;s<6;s++){
+                       for(unsigned i=0;i<4;i++){
+                           c :> vals[i*2];
+                           d :> vals[i*2+1];
+                       }
+                       for(unsigned i=0;i<8;i++){
+                           if(m == i){
+                               unsigned index = (7-o + s*8);
+                               int d =  (vals[i] - min_sat)/2 - fir1_debug[index];
+                               if(d*d>1)
+                                   printf("Error: unexpected coefficient\n");
+                           } else {
+                               if((vals[i] - min_sat) != 0)
+                                   printf("Error: crosstalk detected\n");
+                           }
+                       }
+                   }
+                }
+            }
+            printf("Success!\n");
+            _Exit(0);
+        }
+    }
+}
+
+
+#define FOUR_BIT_PORTS 0
+int main(){
+#if FOUR_BIT_PORTS
+    #if CHANNELS == 4
+        test4ch_4bit();
+    #else
+        test8ch_4bit();
+    #endif
 #else
-    test8ch();
+    #if CHANNELS == 4
+        test4ch();
+    #else
+        test8ch();
+    #endif
 #endif
     return 0;
 }
