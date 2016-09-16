@@ -11,7 +11,7 @@ def do_frontend_test(channel_count, port_width, testlevel):
                                        'lib_mic_array',
                                        'lib_mic_array_frontend_tests',
                                        'frontend_test_%s'%testlevel,
-                                       {'channel_count':channel_count})
+                                       {'channel_count':channel_count, 'port_width':port_width})
 
     tester.set_min_testlevel(testlevel)
 
@@ -22,5 +22,4 @@ def do_frontend_test(channel_count, port_width, testlevel):
 def runtest():
     for channel_count in (4, 8):
         for port_width in (4, 8):
-            print "channel count", channel_count, "port_width", port_width
             do_frontend_test(channel_count, port_width, "smoke")
