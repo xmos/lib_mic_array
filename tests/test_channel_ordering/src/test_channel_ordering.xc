@@ -4,9 +4,19 @@
 #include <xs1.h>
 #include <stdlib.h>
 
+
+#if (defined(FRONTEND_4BIT_8CH) || defined(FRONTEND_4BIT_4CH))
+#define USING_4B_PORTS      1
+#endif
+
 out port p_out  = XS1_PORT_8A;
 
+#ifdef USING_4B_PORTS
+in buffered port:32 p_pdm_mics_a  = XS1_PORT_4A;
+in buffered port:32 p_pdm_mics_b  = XS1_PORT_4B;
+#else
 in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
+#endif
 clock pdmclk                    = XS1_CLKBLK_1;
 
 void test8ch_frontend(){
@@ -14,9 +24,16 @@ void test8ch_frontend(){
     par {
         {
             configure_clock_ref(pdmclk, 10);
+#ifdef USING_4B_PORTS
+            configure_in_port(p_pdm_mics_a, pdmclk);
+            configure_in_port(p_pdm_mics_b, pdmclk);
+            start_clock(pdmclk);
+            mic_array_pdm_rx_4_bit(p_pdm_mics_a, p_pdm_mics_b, c, d);
+#else
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
             mic_array_pdm_rx(p_pdm_mics, c, d);
+#endif
         }
         {
             p_out <: 0;
@@ -66,9 +83,16 @@ void test4ch_frontend(){
     par {
         {
             configure_clock_ref(pdmclk, 10);
+#ifdef USING_4B_PORTS
+            configure_in_port(p_pdm_mics_a, pdmclk);
+            configure_in_port(p_pdm_mics_b, pdmclk);
+            start_clock(pdmclk);
+            mic_array_pdm_rx_4_bit(p_pdm_mics_a, p_pdm_mics_b, c, null);
+#else
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);
             mic_array_pdm_rx(p_pdm_mics, c, null);
+#endif
         }
         {
             p_out <: 0;
@@ -209,11 +233,11 @@ void test4ch_backend(){
 
 int main(){
 
-#ifdef FRONTEND_8BIT_4CH
+#if (defined(FRONTEND_8BIT_4CH) || defined(FRONTEND_4BIT_4CH))
     test4ch_frontend();
 #endif
 
-#ifdef FRONTEND_8BIT_8CH
+#if (defined(FRONTEND_8BIT_8CH) || defined(FRONTEND_4BIT_8CH))
      test8ch_frontend();
 #endif
 

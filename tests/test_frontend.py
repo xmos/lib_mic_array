@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import xmostest
 
-def do_frontend_test(channel_count, testlevel):
+def do_frontend_test(channel_count, port_width, testlevel):
 
     resources = xmostest.request_resource("xsim")
 
-    binary = 'test_pdm_interface/bin/CH{ch}/test_pdm_interface_CH{ch}.xe'.format(ch=channel_count)
+    binary = 'test_pdm_interface/bin/CH{ch}_{pw}B/test_pdm_interface_CH{ch}_{pw}B.xe'.format(ch=channel_count, pw=port_width)
 
     tester = xmostest.ComparisonTester(open('pdm_interface.expect'),
                                        'lib_mic_array',
@@ -20,5 +20,7 @@ def do_frontend_test(channel_count, testlevel):
                               tester = tester)
 
 def runtest():
-    do_frontend_test(4, "smoke")
-    do_frontend_test(8, "smoke")
+    for channel_count in (4, 8):
+        for port_width in (4, 8):
+            print "channel count", channel_count, "port_width", port_width
+            do_frontend_test(channel_count, port_width, "smoke")

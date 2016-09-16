@@ -332,15 +332,14 @@ void test8ch_4bit(){
 }
 
 
-#define FOUR_BIT_PORTS 0
 int main(){
-#if FOUR_BIT_PORTS
+#if PORT_WIDTH == 4
     #if CHANNELS == 4
         test4ch_4bit();
     #else
         test8ch_4bit();
     #endif
-#else
+#else //PORT_WIDTH == 8
     #if CHANNELS == 4
         test4ch();
     #else

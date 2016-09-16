@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-import xmostest
+import xmostest, sys
 
-def do_channel_ordering_test(test_name, testlevel):
+def do_channel_ordering_test(test_name, port_width, testlevel):
 
     resources = xmostest.request_resource("xsim")
 
@@ -15,13 +15,28 @@ def do_channel_ordering_test(test_name, testlevel):
 
     tester.set_min_testlevel(testlevel)
 
+    if port_width == 8:
+        loopback_command =  "-port tile[0] XS1_PORT_8A 8 0 -port tile[0] XS1_PORT_8B 8 0 "
+    elif port_width == 4:
+        loopback_command =  "-port tile[0] XS1_PORT_4A 2 0 -port tile[0] XS1_PORT_8B 2 0 " + \
+                            "-port tile[0] XS1_PORT_4B 4 0 -port tile[0] XS1_PORT_8B 4 2 " + \
+                            "-port tile[0] XS1_PORT_4A 2 2 -port tile[0] XS1_PORT_8B 2 6 " 
+    else:
+        print "ERROR: invalid port width specified = %d\n" % port_width 
+        sys.exit(1)
+
     xmostest.run_on_simulator(resources['xsim'], binary,
                               simargs=["--plugin", "LoopbackPort.dll",  "-port tile[0] XS1_PORT_8A 8 0 -port tile[0] XS1_PORT_8B 8 0 "],
                               tester = tester)
 
 def runtest():
-    do_channel_ordering_test("FRONTEND_8BIT_4CH", "smoke")
-    do_channel_ordering_test("FRONTEND_8BIT_8CH", "smoke")
-    do_channel_ordering_test("FRONTEND_8BIT_4CH_CHANREORDER", "smoke")
-    do_channel_ordering_test("FRONTEND_8BIT_8CH_CHANREORDER", "smoke")
-    do_channel_ordering_test("BACKEND", "smoke")
+    do_channel_ordering_test("FRONTEND_8BIT_4CH", 8, "smoke")
+    do_channel_ordering_test("FRONTEND_8BIT_8CH", 8,  "smoke")
+    do_channel_ordering_test("FRONTEND_4BIT_4CH", 4, "smoke")
+    do_channel_ordering_test("FRONTEND_4BIT_8CH", 4, "smoke")
+    #These are commented out because re-ordering test is not yet implemented
+    #do_channel_ordering_test("FRONTEND_8BIT_4CH_CHANREORDER", 8,  "smoke")
+    #do_channel_ordering_test("FRONTEND_8BIT_8CH_CHANREORDER", 8,  "smoke")
+    #do_channel_ordering_test("FRONTEND_4BIT_4CH_CHANREORDER", 4,  "smoke")
+    #do_channel_ordering_test("FRONTEND_4BIT_8CH_CHANREORDER", 4,  "smoke")
+    #do_channel_ordering_test("BACKEND", "smoke")
