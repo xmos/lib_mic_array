@@ -316,12 +316,12 @@ pdm_rx_4_bit_asm://(
 	.align 8
 pdm_rx_4_bit_4ch_loop:
 
-	ldd a, b, sp[7]		//Make the assumption that if 4 channels are being used then theya re all on port0
+	ldd a, b, sp[7]		//Make the assumption that if 4 channels are being used then they are all on port0
 	{in a, res[a]; ldc b, 0}
 	//in b, res[b]		//If above assumption is not true then use this line instead of the above.
-	unzip a, a, 1
-	unzip a, a, 0
-	unzip b, b, 3	//???? what!
+	unzip a, b, 1
+	unzip a, b, 0
+	unzip a, b, 3
 	std a, b, p[0]
 
 	FIR();

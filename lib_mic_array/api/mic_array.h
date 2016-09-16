@@ -46,7 +46,7 @@ void mic_array_pdm_rx(
  */
 void mic_array_pdm_rx_4_bit(
         in buffered port:32 p_pdm_mics0,
-        in buffered port:32 p_pdm_mics1,
+        in buffered port:32 ?p_pdm_mics1,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend ?c_4x_pdm_mic_1);
 
