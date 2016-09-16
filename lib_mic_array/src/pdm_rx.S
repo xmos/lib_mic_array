@@ -284,13 +284,13 @@ pdm_rx_4_bit_asm://(
 .issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 
-	std r0, r1, sp[7]
+	std r0, r1, sp[7]			//store port0 and port1 off to the stack
 	{mov r1, r2; mov r2, r3}	//to minic the defines of the original
 #ifdef TEST_MODE
 	ldc t, 0
 #else
-	ldc t, 0x5555
-	shl t, t, 16; mov c, t
+	ldc t, 0x5555				//In TEST_MODE load the FIR data with 0x55s so that its
+	shl t, t, 16; mov c, t		//initial value is 0
 	add t, t, c
 #endif
 	std t, t, sp[0]
@@ -316,13 +316,12 @@ pdm_rx_4_bit_asm://(
 	.align 8
 pdm_rx_4_bit_4ch_loop:
 
-	ldd a, b, sp[7]
-	in b, res[b]
-	in a, res[a]
-	unzip a, a, 2
+	ldd a, b, sp[7]		//Make the assumption that if 4 channels are being used then theya re all on port0
+	{in a, res[a]; ldc b, 0}
+	//in b, res[b]		//If above assumption is not true then use this line instead of the above.
 	unzip a, a, 1
-	unzip b, b, 2
-	unzip b, b, 1
+	unzip a, a, 0
+	unzip b, b, 3	//???? what!
 	std a, b, p[0]
 
 	FIR();
@@ -360,9 +359,9 @@ pdm_rx_4_bit_8ch_loop:
 	ldw a, sp[15]
 	in b, res[a]
 	in a, res[a]
-	unzip a, b, 2
 	unzip a, b, 1
 	unzip a, b, 0
+	unzip a, b, 3
 	std a, b, p[0]
 
 	FIR();
