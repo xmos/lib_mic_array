@@ -317,7 +317,7 @@ pdm_rx_4_bit_asm://(
 pdm_rx_4_bit_4ch_loop:
 
 	ldd a, b, sp[7]		//Make the assumption that if 4 channels are being used then they are all on port0
-	{in a, res[a]; ldc b, 0}
+	{in b, res[a]; ldc a, 0}
 	//in b, res[b]		//If above assumption is not true then use this line instead of the above.
 	unzip a, b, 1
 	unzip a, b, 0
@@ -356,9 +356,9 @@ pdm_rx_4_bit_4ch_loop:
 pdm_rx_4_bit_8ch_loop:
 //about 6 inst spare without optimisation
 
-	ldw a, sp[15]
-	in b, res[a]
+	ldd a, b, sp[7]
 	in a, res[a]
+	in b, res[b]
 	unzip a, b, 1
 	unzip a, b, 0
 	unzip a, b, 3
