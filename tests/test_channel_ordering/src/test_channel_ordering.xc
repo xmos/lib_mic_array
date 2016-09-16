@@ -12,12 +12,12 @@
 out port p_out  = XS1_PORT_8A;
 
 #ifdef USING_4B_PORTS
-in buffered port:32 p_pdm_mics_a  = XS1_PORT_4A;
-in buffered port:32 p_pdm_mics_b  = XS1_PORT_4B;
+in buffered port:32 p_pdm_mics_a  = XS1_PORT_4C;
+in buffered port:32 p_pdm_mics_b  = XS1_PORT_4D;
 #else
-in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
+in buffered port:32 p_pdm_mics    = XS1_PORT_8B;
 #endif
-clock pdmclk                    = XS1_CLKBLK_1;
+clock pdmclk                      = XS1_CLKBLK_1;
 
 void test8ch_frontend(){
     streaming chan c, d;
