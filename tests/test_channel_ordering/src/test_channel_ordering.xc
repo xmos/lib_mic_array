@@ -85,9 +85,8 @@ void test4ch_frontend(){
             configure_clock_ref(pdmclk, 10);
 #ifdef USING_4B_PORTS
             configure_in_port(p_pdm_mics_a, pdmclk);
-            configure_in_port(p_pdm_mics_b, pdmclk);
             start_clock(pdmclk);
-            mic_array_pdm_rx_4_bit(p_pdm_mics_a, p_pdm_mics_b, c, null);
+            mic_array_pdm_rx_4_bit(p_pdm_mics_a, null, c, null);
 #else
             configure_in_port(p_pdm_mics, pdmclk);
             start_clock(pdmclk);

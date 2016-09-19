@@ -75,28 +75,28 @@
 
 //This mapping allows pins to be mapped to specific channels in 4b mode
 #ifndef MIC_ARRAY_CH0_4B
-	#define MIC_ARRAY_CH0_4B PIN0_4A
+	#define MIC_ARRAY_CH0_4BIT PIN0_4A
 #endif
-#ifndef MIC_ARRAY_CH1_4B
-	#define MIC_ARRAY_CH1_4B PIN1_4A
+#ifndef MIC_ARRAY_CH1_4BIT
+	#define MIC_ARRAY_CH1_4BIT PIN1_4A
 #endif
-#ifndef MIC_ARRAY_CH2_4B
-	#define MIC_ARRAY_CH2_4B PIN2_4A
+#ifndef MIC_ARRAY_CH2_4BIT
+	#define MIC_ARRAY_CH2_4BIT PIN2_4A
 #endif
-#ifndef MIC_ARRAY_CH3_4B
-	#define MIC_ARRAY_CH3_4B PIN3_4A
+#ifndef MIC_ARRAY_CH3_4BIT
+	#define MIC_ARRAY_CH3_4BIT PIN3_4A
 #endif
-#ifndef MIC_ARRAY_CH4_4B
-	#define MIC_ARRAY_CH4_4B PIN0_4B
+#ifndef MIC_ARRAY_CH4_4BIT
+	#define MIC_ARRAY_CH4_4BIT PIN0_4B
 #endif
-#ifndef MIC_ARRAY_CH5_4B
-	#define MIC_ARRAY_CH5_4B PIN1_4B
+#ifndef MIC_ARRAY_CH5_4BIT
+	#define MIC_ARRAY_CH5_4BIT PIN1_4B
 #endif
-#ifndef MIC_ARRAY_CH6_4B
-	#define MIC_ARRAY_CH6_4B PIN2_4B
+#ifndef MIC_ARRAY_CH6_4BIT
+	#define MIC_ARRAY_CH6_4BIT PIN2_4B
 #endif
-#ifndef MIC_ARRAY_CH7_4B
-	#define MIC_ARRAY_CH7_4B PIN3_4B
+#ifndef MIC_ARRAY_CH7_4BIT
+	#define MIC_ARRAY_CH7_4BIT PIN3_4B
 #endif
 
 #define STACKWORDS 16
@@ -312,7 +312,7 @@ pdm_rx_4_bit_asm_debug:
 .type	pdm_rx_4_bit_asm,@function
 pdm_rx_4_bit_asm://(
         //in buffered port:32 p_pdm_mic0,
-        //in buffered port:32 p_pdm_mic1,
+        //in buffered port:32 ?p_pdm_mic1,
         //streaming chanend c,
         //streaming chanend ?d,
 
@@ -344,30 +344,30 @@ pdm_rx_4_bit_asm://(
 
 	ldaw p, sp[0]
 
-	ldc c,  MIC_ARRAY_CH0_4B
+	ldc c,  MIC_ARRAY_CH0_4BIT
 	bt c_two, pdm_rx_4_bit_8ch_loop
 
-	ldc c,  MIC_ARRAY_CH0_4B
+	ldc c,  MIC_ARRAY_CH0_4BIT
 	.align 8
 pdm_rx_4_bit_4ch_loop:
 
 	ldd a, b, sp[7]		//Make the assumption that if 4 channels are being used then they are all on port0
 	{in b, res[a]; ldc a, 0}
-	//in b, res[b]		//If above assumption is not true then use this line instead of the above.
+	//in b, res[b]; ldc b, 0}		//If above assumption is not true then use this line instead of the above.
 	unzip a, b, 1
 	unzip a, b, 0
 	unzip a, b, 3
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT( MIC_ARRAY_CH1_4B, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH5_4BIT, c_one)	//output c_one
 	FIR();
-	OUTPUT( MIC_ARRAY_CH2_4B, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH6_4BIT, c_one)	//output c_one
 	FIR();
-	{mov temp_one, a; ldc c, MIC_ARRAY_CH3_4B}
+	{mov temp_one, a; ldc c, MIC_ARRAY_CH7_4BIT}
 	FIR();
 	{out res[c_one], temp_one}
-	OUTPUT( MIC_ARRAY_CH0_4B, c_one)	//output unused0 then this to c_one
+	OUTPUT( MIC_ARRAY_CH4_4BIT, c_one)	//output unused0 then this to c_one
 
 	ldd a, b, p[4]
 	std a, b, p[5]
@@ -400,24 +400,24 @@ pdm_rx_4_bit_8ch_loop:
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT( MIC_ARRAY_CH4_4B, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH4_4BIT, c_one)	//output c_one
 	FIR();
-	OUTPUT( MIC_ARRAY_CH1_4B, c_two)	//output c_two
+	OUTPUT( MIC_ARRAY_CH1_4BIT, c_two)	//output c_two
 	FIR();
-	OUTPUT( MIC_ARRAY_CH5_4B, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH5_4BIT, c_one)	//output c_one
 	FIR();
-	OUTPUT( MIC_ARRAY_CH2_4B, c_two)	//output c_two
+	OUTPUT( MIC_ARRAY_CH2_4BIT, c_two)	//output c_two
 	FIR();
-	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6_4B}
+	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6_4BIT}
 	FIR();
-	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3_4B}
+	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3_4BIT}
 	FIR();
-	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7_4B}
+	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7_4BIT}
 	FIR();
 	{out res[c_one], temp_one}
 	{out res[c_two], temp_two}
 	{out res[c_one], temp_three}
-	OUTPUT( MIC_ARRAY_CH0_4B, c_two)
+	OUTPUT( MIC_ARRAY_CH0_4BIT, c_two)
 
 	ldd a, b, p[4]
 	std a, b, p[5]

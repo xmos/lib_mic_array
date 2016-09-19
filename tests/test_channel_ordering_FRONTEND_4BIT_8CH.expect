@@ -1,9 +1,9 @@
 Pin 0 -> Channel 0 
 Pin 1 -> Channel 1 
-Pin 2 -> Channel 2 
-Pin 3 -> Channel 3 
-Pin 4 -> Channel 4 
-Pin 5 -> Channel 5 
-Pin 6 -> Channel 6 
-Pin 7 -> Channel 7 
+Pin 2 -> Channel 4 
+Pin 3 -> Channel 5 
+Pin 4 -> Channel 6 
+Pin 5 -> Channel 7 
+Pin 6 -> Channel 2 
+Pin 7 -> Channel 3 
 
