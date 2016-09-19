@@ -37,14 +37,12 @@ def do_channel_ordering_test(test_name, port_width, testlevel):
                               tester = tester)
 
 def runtest():
-    #do_channel_ordering_test("FRONTEND_8BIT_4CH", 8, "smoke")
-    #do_channel_ordering_test("FRONTEND_8BIT_8CH", 8,  "smoke")
+    do_channel_ordering_test("FRONTEND_8BIT_4CH", 8, "smoke")
+    do_channel_ordering_test("FRONTEND_8BIT_8CH", 8,  "smoke")
     do_channel_ordering_test("FRONTEND_4BIT_4CH", 4, "smoke")
     do_channel_ordering_test("FRONTEND_4BIT_8CH", 4, "smoke")
-    sys.exit(0)
-    #These are commented out because re-ordering test is not yet implemented
-    #do_channel_ordering_test("FRONTEND_8BIT_4CH_CHANREORDER", 8,  "smoke")
-    #do_channel_ordering_test("FRONTEND_8BIT_8CH_CHANREORDER", 8,  "smoke")
-    #do_channel_ordering_test("FRONTEND_4BIT_4CH_CHANREORDER", 4,  "smoke")
-    #do_channel_ordering_test("FRONTEND_4BIT_8CH_CHANREORDER", 4,  "smoke")
-    #do_channel_ordering_test("BACKEND", "smoke")
+    do_channel_ordering_test("FRONTEND_8BIT_4CH_CHANREORDER", 8,  "smoke")
+    do_channel_ordering_test("FRONTEND_8BIT_8CH_CHANREORDER", 8,  "smoke")
+    do_channel_ordering_test("FRONTEND_4BIT_4CH_CHANREORDER", 4,  "smoke")
+    do_channel_ordering_test("FRONTEND_4BIT_8CH_CHANREORDER", 4,  "smoke")
+    do_channel_ordering_test("BACKEND", "smoke")

@@ -35,15 +35,16 @@
 #define PIN5 5
 #define PIN6 3
 #define PIN7 7
-//4B port mapping
-#define PIN0_4A 4
-#define PIN1_4A 6
-#define PIN2_4A 5
-#define PIN3_4A 7
-#define PIN0_4B 0
-#define PIN1_4B 2
-#define PIN2_4B 1
-#define PIN3_4B 3
+
+//4B mode port mapping
+#define PIN0_4A 0
+#define PIN1_4A 2
+#define PIN2_4A 1
+#define PIN3_4A 3
+#define PIN0_4B 4
+#define PIN1_4B 6
+#define PIN2_4B 5
+#define PIN3_4B 7
 
 #include "mic_array_conf.h"
 
@@ -360,14 +361,14 @@ pdm_rx_4_bit_4ch_loop:
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT( MIC_ARRAY_CH5_4BIT, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH1_4BIT, c_one)	//output c_one
 	FIR();
-	OUTPUT( MIC_ARRAY_CH6_4BIT, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH2_4BIT, c_one)	//output c_one
 	FIR();
-	{mov temp_one, a; ldc c, MIC_ARRAY_CH7_4BIT}
+	{mov temp_one, a; ldc c, MIC_ARRAY_CH3_4BIT}
 	FIR();
 	{out res[c_one], temp_one}
-	OUTPUT( MIC_ARRAY_CH4_4BIT, c_one)	//output unused0 then this to c_one
+	OUTPUT( MIC_ARRAY_CH0_4BIT, c_one)	//output unused0 then this to c_one
 
 	ldd a, b, p[4]
 	std a, b, p[5]
@@ -400,24 +401,24 @@ pdm_rx_4_bit_8ch_loop:
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT( MIC_ARRAY_CH4_4BIT, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH0_4BIT, c_one)	//output c_one
 	FIR();
-	OUTPUT( MIC_ARRAY_CH1_4BIT, c_two)	//output c_two
+	OUTPUT( MIC_ARRAY_CH5_4BIT, c_two)	//output c_two
 	FIR();
-	OUTPUT( MIC_ARRAY_CH5_4BIT, c_one)	//output c_one
+	OUTPUT( MIC_ARRAY_CH1_4BIT, c_one)	//output c_one
 	FIR();
-	OUTPUT( MIC_ARRAY_CH2_4BIT, c_two)	//output c_two
+	OUTPUT( MIC_ARRAY_CH6_4BIT, c_two)	//output c_two
 	FIR();
-	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6_4BIT}
+	{mov temp_one, a; ldc c,  MIC_ARRAY_CH2_4BIT}
 	FIR();
-	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3_4BIT}
+	{mov temp_two, a; ldc c,  MIC_ARRAY_CH7_4BIT}
 	FIR();
-	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7_4BIT}
+	{mov temp_three, a; ldc c,  MIC_ARRAY_CH3_4BIT}
 	FIR();
 	{out res[c_one], temp_one}
 	{out res[c_two], temp_two}
 	{out res[c_one], temp_three}
-	OUTPUT( MIC_ARRAY_CH0_4BIT, c_two)
+	OUTPUT( MIC_ARRAY_CH4_4BIT, c_two)
 
 	ldd a, b, p[4]
 	std a, b, p[5]
