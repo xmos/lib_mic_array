@@ -19,9 +19,14 @@ def do_channel_ordering_test(test_name, port_width, testlevel):
     if port_width == 8:
         simargs =  ("--plugin", "LoopbackPort.dll", "-port tile[0] XS1_PORT_8A 8 0 -port tile[0] XS1_PORT_8B 8 0 ")
     elif port_width == 4:
+        simargs =  ("--plugin", "LoopbackPort.dll", "-port tile[0] XS1_PORT_8A 4 0 -port tile[0] XS1_PORT_4C 4 0 ",
+                    "--plugin", "LoopbackPort.dll", "-port tile[0] XS1_PORT_8A 4 4 -port tile[0] XS1_PORT_4D 4 0 ")
+
+        """
         simargs =  ("--plugin", "LoopbackPort.dll", "-port tile[0] XS1_PORT_8A 2 0 -port tile[0] XS1_PORT_4C 2 0 ",
                     "--plugin", "LoopbackPort.dll", "-port tile[0] XS1_PORT_8A 4 2 -port tile[0] XS1_PORT_4D 4 0 ",
                     "--plugin", "LoopbackPort.dll", "-port tile[0] XS1_PORT_8A 2 6 -port tile[0] XS1_PORT_4C 2 2 ")
+        """
     else:
         print "ERROR: invalid port width specified = %d\n" % port_width 
         sys.exit(1)
