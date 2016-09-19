@@ -74,7 +74,7 @@
 #endif
 
 //This mapping allows pins to be mapped to specific channels in 4b mode
-#ifndef MIC_ARRAY_CH0_4B
+#ifndef MIC_ARRAY_CH0_4BIT
 	#define MIC_ARRAY_CH0_4BIT PIN0_4A
 #endif
 #ifndef MIC_ARRAY_CH1_4BIT

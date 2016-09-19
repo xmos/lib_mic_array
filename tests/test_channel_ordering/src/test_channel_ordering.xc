@@ -4,7 +4,6 @@
 #include <xs1.h>
 #include <stdlib.h>
 
-
 #if (defined(FRONTEND_4BIT_8CH) || defined(FRONTEND_4BIT_4CH))
 #define USING_4B_PORTS      1
 #endif
