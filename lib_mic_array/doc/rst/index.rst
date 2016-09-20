@@ -120,9 +120,9 @@ Hardware characteristics
 ------------------------
 
 The PDM microphones need a *clock input* and provide the PDM signal on a
-*data output*. All PDM microphones share the same clock signal (buffered on
-the PCB as appropriate), and output onto eight data wires that are
-connected to a single 8-bit port:
+*data output pin*. All PDM microphones share the same clock signal (buffered on
+the PCB as appropriate), and output onto input data wires that are
+connected either to a single 8-bit port or one or two 4-bit ports:
 
 .. _pdm_wire_table:
 
@@ -133,17 +133,52 @@ connected to a single 8-bit port:
        - Clock line, the PDM clock the used by the microphones to 
          drive the data out.
      * - *DQ_PDM*
-       - The data from the PDM microphones on an 8 bit port.
+       - The data from the PDM microphones on an 8-bit port or 4-bit ports.
        
-The only port passed into the library is the 8-bit data port. The library
-assumes that the input port is clocked using the PDM clock and 
-requires no knowledge of PDM clock source. If a clock block ``pdmclk``
-is clocked at a 3.072 MHz rate, and the 8-bit port is p_pdm_mics then 
-the following statements will ensure that the PDM data
-port is clocked by the PDM clock::
+The only ports passed into the library as arguments are the 8-bit PDM data port or one or two 4-bit PDM data ports. The library
+requires no knowledge of PDM clock source and assumes that any input ports passed are have been configured to be clocked using the PDM clock. 
+If a clock block ``pdmclk`` is clocked at a 3.072 MHz rate, and has a single PDM input port ``p_pdm_mics``, then 
+the following statements will ensure that the PDM data port is clocked by the PDM clock::
 
   configure_in_port(p_pdm_mics, pdmclk);
   start_clock(pdmclk);
+
+The default channel mapping of the PDM microphones is shown below. 
+
+.. _pdm_port_channel_mapping:
+
+.. list-table:: PDM microphone data channel to port bit mapping
+     :header-rows: 1
+     
+     * - *Mic Channel*
+       - *8-bit port*
+       - *4-bit ports*
+     * - 0
+       - Bit 0
+       - Port 4(0) bit 0
+     * - 1
+       - Bit 1
+       - Port 4(0) bit 1
+     * - 2
+       - Bit 2
+       - Port 4(1) bit 0
+     * - 3
+       - Bit 3
+       - Port 4(1) bit 1
+     * - 4
+       - Bit 4
+       - Port 4(1) bit 2
+     * - 5
+       - Bit 5
+       - Port 4(1) bit 3
+     * - 6
+       - Bit 6
+       - Port 4(0) bit 2
+     * - 7
+       - Bit 7       
+       - Port 4(0) bit 3
+
+The channel mapping can be overridden by adding entries to ``mic_array_conf.h`` outlined here :ref:`mic_array_conf`. 
 
 The input clock for the microphones can be generated in a multitude of
 ways. For example, a 3.072MHz clock can be generated on the board, or the xCORE can
@@ -347,7 +382,7 @@ element of the structure ``mic_array_frame_time_domain`` is used to address the
 channel and the second index is used for the sample number with zero being the 
 oldest sample.
 
-Frames are initialised by the application with a call to ``mic_array_init_time_domain_frame()``. Pass it:
+Frames are initialized by the application with a call to ``mic_array_init_time_domain_frame()``. Pass it:
 
 * ``c_from_decimators``: An array of channels to the decimators.
 
@@ -445,7 +480,9 @@ reconfigure and reset all attached decimators. The only configuration that will 
 is the DC offset memory. It is assumed that the microphone specific DC offset 
 remains fairly constant between reconfigurations. 
 
-  
+
+.. _mic_array_conf:
+
 ``mic_array_conf.h``
 --------------------
 
@@ -487,18 +524,24 @@ Optionally, ``mic_array_conf.h`` may define:
 
    * Microphone to channel remapping
 
-     By default pin ``n`` is mapped to channel ``n`` for all the pins of the microphone input 
-     port. If a reordering of pins to channels is required then the ordering can be overridden 
-     with the define ``MIC_ARRAY_CHn`` and the pin``PINm`` where ``n`` and ``m`` are the channel 
-     number and pin number respectivly. For example, ``#define MIC_ARRAY_CH0 PIN2`` would map 
-     pin 2 of the microphone input port to channel 0. Any undefined channel are left as the default 
-     mapping.
+     The PDM microphone channel to input port mapping can be overridden. For example, to swap channels zero and one 
+     when using an 8-bit port as PDM data input, add the following lines::
+
+        #define   MIC_ARRAY_CH0   PIN1
+        #define   MIC_ARRAY_CH1   PIN0
+
+     To swap channels zero and one when using 4-bit ports for PDM data input, use the following line::
+
+        #define   MIC_ARRAY_CH0_4BIT   PIN1_4A
+        #define   MIC_ARRAY_CH1_4BIT   PIN0_4A
+
+     Any undefined channels are left as the default mapping.
 
    * MIC_ARRAY_FIXED_GAIN
 
      If this define will apply a fixed gain to the 64 bit output of the final stage decimation FIR. 
-     The define should be set to an integer between -32 and +32. The define referes to the 
-     ammount that the signal should be left shifted by with positive number increasing the 
+     The define should be set to an integer between -32 and +32. The define refers to the 
+     amount that the signal should be left shifted by with positive number increasing the 
      signal and negative numbers decreasing the signal. The use of this can cause distortion. 
      There is no saturation logic included in the gain control.
 	 
@@ -863,6 +906,7 @@ Creating an PDM microphone interface instance
 .............................................
 
 .. doxygenfunction:: mic_array_pdm_rx
+.. doxygenfunction:: mic_array_pdm_rx_4_bit
 
 |newpage|
 
