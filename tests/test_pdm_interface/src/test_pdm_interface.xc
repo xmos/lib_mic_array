@@ -85,11 +85,7 @@ void test8ch(){
                    for(unsigned s=0;s<6;s++){
                        for(unsigned i=0;i<4;i++){
                            c :> vals[i*2];
-                                               printf("c-%x\n",vals[i*2]);
-
                            d :> vals[i*2+1];
-                                               printf("d-%x\n",vals[i*2+1]);
-
                        }
                        for(unsigned i=0;i<8;i++){
                            if(m == i){
@@ -215,44 +211,43 @@ void test4ch_4bit(){
         pdm_rx_4_bit_debug(c_port0, null, c, null);
         {
             for(unsigned ch=0;ch<4;ch++){
-                for(unsigned i=0;i<12;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<6;i++) c_port0 <: 0x00000000;
 
                 unsigned mask = 1<<ch;
 
                 c_port0 <: mask<<0;
                 c_port0 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
                 c_port0 <: mask<<4;
                 c_port0 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
                 c_port0 <: mask<<8;
                 c_port0 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
                 c_port0 <: mask<<12;
                 c_port0 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
-
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
+                
+                c_port0 <: mask<<0;
                 c_port0 <: 0x00000000;
-                c_port0 <: mask<<16;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
-
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
+   
+                c_port0 <: mask<<4;
                 c_port0 <: 0x00000000;
-                c_port0 <: mask<<20;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
+                c_port0 <: mask<<8;
                 c_port0 <: 0x00000000;
-                c_port0 <: mask<<24;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
+                c_port0 <: mask<<12;
                 c_port0 <: 0x00000000;
-                c_port0 <: mask<<28;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
             }
         }
-
         {
             unsigned ch_to_mic[4] = {0, 1, 2, 3};
 
@@ -263,14 +258,12 @@ void test4ch_4bit(){
 
                 for(unsigned i=0;i<4;i++){
                     c :> vals[i];
-                    printf("%x\n", vals[i]);
                 }
 
                 for(unsigned j=0;j<5;j++){
                     for(unsigned i=0;i<4;i++){
                         int v;
                         c :> v;
-                        printf("%x\n", v);
                         if (v!= vals[i])
                             printf("Error: channels are not the same\n");
                     }
@@ -279,7 +272,7 @@ void test4ch_4bit(){
                 min_sat = vals[m];
                 //then test each channel
 
-               for(unsigned o=0;o<8;o++){
+               for(unsigned o=0;o<8;o++){ //decimate by 8
                    for(unsigned s=0;s<6;s++){
                        for(unsigned i=0;i<4;i++)
                            c :> vals[i];
@@ -287,11 +280,13 @@ void test4ch_4bit(){
                            if(m == i){
                                unsigned index = (7-o + s*8);
                                int d =  (vals[i] - min_sat)/2 - fir1_debug[index];
+                               //Channel we are looking at must be within one bit of coeff value
                                if(d*d>1)
                                    printf("Error: unexpected coefficient\n");
                            } else {
                                if((vals[i] - min_sat) != 0)
                                    printf("Error: crosstalk detected\n");
+                                   //All other channels should be at negative saturation
                            }
                        }
                    }
@@ -311,41 +306,41 @@ void test8ch_4bit(){
         pdm_rx_4_bit_debug(c_port0, c_port1, c, d);
         {
             for(unsigned ch=0;ch<4;ch++){
-                for(unsigned i=0;i<12;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<6;i++) c_port0 <: 0x00000000;
 
                 unsigned mask = 1<<ch;
 
                 c_port0 <: mask<<0;
                 c_port0 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
                 c_port0 <: mask<<4;
                 c_port0 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
                 c_port0 <: mask<<8;
                 c_port0 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
                 c_port0 <: mask<<12;
                 c_port0 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
-
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
+                
+                c_port0 <: mask<<0;
                 c_port0 <: 0x00000000;
-                c_port0 <: mask<<16;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
-
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
+   
+                c_port0 <: mask<<4;
                 c_port0 <: 0x00000000;
-                c_port0 <: mask<<20;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
+                c_port0 <: mask<<8;
                 c_port0 <: 0x00000000;
-                c_port0 <: mask<<24;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
 
+                c_port0 <: mask<<12;
                 c_port0 <: 0x00000000;
-                c_port0 <: mask<<28;
-                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port0 <: 0x00000000;
             }
         }
         {
@@ -353,41 +348,41 @@ void test8ch_4bit(){
             for(unsigned i=0;i<96;i++) c_port1 <: 0x00000000;
 
             for(unsigned ch=0;ch<4;ch++){
-                for(unsigned i=0;i<12;i++) c_port1 <: 0x00000000;
+                for(unsigned i=0;i<6;i++) c_port1 <: 0x00000000;
 
                 unsigned mask = 1<<ch;
 
                 c_port1 <: mask<<0;
                 c_port1 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port1 <: 0x00000000;
 
                 c_port1 <: mask<<4;
                 c_port1 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port1 <: 0x00000000;
 
                 c_port1 <: mask<<8;
                 c_port1 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port1 <: 0x00000000;
 
                 c_port1 <: mask<<12;
                 c_port1 <: 0x00000000;
-                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
-
+                for(unsigned i=0;i<4;i++) c_port1 <: 0x00000000;
+                
+                c_port1 <: mask<<0;
                 c_port1 <: 0x00000000;
-                c_port1 <: mask<<16;
-                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
-
+                for(unsigned i=0;i<4;i++) c_port1 <: 0x00000000;
+   
+                c_port1 <: mask<<4;
                 c_port1 <: 0x00000000;
-                c_port1 <: mask<<20;
-                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port1 <: 0x00000000;
 
+                c_port1 <: mask<<8;
                 c_port1 <: 0x00000000;
-                c_port1 <: mask<<24;
-                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port1 <: 0x00000000;
 
+                c_port1 <: mask<<12;
                 c_port1 <: 0x00000000;
-                c_port1 <: mask<<28;
-                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+                for(unsigned i=0;i<4;i++) c_port1 <: 0x00000000;
             }
         
         }
