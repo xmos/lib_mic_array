@@ -8,6 +8,7 @@ lib_mic_array change log
     to the mic_array so that they can benefit from the post processing of the
     mic_array.
   * Enabled the metadata which delivers the frame counter.
+  * Added significant bits collection to the metadata.
   * Added fixed gain control through define MIC_ARRAY_FIXED_GAIN.
   * Tested and enabled the debug mode for detecting frame dropping. Enabled by
     adding -DDEBUG_MIC_ARRAY to the Makefile.

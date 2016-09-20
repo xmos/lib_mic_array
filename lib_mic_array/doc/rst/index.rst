@@ -404,10 +404,23 @@ subsequent audio frames. These calls require the exact same parameters as
 Metadata
 ........
 
-Both types of frame will have metadata attached to them that records the frame number.
+The metadata associated with frames is dependent on the final stage decimator ratio. For all
+final stage decimators all frames will have metadata attached to them that records the frame number.
 The frame counter is a unsigned 32 bit counter. Care must be taken when using this counter
 for extended periods as it will wrap (at 48kHz the counter will wrap after ~24hrs). The 
 frame counter will increament every time a frame is accepted. 
+
+When the final stage decimator is greater than 2 (correcponding to output sample rate of 24kHz 
+or 22.05kHz) then extra metadata will be collected. The metadata reported is:
+
+* ``sig_bits``: A mask of the significant bits used within the frame to represent the all the samples. 
+  It is litterally,  initially ``sig_bits[n] = 0`` then ``sig_bits[n] | abs(s)`` for all ``s`` samples 
+  within channel ``n`` of a frame. This is a 4 element array with each element representing a channel.
+  The significant bits mask is updated before windowing is applied. This means that if windowing is applied
+  then the true number of significant bits may be fewer than the reported number. 
+
+* ``x``: an unused valiable to pad the structure for double word alignment.
+  
 
 Using the decimators
 --------------------
