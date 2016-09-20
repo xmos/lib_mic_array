@@ -85,7 +85,11 @@ void test8ch(){
                    for(unsigned s=0;s<6;s++){
                        for(unsigned i=0;i<4;i++){
                            c :> vals[i*2];
+                                               printf("c-%x\n",vals[i*2]);
+
                            d :> vals[i*2+1];
+                                               printf("d-%x\n",vals[i*2+1]);
+
                        }
                        for(unsigned i=0;i<8;i++){
                            if(m == i){
@@ -206,16 +210,49 @@ extern void pdm_rx_4_bit_debug(
 
 
 void test4ch_4bit(){
-
-    streaming chan c,  c_port0, c_port1;
+    streaming chan c, c_port0;
     par {
-        pdm_rx_4_bit_debug(c_port0, c_port1, c, null);
+        pdm_rx_4_bit_debug(c_port0, null, c, null);
         {
-            for(unsigned ch=0;ch<8;ch++){
+            for(unsigned ch=0;ch<4;ch++){
+                for(unsigned i=0;i<12;i++) c_port0 <: 0x00000000;
 
-                //TODO
+                unsigned mask = 1<<ch;
+
+                c_port0 <: mask<<0;
+                c_port0 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: mask<<4;
+                c_port0 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: mask<<8;
+                c_port0 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: mask<<12;
+                c_port0 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: 0x00000000;
+                c_port0 <: mask<<16;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: 0x00000000;
+                c_port0 <: mask<<20;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: 0x00000000;
+                c_port0 <: mask<<24;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: 0x00000000;
+                c_port0 <: mask<<28;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
             }
         }
+
         {
             unsigned ch_to_mic[4] = {0, 1, 2, 3};
 
@@ -226,12 +263,14 @@ void test4ch_4bit(){
 
                 for(unsigned i=0;i<4;i++){
                     c :> vals[i];
+                    printf("%x\n", vals[i]);
                 }
 
                 for(unsigned j=0;j<5;j++){
                     for(unsigned i=0;i<4;i++){
                         int v;
                         c :> v;
+                        printf("%x\n", v);
                         if (v!= vals[i])
                             printf("Error: channels are not the same\n");
                     }
@@ -271,14 +310,89 @@ void test8ch_4bit(){
     par {
         pdm_rx_4_bit_debug(c_port0, c_port1, c, d);
         {
-            for(unsigned ch=0;ch<8;ch++){
+            for(unsigned ch=0;ch<4;ch++){
+                for(unsigned i=0;i<12;i++) c_port0 <: 0x00000000;
 
-                //TODO
+                unsigned mask = 1<<ch;
 
+                c_port0 <: mask<<0;
+                c_port0 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: mask<<4;
+                c_port0 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: mask<<8;
+                c_port0 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: mask<<12;
+                c_port0 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: 0x00000000;
+                c_port0 <: mask<<16;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: 0x00000000;
+                c_port0 <: mask<<20;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: 0x00000000;
+                c_port0 <: mask<<24;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
+
+                c_port0 <: 0x00000000;
+                c_port0 <: mask<<28;
+                for(unsigned i=0;i<10;i++) c_port0 <: 0x00000000;
             }
         }
         {
-            unsigned ch_to_mic[8] = {0, 2, 4, 6, 1, 3, 5, 7};
+            //Wait for impulse to propagate through other port first
+            for(unsigned i=0;i<96;i++) c_port1 <: 0x00000000;
+
+            for(unsigned ch=0;ch<4;ch++){
+                for(unsigned i=0;i<12;i++) c_port1 <: 0x00000000;
+
+                unsigned mask = 1<<ch;
+
+                c_port1 <: mask<<0;
+                c_port1 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+
+                c_port1 <: mask<<4;
+                c_port1 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+
+                c_port1 <: mask<<8;
+                c_port1 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+
+                c_port1 <: mask<<12;
+                c_port1 <: 0x00000000;
+                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+
+                c_port1 <: 0x00000000;
+                c_port1 <: mask<<16;
+                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+
+                c_port1 <: 0x00000000;
+                c_port1 <: mask<<20;
+                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+
+                c_port1 <: 0x00000000;
+                c_port1 <: mask<<24;
+                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+
+                c_port1 <: 0x00000000;
+                c_port1 <: mask<<28;
+                for(unsigned i=0;i<10;i++) c_port1 <: 0x00000000;
+            }
+        
+        }
+        {
+            unsigned ch_to_mic[8] = {0, 1, 6, 7, 2, 3, 4, 5};
 
             for(unsigned ch=0;ch<8;ch++){
 
@@ -287,7 +401,9 @@ void test8ch_4bit(){
 
                 for(unsigned i=0;i<4;i++){
                     c :> vals[i*2];
+                    printf("c-%x\n",vals[i*2]);
                     d :> vals[i*2+1];
+                    printf("c-%x\n",vals[i*2+1]);
                 }
 
                 for(unsigned j=0;j<5;j++){

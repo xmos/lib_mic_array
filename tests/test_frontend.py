@@ -19,7 +19,17 @@ def do_frontend_test(channel_count, port_width, testlevel):
                               simargs=[],
                               tester = tester)
 
-def runtest():
+def _runtest():
     for channel_count in (4, 8):
         for port_width in (4, 8):
             do_frontend_test(channel_count, port_width, "smoke")
+
+def runtest():
+    do_frontend_test(4, 4, "smoke")
+
+xmostest.init()
+
+xmostest.register_group("lib_mic_array",
+                            "lib_mic_array_frontend_tests",
+                            "lib_mic_array frontend tests", "blag")
+runtest()
