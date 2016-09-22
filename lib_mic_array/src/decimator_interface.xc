@@ -53,7 +53,9 @@ void mic_array_init_time_domain_frame(
 #endif
      }
 
-    for(unsigned i=0;i<decimator_count;i++)
+   memset(audio, 0, sizeof(mic_array_frame_time_domain)*frames);
+
+   for(unsigned i=0;i<decimator_count;i++)
         c_from_decimator[i] <: frames;
    for(unsigned f=0;f<frames;f++){
         unsafe {
@@ -158,6 +160,9 @@ void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[],
          __builtin_unreachable();
 #endif
      }
+
+     memset(f_fft_preprocessed, 0, sizeof(mic_array_frame_fft_preprocessed)*frames);
+
      for(unsigned i=0;i<decimator_count;i++)
          c_from_decimator[i] <: frames;
 
