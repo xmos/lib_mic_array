@@ -39,18 +39,24 @@ typedef struct {
     mic_array_metadata_t metadata[(MIC_ARRAY_NUM_MICS+3)/4]; /**< Frame metadata*/
 } mic_array_frame_time_domain;
 
+/*
+ * This number allocates the correct amount of metadata
+ * memory for the nunber of decimators.
+ */
+#define MAX_NUM_DECIMATORS 4
+
 /** A frame of frequency domain audio in Cartesian coordinates.*/
 typedef struct {
     long long alignment;		/**<Used to force double work alignment. */
     mic_array_complex_t data[MIC_ARRAY_NUM_FREQ_CHANNELS*2][1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2-1)]; /**< Complex audio data (Cartesian)*/
-    mic_array_metadata_t metadata[2]; /**< Frame metadata (Used internally)*/
+    mic_array_metadata_t metadata[MAX_NUM_DECIMATORS]; /**< Frame metadata (Used internally)*/
 } mic_array_frame_frequency_domain;
 
 /** A frame of audio preprocessed for direct insertion into an FFT.*/
 typedef struct {
     long long alignment;		/**<Used to force double work alignment. */
     mic_array_complex_t data[MIC_ARRAY_NUM_FREQ_CHANNELS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2]; /**< Complex audio data (Cartesian)*/
-    mic_array_metadata_t metadata[2]; /**< Frame metadata (Used internally)*/
+    mic_array_metadata_t metadata[MAX_NUM_DECIMATORS]; /**< Frame metadata (Used internally)*/
 } mic_array_frame_fft_preprocessed;
 
 
