@@ -483,7 +483,7 @@ Optionally, ``mic_array_conf.h`` may define:
 
      The DC offset is removed with a high pass filter. ``DC_OFFSET_DIVIDER_LOG2``
 	 can be used to control the responsiveness of the filter vs the cut off frequency.
-	 The default is 13, but setting this will override it. The value must not exceed 31.
+	 The default is 8, but setting this will override it. The value must not exceed 31.
 	 See :ref:`section_dc` DC offset removal for further explanation.
 
    * MIC_ARRAY_MIC_ARRAY_HIRES_MAX_DELAY
