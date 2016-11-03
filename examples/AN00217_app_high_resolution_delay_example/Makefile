@@ -9,7 +9,7 @@ TARGET = MIC-ARRAY-1V0
 APP_NAME = app_high_resolution_delay_example
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_mic_array
+USED_MODULES = lib_mic_array(>=3.0.0)
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:

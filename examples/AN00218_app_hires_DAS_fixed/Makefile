@@ -9,7 +9,7 @@ TARGET = MIC-ARRAY-1V0
 APP_NAME = app_hires_DAS_fixed
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_i2c lib_i2s lib_mic_array lib_mic_array_board_support
+USED_MODULES = lib_i2c(>=4.0.0) lib_i2s(>=2.2.0) lib_mic_array(>=3.0.0) lib_mic_array_board_support(>=2.1.0)
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:
