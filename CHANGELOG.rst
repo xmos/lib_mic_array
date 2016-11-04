@@ -16,7 +16,8 @@ lib_mic_array change log
   * Bug fix in python FIR generator script resulting in excessive output ripple.
   * Default FIR coefficients now optimised for 16kHz output sample rate.
   * Added ability to remap port pins to channels.
-  * MIC_ARRAY_NUM_MICS is now forced to a multiple of 4 with a warning if it changed.
+  * MIC_ARRAY_NUM_MICS is now forced to a multiple of 4 with a warning if it
+    changed.
   * Corrected MIC_ARRAY_DC_OFFSET_LOG2 default value reporting in documentation.
 
   * Changes to dependencies:
