@@ -28,4 +28,8 @@ extern const int g_third_stage_div_12_fir[756];
 extern const int fir3_div_12_debug[384];
 #define FIR_COMPENSATOR_DIV_12 (387076045)
 
+extern const int g_third_stage_my_decimator_fir[189];
+extern const int fir3_my_decimator_debug[96];
+#define FIR_COMPENSATOR_MY_DECIMATOR (386180942)
+
 #define THIRD_STAGE_COEFS_PER_STAGE (32)

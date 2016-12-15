@@ -45,9 +45,9 @@ def parseArguments(third_stage_configs):
       choices=range(1,33), help='The number of FIR taps per stage '
       '(decimation factor). The fewer there are the lower the group delay.')
 
-    parser.add_argument('--add-third-stage', nargs=4,
-      help='Add a third stage filter e.g. 12 0.4 0.55 my_filt',
-                        metavar=('DIVIDER', 'NORM_PASS', 'NORM_STOP', 'NAME'))
+    parser.add_argument('--add-third-stage', nargs=5,
+      help='Add a third stage filter e.g. 12 0.4 0.55 my_filt 32',
+                        metavar=('DIVIDER', 'NORM_PASS', 'NORM_STOP', 'NAME', 'N_TAPS'))
 
     args = parser.parse_args()
 
@@ -58,8 +58,9 @@ def parseArguments(third_stage_configs):
             norm_pass = float(to_add[1])
             norm_stop = float(to_add[2])
             name = to_add[3]
+            num_taps = int(to_add[4])
             third_stage_configs.append(
-                [divider, norm_pass, norm_stop, name])
+                [divider, norm_pass, norm_stop, name, num_taps])
         except:
             print("ERROR: Invalid arguments for third stage")
             sys.exit(1)
@@ -406,6 +407,8 @@ if __name__ == "__main__":
   ]
   args = parseArguments(third_stage_configs)
 
+
+  print third_stage_configs
   header = open ("fir_coefs.h", 'w')
   body   = open ("fir_coefs.xc", 'w')
 
