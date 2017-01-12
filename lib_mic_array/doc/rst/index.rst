@@ -537,7 +537,7 @@ following settings through ``decimator_config_common``:
   or not. Set to non-zero to enable, or ``0`` to not apply DC offset removal.
   
 * ``output_decimation_factor``: This specifies the decimation factor to apply to the PDM input
-  after an 8x decimtor and 4x decimator has already been applied, i.e. for s 3.072MHz PDM clock the 
+  after an 8x decimator and 4x decimator has already been applied, i.e. for a 3.072MHz PDM clock the 
   ``output_decimation_factor`` will apply to a 96kHz sample rate. The valid values
   are 2, 4, 6, 8 and 12. Common sample rates can be achieved by using
   these decimation factors as follows:
