@@ -1,7 +1,6 @@
 // Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
 #include <xs1.h>
 #include <stdint.h>
-#define DEBUG_MIC_ARRAY 1
 
 #if DEBUG_MIC_ARRAY
 #include "xassert.h"
