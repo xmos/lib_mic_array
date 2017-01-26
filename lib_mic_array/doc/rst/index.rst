@@ -34,9 +34,9 @@ or for 5-8 channels three logical cores as shown below:
             Thirteen to sixteen count PDM interface
 
 The left most task, ``mic_array_pdm_rx()``, samples up to 8 microphones and filters the data to provide up to
-eight 384 KHz data streams, split in two streams of four channels. The processing thread
+eight 384 kHz data streams, split in two streams of four channels. The processing thread
 decimates the signal to a user chosen sample rate (one of 48, 24, 16, 12,
-or 8 KHz). If more than 8 channels are required then another ``mic_array_pdm_rx`` task can be created.
+or 8 kHz). If more than 8 channels are required then another ``mic_array_pdm_rx`` task can be created.
 After the decimation to the output sample rate the following steps takes place:
 
 * Any DC offset is eliminated on the each channel.
@@ -113,7 +113,7 @@ final stage divider.
    12                  16              38.1
   =================== =============== ==========================
   
-These valuse should be use as a guide as actual memory usage may vary slightly.
+These values should be use as a guide as actual memory usage may vary slightly.
 
 
 Hardware characteristics
@@ -408,25 +408,25 @@ The metadata associated with frames is dependent on the final stage decimator ra
 final stage decimators all frames will have metadata attached to them that records the frame number.
 The frame counter is a unsigned 32 bit counter. Care must be taken when using this counter
 for extended periods as it will wrap (at 48kHz the counter will wrap after ~24hrs). The 
-frame counter will increament every time a frame is accepted. 
+frame counter will increment every time a frame is accepted. 
 
-When the final stage decimator is greater than 2 (correcponding to output sample rate of 24kHz 
+When the final stage decimator is greater than 2 (corresponding to output sample rate of 24kHz 
 or 22.05kHz) then extra metadata will be collected. The metadata reported is:
 
 * ``sig_bits``: A mask of the significant bits used within the frame to represent the all the samples. 
-  It is litterally,  initially ``sig_bits[n] = 0`` then ``sig_bits[n] | abs(s)`` for all ``s`` samples 
+  It is literally,  initially ``sig_bits[n] = 0`` then ``sig_bits[n] | abs(s)`` for all ``s`` samples 
   within channel ``n`` of a frame. This is a 4 element array with each element representing a channel.
   The significant bits mask is updated before windowing is applied. This means that if windowing is applied
   then the true number of significant bits may be fewer than the reported number. 
 
-* ``x``: an unused valiable to pad the structure for double word alignment.
+* ``x``: an unused variable to pad the structure for double word alignment.
   
 
 Using the decimators
 --------------------
 
 The decimators reduce the high rate PCM down to lower rate PCM. They also prepare the audio
-for subsequenct algorithms, i.e. framing, windowing, etc.
+for subsequent algorithms, i.e. framing, windowing, etc.
 
 Setting up the decimators
 .........................
@@ -503,15 +503,15 @@ Optionally, ``mic_array_conf.h`` may define:
      By default pin ``n`` is mapped to channel ``n`` for all the pins of the microphone input 
      port. If a reordering of pins to channels is required then the ordering can be overridden 
      with the define ``MIC_ARRAY_CHn`` and the pin``PINm`` where ``n`` and ``m`` are the channel 
-     number and pin number respectivly. For example, ``#define MIC_ARRAY_CH0 PIN2`` would map 
+     number and pin number respectively. For example, ``#define MIC_ARRAY_CH0 PIN2`` would map 
      pin 2 of the microphone input port to channel 0. Any undefined channel are left as the default 
      mapping.
 
    * MIC_ARRAY_FIXED_GAIN
 
      If this define will apply a fixed gain to the 64 bit output of the final stage decimation FIR. 
-     The define should be set to an integer between -32 and +32. The define referes to the 
-     ammount that the signal should be left shifted by with positive number increasing the 
+     The define should be set to an integer between -32 and +32. The define refers to the 
+     amount that the signal should be left shifted by with positive number increasing the 
      signal and negative numbers decreasing the signal. The use of this can cause distortion. 
      There is no saturation logic included in the gain control.
 	 
@@ -545,13 +545,13 @@ following settings through ``decimator_config_common``:
   ======================== ========== ==============
   output_decimation_factor PDM clock  Sample rate
   ======================== ========== ==============
-  2                        3.072 MHz   48 KHz
-  4                        3.072 MHz   24 KHz
-  6                        3.072 MHz   16 KHz
-  8                        3.072 MHz   12 KHz
-  12                       3.072 MHz   8 KHz
-  2                        2.8224 MHz  44.1 KHz
-  4                        2.8224 MHz  22.05 KHz
+  2                        3.072 MHz   48 kHz
+  4                        3.072 MHz   24 kHz
+  6                        3.072 MHz   16 kHz
+  8                        3.072 MHz   12 kHz
+  12                       3.072 MHz   8 kHz
+  2                        2.8224 MHz  44.1 kHz
+  4                        2.8224 MHz  22.05 kHz
   ======================== ========== ==============
   
   For other decimation factors see :ref:`section_advanced`.
