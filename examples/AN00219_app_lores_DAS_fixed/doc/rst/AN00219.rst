@@ -69,7 +69,7 @@ Also required is support for |I2S| and |I2C| through the headers:
 Allocating hardware resources
 .............................
 
-A PDM microphone requires a clock and a data pin. For eight PDM mocrophones a single 
+A PDM microphone requires a clock and a data pin. For eight PDM microphones a single 
 clock can be shared between all microphones and the data can be sampled on a single 
 8 bit port. On an xCORE the pins are controlled by ``ports``. The application therefore 
 declares one 1-bit port and one 8-bit port:
@@ -92,7 +92,7 @@ and are configured with:
    :end-on:  start_clock(pdmclk);     
 
 The result begin a 3.072MHz PDM clock is used for clocking the microphone data into the xCORE. Additionally, 
-the leds and buttons are declared by
+the LEDs and buttons are declared by
    
 .. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: p_leds leds
@@ -210,7 +210,7 @@ then the decimators require initialization via:
    :start-on: mic_array_init_time_domain_frame
    :end-before: while(1)
 
-The the decimators will start presenting samples in the form of frames that can be accessed with:
+The decimators will start presenting samples in the form of frames that can be accessed with:
 
 .. literalinclude:: app_lores_DAS_fixed.xc
    :start-on: mic_array_frame_time_domain *  current =
@@ -220,7 +220,7 @@ The return value of ``mic_array_get_next_time_domain_frame()`` is a pointer to t
 the application is allowed to access. The ``current`` frame contains the frame data in the 
 ``data`` member. ``data`` is a 2D array with the first index denoting the channel number and 
 the second index denoting the frame index. The frame index used 0 for the oldest samples and 
-increasing indicies for newer samples.
+increasing indices for newer samples.
 
 Delay taps
 ----------

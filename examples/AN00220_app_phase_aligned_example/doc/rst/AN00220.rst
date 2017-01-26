@@ -50,7 +50,7 @@ be included in your code to use the library. The support functions for the board
 Allocating hardware resources
 .............................
 
-A PDM microphone requires a clock and a data pin. For eight PDM mocrophones a single 
+A PDM microphone requires a clock and a data pin. For eight PDM microphones a single 
 clock can be shared between all microphones and the data can be sampled on a single 
 8 bit port. On an xCORE the pins are controlled by ``ports``. The application therefore 
 declares one 1-bit port and one 8-bit port:
@@ -124,7 +124,7 @@ then the decimators require initialization via:
    :start-on: mic_array_init_time_domain_frame
    :end-before: while(1)
 
-The the decimators will start presenting samples in the form of frames that can be accessed with:
+The decimators will start presenting samples in the form of frames that can be accessed with:
 
 .. literalinclude:: app_phase_aligned_example.xc
    :start-on: mic_array_frame_time_domain *  current =
@@ -134,7 +134,7 @@ The return value of ``mic_array_get_next_time_domain_frame()`` is a pointer to t
 the application is allowed to access. The ``current`` frame contains the frame data in the 
 ``data`` member. ``data`` is a 2D array with the first index denoting the channel number and 
 the second index denoting the frame index. The frame index used 0 for the oldest samples and 
-increasing indicies for newer samples.
+increasing indices for newer samples.
 
 Changing the sample rate
 ........................
@@ -145,7 +145,7 @@ The sample rate chane be change easily with the example code by modifying:
    :start-on: #define DECIMATION_FACTOR
    :end-before: #define DECIMATOR_COUNT 
 
-The supported ``DECIMATION_FACTORS`` that come as stadard from ``lib_mic_array`` are 2, 4, 6, 8 and 12. These
+The supported ``DECIMATION_FACTORS`` that come as standard from ``lib_mic_array`` are 2, 4, 6, 8 and 12. These
 correspond to 48kHz, 24kHz, 16kHz, 12kHz, 8kHz and 6kHz. In order to change the define successfully you must
 also ensure that the coefficients to the decimators are correct for the selected decimation factor.
 The coefficients are declared in the header ``fir_coefs.h`` which is included in ``mic_array.h``. The ``coefs``
@@ -168,14 +168,14 @@ the FIR compensation must be made to match. For example, to change to 24kHz outp
 Changing the frame buffer count
 ...............................
 
-The number of frame buffer in use can be modifide through the define 
+The number of frame buffer in use can be modified through the define 
 
 .. literalinclude:: app_phase_aligned_example.xc
    :start-on: #define FRAME_BUFFER_COUNT  2
    :end-before: #define DECIMATOR_CH_COUNT 4 
    
 within this application. Increasing this would allow sample to be known for a longer period of time 
-before the memory is resued for the present samples at the cost of increased memory usage. 
+before the memory is reused for the present samples at the cost of increased memory usage. 
 
 
 Changing the frame size
@@ -196,7 +196,7 @@ be serviced is doubled.
 Disabling the DC offset elimination
 ...................................
 
-The DC offset elimination can be disbaled by configuring the ``mic_array_decimator_config_common`` with
+The DC offset elimination can be disabled by configuring the ``mic_array_decimator_config_common`` with
 0 in the ``apply_dc_offset_removal`` member. Setting ``apply_dc_offset_removal`` to non-zero will enable
 it.
 
