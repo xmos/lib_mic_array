@@ -1,10 +1,14 @@
-// Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
 #ifndef MIC_ARRAY_FRAME_H_
 #define MIC_ARRAY_FRAME_H_
 
 #include <stdint.h>
 #include "mic_array_conf.h"
 #include "dsp_fft.h"
+
+#ifndef MIC_ARRAY_WORD_LENGTH_SHORT
+    #define MIC_ARRAY_WORD_LENGTH_SHORT 0
+#endif
 
 #ifndef MIC_ARRAY_NUM_MICS
     #warning Count of microphones not defined in mic_array_conf.h, defaulting to 16
