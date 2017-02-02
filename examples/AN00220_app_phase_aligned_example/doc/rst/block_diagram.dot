@@ -1,7 +1,6 @@
 digraph g {
 	
 	mic_array_pdm_rx [label="mic_array_pdm_rx()", color=red]; 
-	mic_array_hires_delay [label="mic_array_hires_delay()", color=red]; 
 	mic_array_decimate_to_pcm_4ch1 [label="mic_array_decimate_to_pcm_4ch()", color=red]; 
 	mic_array_decimate_to_pcm_4ch0 [label="mic_array_decimate_to_pcm_4ch()", color=red]; 
 	example [label="example()", color=red]; 
