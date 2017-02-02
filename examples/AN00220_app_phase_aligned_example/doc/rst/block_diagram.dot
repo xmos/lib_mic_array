@@ -10,8 +10,9 @@ digraph g {
 
 	pdm_mic -> mic_array_pdm_rx;
 	
-	mic_array_pdm_rx -> mic_array_decimate_to_pcm_4ch0;
-	mic_array_pdm_rx -> mic_array_decimate_to_pcm_4ch1;
+	mic_array_pdm_rx -> mic_array_hires_delay;
+	mic_array_hires_delay -> mic_array_decimate_to_pcm_4ch0;
+	mic_array_hires_delay -> mic_array_decimate_to_pcm_4ch1;
 
 	mic_array_decimate_to_pcm_4ch0 -> example;
 	mic_array_decimate_to_pcm_4ch1 -> example;
