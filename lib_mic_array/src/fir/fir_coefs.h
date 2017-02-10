@@ -1,4 +1,4 @@
-// Copyright (c) 2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
 extern const int g_first_stage_fir_0[256];
 extern const int g_first_stage_fir_1[256];
 extern const int g_first_stage_fir_2[256];
