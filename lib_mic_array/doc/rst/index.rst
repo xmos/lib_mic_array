@@ -79,6 +79,28 @@ requires a single extra core for up to 16 channels. All tasks requires a 62.5 MI
 therefore, all eight cores can be used simultaneously without timing problems developing
 within ``lib_mic_array``.
 
+Version upgrade advisory
+------------------------
+
+2.+ -> 3.0.+
+............
+
+When upgrading from version 2 to 3 the main interface change is from the function ``mic_array_decimate_to_pcm_4ch()``.
+In version 2::
+            void mic_array_decimate_to_pcm_4ch(
+                    streaming chanend c_from_pdm_interface);
+
+And in version 3::
+            void mic_array_decimate_to_pcm_4ch(
+                    streaming chanend c_from_pdm_interface,
+                    streaming chanend c_frame_output, mic_array_internal_audio_channels * channels);
+
+This new parameter is used for feeding internal audio channels into the decimators so that the internal channels 
+can benefit from the post decimation processing that the microphones recieve (metadata collection, windowing, etc).
+In order to upgrade a version 2 mic array to version 3 simply use the define ``MIC_ARRAY_NO_INTERNAL_CHANS`` for 
+the new parameter in the above function.
+
+
 Typical memory usage
 --------------------
 
@@ -221,8 +243,8 @@ connect to the PDM interface via streaming channels::
         par {
             mic_array_pdm_rx(p_pdm_mics, c_pdm_to_dec[0], c_pdm_to_dec[1]);
 
-            mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0]);
-            mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1]);
+            mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[0], c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+            mic_array_decimate_to_pcm_4ch(c_pdm_to_dec[1], c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
 
             application(c_ds_output);
         }
@@ -262,8 +284,8 @@ interface and the decimators in the following fashion::
 
             mic_array_hires_delay(c_pdm_to_hires, c_hires_to_dec, 2, c_cmd);
 
-            mic_array_decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0]);
-            mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1]);
+            mic_array_decimate_to_pcm_4ch(c_hires_to_dec[0], c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+            mic_array_decimate_to_pcm_4ch(c_hires_to_dec[1], c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
 
             application(c_ds_output, c_cmd);
         }
@@ -802,12 +824,17 @@ In order generate custom filters the ``fir_design.py`` can be executed. The purp
 is to design and generate the FIR coefficients for the three stages of decimation. ``fir_design.py`` 
 is a command line tool that takes a number of options to control each parameter of the
 filter design. As previously illustrated the PDM to PCM conversion is divided into three stages. 
-The overall noise floor is governed with the option ``--stopband-attenuation``. This should be a 
-positive number of decibels between 20 and 120. In the first stage the designer is able 
-to tune:
+The stop band attenuation is controlled for each stage with the options:
+
+* first stage (``--first-stage-stop-atten``) - The stop band attenuation(in dB) of the first stage filter(Normally negative).
+* second stage (``--second-stage-stop-atten``) - The stop band attenuation(in dB) of the second stage filter(Normally negative).
+* third stage (``--third-stage-stop-atten``) - The stop band attenuation(in dB) of the third stage filter(Normally negative).
+
+In the first stage the designer is then able to tune:
 
 * passband bandwidth (``--first-stage-pass-bw``) - The bandwidth of the passband, in kHz.
 * stopband bandwidth (``--first-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
+* num taps (``--first-stage-num-taps``)  - Do not change this
 
 These are illustrated in :ref:`figfirst`.
 
@@ -838,12 +865,13 @@ delay of the filter but the harder the design will be to meet other criteria.
 To add a custom third stage filter ``--add-third-stage`` has to be called. It requires the following arguments:
 
 * decimation factor - the ratio of input samples to output samples.
-* normalized output passband - this specifies where the passband ends.
-* normalized output stopband - this specified where the stopband starts.
+* output passband - this specifies where the passband ends.
+* output stopband start - this specified where the stopband starts.
 * filter_name - this assigns a name to the custom filter.
+* num taps - the number of taps to use for each round of the third stage
 
-For example to add a third stage decimator called "my_filter" with a final stage decimation factor of 2, normalized 
-output passband of 0.4 and normalized output stopband of 0.5 then the argument ``--add-third-stage 2 0.4 0.5 my_filter``
+For example to add a third stage decimator called "my_filter" with a final stage decimation factor of 2, 
+output passband of 16kHz and output stopband start of 24kHz and 32 taps per phase then the argument ``--add-third-stage 2 16 24 my_filter 32``
 would need to be passed to the script.
 
 These are illustrated in figure :ref:`figthird`.

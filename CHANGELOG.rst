@@ -1,6 +1,12 @@
 lib_mic_array change log
 ========================
 
+3.0.1
+-----
+
+  * Filter design script update for usability.
+  * Documentation improvement.
+
 3.0.0
 -----
 

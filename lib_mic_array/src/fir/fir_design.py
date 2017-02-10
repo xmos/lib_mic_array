@@ -11,54 +11,61 @@ import datetime
 from scipy import signal
 import matplotlib.pyplot as plt
 
-#This controls the resolution of the FIR compansation
-response_point_count = 100
-
 ###############################################################################
 
 def parseArguments(third_stage_configs):
     parser = argparse.ArgumentParser(description="Filter builder")
 
+    #this must be set for all other bandwidths to be relative to
     parser.add_argument('--pdm-sample-rate', type=float, default=3072.0,
                         help='The sample rate (in kHz) of the PDM microphones',
                         metavar='kHz')
-    parser.add_argument('--stopband-attenuation', type=int, default=62,
-      help='The desired attenuation to apply to the stop band at each stage')
 
-    parser.add_argument('--first-stage-pass-bw', type=float, default=42.0,
+    parser.add_argument('--first-stage-num-taps', type=int, default=48,
+      help='The number of FIR taps in the first stage of decimation.')
+    parser.add_argument('--first-stage-pass-bw', type=float, default = 40.0,
       help='The pass bandwidth (in kHz) of the first stage filter.'
-                             ' Starts at 0Hz and ends at this frequency',
-                        metavar='kHz')
-    parser.add_argument('--first-stage-stop-bw', type=float, default=110.0,
+          ' Starts at 0Hz and ends at this frequency', metavar='kHz')
+    parser.add_argument('--first-stage-stop-bw', type=float, default = 110.0,
       help='The stop bandwidth (in kHz) of the first stage filter.',
-                        metavar='kHz')
+      metavar='kHz')
+    parser.add_argument('--first-stage-stop-atten', type=float, default = -85.0,
+      help='The stop band attenuation(in dB) of the first stage filter(Normally negative).', metavar='dB')
 
-    parser.add_argument('--second-stage-pass-bw', type=float, default=8,
-      help='The pass bandwidth (in kHz) of the second stage filter.'
-                             ' Starts at 0Hz and ends at this frequency',
-                        metavar='kHz')
-    parser.add_argument('--second-stage-stop-bw', type=float, default=8,
-      help='The stop bandwidth (in kHz) of the second stage filter.',
-                        metavar='kHz')
+    parser.add_argument('--second_stage_pass_bw', type=float, default=8,
+       help='The number of FIR taps per stage '
+          ' Starts at 0Hz and ends at this frequency', metavar='kHz')
+    parser.add_argument('--second_stage_stop_bw', type=float, default=8,
+       help='The number of FIR taps per stage '
+          ' Starts at 0Hz and ends at this frequency', metavar='kHz')
+    parser.add_argument('--second-stage-stop-atten', type=float, default = -70.0,
+      help='The stop band attenuation(in dB) of the second stage filter(Normally negative).', metavar='dB')
 
     parser.add_argument('--third-stage-num-taps', type=int, default=32,
-      choices=range(1,33), help='The number of FIR taps per stage '
+       help='The number of FIR taps per stage '
       '(decimation factor). The fewer there are the lower the group delay.')
 
+    parser.add_argument('--third-stage-stop-atten', type=float, default = -70.0,
+      help='The stop band attenuation(in dB) of the third stage filter(Normally negative).', metavar='dB')
+
     parser.add_argument('--add-third-stage', nargs=5,
-      help='Add a third stage filter e.g. 12 0.4 0.55 my_filt 32',
-                        metavar=('DIVIDER', 'NORM_PASS', 'NORM_STOP', 'NAME', 'N_TAPS'))
+      help='Add a custom third stage filter; e.g. 6 6.2 8.1 custom_16k_filt 32',
+                        metavar=('DIVIDER', 'PASS_BANDWIDTH', 'STOP_BAND_START', 'NAME', 'NUM_TAPS'))
 
     args = parser.parse_args()
 
     to_add = args.add_third_stage
     if to_add:
+    	pdm_rate = float(args.pdm_sample_rate)
+    	print "****** Input rate for custom filter: " + str(args.pdm_sample_rate) + "kHz. ********"
         try:
             divider = int(to_add[0])
-            norm_pass = float(to_add[1])
-            norm_stop = float(to_add[2])
-            name = to_add[3]
+            passbw = float(to_add[1])
+            stopbw = float(to_add[2])
+            name = str(to_add[3])
             num_taps = int(to_add[4])
+            norm_pass = passbw / (pdm_rate/8/4 / divider)
+            norm_stop = stopbw / (pdm_rate/8/4 / divider)
             third_stage_configs.append(
                 [divider, norm_pass, norm_stop, name, num_taps])
         except:
@@ -146,14 +153,8 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
 
 ###############################################################################
 
-def generate_first_stage(header, body, points):
+def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps):
 
-  first_stage_num_taps = 48
-
- # points = int(bw/(2*khz_per_point))
-
-  pbw = args.first_stage_pass_bw/args.pdm_sample_rate
-  sbw = args.first_stage_stop_bw/args.pdm_sample_rate
   nulls = 1.0/8.0
   a = [1, 0, 0, 0, 0]
   w = [1, 1, 1, 1, 1]
@@ -213,12 +214,8 @@ def generate_first_stage(header, body, points):
 
 ###############################################################################
 
-def generate_second_stage(header, body, points):
+def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps):
 
-  second_stage_num_taps = 16
-
-  pbw = args.second_stage_pass_bw/(args.pdm_sample_rate/8.0)
-  sbw = args.second_stage_stop_bw/(args.pdm_sample_rate/8.0)
   nulls = 1.0/4.0
   a = [1, 0, 0]
   w = [1, 1, 1]
@@ -266,7 +263,7 @@ def generate_second_stage(header, body, points):
 
 ###############################################################################
 
-def generate_third_stage(header, body, third_stage_configs, combined_response, points):
+def generate_third_stage(header, body, third_stage_configs, combined_response, points, input_sample_rate):
 
   max_coefs_per_phase = 32
 
@@ -379,8 +376,14 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
     print "Filter name: " + name
     print "Final stage divider: " + str(divider)
-    print "(3.072MHz) Passband:" + str(48000*2*passband/divider) + "Hz Stopband:"+ str(48000*2*stopband/divider) + "Hz"
-    print "(2.822MHz) Passband:" + str(44100*2*passband/divider) + "Hz Stopband:"+ str(44100*2*stopband/divider) + "Hz"
+    print "Output sample rate: " + str(input_sample_rate/divider)+ "kHz"
+    print "Pass bandwidth: " + str(input_sample_rate*passband/divider) + "kHz of " + str(input_sample_rate/(divider*2)) + "kHz total bandwidth."
+    print "Pass bandwidth(normalised): " + str(passband*2) + " of Nyquist."
+    print "Stop band start: " + str(input_sample_rate*stopband/divider) + "kHz of " + str(input_sample_rate/(divider*2)) + "kHz total bandwidth."
+    print "Stop band start(normalised): " + str(stopband*2) + " of Nyquist."
+
+   # print "(3.072MHz) Passband:" + str(48000*2*passband/divider) + "Hz Stopband:"+ str(48000*2*stopband/divider) + "Hz"
+   # print "(2.822MHz) Passband:" + str(44100*2*passband/divider) + "Hz Stopband:"+ str(44100*2*stopband/divider) + "Hz"
     
     if 1.0/passband_max > 8.0:
       print "Error: Compensation factor is too large"
@@ -407,8 +410,27 @@ if __name__ == "__main__":
   ]
   args = parseArguments(third_stage_configs)
 
+  input_sample_rate = args.pdm_sample_rate
+  input_band_width = input_sample_rate/2.0
+  first_stage_pbw = args.first_stage_pass_bw/args.pdm_sample_rate
+  first_stage_sbw = args.first_stage_stop_bw/args.pdm_sample_rate
+  first_stage_num_taps = int(args.first_stage_num_taps)
+  first_stage_stop_band_atten = args.first_stage_stop_atten
 
-  print third_stage_configs
+#warnings
+  if first_stage_stop_band_atten > 0:
+  	print "Warning first stage stop band attenuation is positive."
+
+  print "Filer Configuration:"
+  print "Input(PDM) sample rate: " + str(input_sample_rate) + "kHz"
+  print "First Stage"
+  print "Num taps: " + str(first_stage_num_taps)
+  print "Pass bandwidth: " + str(args.first_stage_pass_bw) + "kHz of " + str(input_band_width) + "kHz total bandwidth."
+  print "Pass bandwidth(normalised): " + str(first_stage_pbw*2) + " of Nyquist."
+  print "Stop band attenuation: " + str(first_stage_stop_band_atten)+ "dB."
+  print "Stop bandwidth: " + str(args.first_stage_stop_bw) + "kHz"
+
+
   header = open ("fir_coefs.h", 'w')
   body   = open ("fir_coefs.xc", 'w')
 
@@ -419,16 +441,42 @@ if __name__ == "__main__":
   points = 8192*8
   combined_response = []
 
-  first_stage_response = generate_first_stage(header, body, points)
+  first_stage_response = generate_first_stage(header, body, points, first_stage_pbw, first_stage_sbw, first_stage_num_taps)
   #Save the response between 0 and 48kHz
   for r in range(0, points/(8*4)+1):
     combined_response.append(abs(first_stage_response[r]))
 
-  second_stage_response = generate_second_stage(header, body, points/8)
+  second_stage_num_taps = 16
+  second_stage_pbw = args.second_stage_pass_bw/(input_sample_rate/8.0)
+  second_stage_sbw = args.second_stage_stop_bw/(input_sample_rate/8.0)
+  second_stage_stop_band_atten = args.second_stage_stop_atten
+
+  print ""
+#warnings
+  if second_stage_stop_band_atten > 0:
+  	print "Warning second stage stop band attenuation is positive."
+
+  print "Second Stage"
+  print "Num taps: " + str(second_stage_num_taps)
+  print "Pass bandwidth: " + str(args.second_stage_pass_bw) + "kHz of " + str(input_sample_rate/8.0) + "kHz total bandwidth."
+  print "Pass bandwidth(normalised): " + str(second_stage_pbw*2) + " of Nyquist."
+  print "Stop band attenuation: " + str()+ "dB."
+  print "Stop bandwidth: " + str(args.second_stage_stop_bw) + "kHz"
+
+  second_stage_response = generate_second_stage(header, body, points/8, second_stage_pbw, second_stage_sbw, second_stage_num_taps)
   for r in range(0, points/(8*4)):
     combined_response[r] = combined_response[r] * abs(second_stage_response[r])
 
-  generate_third_stage(header, body, third_stage_configs, combined_response, points/(8*4))
+  third_stage_stop_band_atten = args.third_stage_stop_atten
+  print ""
+#warnings
+  if third_stage_stop_band_atten > 0:
+  	print "Warning third stage stop band attenuation is positive."
+
+  print "Third Stage"
+  generate_third_stage(header, body, third_stage_configs, combined_response, points/(8*4), input_sample_rate/8.0/4.0)
 
   header.write("#define THIRD_STAGE_COEFS_PER_STAGE (32)\n")
   
+
+
