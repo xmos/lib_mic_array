@@ -800,6 +800,23 @@ can be viewed in :ref:`figfirst_stage` and :ref:`figsecond_stage`.
 The phase delay of the default filters is 18 output clock cycles. This can be shortened by either using a minimum phase 
 FIR as the final stage decimation FIR and/or by reducing the number of taps on the final stage decimation FIR. 
 
+FIR dynamic range
+.................
+
+The dynamic range of the decimation FIRs is given as (log2(number of taps) - 1) * 6.02. This gives thre first stage
+at least 153.01dB of dynamic range, the second stage at least 162.56dB of dynamic range and the third stage with 32 
+coefficients per phase as:
+  ======================== ==================
+  output_decimation_factor Dynamic Range (dB)
+  ======================== ==================
+  2                          150.51
+  4                          144.49
+  6                          140.97
+  8                          138.47
+  12                         134.95
+  ======================== ==================
+
+  
 
 .. _section_advanced:
 
