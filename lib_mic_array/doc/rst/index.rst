@@ -82,7 +82,7 @@ within ``lib_mic_array``.
 Version upgrade advisory
 ------------------------
 
-2.+ -> 3.0.+
+2.+ -> 3.+
 ............
 
 When upgrading from version 2 to 3 the main interface change is from the function ``mic_array_decimate_to_pcm_4ch()``.
@@ -849,7 +849,7 @@ The stop band attenuation is controlled for each stage with the options:
 
 In the first stage the designer is then able to tune:
 
-* passband bandwidth (``--first-stage-pass-bw``) - The bandwidth of the passband, in kHz.
+* passband bandwidth (``--first-stage-pass-bw``) - The bandwidth of the passband, in kHz (defaults to 40kHz).
 * stopband bandwidth (``--first-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
 * num taps (``--first-stage-num-taps``)  - Do not change this
 
@@ -863,7 +863,7 @@ These are illustrated in :ref:`figfirst`.
 
 In the second stage the same options are available:
 
-* passband bandwidth (``--second-stage-pass-bw``) - The bandwidth of the passband, in kHz.
+* passband bandwidth (``--second-stage-pass-bw``) - The bandwidth of the passband, in kHz (defaults to 16kHz).
 * stopband bandwidth (``--second-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
 
 These are illustrated in :ref:`figsecond`.
@@ -887,8 +887,14 @@ To add a custom third stage filter ``--add-third-stage`` has to be called. It re
 * filter_name - this assigns a name to the custom filter.
 * num taps - the number of taps to use for each round of the third stage
 
-For example to add a third stage decimator called "my_filter" with a final stage decimation factor of 2, 
-output passband of 16kHz and output stopband start of 24kHz and 32 taps per phase then the argument ``--add-third-stage 2 16 24 my_filter 32``
+Examples
+........
+
+General Example
+===============
+
+For example to add a third stage decimator called "my_filter" with a final stage decimation factor of D, 
+output passband of PkHz and output stopband start of SkHz and N taps per phase then the argument ``--add-third-stage D P S my_filter N``
 would need to be passed to the script.
 
 These are illustrated in figure :ref:`figthird`.
@@ -904,12 +910,42 @@ The defines ``DECIMATION_FACTOR_ + (filter_name)`` and ``FIR_COMPENSATOR_ + (fil
 represent the filter designed. In the generated defines the name will be in all caps and the FIR coefficients array will 
 be in all lowercase. Additionally, the array ``const int g_third_stage_ + (filter_name) _fir[]`` will
 also be generated and will contain all the coefficients to implement the filter.
-For example, if ``fir_design.py`` was passed the option ``--add-third-stage 2 0.4 0.5 my_filter`` then available 
+For example, if ``fir_design.py`` was passed the option ``--add-third-stage 2 P S my_filter N`` then available 
 in ``lib_mic_array`` would be::
  
   #define DECIMATION_FACTOR_MY_FILTER (2)
   #define FIR_COMPENSATOR_MY_FILTER (301451293)
   extern const int g_third_stage_my_filter_fir[126];
+
+
+16kHz voice
+===========
+In this example we would like to optimise for a 16kHz output rate, let's assume that the requirment of 6.7kHz bandwidth is sufficient. We will assume a 3.072MHz PDM clock and that our microphones have a -63dB SNR. This means that a decimation factor of 6 will be required to reduce the output of the second stage (384kHz in this case) down to 16kHz. We would also like to keep the passband ripple to within 0.15dB and have no aliasing in the highest frequencies above -40dB.
+
+Next we only require that each stage of decimation can pass the voice which, by virtue of the 16kHz sample rate, will be output limited to 8kHz of band width. The first decimator is by default over specified so needs no attention. The second stage deimator will introduce high frequency atteuation if the passband is too wide, for this reason we should limit it to our requirements in order to maximise stopband attenuation and minimise ripple. The third stage is where we make the final output decisions; we require 6.7kHz of passband bandwidth but in order to minimise ripple we want to relax the transition region as much as possible without introducing too much aliasing. In order to meet our specification we can set the start of the stop band at 8.15kHz and the stop band attenuation to -65dB.
+
+All this can be captured by the FIR design script::
+
+    python fir_design.py --pdm-sample-rate 3072 --second-stage-pass-bw 6.7 --second-stage-stop-bw 6.7 --add-third-stage 6 6.7 8.15 custom_voice 32 --third-stage-stop-atten -65.0
+
+The resulting filter would be :ref:`figcustom`.
+
+  .. figcustom:
+  .. figure:: output_custom_voice.pdf
+  :width: 100%
+      
+  Custom voice filter.
+
+We can see that as the PDM sample rate was specified then the output magnitude response is displayed on :ref:`figcustom`.
+
+48kHz fullband
+==============
+
+In this example we will look at the situation where a 48kHz wideband output is required. This time les's assume that a 16kHz passband is acceptable    
+
+
+
+
 
 
 .. _section_api:
