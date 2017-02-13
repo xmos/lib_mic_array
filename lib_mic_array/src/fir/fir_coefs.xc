@@ -1,4 +1,4 @@
-// Copyright (c) 2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
 const int g_first_stage_fir_0[256] = {
 	0xff41bab1, 0xffe05557, 0xff98ea26, 0x003784cb, 0xff95b9c9, 0x0034546f, 0xffece93e, 0x008b83e3, 
 	0xff91164c, 0x002fb0f1, 0xffe845c0, 0x0086e065, 0xffe51564, 0x0083b009, 0x003c44d7, 0x00dadf7e, 

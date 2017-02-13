@@ -208,6 +208,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3/FilterData}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/ds3/FilterData}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="/ssdbuilds/moby_dick/Installs/Linux/target/include/xc"/>
+									<listOptionValue builtIn="false" value="/ssdbuilds/moby_dick/Installs/Linux/target/include"/>
+									<listOptionValue builtIn="false" value="/ssdbuilds/moby_dick/Installs/Linux/target/include/clang"/>
 								</option>
 								<inputType id="com.xmos.cdt.xc.compiler.input.1370880023" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
@@ -541,6 +544,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3/FilterData}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/ds3/FilterData}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="/ssdbuilds/moby_dick/Installs/Linux/target/include"/>
+									<listOptionValue builtIn="false" value="/ssdbuilds/moby_dick/Installs/Linux/target/include/clang"/>
 								</option>
 								<inputType id="com.xmos.cdt.c.compiler.input.c.1236095096" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
@@ -882,6 +887,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3/FilterData}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/ds3/FilterData}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/doc/pdf}&quot;"/>
+									<listOptionValue builtIn="false" value="/ssdbuilds/moby_dick/Installs/Linux/target/include"/>
+									<listOptionValue builtIn="false" value="/ssdbuilds/moby_dick/Installs/Linux/target/include/clang"/>
+									<listOptionValue builtIn="false" value="/ssdbuilds/moby_dick/Installs/Linux/target/include/c++/v1"/>
 								</option>
 								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.757073714" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>
