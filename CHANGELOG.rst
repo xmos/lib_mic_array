@@ -22,7 +22,7 @@ lib_mic_array change log
   * Added significant bits collection to the metadata.
   * Added fixed gain control through define MIC_ARRAY_FIXED_GAIN.
   * Tested and enabled the debug mode for detecting frame dropping. Enabled by
-    adding -DDEBUG_MIC_ARRAY to the Makefile.
+    adding DEBUG_MIC_ARRAY to the Makefile.
   * Moved to using types from lib_dsp.
   * Bug fix in python FIR generator script resulting in excessive output ripple.
   * Default FIR coefficients now optimised for 16kHz output sample rate.
