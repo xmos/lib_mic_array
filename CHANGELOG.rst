@@ -6,6 +6,9 @@ lib_mic_array change log
 
   * Filter design script update for usability.
   * Documentation improvement.
+  * Changed DEBUG_UNIT to XASSERT_UNIT to work with lib_xassert.
+  * Added upgrade advisory.
+  * Added dynamic range subsection to documentation.
 
 3.0.0
 -----

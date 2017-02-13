@@ -22,7 +22,7 @@ The microphone array library has the following features:
   - 48kHz, 24kHz, 16kHz, 12kHz and 8kHz output sample rate by default (3.072MHz PDM clock), 
   - 44.1kHz, 22.05kHz, 14.7kHz, 11.025kHz and 7.35kHz output sample rate by default (2.8224MHz PDM clock), 
   - 4, 8, 12 or 16 PDM interfaces per tile,
-  - No less than 80dB of stop band attenuation for all output sample frequencies,
+  - No less than 70dB of stop band attenuation for all output sample frequencies,
   - Configurable latency, ripple and bandwidth,
   - Framing, configurable frame size from 1 sample to 8192 samples plus 50% overlapping frames option,
   - Windowing and sample index bit reversal within a frame,
@@ -30,7 +30,9 @@ The microphone array library has the following features:
   - DC offset removal,
   - Up to 3.072MHz input sample rate,
   - High resolution (2.63 microsecond) microphone specific delay lines,
-  - Every task requires only a 62.5 MIPS core to run.
+  - Every task requires only a 62.5 MIPS core to run,
+  - Group delay of a maximum of 18 output clock cycles,
+  - No less than 140dB of dynamic range.
 
 Components
 ...........

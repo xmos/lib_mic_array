@@ -225,8 +225,6 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
             nulls*1-sbw, nulls*1+sbw,
             nulls*2-sbw, 0.5]
 
-  print bands
-
   second_stage_response, coefs =  generate_stage( 
     second_stage_num_taps, bands, a, w, stopband_attenuation = stop_band_atten)
 
@@ -407,7 +405,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
     header.write("#define FIR_COMPENSATOR_" + name.upper() + " (" + str(int(comp_factor)) +")\n")
 
     header.write("\n")
-    print "Passband ripple = " + str(20.0*numpy.log10(passband_min/passband_max)) +" dB\n"
+    print "Passband ripple = " + str(abs(20.0*numpy.log10(passband_min/passband_max))) +" dB\n"
   return
 
 ###############################################################################

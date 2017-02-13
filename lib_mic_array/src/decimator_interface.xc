@@ -3,7 +3,7 @@
 #include <xs1.h>
 #include <string.h>
 
-#define DEBUG_UNIT DEBUG_MIC_ARRAY
+#define XASSERT_UNIT DEBUG_MIC_ARRAY
 
 #if DEBUG_MIC_ARRAY
 #include "xassert.h"

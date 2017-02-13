@@ -59,7 +59,7 @@ After the decimation to the output sample rate the following steps takes place:
 There is also an optional high resolution delay, running at up to 384kHz, that can be used to add to the 
 signal path channel specific delays. This can be used for high resolution delay and sum
 beamforming. The task diagrams for 4 and 8 channel microphone arrays are given in 
-:ref:`figfourchanhires` and :ref:`figeightchanhires` respectivly.
+:ref:`figfourchanhires` and :ref:`figeightchanhires` respectively.
 
 .. _figfourchanhires:
 .. figure:: chan4hires.pdf
@@ -87,16 +87,18 @@ Version upgrade advisory
 
 When upgrading from version 2 to 3 the main interface change is from the function ``mic_array_decimate_to_pcm_4ch()``.
 In version 2::
+
             void mic_array_decimate_to_pcm_4ch(
                     streaming chanend c_from_pdm_interface);
 
 And in version 3::
+
             void mic_array_decimate_to_pcm_4ch(
                     streaming chanend c_from_pdm_interface,
                     streaming chanend c_frame_output, mic_array_internal_audio_channels * channels);
 
 This new parameter is used for feeding internal audio channels into the decimators so that the internal channels 
-can benefit from the post decimation processing that the microphones recieve (metadata collection, windowing, etc).
+can benefit from the post decimation processing that the microphones receive (metadata collection, windowing, etc).
 In order to upgrade a version 2 mic array to version 3 simply use the define ``MIC_ARRAY_NO_INTERNAL_CHANS`` for 
 the new parameter in the above function.
 
@@ -189,7 +191,7 @@ An approximate clock can be generated from the 500 MHz xCORE clock as follows::
   configure_in_port(p_pdm_mics, pdmclk);
   start_clock(pdmclk);
 
-It should be noted that this is a 3.048 MHz clock, which is 0.75% off a true
+It should be noted that this is a 3.049 MHz clock, which is 0.75% off a true
 3.072 MHz clock. Finally, an approximate clock can also be generated from the 100 MHz reference
 clock as follows::
 
@@ -252,7 +254,7 @@ connect to the PDM interface via streaming channels::
   }
 
 There is a further requirement that any application of a ``mic_array_decimate_to_pcm_4ch()`` 
-task must be on the same tile as the ``mic_array_decimate_to_pcm_4ch()`` task due to the sharaed
+task must be on the same tile as the ``mic_array_decimate_to_pcm_4ch()`` task due to the shared
 frame memory.
   
 As the PDM interface ``mic_array_pdm_rx()`` communicates over channels then the placement of it
@@ -536,9 +538,14 @@ Optionally, ``mic_array_conf.h`` may define:
      amount that the signal should be left shifted by with positive number increasing the 
      signal and negative numbers decreasing the signal. The use of this can cause distortion. 
      There is no saturation logic included in the gain control.
+
+Optionally, ``mic_array_conf.h`` or ``xassert_conf.h`` may define:
+
+   * DEBUG_MIC_ARRAY
+
+     If this define will enable the debugging features of the mic array. These include timing assertions
+     and configuration validation. To enable set to non-zero.
 	 
-
-
 Four Channel Decimator
 ----------------------
 
@@ -675,7 +682,7 @@ When a reconfigure is performed then there will be a short interval (to flush th
 before the audio continues.
 
 Overlapping frames are supported so that frequency domain algorithms can be converted back into the 
-time domain without artifacts. See ``lib_dsp`` for FFT functions.
+time domain without artefacts. See ``lib_dsp`` for FFT functions.
  
 The ``number_of_frame_buffers`` member of ``decimator_config_common`` is required so that a frame 
 buffer (array) can be used in a round-robin fashion. This means that the when the application calls 
@@ -688,6 +695,10 @@ of longer periods of time at the expense of memory.
 
 Due to the round-robin nature of the library the application must be finished with the data in the 
 oldest frame before the decimators need it again. This is the nature of real time audio processing.
+
+Note: timing verification can be checked by switching on ``DEBUG_MIC_ARRAY``. This will enable an assertion 
+if the application of the decimators does not meet the real time requirements of the audio stream. 
+
 
 FIR memory
 ----------
@@ -704,7 +715,7 @@ would look like::
   int data[CHANNELS][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
 The FIR memory must also be initialized in order to prevent a spurious click during startup. 
-Normally initializing to all zeros is sufficient. Memset is a highly efficient way of doing this.
+Normally initializing to all zeros is sufficient. ``memset`` is a highly efficient way of doing this.
 
 Note, globally declared memory is always double word aligned.
 
@@ -752,14 +763,16 @@ than 3dB.
 Stopband
 ........
 
-This specifies the start frequency to the input Nyquest sample rate that the input signal should 
+This specifies the start frequency to the input Nyquist sample rate that the input signal should 
 be attenuated over.
+
+.. _section_characteristics:
 
 Characteristics
 ...............
 
-The output signal has been decimated from the original PDM in such a way to introduce no more than -80dB 
-of noise into the passband for all output sample rates.
+By default the output signal has been decimated from the original PDM in such a way to introduce no more than 
+-70dB of alias noise (during the decimation process) into the passband for all output sample rates.
 
   ======================== =================== ======================
   output_decimation_factor PDM Sample Rate(Hz) Output sample rate(Hz)
@@ -779,16 +792,16 @@ of noise into the passband for all output sample rates.
   ======================== ============ ============ ========== ==========
   output_decimation_factor Passband(Hz) Stopband(Hz) Ripple(dB) THD+N(dB)
   ======================== ============ ============ ========== ==========
-  2                         18240        24000        0.12        -144.63
-  4                         10080        12480        0.05        -142.61
-  6                         6720         8320         0.04        -139.10
-  8                         5040         6240         0.04        -136.60
-  12                        3360         4160         0.04        -133.07
-  2                         16758        22050        0.12        -144.63
-  4                         9261         11466        0.05        -142.61
-  6                         6174         7644         0.04        -139.10
-  8                         4630         5733         0.04        -136.60
-  12                        3087         3822         0.04        -133.07
+  2                         18240        24000        1.40        -144.63
+  4                         10080        12480        0.49        -142.61
+  6                         6720         8320         0.23        -139.10
+  8                         5040         6240         0.18        -136.60
+  12                        3360         4160         0.12        -133.07
+  2                         16758        22050        1.40        -144.63
+  4                         9261         11466        0.49        -142.61
+  6                         6174         7644         0.23        -139.10
+  8                         4630         5733         0.18        -136.60
+  12                        3087         3822         0.12        -133.07
   ======================== ============ ============ ========== ==========
 
 The decimation is achieved by applying three poly-phase FIR filters sequentially. 
@@ -797,33 +810,35 @@ magnitude responses of the first to third stages are given as :ref:`figthird_sta
 through to :ref:`figthird_stage_div_12` in the appendix. The first stage and second stage 
 can be viewed in :ref:`figfirst_stage` and :ref:`figsecond_stage`.
 
-The phase delay of the default filters is 18 output clock cycles. This can be shortened by either using a minimum phase 
+Group delay
+...........
+
+The group delay of the default filters is 18 output clock cycles. This can be shortened by either using a minimum phase 
 FIR as the final stage decimation FIR and/or by reducing the number of taps on the final stage decimation FIR. 
 
 FIR dynamic range
 .................
 
-The dynamic range of the decimation FIRs is given as (log2(number of taps) - 1) * 6.02. This gives thre first stage
-at least 153.01dB of dynamic range, the second stage at least 162.56dB of dynamic range and the third stage with 32 
+The dynamic range of the decimation FIRs is given as ``(32 - log2(number of taps)) * 6.02``. This gives the first stage
+at least 159.0dB of dynamic range, the second stage at least 168.6dB of dynamic range and the third stage with 32 
 coefficients per phase as:
-  ======================== ==================
-  output_decimation_factor Dynamic Range (dB)
-  ======================== ==================
-  2                          150.51
-  4                          144.49
-  6                          140.97
-  8                          138.47
-  12                         134.95
-  ======================== ==================
 
-  
+  ======================== ====================
+  output_decimation_factor  Dynamic Range (dB)
+  ======================== ====================
+    2                          156.53
+    4                          150.51
+    6                          146.99
+    8                          144.49
+    12                         140.97
+  ======================== ====================
 
 .. _section_advanced:
 
 Advanced filter design
-......................
+----------------------
 
-The above table has been generated to provide 65dB of stopband attenuation for all decimation factors
+The table in :ref:`section_characteristics` has been generated to provide 70dB of stopband attenuation for all decimation factors
 whilst maintaining a fairly flat passband and wide bandwidth. However for a given specification 
 the filter characteristics can be optimised to reduce latency, increase passband, lower the 
 passband ripple and increase the signal to noise ratio. For example, in a system where a 16kHz
@@ -832,7 +847,9 @@ if the noise floor of the PDM microphone is 65dB then there is little advantage 
 filter. 
 
 Note, as of version 3.0.0 the default FIR coefficients are optimised for 16kHz output with a stopband 
-attenuation of 65dB. Read below to specify custom filter characteristics.
+attenuation of 70dB. Read below to specify custom filter characteristics. To see the exact filter characteristics
+``fir_design.py`` can be run, as part of its output the script will write the filter characteristics to the terminal.
+
 
 ``fir_design.py`` usage
 .......................
@@ -891,10 +908,10 @@ Examples
 ........
 
 General Example
-===============
+...............
 
 For example to add a third stage decimator called "my_filter" with a final stage decimation factor of D, 
-output passband of PkHz and output stopband start of SkHz and N taps per phase then the argument ``--add-third-stage D P S my_filter N``
+output passband of PkHz and output stopband start of S kHz and N taps per phase then the argument ``--add-third-stage D P S my_filter N``
 would need to be passed to the script.
 
 These are illustrated in figure :ref:`figthird`.
@@ -919,34 +936,42 @@ in ``lib_mic_array`` would be::
 
 
 16kHz voice
-===========
-In this example we would like to optimise for a 16kHz output rate, let's assume that the requirment of 6.7kHz bandwidth is sufficient. We will assume a 3.072MHz PDM clock and that our microphones have a -63dB SNR. This means that a decimation factor of 6 will be required to reduce the output of the second stage (384kHz in this case) down to 16kHz. We would also like to keep the passband ripple to within 0.15dB and have no aliasing in the highest frequencies above -40dB.
+...........
 
-Next we only require that each stage of decimation can pass the voice which, by virtue of the 16kHz sample rate, will be output limited to 8kHz of band width. The first decimator is by default over specified so needs no attention. The second stage deimator will introduce high frequency atteuation if the passband is too wide, for this reason we should limit it to our requirements in order to maximise stopband attenuation and minimise ripple. The third stage is where we make the final output decisions; we require 6.7kHz of passband bandwidth but in order to minimise ripple we want to relax the transition region as much as possible without introducing too much aliasing. In order to meet our specification we can set the start of the stop band at 8.15kHz and the stop band attenuation to -65dB.
+In this example we would like to optimise for a 16kHz output rate, let's assume that the requirement of 6.7kHz bandwidth is sufficient. We will assume a 3.072MHz PDM clock and that our microphones have a -63dB SNR. This means that a decimation factor of 6 will be required to reduce the output of the second stage (384kHz in this case) down to 16kHz. We would also like to keep the passband ripple to within 0.15dB and have no aliasing in the highest frequencies above -40dB.
+
+Next we only require that each stage of decimation can pass the voice which, by virtue of the 16kHz sample rate, will be output limited to 8kHz of band width. The first decimator is by default over specified so needs no attention. The second stage decimator will introduce high frequency attenuation if the passband is too wide, for this reason we should limit it to our requirements in order to maximise stopband attenuation and minimise ripple. The third stage is where we make the final output decisions; we require 6.7kHz of passband bandwidth but in order to minimise ripple we want to relax the transition region as much as possible without introducing too much aliasing. In order to meet our specification we can set the start of the stop band at 8.15kHz and the stop band attenuation to -65dB.
 
 All this can be captured by the FIR design script::
 
     python fir_design.py --pdm-sample-rate 3072 --second-stage-pass-bw 6.7 --second-stage-stop-bw 6.7 --add-third-stage 6 6.7 8.15 custom_voice 32 --third-stage-stop-atten -65.0
 
-The resulting filter would be :ref:`figcustom`.
+The resulting filter would be :ref:`figcustomvoice`.
 
-  .. figcustom:
+  .. _figcustomvoice:
   .. figure:: output_custom_voice.pdf
-  :width: 100%
+	:width: 100%
       
-  Custom voice filter.
+	Custom voice filter.
 
-We can see that as the PDM sample rate was specified then the output magnitude response is displayed on :ref:`figcustom`.
+We can see that as the PDM sample rate was specified then the output magnitude response is displayed on :ref:`figcustomvoice`.
 
 48kHz fullband
-==============
+..............
 
-In this example we will look at the situation where a 48kHz wideband output is required. This time les's assume that a 16kHz passband is acceptable    
+In this example we will look at the situation where a 48kHz wideband output is required. This time let's assume that a 14kHz passband is required with -70dB stop band attenuation and 0.3dB of ripple is acceptable. As the all of the default stopband 
+attenuations are better than or equal to the desired stopband attenuation then we wont need to modify it. We will need to set 
+the bandwidths of the second stage to our new 14kHz requirement. For the third stage tere will be no need for the stop band to exceed the Nyquist rate so we will set it to 24kHz. This can be captured by the FIR design script::
 
+    python fir_design.py --pdm-sample-rate 3072 --second-stage-pass-bw 14 --second-stage-stop-bw 14 --add-third-stage 6 14 24 custom_wideband 32
 
+The resulting filter would be :ref:`figcustomwideband`.
 
-
-
+  .. _figcustomwideband:
+  .. figure:: output_custom_wideband.pdf
+	:width: 100%
+      
+	Custom wideband filter.
 
 .. _section_api:
 
@@ -1019,35 +1044,35 @@ High resolution delay task
 .. figure:: third_stage_div_2.pdf
             :width: 70%
                     
-            Third stage FIR magnitude response for a divide of 2.
+            Third stage FIR magnitude response for a divide of 2 giving a typical output rate of 48kHz(3.072MHz) or 44.1kHz(2.8224MHz).
 
 
 .. _figthird_stage_div_4:
 .. figure:: third_stage_div_4.pdf
             :width: 70%
                     
-            Third stage FIR magnitude response for a divide of 4.
+            Third stage FIR magnitude response for a divide of 4 giving a typical output rate of 24kHz(3.072MHz) or 22.05kHz(2.8224MHz).
 
 
 .. _figthird_stage_div_6:
 .. figure:: third_stage_div_6.pdf
             :width: 70%
                     
-            Third stage FIR magnitude response for a divide of 6.
+            Third stage FIR magnitude response for a divide of 6 giving a typical output rate of 16kHz(3.072MHz) or 14.7kHz(2.8224MHz).
 
 
 .. _figthird_stage_div_8:
 .. figure:: third_stage_div_8.pdf
             :width: 70%
                     
-            Third stage FIR magnitude response for a divide of 8.
+            Third stage FIR magnitude response for a divide of 8 giving a typical output rate of 12kHz(3.072MHz) or 11.025kHz(2.8224MHz).
 
 
 .. _figthird_stage_div_12:
 .. figure:: third_stage_div_12.pdf
             :width: 70%
                     
-            Third stage FIR magnitude response for a divide of 12.
+            Third stage FIR magnitude response for a divide of 12 giving a typical output rate of 8kHz(3.072MHz) or 7.35kHz(2.8224MHz).
 
 
 
@@ -1055,7 +1080,7 @@ High resolution delay task
 .. figure:: output_div_2.pdf
             :width: 70%
                     
-            Final frequency response for a divide of 2.
+            Final frequency response for a divide of 2 giving a typical output rate of 48kHz(3.072MHz) or 44.1kHz(2.8224MHz).
 
 
 
@@ -1063,7 +1088,7 @@ High resolution delay task
 .. figure:: output_div_4.pdf
             :width: 70%
                     
-            Final frequency response for a divide of 4.
+            Final frequency response for a divide of 4 giving a typical output rate of 24kHz(3.072MHz) or 22.05kHz(2.8224MHz).
 
 
 
@@ -1071,7 +1096,7 @@ High resolution delay task
 .. figure:: output_div_6.pdf
             :width: 70%
                     
-            Final frequency response for a divide of 6.
+            Final frequency response for a divide of 6 giving a typical output rate of 16kHz(3.072MHz) or 14.7kHz(2.8224MHz).
 
 
 
@@ -1079,7 +1104,7 @@ High resolution delay task
 .. figure:: output_div_8.pdf
             :width: 70%
                     
-            Final frequency response for a divide of 8.
+            Final frequency response for a divide of 8 giving a typical output rate of 12kHz(3.072MHz) or 11.025kHz(2.8224MHz).
 
 
 
@@ -1087,7 +1112,7 @@ High resolution delay task
 .. figure:: output_div_12.pdf
             :width: 70%
                     
-            Final frequency response for a divide of 12.
+            Final frequency response for a divide of 12 giving a typical output rate of 8kHz(3.072MHz) or 7.35kHz(2.8224MHz).
 
 				
 |newpage|
