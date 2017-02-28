@@ -21,10 +21,10 @@ def do_backend_test(length, frame_count, testlevel):
 
     tester.set_min_testlevel(testlevel)
 
-    resources = xmostest.request_resource("uac2_xcore200_mc_testrig_os_x_11",
+    resources = xmostest.request_resource("testrig_os_x_11",
                                           tester)
 
-    run_job = xmostest.run_on_xcore(resources['analysis_device_1'],
+    run_job = xmostest.run_on_xcore(resources['uac2_xcore200_mc_analysis_device_1'],
                                     binary,
                                     tester=tester, timeout=3600)
 
