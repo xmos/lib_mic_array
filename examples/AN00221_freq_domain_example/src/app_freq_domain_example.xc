@@ -278,30 +278,29 @@ void i2s_handler(server i2s_callback_if i2s,
   p_rst_shared <: 0xF;
 
   mabs_init_pll(i2c, ETH_MIC_ARRAY);
+
   i2c_regop_res_t res;
   int i = 0x4A;
-  uint8_t data = i2c.read_reg(i, 1, res);
 
-  data = i2c.read_reg(i, 0x02, res);
-  data |= 1;
+  uint8_t data = 1;
   res = i2c.write_reg(i, 0x02, data); // Power down
 
-  // Setting MCLKDIV2 high if using 24.576MHz.
-  data = i2c.read_reg(i, 0x03, res);
-  data |= 1;
-  res = i2c.write_reg(i, 0x03, data);
+  data = 0x08;
+  res = i2c.write_reg(i, 0x04, data); // Slave, I2S mode, up to 24-bit
 
-  data = 0b01110000;
-  res = i2c.write_reg(i, 0x10, data);
+  data = 0;
+  res = i2c.write_reg(i, 0x03, data); // Disable Auto mode and MCLKDIV2
 
-  data = i2c.read_reg(i, 0x02, res);
-  data &= ~1;
+  data = 0x00;
+  res = i2c.write_reg(i, 0x09, data); // Disable DSP
+
+  data = 0;
   res = i2c.write_reg(i, 0x02, data); // Power up
 
   while (1) {
     select {
     case i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
-      i2s_config.mode = I2S_MODE_LEFT_JUSTIFIED;
+      i2s_config.mode = I2S_MODE_I2S;
       i2s_config.mclk_bclk_ratio = (MASTER_CLOCK_FREQUENCY/OUTPUT_SAMPLE_RATE)/64;
       break;
 
