@@ -1,8 +1,9 @@
 lib_mic_array change log
 ========================
 
-3.0.1
+3.0.2
 -----
+
   * Update DAC settings to work for mic array base board as well.
 
 3.0.1
