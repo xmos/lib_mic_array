@@ -39,7 +39,7 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 // MIC_ARRAY_MAX_FRAME_SIZE_LOG2 given in mic_array_conf.h)
 #define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
 
-dsp_complex_t p[FFT_N];             // use as tmp buffer as well as output buffer - must be aligned on an 8 byte boundary
+dsp_complex_t p[FFT_N];             // Use as tmp buffer as well as output buffer - must be aligned on an 8 byte boundary
 
 typedef struct {
     int32_t data[NUM_OUTPUT_CHANNELS][FFT_N/2]; // FFT_N/2 due to overlapping
