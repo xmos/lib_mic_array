@@ -39,6 +39,8 @@ clock bclk                          = on tile[1]: XS1_CLKBLK_4;
 // MIC_ARRAY_MAX_FRAME_SIZE_LOG2 given in mic_array_conf.h)
 #define FFT_N (1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2)
 
+dsp_complex_t p[FFT_N];             // use as tmp buffer as well as output buffer - must be aligned on an 8 byte boundary
+
 typedef struct {
     int32_t data[NUM_OUTPUT_CHANNELS][FFT_N/2]; // FFT_N/2 due to overlapping
 } multichannel_audio_block_s;
@@ -121,8 +123,6 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
         mic_array_init_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
         while(1){
-           dsp_complex_t p[FFT_N]; // use as tmp buffer as well as output buffer
-
            //Receive the preprocessed frames ready for the FFT
            mic_array_frame_fft_preprocessed * current = mic_array_get_next_frequency_domain_frame(c_ds_output, 2, buffer, comp, dc);
 
