@@ -1,6 +1,13 @@
 lib_mic_array change log
 ========================
 
+3.0.3
+-----
+
+  * Modified the FIR designer to increase the first stage stopband attenuation.
+  * Cleaned up some of the code in the FIR designer.
+  * Updated docs to reflect the above.
+
 3.0.2
 -----
 

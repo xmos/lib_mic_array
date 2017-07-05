@@ -868,6 +868,7 @@ In the first stage the designer is then able to tune:
 
 * passband bandwidth (``--first-stage-pass-bw``) - The bandwidth of the passband, in kHz (defaults to 40kHz).
 * stopband bandwidth (``--first-stage-stop-bw``) - The bandwidth of the bands around the regions that will alias with the pass band after decimation, in kHz.
+* use lowest ripple first stage (``--use-low-ripple-first-stage``) - This uses an alternative filter design to minimise passband ripple at the cost of broadband stopband attenuation.
 * num taps (``--first-stage-num-taps``)  - Do not change this
 
 These are illustrated in :ref:`figfirst`.
