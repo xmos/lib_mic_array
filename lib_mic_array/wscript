@@ -1,0 +1,8 @@
+def use_module(bld):
+    sources = bld.path.ant_glob(['src/**/*.xc', 'src/**/*.S'])
+    source_dirs = set((source.parent for source in sources))
+    bld.module(
+        source=sources,
+        includes=list(source_dirs) + ['api'],
+        depends_on=['lib_xassert(>=3.0.0)', 'lib_logging(>=2.1.0)', 'lib_dsp(>=3.0.0)'],
+        version='3.0.2')
