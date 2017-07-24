@@ -2,6 +2,7 @@
 #ifndef MIC_ARRAY_H_
 #define MIC_ARRAY_H_
 
+#include <xs1.h>
 #include <stdint.h>
 #include <limits.h>
 #include "fir_coefs.h"
@@ -283,5 +284,43 @@ void mic_array_decimator_configure(
         streaming chanend c_from_decimators[],
         unsigned decimator_count,
         mic_array_decimator_config_t dc[]);
+
+
+/** Function that sets up the microphones for SDR use; that is, a single
+ * microphone is connected to each data wire.
+ *
+ *  \param [in] pdmclk     Clock block to be used
+ *  \param [in] p_mclk     Master clock input pin
+ *  \param [in] p_pdm_clk  PDM clock output pin
+ *  \param [in] p_pdm_data PDM data input pins
+ *  \param [in] divide     Desired ration between master and PDM clock.
+ *                         Must be even and at least two.
+ */
+extern void mic_array_setup_sdr(clock pdmclk,
+                                in port p_mclk,
+                                out port p_pdm_clk,
+                                buffered in port:32 p_pdm_data,
+                                int divide);
+
+/** Function that sets up the microphones for DDR use; that is, two
+ * microphones are connected to each data wire. The data port should be a
+ * 4-bit port, and microphones N and N+4 should be connected to wire N of
+ * the port.
+ *
+ *  \param [in] pdmclk     First clock block to be used
+ *  \param [in] pdmclk6    Second clock block to be used
+ *  \param [in] p_mclk     Master clock input pin
+ *  \param [in] p_pdm_clk  PDM clock output pin
+ *  \param [in] p_pdm_data PDM data input pins
+ *  \param [in] divide     Desired ratio between master and PDM clock.
+ *                         Must be a multiple of four and at least four.
+ */
+extern void mic_array_setup_ddr(clock pdmclk,
+                                clock pdmclk6,
+                                in port p_mclk,
+                                out port p_pdm_clk,
+                                buffered in port:32 p_pdm_data,
+                                int divide);
+
 
 #endif /* MIC_ARRAY_H_ */
