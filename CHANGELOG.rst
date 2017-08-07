@@ -4,7 +4,7 @@ lib_mic_array change log
 3.1.1
 -----
   
-  * Updated lib_i2s dependancy from 3.0.0 to 4.0.0
+  * Updated lib_dsp dependancy from 3.0.0 to 4.0.0
 
 3.1.0
 -----
