@@ -1,0 +1,10 @@
+
+def configure(conf):
+    conf.load('xwaf.compiler_xcc')
+
+def build(bld):
+    bld.env.XCC_FLAGS = ['-O2', '-g']
+    bld.env.TARGET_ARCH = 'MIC-ARRAY-1V0'
+
+    depends_on = ['lib_i2c', 'lib_i2s', 'lib_mic_array', 'lib_mic_array_board_support']
+    prog = bld.program(depends_on=depends_on)
