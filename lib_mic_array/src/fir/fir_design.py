@@ -21,18 +21,15 @@ def parseArguments(third_stage_configs):
                         help='The sample rate (in kHz) of the PDM microphones',
                         metavar='kHz')
 
-    parser.add_argument('--use-low-ripple-first-stage', type=bool, default=False,
-      help='Use the lowest ripple possible for the given output passband.')
-
     parser.add_argument('--first-stage-num-taps', type=int, default=48,
       help='The number of FIR taps in the first stage of decimation.')
-    parser.add_argument('--first-stage-pass-bw', type=float, default = 20.0,
+    parser.add_argument('--first-stage-pass-bw', type=float, default = 30.0,
       help='The pass bandwidth (in kHz) of the first stage filter.'
           ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--first-stage-stop-bw', type=float, default = 24.0,
+    parser.add_argument('--first-stage-stop-bw', type=float, default = 30.0,
       help='The stop bandwidth (in kHz) of the first stage filter.',
       metavar='kHz')
-    parser.add_argument('--first-stage-stop-atten', type=float, default = -120.0,
+    parser.add_argument('--first-stage-stop-atten', type=float, default = -100.0,
       help='The stop band attenuation(in dB) of the first stage filter(Normally negative).', metavar='dB')
 
     parser.add_argument('--second-stage-pass-bw', type=float, default=16,
@@ -157,32 +154,20 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
 
 ###############################################################################
 
-def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps, first_stage_stop_atten):
-  nulls = 1.0/8.0
-  a = [1, 0]
-  w = [1, 1]
-
-  bands = [ 0, pbw, nulls-sbw, 0.5]
-
-  return first_stage_output_coefficients(header, body, points, first_stage_num_taps, first_stage_stop_atten, nulls, a, w, bands)
-
-def generate_first_stage_low_ripple(header, body, points, pbw, sbw, first_stage_num_taps, first_stage_stop_atten):
+def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps):
 
   nulls = 1.0/8.0
   a = [1, 0, 0, 0, 0]
   w = [1, 1, 1, 1, 1]
+
   bands = [ 0,           pbw,
             nulls*1-sbw, nulls*1+sbw,
             nulls*2-sbw, nulls*2+sbw,
             nulls*3-sbw, nulls*3+sbw,
             nulls*4-sbw, 0.5]
 
-  return first_stage_output_coefficients(header, body, points, first_stage_num_taps, first_stage_stop_atten, nulls, a, w, bands)
-
-def first_stage_output_coefficients(header, body, points, first_stage_num_taps, first_stage_stop_atten, nulls, a, w, bands):
-
   first_stage_response, coefs =  generate_stage( 
-    first_stage_num_taps, bands, a, w, stopband_attenuation = first_stage_stop_atten)
+    first_stage_num_taps, bands, a, w)
 
   #ensure the there is never any overflow 
   coefs /= sum(abs(coefs))
@@ -227,7 +212,6 @@ def first_stage_output_coefficients(header, body, points, first_stage_num_taps, 
   header.write("\n")
 
   return H
-
 
 ###############################################################################
 
@@ -297,10 +281,14 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
     pbw = passband/divider
     sbw = stopband/divider
 
-    a = [1, 0]
-    w = [1, 1]
+    a = [1, 1, 0]
+    w = [1, 1, 1]
 
-    bands = [0, pbw, sbw, 0.5]
+    thing1 = (00.0/48000.0)/divider
+    thing2 = (200.0/48000.0)/divider
+
+    bands = [0, 0, thing2, pbw, sbw, 0.5]
+
 
     third_stage_response, coefs =  generate_stage( 
       coefs_per_phase*divider, bands, a, w, stopband_attenuation = stop_band_atten)
@@ -440,7 +428,6 @@ if __name__ == "__main__":
   first_stage_sbw = args.first_stage_stop_bw/args.pdm_sample_rate
   first_stage_num_taps = int(args.first_stage_num_taps)
   first_stage_stop_band_atten = args.first_stage_stop_atten
-  first_stage_low_ripple = args.use_low_ripple_first_stage
 
 #warnings
   if first_stage_stop_band_atten > 0:
@@ -454,7 +441,6 @@ if __name__ == "__main__":
   print "Pass bandwidth(normalised): " + str(first_stage_pbw*2) + " of Nyquist."
   print "Stop band attenuation: " + str(first_stage_stop_band_atten)+ "dB."
   print "Stop bandwidth: " + str(args.first_stage_stop_bw) + "kHz"
-  print "Lowest Ripple: " + str(first_stage_low_ripple) 
 
 
   header = open ("fir_coefs.h", 'w')
@@ -467,10 +453,7 @@ if __name__ == "__main__":
   points = 8192*8
   combined_response = []
 
-  if first_stage_low_ripple:
-    first_stage_response = generate_first_stage_low_ripple(header, body, points, first_stage_pbw, first_stage_sbw, first_stage_num_taps, first_stage_stop_band_atten)
-  else: 
-    first_stage_response = generate_first_stage(header, body, points, first_stage_pbw, first_stage_sbw, first_stage_num_taps, first_stage_stop_band_atten)
+  first_stage_response = generate_first_stage(header, body, points, first_stage_pbw, first_stage_sbw, first_stage_num_taps)
   #Save the response between 0 and 48kHz
   for r in range(0, points/(8*4)+1):
     combined_response.append(abs(first_stage_response[r]))
