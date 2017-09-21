@@ -1,0 +1,10 @@
+
+def configure(conf):
+    conf.load('xwaf.compiler_xcc')
+
+def build(bld):
+    bld.env.XCC_FLAGS = ['-O2', '-g']
+    bld.env.TARGET_ARCH = 'XCORE-200-EXPLORER'
+
+    depends_on = ['lib_mic_array']
+    prog = bld.program(depends_on=depends_on)
