@@ -1,6 +1,12 @@
 lib_mic_array change log
 ========================
 
+3.1.1
+-----
+
+  * Cleaned up some of the code in the FIR designer.
+  * Removed fixed gain in examples
+
 3.1.0
 -----
 
