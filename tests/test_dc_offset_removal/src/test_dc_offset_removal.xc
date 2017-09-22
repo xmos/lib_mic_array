@@ -3,16 +3,17 @@
 #include <stdio.h>
 #include <xs1.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <math.h>
 #include <xscope.h>
 
 int data[4*THIRD_STAGE_COEFS_PER_STAGE*2] = {0};
 
-int dc_elim_model(int x, int &prev_x, long long & y){
+int dc_elim_model(int32_t x, int32_t &prev_x, int64_t & y){
 #define S 0
 #define N 8
-    long long X = x;
-    long long prev_X = prev_x;
+    int64_t X = x;
+    int64_t prev_X = prev_x;
 
     y = y - (y>>8);
 
@@ -40,7 +41,7 @@ void test(){
 
             for(unsigned i=0;i<INPUT_SAMPLES;i++){
                 one_khz_sine[i] = (int)((double)(FIRST_STAGE_MAX_PASSBAND_OUTPUT-actual_dc_offset)
-                        *sin((double)i*3.1415926535*2.0 / (double)INPUT_SAMPLES) + actual_dc_offset);
+                        *sin((double)i*M_PI*2.0 / (double)INPUT_SAMPLES) + actual_dc_offset);
             }
 
             while(1){
@@ -65,16 +66,16 @@ void test(){
                 mic_array_decimator_configure(c_ds_output, 1, dc);
                 mic_array_init_time_domain_frame(c_ds_output, 1 , buffer, audio, dc);
 
-                long long rolling_window[SINE_LENGTH] = {0};
-                long long sum = 0;
+                int32_t rolling_window[SINE_LENGTH] = {0};
+                int64_t sum = 0;
                 unsigned head = 0;
 
-                int prev_x = 0;
+                int32_t prev_x = 0;
                 unsigned count = 0;
                 while(1){
                     mic_array_frame_time_domain *current = mic_array_get_next_time_domain_frame(c_ds_output, 1, buffer, audio, dc);
                     count++;
-                    int x = current->data[0][0];
+                    int32_t x = current->data[0][0];
 
                     //wait for DC to become zero
                     sum -= rolling_window[head];
@@ -87,12 +88,12 @@ void test(){
                     int diff = x - prev_x;
                     if (diff < 0) diff = -diff;
                     if(diff > (INT_MAX/2)){
-                        printf("Error: sine rapped really hard\n");
+                        printf("Error: sine wrapped really hard\n");
                         _Exit(1);
                     }
                     prev_x=x;
 
-                    int abs_sum = sum;
+                    int32_t abs_sum = sum;
                     if(abs_sum < 0)
                         abs_sum = -abs_sum;
 

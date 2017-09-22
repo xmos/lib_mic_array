@@ -1,0 +1,74 @@
+import fnmatch
+import re
+from waflib import Build, Options
+from waflib.Build import BuildContext, CleanContext
+
+
+def options(ctx):
+    ctx.add_option('--config', action='store', default='')
+
+
+def configure(conf):
+    def make_config(name, flags):
+        conf.setenv(name)
+        conf.load('xwaf.compiler_xcc')
+        conf.env.XCC_FLAGS = flags
+
+    for key, value in CONFIGS.iteritems():
+        make_config(key, value)
+
+
+def build(bld):
+    if not bld.variant:
+        if not bld.options.config:
+            bld.fatal('specify a config with --config')
+
+        build_configs = [
+            c for c in CONFIGS.keys()
+            if fnmatch.fnmatch(c, bld.options.config)
+        ]
+        build_commands = ['{}_{}'.format(bld.cmd, c) for c in build_configs]
+
+        if not build_commands:
+            bld.fatal(
+                '{} does not match any configs'.format(bld.options.config))
+
+        cmd_str = {'build': 'Building', 'clean': 'Cleaning'}[bld.cmd]
+        print('{} configs:\n    {}'.format(cmd_str, '\n    '.join(
+            build_configs)))
+        Options.commands = build_commands + Options.commands
+        return
+
+    depends_on = ['lib_logging', 'lib_mic_array']
+
+    bld.env.TARGET_ARCH = 'XCORE-200-EXPLORER'
+
+    prog = bld.program(depends_on=depends_on)
+
+
+CONFIGS = {
+    'COUNT64_LONG': [
+        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
+        '-DCOUNT=64', '-DMIC_ARRAY_WORD_LENGTH_SHORT=0'
+    ],
+    'COUNT4_SHORT': [
+        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
+        '-DCOUNT=4', '-DMIC_ARRAY_WORD_LENGTH_SHORT=1'
+    ],
+    'COUNT4_LONG': [
+        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
+        '-DCOUNT=4', '-DMIC_ARRAY_WORD_LENGTH_SHORT=0'
+    ],
+    'COUNT64_SHORT': [
+        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
+        '-DCOUNT=64', '-DMIC_ARRAY_WORD_LENGTH_SHORT=1'
+    ],
+}
+
+for config in CONFIGS.keys():
+    for ctx in (BuildContext, CleanContext):
+        raw_context = ctx.__name__.replace('Context', '').lower()
+
+        class tmp(ctx):
+            cmd = raw_context + '_' + config
+            variant = config
