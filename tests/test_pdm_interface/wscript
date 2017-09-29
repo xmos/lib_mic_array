@@ -1,55 +1,37 @@
+import xwaf.utils.configs as config_utils
 
-import fnmatch
-import re
-from waflib import Build, Options
-from waflib.Build import BuildContext, CleanContext
 
 def options(ctx):
     ctx.add_option('--config', action='store', default='')
+
 
 def configure(conf):
     def make_config(name, flags):
         conf.setenv(name)
         conf.load('xwaf.compiler_xcc')
         conf.env.XCC_FLAGS = flags
+
     for key, value in CONFIGS.iteritems():
         make_config(key, value)
 
+
 def build(bld):
-    if not bld.variant:
-        if not bld.options.config:
-            bld.fatal('specify a config with --config')
-
-        build_configs = [
-            c for c in CONFIGS.keys()
-            if fnmatch.fnmatch(c, bld.options.config)
-        ]
-        build_commands = ['{}_{}'.format(bld.cmd, c) for c in build_configs]
-
-        if not build_commands:
-            bld.fatal(
-                '{} does not match any configs'.format(bld.options.config))
-
-        cmd_str = {'build': 'Building', 'clean': 'Cleaning'}[bld.cmd]
-        print('{} configs:\n    {}'.format(cmd_str, '\n    '.join(
-            build_configs)))
-        Options.commands = build_commands + Options.commands
+    if not config_utils.check_build_config(bld, CONFIGS):
         return
+
+    bld.env.PROJECT_ROOT = '../../..'
 
     depends_on = ['lib_mic_array']
 
     bld.env.TARGET_ARCH = 'XCORE-200-EXPLORER'
+    bld.env.XSCOPE = 'config.xscope'
 
     prog = bld.program(depends_on=depends_on)
+
 
 CONFIGS = {
     'CH4': ['-O2', '-g', '-Wno-timing', '-DTEST_MODE', '-DCHANNELS=4'],
     'CH8': ['-O2', '-g', '-Wno-timing', '-DTEST_MODE', '-DCHANNELS=8'],
 }
 
-for config in CONFIGS.keys():
-    for ctx in (BuildContext, CleanContext):
-        raw_context = ctx.__name__.replace('Context', '').lower()
-        class tmp(ctx):
-            cmd = raw_context + '_' + config
-            variant = config
+config_utils.register_configs(CONFIGS)
