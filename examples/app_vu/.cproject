@@ -217,6 +217,21 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/ds3}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3/FilterData}&quot;"/>
+									<listOptionValue builtIn="false" value="/Users/andrew/sandboxes/test_box/Installs/Mac/target/include/xc"/>
+									<listOptionValue builtIn="false" value="/Users/andrew/sandboxes/test_box/Installs/Mac/target/include"/>
+									<listOptionValue builtIn="false" value="/Users/andrew/sandboxes/test_box/Installs/Mac/target/include/clang"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/bfp}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc/rst/images}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/api}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.xc.compiler.input.669033079" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
@@ -560,6 +575,20 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/ds3}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3/FilterData}&quot;"/>
+									<listOptionValue builtIn="false" value="/Users/andrew/sandboxes/test_box/Installs/Mac/target/include"/>
+									<listOptionValue builtIn="false" value="/Users/andrew/sandboxes/test_box/Installs/Mac/target/include/clang"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/bfp}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc/rst/images}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/api}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.c.compiler.input.c.146291043" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
@@ -910,6 +939,21 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/ds3}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/os3/FilterData}&quot;"/>
+									<listOptionValue builtIn="false" value="/Users/andrew/sandboxes/test_box/Installs/Mac/target/include"/>
+									<listOptionValue builtIn="false" value="/Users/andrew/sandboxes/test_box/Installs/Mac/target/include/clang"/>
+									<listOptionValue builtIn="false" value="/Users/andrew/sandboxes/test_box/Installs/Mac/target/include/c++/v1"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_dsp/src/bfp}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/api}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc/rst/images}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/doc/rst}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_mic_array_board_support/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lib_i2s/api}&quot;"/>
 								</option>
 								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.895199262" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
 							</tool>

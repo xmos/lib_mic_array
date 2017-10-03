@@ -16,12 +16,8 @@
 
 <xSCOPEconfig ioMode="basic" enabled="true">
 
-    <Probe name="Mic 0" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 1" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 2" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 3" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 4" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 5" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 6" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
+    <Probe name="z_weight" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <Probe name="a_weight" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <Probe name="c_weight" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
 
 </xSCOPEconfig>
