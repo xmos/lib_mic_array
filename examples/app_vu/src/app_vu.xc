@@ -45,15 +45,91 @@ int32_t filter_state_C_weight[2*DSP_NUM_STATES_PER_BIQUAD] = {0};
 
 int data[8][THIRD_STAGE_COEFS_PER_STAGE*DECIMATION_FACTOR];
 
+#define LOG2_BITS 6
+#define LOG2_MASK ((1<<LOG2_BITS)-1)
+const uint32_t log2_lut[] = {
+    0xffffff, 0xfa461a, 0xf4a296, 0xef14c7, 0xe99c09, 0xe437bd, 0xdee74e, 0xd9aa2c,
+    0xd47fcb, 0xcf67a8, 0xca6143, 0xc56c23, 0xc087d2, 0xbbb3e0, 0xb6efe1, 0xb23b6c,
+    0xad961e, 0xa8ff97, 0xa47778, 0x9ffd6a, 0x9b9115, 0x973227, 0x92e050, 0x8e9b41,
+    0x8a62b0, 0x863655, 0x8215ea, 0x7e012b, 0x79f7d7, 0x75f9b0, 0x720677, 0x6e1df1,
+    0x6a3fe5, 0x666c1c, 0x62a260, 0x5ee27c, 0x5b2c3d, 0x577f73, 0x53dbee, 0x504180,
+    0x4caffb, 0x492734, 0x45a701, 0x422f38, 0x3ebfb1, 0x3b5845, 0x37f8cf, 0x34a129,
+    0x315130, 0x2e08c0, 0x2ac7b8, 0x278df6, 0x245b5b, 0x212fc7, 0x1e0b1a, 0x1aed39,
+    0x17d604, 0x14c560, 0x11bb32, 0x0eb75e, 0x0bb9ca, 0x08c25c, 0x05d0fb, 0x02e58f,
+};
 
-void update_power(uint32_t &lpf_p, uint32_t alpha, uint32_t p){
-    int64_t l =  (int64_t)lpf_p *(int64_t)(UINT_MAX - alpha);
-    int64_t r =  (int64_t)p *(int64_t)alpha;
-    lpf_p = (l+r)>>32;
+
+q8_24 uint32_log2(uint32_t r){
+    unsigned c = clz(r);
+    unsigned m = (r>>((32 - LOG2_BITS) - (c + 1)))&LOG2_MASK;
+    return -(int32_t)((c<<24) + log2_lut[m]);
 }
 
+q8_24 uint64_log2(uint64_t r){
+    unsigned c = clz(r>>32);
+    if(c == 32){
+        unsigned more_c = clz(r&0xffffffff);
+        c+=more_c;
+        uint64_t t = (r>>((32 - LOG2_BITS) - (more_c + 1)));
+        unsigned m =t&LOG2_MASK;
+        return -(int32_t)((c<<24) + log2_lut[m]);
+    } else {
+        uint64_t t =  (r>>((32 - LOG2_BITS) - (c + 1)));
+        unsigned m =(t>>32)&LOG2_MASK;
+        return -(int32_t)((c<<24) + log2_lut[m]);
+    }
+
+}
+
+q8_24 log2_to_log10(const q8_24 i){
+    const int32_t d = 1292913986; // (1.0/log2(10)) * (2^(31 + 1)-1)
+    return ((int64_t)d * (int64_t)i)>>(31+1);
+}
+
+int64_t power(int32_t v){
+    uint64_t p =  (int64_t)v*(int64_t)v;
+    p<<=1;
+    return p;
+}
+
+void update_power(uint64_t &lpf_p, uint32_t alpha, uint64_t p){
+
+    uint64_t lpf_p_top = lpf_p >> 32;
+    uint64_t lpf_p_bot = lpf_p&0xffffffff;
+
+    uint64_t not_alpha = (uint64_t)(UINT_MAX - alpha);
+
+    uint64_t l_top =  lpf_p_top * not_alpha;
+    uint64_t l_bot =  lpf_p_bot * not_alpha;
+
+    uint64_t l = l_top + (l_bot>>32);
+
+    uint64_t p_top = p >> 32;
+    uint64_t p_bot = p&0xffffffff;
+
+    int64_t r_top =  p_top *(int64_t)alpha;
+    int64_t r_bot =  p_bot *(int64_t)alpha;
+
+    uint64_t r = r_top + (r_bot>>32);
+
+    lpf_p = l+r;
+}
+
+/*
+   AKU441
+   116dbSPL = 0  dbFS = 2**32-1  linear power
+    94dBSPL = -26dBFS = 10788470 linear power
+    62dbSPL = -54dbFS = 6807     linear power
+              -89dbFS = 5        linear power (noise floor, a weighted)
+
+    Brand x
+   130dbSPL = 0  dbFS = 2**32-1  linear power
+    94dBSPL = -36dBFS = 1078847  linear power
+             -105dbFS = 5        linear power (noise floor, a weighted)
+
+*/
 void vu(streaming chanend c_ds_output[DECIMATOR_COUNT],
-        client interface mabs_led_button_if lb) {
+        client interface mabs_led_button_if lb, chanend c_printer) {
 
     unsafe{
         unsigned buffer;
@@ -75,13 +151,16 @@ void vu(streaming chanend c_ds_output[DECIMATOR_COUNT],
 
         unsigned selected_ch = 0;
 
-        uint32_t pZ_slow = 0, pZ_fast = 0;
-        uint32_t pA_slow = 0, pA_fast = 0;
-        uint32_t pC_slow = 0, pC_fast = 0;
+        uint64_t pZ_slow = 0, pZ_fast = 0;
+        uint64_t pA_slow = 0, pA_fast = 0;
+        uint64_t pC_slow = 0, pC_fast = 0;
 
+        //TODO give these exponential decay rates meaning.
         uint32_t alpha_slow = (int64_t)((double)UINT_MAX * 0.01);
         uint32_t alpha_fast = (int64_t)((double)UINT_MAX * 0.1);
 
+        unsigned sample_rate = 48000;
+        unsigned counter = 0;
         while(1){
 
             mic_array_frame_time_domain *  current =
@@ -89,29 +168,74 @@ void vu(streaming chanend c_ds_output[DECIMATOR_COUNT],
 
             int32_t v = current->data[selected_ch][0];
 
-            v = v >> 1; // To ensure the gain of the A weighting never overflows.
+            v = v >> 1; // To ensure the gain of the A weighting never overflows,
+                        // equlivant to -6.02dB.
 
             int32_t a = dsp_filters_biquads(v, filter_coeffs_A_weight,
                     filter_state_A_weight, num_sections_A_weight, q_format_A_weight);
             int32_t c = dsp_filters_biquads(v, filter_coeffs_C_weight,
                     filter_state_C_weight, num_sections_C_weight, q_format_C_weight);
 
-            uint32_t pV = ((int64_t)v * (int64_t)v)>>(31 - 1);
+            uint64_t pV = power(v);
             update_power(pZ_slow, alpha_slow, pV);
             update_power(pZ_fast, alpha_fast, pV);
 
-            uint32_t pA = ((int64_t)a * (int64_t)a)>>(31 - 1);
+            uint64_t pA = power(a);
             update_power(pA_slow, alpha_slow, pA);
             update_power(pA_fast, alpha_fast, pA);
 
-            uint32_t pC = ((int64_t)c * (int64_t)c)>>(31 - 1);
+            uint64_t pC = power(c);
             update_power(pC_slow, alpha_slow, pC);
             update_power(pC_fast, alpha_fast, pC);
 
-            printf("%12u %12u %12u %12u %12u %12u\n", pZ_slow, pZ_fast,
-                    pA_slow, pA_fast, pC_slow, pC_fast);
+            q8_24 dB_pZ_slow = log2_to_log10(uint64_log2(pZ_slow));
+            dB_pZ_slow = dB_pZ_slow*10 + Q24(6.02); //+6.02dB to undo the above
 
+            q8_24 dB_pZ_fast = log2_to_log10(uint64_log2(pZ_fast));
+            dB_pZ_fast = dB_pZ_fast*10 + Q24(6.02);
+
+            q8_24 dB_pA_slow = log2_to_log10(uint64_log2(pA_slow));
+            dB_pA_slow = dB_pA_slow*10 + Q24(6.02);
+
+            q8_24 dB_pA_fast = log2_to_log10(uint64_log2(pA_fast));
+            dB_pA_fast = dB_pA_fast*10 + Q24(6.02);
+
+            q8_24 dB_pC_slow = log2_to_log10(uint64_log2(pC_slow));
+            dB_pC_slow = dB_pC_slow*10 + Q24(6.02);
+
+            q8_24 dB_pC_fast = log2_to_log10(uint64_log2(pC_fast));
+            dB_pC_fast = dB_pC_fast*10 + Q24(6.02);
+
+            if(counter == (sample_rate/16)){
+                master{
+                    c_printer <: dB_pZ_slow;
+                    c_printer <: dB_pZ_fast;
+                    c_printer <: dB_pA_slow;
+                    c_printer <: dB_pA_fast;
+                    c_printer <: dB_pC_slow;
+                    c_printer <: dB_pC_fast;
+                }
+                counter = 0;
+            } else {
+                counter++;
+            }
         }
+    }
+}
+
+void printer(chanend c_printer){
+    q8_24 v[6];
+    while(1){
+        slave{
+            for(unsigned i=0;i<6;i++){
+                c_printer :> v[i];
+            }
+        }
+        for(unsigned i=0;i<6;i++){
+            printf("%f ", F24(v[i]));
+//            xscope_float(i, F24(v[i]));
+        }
+        printf("\n");
     }
 }
 
@@ -136,13 +260,14 @@ int main() {
             streaming chan c_ds_output[DECIMATOR_COUNT];
 
             interface mabs_led_button_if lb[1];
-
+            chan c_printer;
             par {
                 mabs_button_and_led_server(lb, 1, leds, p_buttons);
                 mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic[0], c_4x_pdm_mic[1]);
                 mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[0], c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
                 mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic[1], c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
-                vu(c_ds_output, lb[0]);
+                vu(c_ds_output, lb[0], c_printer);
+                printer(c_printer);
             }
         }
     }

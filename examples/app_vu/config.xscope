@@ -16,8 +16,11 @@
 
 <xSCOPEconfig ioMode="basic" enabled="true">
 
-    <Probe name="z_weight" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-    <Probe name="a_weight" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
-    <Probe name="c_weight" type="CONTINUOUS" datatype="INT" units="Value" enabled="true"/>
+    <Probe name="pZ_slow" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pZ_fast" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pA_slow" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pA_fast" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pC_slow" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pC_fast" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
 
 </xSCOPEconfig>
