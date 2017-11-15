@@ -129,6 +129,8 @@ pdm_rx_asm://(
 	std t, t, sp[4]
 	std t, t, sp[5]
 
+	ldaw t, cp[pdm_counter]
+	stw t, sp[14]
 	ldaw t, cp[g_first_stage_fir_0]
 	mov fir0, t
 	ldaw t, cp[g_first_stage_fir_1]
@@ -145,9 +147,12 @@ pdm_rx_asm://(
 	.align 8
 pdm_rx_4ch_loop:
 
-	ldw a, sp[15]
-	in b, res[a]
-	in a, res[a]
+	ldd a, temp_one, sp[7]
+	{in b, res[a];ldw t, temp_one[0]}
+	{in a, res[a]; add t, t, 1}
+#if USE_PDM_COUNTER
+	stw t, temp_one[0]
+#endif
 	unzip a, b, 2
 	unzip a, b, 1
 	unzip a, b, 0
@@ -185,9 +190,12 @@ pdm_rx_4ch_loop:
 pdm_rx_8ch_loop:
 //about 6 inst spare without optimisation
 
-	ldw a, sp[15]
-	in b, res[a]
-	in a, res[a]
+	ldd a, temp_one, sp[7]
+	{in b, res[a];ldw t, temp_one[0]}
+	{in a, res[a]; add t, t, 1}
+#if USE_PDM_COUNTER
+	stw t, temp_one[0]
+#endif
 	unzip a, b, 2
 	unzip a, b, 1
 	unzip a, b, 0
