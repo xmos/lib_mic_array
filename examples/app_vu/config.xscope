@@ -16,12 +16,11 @@
 
 <xSCOPEconfig ioMode="basic" enabled="true">
 
-    <Probe name="Mic 0" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 1" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 2" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 3" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 4" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 5" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
-    <Probe name="Mic 6" type="CONTINUOUS" datatype="UINT" units="Value" enabled="true"/>
+    <Probe name="pZ_slow" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pZ_fast" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pA_slow" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pA_fast" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pC_slow" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
+    <Probe name="pC_fast" type="CONTINUOUS" datatype="FLOAT" units="Value" enabled="true"/>
 
 </xSCOPEconfig>

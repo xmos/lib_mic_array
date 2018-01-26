@@ -20,7 +20,7 @@
 #define NUM_OUTPUT_CHANNELS 2
 
 //Ports for the PDM microphones
-on tile[0]: out port p_pdm_clk               = XS1_PORT_1E;
+on tile[0]: out port p_pdm_clk              = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;

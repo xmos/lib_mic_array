@@ -1,0 +1,50 @@
+import xwaf.utils.configs as config_utils
+
+
+def options(ctx):
+    ctx.add_option('--config', action='store', default='')
+
+
+def configure(conf):
+    def make_config(name, flags):
+        conf.setenv(name)
+        conf.load('xwaf.compiler_xcc')
+        conf.env.XCC_FLAGS = flags
+
+    for key, value in CONFIGS.iteritems():
+        make_config(key, value)
+
+
+def build(bld):
+    if not config_utils.check_build_config(bld, CONFIGS):
+        return
+
+    bld.env.PROJECT_ROOT = '../../..'
+
+    depends_on = ['lib_logging', 'lib_mic_array']
+
+    bld.env.TARGET_ARCH = 'XCORE-200-EXPLORER'
+
+    prog = bld.program(depends_on=depends_on)
+
+
+CONFIGS = {
+    'COUNT64_LONG': [
+        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
+        '-DCOUNT=64', '-DMIC_ARRAY_WORD_LENGTH_SHORT=0'
+    ],
+    'COUNT4_SHORT': [
+        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
+        '-DCOUNT=4', '-DMIC_ARRAY_WORD_LENGTH_SHORT=1'
+    ],
+    'COUNT4_LONG': [
+        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
+        '-DCOUNT=4', '-DMIC_ARRAY_WORD_LENGTH_SHORT=0'
+    ],
+    'COUNT64_SHORT': [
+        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
+        '-DCOUNT=64', '-DMIC_ARRAY_WORD_LENGTH_SHORT=1'
+    ],
+}
+
+config_utils.register_configs(CONFIGS)

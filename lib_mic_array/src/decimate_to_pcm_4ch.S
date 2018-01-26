@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
 	.section	.dp.data,"awd",@progbits
 	.text
 
@@ -461,7 +461,8 @@ stack_init_loop:
 	stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
 
 initialise_frame_gain:
-	ldc r10, MIC_ARRAY_FIXED_GAIN
+    {ldc r11, 32;	ldc r10, (32 - MIC_ARRAY_FIXED_GAIN)}
+    sub r10, r11, r10
 	stw r10, r4[S_FRAME_GAIN]
 
 take_config_from_application:
@@ -998,9 +999,14 @@ internal_channel_overwrite_begin:
 	ldaw r11, sp[S_THIRD_STAGE]
 	ldaw r4, sp[S_FRAME_OFFSET]
 
+
+
 	//copy accumulators to store
-	{ldw r10, r4[S_FRAME_GAIN]; ldc r7, 32}
-	{sub r7, r7, r10; ldc r10, 0}
+	{ldw r10, r4[S_FRAME_GAIN]; ldc r7, 0}
+	{lss r5, r10, r7; ldc r7, 32}
+	{bt r5, apply_negative_frame_gain; sub r7, r7, r10}
+
+apply_positive_frame_gain:
 	ldd r5, r6, r11[S_D_THIRD_STAGE_CH0_ACC]
 	lextract r0, r5, r6, r7, 32
 	ldd r5, r6, r11[S_D_THIRD_STAGE_CH1_ACC]
@@ -1009,7 +1015,20 @@ internal_channel_overwrite_begin:
 	lextract r2, r5, r6, r7, 32
 	ldd r5, r6, r11[S_D_THIRD_STAGE_CH3_ACC]
 	lextract r3, r5, r6, r7, 32
+	{bu frame_gain_complete; ldc r10, 0}
 
+apply_negative_frame_gain:
+    {neg r7, r10; ldc r10, 0}
+	ldd r5, r6, r11[S_D_THIRD_STAGE_CH0_ACC]
+	ashr r0, r5, r7
+	ldd r5, r6, r11[S_D_THIRD_STAGE_CH1_ACC]
+	ashr r1, r5, r7
+	ldd r5, r6, r11[S_D_THIRD_STAGE_CH2_ACC]
+	ashr r2, r5, r7
+	ldd r5, r6, r11[S_D_THIRD_STAGE_CH3_ACC]
+	ashr r3, r5, r7
+
+frame_gain_complete:
 	ldaw r4, sp[S_OUTPUT_STORAGE];
 	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];

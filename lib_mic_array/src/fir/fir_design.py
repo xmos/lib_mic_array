@@ -9,7 +9,11 @@ import sys
 import math
 import datetime
 from scipy import signal
+import numpy as np
 import matplotlib.pyplot as plt
+
+int32_max = np.int64(np.iinfo(np.int32).max)
+int64_max = np.int64(np.iinfo(np.int64).max)
 
 ###############################################################################
 
@@ -85,6 +89,9 @@ def measure_stopband_and_ripple(bands, a, H):
     passband_min = float('inf');
     stopband_max = float('-inf');
 
+    # freq = 0.5*np.arange(len(h))/len(h)
+    # mag  = 20.0*np.log10(H)
+
     #The bands are evenly spaced throughout 0 to 0.5 of the bandwidth
     for h in range(0, H.size):
       freq = 0.5*h/(H.size)
@@ -114,8 +121,8 @@ def plot_response(H, file_name):
 
 
 def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=2048, stopband_attenuation = -65.0):
-  
-  w = [1] * len(a)
+
+  w = np.ones(len(a))
 
   weight_min = 0.0
   weight_max = 1024.0
@@ -129,6 +136,8 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
     for i in range(0, len(a)-1):
       if a[i] != 0:
         w[i] = test_weight*weights[i]
+    # w = weights*test_weight*(a!= 0.0)
+
     try:
       h = signal.remez(num_taps, bands, a, w)
       
@@ -159,8 +168,9 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
 
 def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps, first_stage_stop_atten):
   nulls = 1.0/8.0
-  a = [1, 0]
-  w = [1, 1]
+  a = np.zeros(2)
+  a[0] = 1.0
+  w = np.ones(len(a))
 
   bands = [ 0, pbw, nulls-sbw, 0.5]
 
@@ -169,8 +179,9 @@ def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps, f
 def generate_first_stage_low_ripple(header, body, points, pbw, sbw, first_stage_num_taps, first_stage_stop_atten):
 
   nulls = 1.0/8.0
-  a = [1, 0, 0, 0, 0]
-  w = [1, 1, 1, 1, 1]
+  a = np.zeros(5)
+  a[0] = 1.0
+  w = np.ones(len(a))
   bands = [ 0,           pbw,
             nulls*1-sbw, nulls*1+sbw,
             nulls*2-sbw, nulls*2+sbw,
@@ -191,7 +202,7 @@ def first_stage_output_coefficients(header, body, points, first_stage_num_taps, 
   for t in range(0, len(coefs)/(8*2)):
     header.write("extern const int g_first_stage_fir_"+str(t)+"[256];\n")
     body.write("const int g_first_stage_fir_"+str(t)+"[256] = {\n\t")
-    max_for_block = 0
+    max_for_block = np.int64(0)
     for x in range(0, 256):
       d=0.0
       for b in range(0, 8):
@@ -199,22 +210,23 @@ def first_stage_output_coefficients(header, body, points, first_stage_num_taps, 
           d = d + coefs[t*8 + b]
         else:
           d = d - coefs[t*8 + b]
-      d_int = int(d*2147483647.0)
-      max_for_block = max(max_for_block, d_int)
+      d_int = np.int32(d*np.float64(int32_max))
+      max_for_block = max(max_for_block, np.abs(np.int64(d_int)))
       body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
       if (x&7)==7:
         body.write("\n\t")
     body.write("};\n\n")
-    total_abs_sum = total_abs_sum + max_for_block*2
+    total_abs_sum += (max_for_block*2)
 
-  #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0)) + ")"
-  if abs(total_abs_sum - 2147483647.0) > 6:
-    print "Warning: error in first stage too large"
+  if total_abs_sum > int32_max:
+    print "WARNING: error in first stage too large"
+  else:
+    print "Max output of firzst stage: " + str(total_abs_sum)
 
   body.write("const int fir1_debug[" + str(first_stage_num_taps) + "] = {\n\n")
   header.write("extern const int fir1_debug[" + str(first_stage_num_taps) + "];\n")
   for i in range(0, len(coefs)):
-    body.write("{:10d}, ".format(int(2147483647.0*coefs[i])))
+    body.write("{:10d}, ".format(int(float(int32_max)*coefs[i])))
     if((i&7)==7):
       body.write("\n")
   body.write("};\n")
@@ -222,7 +234,7 @@ def first_stage_output_coefficients(header, body, points, first_stage_num_taps, 
   (_, H) = signal.freqz(coefs, worN=points)
   plot_response(H, 'first_stage')
   [stop, passband_min, passband_max] = measure_stopband_and_ripple(bands, a, H)
-  max_passband_output = int(2147483647.0 * 10.0 ** (passband_max/20.0) + 1)
+  max_passband_output = int(float(int32_max) * 10.0 ** (passband_max/20.0) + 1)
   header.write("#define FIRST_STAGE_MAX_PASSBAND_OUTPUT (" + str(max_passband_output) +")\n")
   header.write("\n")
 
@@ -244,29 +256,30 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
   second_stage_response, coefs =  generate_stage( 
     second_stage_num_taps, bands, a, w, stopband_attenuation = stop_band_atten)
 
+
   #ensure the there is never any overflow 
   coefs /= sum(abs(coefs))
 
   header.write("extern const int g_second_stage_fir[8];\n")
   body.write("const int g_second_stage_fir[8] = {\n")
 
-  total_abs_sum = 0
+  total_abs_sum = np.int64(0)
   for i in range(0, len(coefs)/2):
     if coefs[i] > 0.5:
       print "Single coefficient too big in second stage FIR"
-    d_int = int(coefs[i]*2147483647.0*2.0);
-    total_abs_sum += abs(d_int*2)
+    d_int = np.int32(coefs[i]*float(int32_max)*2.0);
+    total_abs_sum += np.abs(np.int64(d_int)*2)
     body.write("\t0x{:08x},\n".format(ctypes.c_uint(d_int).value))
   body.write("};\n\n")
 
-  #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647*2)) + ")"
-  if abs(total_abs_sum - 2147483647*2) > 10:
-    print "Warning: error in second stage too large"
+  if total_abs_sum*int32_max > int64_max:
+    print "WARNING: error in second stage too large"
+
 
   body.write("const int fir2_debug[" + str(second_stage_num_taps) + "] = {\n")
   header.write("extern const int fir2_debug[" + str(second_stage_num_taps) + "];\n\n")
   for i in range(0, len(coefs)):
-    body.write("{:10d}, ".format(int(2147483647.0*coefs[i])))
+    body.write("{:10d}, ".format(int(float(int32_max)*coefs[i])))
     if((i&7)==7):
       body.write("\n")
   body.write("};\n\n")
@@ -276,6 +289,9 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
 
   [stop, passband_min, passband_max] = measure_stopband_and_ripple(bands, a, H)
 
+  # plt.clf()
+  # plt.plot(np.log10(np.abs(H))*20.)
+  # plt.show()
   return H
 
 ###############################################################################
@@ -318,8 +334,8 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
         index = coefs_per_phase*divider - divider - (i*divider - phase);
         if coefs[i] > 0.5:
           print "Single coefficient too big in third stage FIR"
-        d_int = int(coefs[index]*2147483647.0*2.0);
-        total_abs_sum += abs(d_int)
+        d_int = np.int32(coefs[index]*float(int32_max)*2.0);
+        total_abs_sum += np.abs(np.int64(d_int))
         body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
         if (i%8)==7: 
           body.write("\n\t");
@@ -330,7 +346,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
       for i in range(coefs_per_phase-1):
         index = coefs_per_phase*divider - divider - (i*divider - phase);
-        d_int = int(coefs[index]*2147483647.0*2.0);
+        d_int = int(coefs[index]*float(int32_max)*2.0);
         body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
         if (i%8)==7: 
           body.write("\n\t");
@@ -343,15 +359,15 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
     body.write("};\n");
 
-    #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0*2.0)) + ")"
-    if abs(total_abs_sum - 2147483647.0*2.0) > 32*divider:
-      print "Warning: error in third stage too large"
+    max_macc = total_abs_sum*int32_max
+    if total_abs_sum*int32_max > int64_max:
+      print "WARNING: error in third stage too large"
 
     body.write("const int fir3_"+ name+"_debug[" + str(max_coefs_per_phase*divider)+ "] = {\n\t");
     header.write("extern const int fir3_"+ name+"_debug[" + str(max_coefs_per_phase*divider) + "];\n");
 
     for i in range(coefs_per_phase*divider):
-      body.write("{:10d}, ".format(int(2147483647.0*coefs[i])))
+      body.write("{:10d}, ".format(int(float(int32_max)*coefs[i])))
       if (i%8)==7: 
         body.write("\n\t");
     

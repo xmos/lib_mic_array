@@ -1,6 +1,13 @@
 lib_mic_array change log
 ========================
 
+3.1.1
+-----
+
+  * Cleaned up some of the code in the FIR designer.
+  * Removed fixed gain in examples
+  * Updated lib_dsp dependancy from 3.0.0 to 4.0.0
+
 3.1.0
 -----
 

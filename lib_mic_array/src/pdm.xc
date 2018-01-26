@@ -7,6 +7,12 @@
 #include "xs2a_kernel.h"
 #endif
 
+// This counter is synchronous to the PDM clock
+// It increments every 64 PDM clock cycles if
+// -DUSE_PDM_COUNTER (experimental) is enabled
+// in the build.
+unsigned pdm_counter=0;
+
 extern void pdm_rx_asm(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
