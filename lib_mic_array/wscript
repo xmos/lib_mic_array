@@ -4,5 +4,5 @@ def use_module(bld):
     bld.module(
         source=sources,
         includes=list(source_dirs) + ['api'],
-        depends_on=['lib_xassert(>=3.0.0)', 'lib_logging(>=2.1.0)', 'lib_dsp(>=3.0.0)'],
+        depends_on=['lib_xassert(>=3.0.0)', 'lib_logging(>=2.1.0)', 'lib_dsp(>=4.0.0)'],
         version='3.0.2')
