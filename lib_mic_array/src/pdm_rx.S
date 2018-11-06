@@ -170,20 +170,23 @@ pdm_rx_4ch_loop:
 
 	FIR();
 
-#if MUTE_CH_1
+#if MUTE_CH_0
 	{out res[c_one], b; ldc c,MIC_ARRAY_CH1}
 #else
 	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
 #endif
+
 	FIR();
 
-#if MUTE_CH_2
+#if MUTE_CH_1
 	{out res[c_one], b; ldc c, MIC_ARRAY_CH2}
 #else
 	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
 #endif
+
 	FIR();
-#if MUTE_CH_3
+
+#if MUTE_CH_2
 	{ldc temp_one, 0; ldc c, MIC_ARRAY_CH3}
 #else
 	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
@@ -192,7 +195,7 @@ pdm_rx_4ch_loop:
 	FIR();
 
 	{out res[c_one], temp_one}
-#if
+#if MUTE_CH_3
 	{out res[c_one], b; ldc c, MIC_ARRAY_CH0}
 #else
 	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
