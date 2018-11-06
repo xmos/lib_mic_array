@@ -21,6 +21,16 @@
 #define t                 	 r11
 #define temp_three           r11
 
+
+#define MUTE_CH_0 0
+#define MUTE_CH_1 0
+#define MUTE_CH_2 0
+#define MUTE_CH_3 0
+#define MUTE_CH_4 0
+#define MUTE_CH_5 0
+#define MUTE_CH_6 0
+#define MUTE_CH_7 0
+
 //This mapping accounts for the muddling of the unzips
 //(do not change).
 #define PIN0 0
@@ -74,7 +84,7 @@
 	FIR_BLOCK(fir2)\
 	FIR_BLOCK(fir1)\
 	FIR_BLOCK(fir0)\
-	add a, a, b
+	{add a, a, b; ldc b, 0}
 
 #define OUTPUT(I, C)\
 	{out res[C], a; ldc c, I}
@@ -159,15 +169,34 @@ pdm_rx_4ch_loop:
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
-	FIR();
-	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
-	FIR();
-	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
-	FIR();
-	{out res[c_one], temp_one}
-	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
 
+#if MUTE_CH_1
+	{out res[c_one], b; ldc c,MIC_ARRAY_CH1}
+#else
+	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
+#endif
+	FIR();
+
+#if MUTE_CH_2
+	{out res[c_one], b; ldc c, MIC_ARRAY_CH2}
+#else
+	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
+#endif
+	FIR();
+#if MUTE_CH_3
+	{ldc temp_one, 0; ldc c, MIC_ARRAY_CH3}
+#else
+	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
+#endif
+
+	FIR();
+
+	{out res[c_one], temp_one}
+#if
+	{out res[c_one], b; ldc c, MIC_ARRAY_CH0}
+#else
+	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
+#endif
 	ldd a, b, p[4]
 	std a, b, p[5]
 
