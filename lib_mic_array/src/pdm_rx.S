@@ -21,15 +21,30 @@
 #define t                 	 r11
 #define temp_three           r11
 
-
-#define MUTE_CH_0 0
-#define MUTE_CH_1 0
-#define MUTE_CH_2 0
-#define MUTE_CH_3 0
-#define MUTE_CH_4 0
-#define MUTE_CH_5 0
-#define MUTE_CH_6 0
-#define MUTE_CH_7 0
+#ifndef MIC_ARRAY_MUTE_CH_0
+#define MIC_ARRAY_MUTE_CH_0 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_0
+#define MIC_ARRAY_MUTE_CH_1 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_2
+#define MIC_ARRAY_MUTE_CH_2 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_3
+#define MIC_ARRAY_MUTE_CH_3 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_4
+#define MIC_ARRAY_MUTE_CH_4 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_5
+#define MIC_ARRAY_MUTE_CH_5 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_6
+#define MIC_ARRAY_MUTE_CH_6 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_7
+#define MIC_ARRAY_MUTE_CH_7 0
+#endif
 
 //This mapping accounts for the muddling of the unzips
 //(do not change).
@@ -170,7 +185,7 @@ pdm_rx_4ch_loop:
 
 	FIR();
 
-#if MUTE_CH_0
+#if MIC_ARRAY_MUTE_CH_0
 	{out res[c_one], b; ldc c,MIC_ARRAY_CH1}
 #else
 	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
@@ -178,7 +193,7 @@ pdm_rx_4ch_loop:
 
 	FIR();
 
-#if MUTE_CH_1
+#if MIC_ARRAY_MUTE_CH_1
 	{out res[c_one], b; ldc c, MIC_ARRAY_CH2}
 #else
 	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
@@ -186,7 +201,7 @@ pdm_rx_4ch_loop:
 
 	FIR();
 
-#if MUTE_CH_2
+#if MIC_ARRAY_MUTE_CH_2
 	{ldc temp_one, 0; ldc c, MIC_ARRAY_CH3}
 #else
 	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
@@ -195,7 +210,7 @@ pdm_rx_4ch_loop:
 	FIR();
 
 	{out res[c_one], temp_one}
-#if MUTE_CH_3
+#if MIC_ARRAY_MUTE_CH_3
 	{out res[c_one], b; ldc c, MIC_ARRAY_CH0}
 #else
 	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
@@ -235,7 +250,7 @@ pdm_rx_8ch_loop:
 
 	FIR();
 
-#if MUTE_CH_0
+#if MIC_ARRAY_MUTE_CH_0
 	{out res[c_one], b; ldc c, MIC_ARRAY_CH4}
 #else
 	OUTPUT( MIC_ARRAY_CH4, c_one)	//output c_one
@@ -243,7 +258,7 @@ pdm_rx_8ch_loop:
 
 	FIR();
 
-#if MUTE_CH_4
+#if MIC_ARRAY_MUTE_CH_4
 	{out res[c_two], b; ldc c, MIC_ARRAY_CH1}
 #else
 	OUTPUT( MIC_ARRAY_CH1, c_two)	//output c_two
@@ -251,7 +266,7 @@ pdm_rx_8ch_loop:
 
 	FIR();
 
-#if MUTE_CH_1
+#if MIC_ARRAY_MUTE_CH_1
 	{out res[c_one], b; ldc c, MIC_ARRAY_CH5}
 #else
 	OUTPUT( MIC_ARRAY_CH5, c_one)	//output c_one
@@ -259,14 +274,14 @@ pdm_rx_8ch_loop:
 
 	FIR();
 
-#if MUTE_CH_5
+#if MIC_ARRAY_MUTE_CH_5
 	{out res[c_two], b; ldc c, MIC_ARRAY_CH2}
 #else
 	OUTPUT( MIC_ARRAY_CH2, c_two)	//output c_two
 #endif
 	FIR();
 
-#if MUTE_CH_2
+#if MIC_ARRAY_MUTE_CH_2
 	{ldc temp_one, 0; ldc c,  MIC_ARRAY_CH6}
 #else
 	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6}
@@ -274,7 +289,7 @@ pdm_rx_8ch_loop:
 
 	FIR();
 
-#if MUTE_CH_6
+#if MIC_ARRAY_MUTE_CH_6
 	{ldc temp_two, 0; ldc c,  MIC_ARRAY_CH3}
 #else
 	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3}
@@ -282,7 +297,7 @@ pdm_rx_8ch_loop:
 
 	FIR();
 
-#if MUTE_CH_3
+#if MIC_ARRAY_MUTE_CH_3
 	{ldc temp_three, 0; ldc c,  MIC_ARRAY_CH7}
 #else
 	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7}
@@ -297,7 +312,7 @@ pdm_rx_8ch_loop:
 
 	{out res[c_one], temp_three; ldc b, 0}
 
-#if MUTE_CH_7
+#if MIC_ARRAY_MUTE_CH_7
 	{out res[c_two], b; ldc c, MIC_ARRAY_CH0}
 #else
 	OUTPUT( MIC_ARRAY_CH0, c_two)
