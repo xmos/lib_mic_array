@@ -234,24 +234,75 @@ pdm_rx_8ch_loop:
 	std a, b, p[0]
 
 	FIR();
+
+#if MUTE_CH_0
+	{out res[c_one], b; ldc c, MIC_ARRAY_CH4}
+#else
 	OUTPUT( MIC_ARRAY_CH4, c_one)	//output c_one
+#endif
+
 	FIR();
+
+#if MUTE_CH_4
+	{out res[c_two], b; ldc c, MIC_ARRAY_CH1}
+#else
 	OUTPUT( MIC_ARRAY_CH1, c_two)	//output c_two
+#endif
+
 	FIR();
+
+#if MUTE_CH_1
+	{out res[c_one], b; ldc c, MIC_ARRAY_CH5}
+#else
 	OUTPUT( MIC_ARRAY_CH5, c_one)	//output c_one
+#endif
+
 	FIR();
+
+#if MUTE_CH_5
+	{out res[c_two], b; ldc c, MIC_ARRAY_CH2}
+#else
 	OUTPUT( MIC_ARRAY_CH2, c_two)	//output c_two
+#endif
 	FIR();
+
+#if MUTE_CH_2
+	{ldc temp_one, 0; ldc c,  MIC_ARRAY_CH6}
+#else
 	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6}
+#endif
+
 	FIR();
+
+#if MUTE_CH_6
+	{ldc temp_two, 0; ldc c,  MIC_ARRAY_CH3}
+#else
 	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3}
+#endif
+
 	FIR();
+
+#if MUTE_CH_3
+	{ldc temp_three, 0; ldc c,  MIC_ARRAY_CH7}
+#else
 	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7}
+#endif
+
 	FIR();
+
+
 	{out res[c_one], temp_one}
+
 	{out res[c_two], temp_two}
-	{out res[c_one], temp_three}
+
+	{out res[c_one], temp_three; ldc b, 0}
+
+#if MUTE_CH_7
+	{out res[c_two], b; ldc c, MIC_ARRAY_CH0}
+#else
 	OUTPUT( MIC_ARRAY_CH0, c_two)
+#endif
+
 
 	ldd a, b, p[4]
 	std a, b, p[5]
