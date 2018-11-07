@@ -24,7 +24,7 @@
 #ifndef MIC_ARRAY_MUTE_CH_0
 #define MIC_ARRAY_MUTE_CH_0 0
 #endif
-#ifndef MIC_ARRAY_MUTE_CH_0
+#ifndef MIC_ARRAY_MUTE_CH_1
 #define MIC_ARRAY_MUTE_CH_1 0
 #endif
 #ifndef MIC_ARRAY_MUTE_CH_2
