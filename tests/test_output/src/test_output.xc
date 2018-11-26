@@ -102,16 +102,11 @@ void test_output(streaming chanend c_ds_output[2],
                 default:break;
             }
 
-            for(int j=0;j<1<<frame_samples;j++){
+            for(int j=0;j<frame_samples;j++){
                 int output = current->data[0][j];
                 output *= gain;
                 c_audio <: output;
                 c_audio <: output;
-
-                for(unsigned i=0;i<8;i++){
-                    xscope_int(i, current->data[i][j]);
-                }
-
             }
         }
     }
