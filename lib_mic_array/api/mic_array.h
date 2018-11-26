@@ -79,7 +79,8 @@ typedef enum {
  */
 typedef struct {
 
-    unsigned frame_size_log2; /**< The output frame size log2, i.e. A frame will contain 2 to the power of frame_size_log2 samples of each channel. */
+    unsigned len; /**< If len is less than 16 then this sets the frame size to 2 to the power of len, i.e. A frame will contain 2 to the power of len samples of each channel.
+                                   If len is 16 or greater then the frame size is equal to len. */
 
     int apply_dc_offset_removal; /**< Remove the DC offset from the audio before the final decimation. Set to non-zero to enable. */
 

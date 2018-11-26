@@ -50,7 +50,9 @@ void test_output(streaming chanend c_ds_output[2],
 
         unsigned gain = 8;
 
-        mic_array_decimator_conf_common_t dcc = {MIC_ARRAY_MAX_FRAME_SIZE_LOG2, 1, 0, 0, DF,
+        unsigned frame_samples = 240;
+
+        mic_array_decimator_conf_common_t dcc = {frame_samples, 1, 0, 0, DF,
                 g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
                 DECIMATOR_NO_FRAME_OVERLAP, 2};
         mic_array_decimator_config_t dc[2] = {
@@ -100,7 +102,7 @@ void test_output(streaming chanend c_ds_output[2],
                 default:break;
             }
 
-            for(int j=0;j<1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2;j++){
+            for(int j=0;j<1<<frame_samples;j++){
                 int output = current->data[0][j];
                 output *= gain;
                 c_audio <: output;
