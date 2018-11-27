@@ -24,6 +24,7 @@ on tile[0]: out port p_pdm_clk              = XS1_PORT_1E;
 on tile[0]: in buffered port:32 p_pdm_mics  = XS1_PORT_8B;
 on tile[0]: in port p_mclk                  = XS1_PORT_1F;
 on tile[0]: clock pdmclk                    = XS1_CLKBLK_1;
+on tile[0]: clock pdmclk6                   = XS1_CLKBLK_2;
 
 //Ports for the DAC and clocking
 out buffered port:32 p_i2s_dout[1]  = on tile[1]: {XS1_PORT_1P};
@@ -357,10 +358,7 @@ int main(){
       on tile[1]:  [[distribute]]i2s_handler(i_i2s, i_i2c[0], bufget);
       on tile[1]:  output_audio_dbuf_handler(bufget, triple_buffer, c_audio);
       on tile[0]: {
-        configure_clock_src_divide(pdmclk, p_mclk, 4);
-        configure_port_clock_output(p_pdm_clk, pdmclk);
-        configure_in_port(p_pdm_mics, pdmclk);
-        start_clock(pdmclk);
+        mic_array_setup_sdr(pdmclk, p_mclk, p_pdm_clk, p_pdm_mics, 8);
       
         par{
             mic_array_pdm_rx(p_pdm_mics, c_4x_pdm_mic_0, c_4x_pdm_mic_1);

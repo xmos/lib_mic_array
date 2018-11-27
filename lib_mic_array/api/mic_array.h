@@ -286,7 +286,6 @@ void mic_array_decimator_configure(
         unsigned decimator_count,
         mic_array_decimator_config_t dc[]);
 
-
 /** Function that sets up the microphones for SDR use; that is, a single
  * microphone is connected to each data wire.
  *
