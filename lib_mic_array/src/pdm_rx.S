@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018, XMOS Ltd, All rights reserved
+// Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
 	.section	.dp.data,"awd",@progbits
 	.text
 
@@ -20,6 +20,31 @@
 #define p                 	 r10
 #define t                 	 r11
 #define temp_three           r11
+
+#ifndef MIC_ARRAY_MUTE_CH_0
+#define MIC_ARRAY_MUTE_CH_0 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_1
+#define MIC_ARRAY_MUTE_CH_1 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_2
+#define MIC_ARRAY_MUTE_CH_2 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_3
+#define MIC_ARRAY_MUTE_CH_3 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_4
+#define MIC_ARRAY_MUTE_CH_4 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_5
+#define MIC_ARRAY_MUTE_CH_5 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_6
+#define MIC_ARRAY_MUTE_CH_6 0
+#endif
+#ifndef MIC_ARRAY_MUTE_CH_7
+#define MIC_ARRAY_MUTE_CH_7 0
+#endif
 
 //This mapping accounts for the muddling of the unzips
 //(do not change).
@@ -74,7 +99,7 @@
 	FIR_BLOCK(fir2)\
 	FIR_BLOCK(fir1)\
 	FIR_BLOCK(fir0)\
-	add a, a, b
+	{add a, a, b; ldc b, 0}
 
 #define OUTPUT(I, C)\
 	{out res[C], a; ldc c, I}
@@ -159,15 +184,37 @@ pdm_rx_4ch_loop:
 	std a, b, p[0]
 
 	FIR();
-	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
-	FIR();
-	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
-	FIR();
-	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
-	FIR();
-	{out res[c_one], temp_one}
-	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
 
+#if MIC_ARRAY_MUTE_CH_0
+	{out res[c_one], b; ldc c,MIC_ARRAY_CH1}
+#else
+	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
+#endif
+
+	FIR();
+
+#if MIC_ARRAY_MUTE_CH_1
+	{out res[c_one], b; ldc c, MIC_ARRAY_CH2}
+#else
+	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
+#endif
+
+	FIR();
+
+#if MIC_ARRAY_MUTE_CH_2
+	{ldc temp_one, 0; ldc c, MIC_ARRAY_CH3}
+#else
+	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
+#endif
+
+	FIR();
+
+	{out res[c_one], temp_one}
+#if MIC_ARRAY_MUTE_CH_3
+	{out res[c_one], b; ldc c, MIC_ARRAY_CH0}
+#else
+	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
+#endif
 	ldd a, b, p[4]
 	std a, b, p[5]
 
@@ -202,24 +249,75 @@ pdm_rx_8ch_loop:
 	std a, b, p[0]
 
 	FIR();
+
+#if MIC_ARRAY_MUTE_CH_0
+	{out res[c_one], b; ldc c, MIC_ARRAY_CH4}
+#else
 	OUTPUT( MIC_ARRAY_CH4, c_one)	//output c_one
+#endif
+
 	FIR();
+
+#if MIC_ARRAY_MUTE_CH_4
+	{out res[c_two], b; ldc c, MIC_ARRAY_CH1}
+#else
 	OUTPUT( MIC_ARRAY_CH1, c_two)	//output c_two
+#endif
+
 	FIR();
+
+#if MIC_ARRAY_MUTE_CH_1
+	{out res[c_one], b; ldc c, MIC_ARRAY_CH5}
+#else
 	OUTPUT( MIC_ARRAY_CH5, c_one)	//output c_one
+#endif
+
 	FIR();
+
+#if MIC_ARRAY_MUTE_CH_5
+	{out res[c_two], b; ldc c, MIC_ARRAY_CH2}
+#else
 	OUTPUT( MIC_ARRAY_CH2, c_two)	//output c_two
+#endif
 	FIR();
+
+#if MIC_ARRAY_MUTE_CH_2
+	{ldc temp_one, 0; ldc c,  MIC_ARRAY_CH6}
+#else
 	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6}
+#endif
+
 	FIR();
+
+#if MIC_ARRAY_MUTE_CH_6
+	{ldc temp_two, 0; ldc c,  MIC_ARRAY_CH3}
+#else
 	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3}
+#endif
+
 	FIR();
+
+#if MIC_ARRAY_MUTE_CH_3
+	{ldc temp_three, 0; ldc c,  MIC_ARRAY_CH7}
+#else
 	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7}
+#endif
+
 	FIR();
+
+
 	{out res[c_one], temp_one}
+
 	{out res[c_two], temp_two}
-	{out res[c_one], temp_three}
+
+	{out res[c_one], temp_three; ldc b, 0}
+
+#if MIC_ARRAY_MUTE_CH_7
+	{out res[c_two], b; ldc c, MIC_ARRAY_CH0}
+#else
 	OUTPUT( MIC_ARRAY_CH0, c_two)
+#endif
+
 
 	ldd a, b, p[4]
 	std a, b, p[5]
