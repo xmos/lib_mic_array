@@ -1,3 +1,4 @@
+# Copyright (c) 2016, XMOS Ltd, All rights reserved
 from __future__ import division
 import sys
 import re

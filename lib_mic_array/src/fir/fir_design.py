@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
 
 import argparse
 import numpy
