@@ -3,7 +3,7 @@ pipeline {
     label 'x86&&macOS&&Apps'
   }
   environment {
-    VIEW = 'xvf3510'
+    VIEW = 'mic_array'
     REPO = 'lib_mic_array'
   }
   options {
@@ -18,6 +18,22 @@ pipeline {
     stage('Library Checks') {
       steps {
         xcoreLibraryChecks("${REPO}")
+      }
+    }
+    stage('Tests') {
+      steps {
+        runXmostest("${REPO}", 'tests')
+      }
+    }
+    stage('Build') {
+      steps {
+        dir("${REPO}") {
+          xcoreAllAppsBuild('examples')
+          xcoreAllAppNotesBuild('examples')
+          dir("${REPO}") {
+            runXdoc('doc')
+          }
+        }
       }
     }
   }
