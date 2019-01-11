@@ -20,6 +20,22 @@ pipeline {
         xcoreLibraryChecks("${REPO}")
       }
     }
+    stage('Tests') {
+      steps {
+        runXmostest("${REPO}", 'tests')
+      }
+    }
+    stage('Build') {
+      steps {
+        dir("${REPO}") {
+          xcoreAllAppsBuild('examples')
+          xcoreAllAppNotesBuild('examples')
+          dir("${REPO}") {
+            runXdoc('doc')
+          }
+        }
+      }
+    }
   }
   post {
     success {
