@@ -3,7 +3,7 @@ pipeline {
     label 'x86&&macOS&&Apps'
   }
   environment {
-    VIEW = 'xvf3510'
+    VIEW = 'mic_array'
     REPO = 'lib_mic_array'
   }
   options {
