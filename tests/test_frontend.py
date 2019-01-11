@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2016, XMOS Ltd, All rights reserved
+# Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
 import xmostest
 
 def do_frontend_test(channel_count, testlevel):
