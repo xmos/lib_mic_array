@@ -23,7 +23,7 @@ pipeline {
   }
   post {
     success {
-      updateViewFiles()
+      updateViewfiles()
     }
     cleanup {
       cleanWs()
