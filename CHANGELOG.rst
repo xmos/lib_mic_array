@@ -1,11 +1,14 @@
 lib_mic_array change log
 ========================
 
-3.1.2
+3.2.0
 -----
 
+  * Added xwaf build system support
   * Cleaned up some of the code in the FIR designer.
   * Removed fixed gain in examples
+  * Update VU meter example
+  * Fix port types in examples
 
 3.1.1
 -----
