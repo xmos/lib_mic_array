@@ -9,6 +9,7 @@ lib_mic_array change log
   * Removed fixed gain in examples
   * Update VU meter example
   * Fix port types in examples
+  * Set and inherit XCC_FLAGS rather than XCC_XC_FLAGS when building library
 
 3.1.1
 -----
