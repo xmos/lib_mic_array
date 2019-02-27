@@ -86,7 +86,7 @@ def read_module_build_info(bld):
 def use_module(bld):
     module_build_info = read_module_build_info(bld)
     sources = bld.path.ant_glob(['src/**/*.xc', 'src/**/*.S'])
-    bld.env.MODULE_XCC_XC_FLAGS = module_build_info['MODULE_XCC_XC_FLAGS']
+    bld.env.MODULE_XCC_FLAGS = module_build_info['MODULE_XCC_FLAGS']
     bld.module(
         source=sources,
         includes=module_build_info['INCLUDE_DIRS'],
