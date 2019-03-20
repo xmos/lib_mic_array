@@ -31,6 +31,12 @@ void mic_array_pdm_rx(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend ?c_4x_pdm_mic_1);
 
+void mic_dual_pdm_rx_decimate(
+        in buffered port:32 p_pdm_mics,
+        streaming chanend c_2x_pdm_mic,
+        streaming chanend c_ref_audio[]);
+
+
 /** High resolution delay component.
  *
  *  This task handles the application of individual delays for up to 16 channels.
