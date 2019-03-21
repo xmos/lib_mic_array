@@ -266,13 +266,34 @@ static inline void ciruclar_buffer_sim_cpy(int * unsafe src_ptr, int * unsafe de
 }
 
 
+static int dc_eliminate(int x, int &prev_x, long long &state){
+#define S 0
+#define N 8
+    long long X = x;
+    long long prev_X = prev_x;
+
+    state = state - (state>>8);
+
+    prev_X<<=32;
+    state = state - prev_X;
+
+    X<<=32;
+    state = state + X;
+
+    prev_x = x;
+
+    return (state>>(32-S));
+}
+
 
 #pragma unsafe arrays
 void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c_2x_pdm_mic, streaming chanend c_ref_audio[]){
 
+  //Send initial request to UBM
   c_ref_audio[0] <: 0;
   c_ref_audio[1] <: 0;
 
+  unsigned delay_line[MIC_PAIR_NUM_CHANNELS][2] = {{0xaaaaaaaa, 0x55555555}, {0xaaaaaaaa, 0x55555555}}; //48 taps, init to pdm zero
   int [[aligned(8)]] out_first_stage[MIC_PAIR_NUM_CHANNELS][4] = {{0}};
 
   unsigned mid_stage_delay_idx = 0;
@@ -282,7 +303,6 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
   memset(mid_stage_delay, 0, sizeof(mid_stage_delay));
 
   int final_stage_in_pcm[MIC_PAIR_NUM_CHANNELS] = {0, 0};
-  int pcm_output[MIC_PAIR_NUM_CHANNELS] = {0, 0};
 
   unsigned block_sample_count = 0;  //Used for assembling blocks from individual samples
   unsigned block_buffer_idx = 0;    //Optional double buffer for output blocks
@@ -293,10 +313,15 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
   memset(final_stage_delay_poly, 0, sizeof(final_stage_delay_poly));
   unsigned final_stage_phase = 0;
 
+  int pcm_output[MIC_PAIR_NUM_CHANNELS] = {0, 0};
+
+  int dc_elim_prev[MIC_PAIR_NUM_CHANNELS] = {0, 0};
+  long long dc_elim_state[MIC_PAIR_NUM_CHANNELS] = {0, 0};
+
+
   int output_block[MIC_PAIR_NUM_OUT_BUFFERS][MIC_PAIR_OUTPUT_BLOCK_SIZE][MIC_PAIR_NUM_CHANNELS + MIC_PAIR_NUM_REF_CHANNELS];
   memset(output_block, 0, sizeof(output_block));
 
-  unsigned delay_line[MIC_PAIR_NUM_CHANNELS][2] = {{0xaaaaaaaa, 0x55555555}, {0xaaaaaaaa, 0x55555555}}; //48 taps, init to pdm zero
 
 
   //Copy non 8 byte aligned coefficients and setup nice array of pointers for each phase of coefficients
@@ -385,12 +410,14 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
         break;
         default:
           //The host doesn't start sending ref audio for a while at startup so we have to be prepared for nothing on channel
-          printstr(".");
+          printstr("."); //This is debug and can be removed
         break;
       }
 
       #pragma loop unroll
       for (int ch = 0; ch < MIC_PAIR_NUM_CHANNELS; ch++){
+        //Now remove DC and apply some gain
+        pcm_output[ch] = dc_eliminate(pcm_output[ch], dc_elim_prev[ch], dc_elim_state[ch]);
         pcm_output[ch] = (int)( ( (long long)pcm_output[ch] * Q28(MIC_GAIN_COMPENSATION) ) >> (28));
         output_block[block_buffer_idx][block_sample_count][ch] = pcm_output[ch];
       }
