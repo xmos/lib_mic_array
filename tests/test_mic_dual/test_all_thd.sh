@@ -1,8 +1,9 @@
+AUDIO_LENGTH_S=5
+
 #Generate sines
 echo "Generating sine waves for test"
-sox -n -c 1 -b 32 -r 16000 ch_a_src.wav synth 30 sine 1000
-sox -n -c 1 -b 32 -r 16000 ch_b_src.wav synth 30 sine 3000
-
+sox -n -c 1 -b 32 -r 16000 ch_a_src.wav synth $AUDIO_LENGTH_S sine 1000
+sox -n -c 1 -b 32 -r 16000 ch_b_src.wav synth $AUDIO_LENGTH_S sine 300
 
 #PCM to PDM
 python pcm_to_pdm.py --output-rate 3072000 --verbose ch_a_src.wav ch_a.pdm & \
