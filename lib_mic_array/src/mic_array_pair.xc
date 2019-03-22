@@ -349,7 +349,8 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
     timer t;
 
     //GET PORT DATA
-    p_pdm_mic :> port_data[0];
+    //p_pdm_mic :> port_data[0];
+    asm volatile("in %0, res[%1]" : "=r"(port_data[0])  : "r"(p_pdm_mic));
     //Input comes in from bit 31 (MSb) and shifts right, so LSB is oldest
     t :> t0;
 
@@ -437,8 +438,8 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
       }
       final_stage_phase = 0;
     }
-    p_pdm_mic :> port_data[1]; 
-
+    //p_pdm_mic :> port_data[1]; 
+    asm volatile("in %0, res[%1]" : "=r"(port_data[1])  : "r"(p_pdm_mic));
 
     t :> t1;
     //Cycle time at 96kHz is 1041 10ns ticks, which is 650 proc cycles
