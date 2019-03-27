@@ -10,7 +10,9 @@
 
 
 #define MIC_PAIR_OUTPUT_BLOCK_SIZE        240
-#define MIC_GAIN_COMPENSATION             2.09f                     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
+#define MIC_GAIN_COMPENSATION             1.00f                     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
+
+//#define MIC_GAIN_COMPENSATION             2.09f                     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
                                                                     //Max is 7.999 due to Q28 format
 #define MIC_PAIR_NUM_OUT_BUFFERS          2                         //Single (1) or double (2) buffered
 #define MIC_PAIR_NUM_CHANNELS             2                         //Always 2 because it's a pair
@@ -443,7 +445,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
 
     t :> t1;
     //Cycle time at 96kHz is 1041 10ns ticks, which is 650 proc cycles
-    //if (t1-t0 > 600) printintln(t1-t0);
+    if (t1-t0 > 600) printintln(t1-t0);
     //printintln(t1-t0);
   }
 }
