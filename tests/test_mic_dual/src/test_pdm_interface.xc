@@ -93,8 +93,8 @@ void test_pdm(chanend c_pdm_input, streaming chanend c_mic_array){
     //printbinln(port_a);
     //printbinln(port_b);
 
-    outuint(c_pdm_input, port_a);
-    outuint(c_pdm_input, port_b);
+    //outuint(c_pdm_input, port_a);
+    //outuint(c_pdm_input, port_b);
 
 
     //Now build word for mic_array
@@ -161,11 +161,11 @@ void collect_output(streaming chanend c_ds_output_dual[1], streaming chanend c_d
 
   while(1){
     unsigned addr;
-    c_ds_output_dual[0] :> addr;
+    //c_ds_output_dual[0] :> addr;
     mic_array_frame_time_domain * current_frame;
-    //current_frame = mic_array_get_next_time_domain_frame(c_ds_output, MIC_DECIMATORS, buffer, audio_frame, decimator_config);
+    current_frame = mic_array_get_next_time_domain_frame(c_ds_output, MIC_DECIMATORS, buffer, audio_frame, decimator_config);
 
-    //printf("c_ds_output %p\n", addr);
+    //printf("c_ds_output_dual %p\n", addr);
     for(unsigned i=0;i<MIC_ARRAY_FRAME_SIZE;i++)unsafe{
       int ch0 = *((int *)addr + (4 * i) + 0);
       int ch1 = *((int *)addr + (4 * i) + 1);
@@ -197,9 +197,9 @@ void test2ch(){
     streaming chan c_ds_output[1], c_4x_pdm_mic_0;
 
     par {
-        call_mic_dual_pdm_rx_decimate(c_pdm_input, c_ds_output_dual, c_ref_audio);
+        // call_mic_dual_pdm_rx_decimate(c_pdm_input, c_ds_output_dual, c_ref_audio);
         test_pdm(c_pdm_input, c_mic_array);
-        ref_audio(c_ref_audio);
+        // ref_audio(c_ref_audio);
         collect_output(c_ds_output_dual, c_ds_output);
 
         //call_pdm_rx(c_pdm_input[1], c_4x_pdm_mic_0, null);
