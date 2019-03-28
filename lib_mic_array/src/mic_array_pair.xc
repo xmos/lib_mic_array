@@ -5,6 +5,7 @@
 #include <string.h>
 #include <print.h>
 #include "fir_coefs.h"                    //From lib_mic_array
+extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.xc
 #include "dsp_qformat.h"                  //Gain compensation
 
 
@@ -307,7 +308,6 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
   unsigned block_sample_count = 0;  //Used for assembling blocks from individual samples
   unsigned block_buffer_idx = 0;    //Optional double buffer for output blocks
 
-  int [[aligned(8)]] final_stage_coeffs_copy[3][32];
   int * unsafe phase_coeff_ptrs[6];
   int [[aligned(8)]] final_stage_delay_poly[MIC_PAIR_NUM_CHANNELS][6][32] = {{{0}}};
   memset(final_stage_delay_poly, 0, sizeof(final_stage_delay_poly));
@@ -322,26 +322,12 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
   int output_block[MIC_PAIR_NUM_OUT_BUFFERS][MIC_PAIR_OUTPUT_BLOCK_SIZE][MIC_PAIR_NUM_CHANNELS + MIC_PAIR_NUM_REF_CHANNELS];
   memset(output_block, 0, sizeof(output_block));
 
-
-
-  //Copy non 8 byte aligned coefficients and setup nice array of pointers for each phase of coefficients
-  //It means we have 8 byte aligned copies of 3 of the 6 phases
+  //Setup nice array of pointers for each phase of coefficients
   unsafe{
-    const size_t phase_coeff_size = (32 * sizeof(int));
-    int * unsafe g_third_stage_div_6_fir_ptr = (int * unsafe)g_third_stage_div_6_fir; //Note copy using unsafe ptr to avoid parallel usage rules
-    phase_coeff_ptrs[0] = (int * unsafe)&g_third_stage_div_6_fir_ptr[0 * 63];
-    memcpy(&final_stage_coeffs_copy[0], &g_third_stage_div_6_fir_ptr[1 * 63], phase_coeff_size);
-    phase_coeff_ptrs[1] = (int * unsafe)&final_stage_coeffs_copy[0];
-    phase_coeff_ptrs[2] = (int * unsafe)&g_third_stage_div_6_fir_ptr[2 * 63];
-    memcpy(&final_stage_coeffs_copy[1], &g_third_stage_div_6_fir_ptr[3 * 63], phase_coeff_size);
-    phase_coeff_ptrs[3] = (int * unsafe)&final_stage_coeffs_copy[1];
-    phase_coeff_ptrs[4] = (int * unsafe)&g_third_stage_div_6_fir_ptr[4 * 63];
-    memcpy(&final_stage_coeffs_copy[2], &g_third_stage_div_6_fir_ptr[5 * 63], phase_coeff_size);
-    phase_coeff_ptrs[5] = (int * unsafe)&final_stage_coeffs_copy[2];
-    //for (int i=0; i<6; i++) printf("ptr %d: 0x%p\n", i, phase_coeff_ptrs[i]);
+    for(int i = 0; i < 6; i++) phase_coeff_ptrs[i] = (int * unsafe)&g_third_stage_div_6_fir_dual[i * 32];
   }
 
-  //We are reading in 2 x 32b in one chunk every 10.4us (96kHz)
+  //We are reading in 2 x 32b values in one chunk every 10.4us (96kHz) so we need to 32b storage elements
   unsigned port_data[2];
 
   while(1) unsafe{
@@ -349,8 +335,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
     timer t;
 
     //GET PORT DATA
-    //p_pdm_mic :> port_data[0];
-    asm volatile("in %0, res[%1]" : "=r"(port_data[0])  : "r"(p_pdm_mic));
+    asm volatile("in %0, res[%1]" : "=r"(port_data[0])  : "r"(p_pdm_mic)); //Use ASM so we avoid SETC instruction
     //Input comes in from bit 31 (MSb) and shifts right, so LSB is oldest
     t :> t0;
 
@@ -387,8 +372,6 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
     if (mid_stage_delay_idx == mid_stage_ntaps) {
       mid_stage_delay_idx = 0;
     }
-
-    //printintln(final_stage_in_pcm);
 
     //CALL FINAL STAGE POLYPHASE FIR
     #pragma loop unroll
@@ -438,7 +421,6 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
       }
       final_stage_phase = 0;
     }
-    //p_pdm_mic :> port_data[1]; 
     asm volatile("in %0, res[%1]" : "=r"(port_data[1])  : "r"(p_pdm_mic));
 
     t :> t1;

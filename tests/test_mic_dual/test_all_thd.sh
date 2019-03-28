@@ -1,4 +1,4 @@
-AUDIO_LENGTH_S=5
+AUDIO_LENGTH_S=10
 
 #Generate sines
 echo "Generating sine waves for test"
