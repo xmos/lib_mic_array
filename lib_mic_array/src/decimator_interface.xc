@@ -92,15 +92,10 @@ static void check_timing(streaming chanend c_from_decimator){
 
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
-mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
+
+mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame_no_tkn(
          streaming chanend c_from_decimator[], unsigned decimator_count,
         unsigned &buffer, mic_array_frame_time_domain * alias audio, mic_array_decimator_config_t dc[]){
-#if DEBUG_MIC_ARRAY
-    check_timing(c_from_decimator[0]);
-#endif
-
-     for(unsigned i=0;i<decimator_count;i++)
-         schkct(c_from_decimator[i], 8);
 
      for(unsigned i=0;i<decimator_count;i++)
          soutct(c_from_decimator[i], EXCHANGE_BUFFERS);
@@ -139,6 +134,24 @@ mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
     if(buffer == buffer_count)
         buffer = 0;
     return &audio[index];
+}
+
+mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
+         streaming chanend c_from_decimator[], unsigned decimator_count,
+        unsigned &buffer, mic_array_frame_time_domain * alias audio, mic_array_decimator_config_t dc[]){
+    #if DEBUG_MIC_ARRAY
+        check_timing(c_from_decimator[0]);
+    #endif
+
+    for(unsigned i=0;i<decimator_count;i++) {
+        schkct(c_from_decimator[i], 8);
+    }
+
+    return mic_array_get_next_time_domain_frame_no_tkn(c_from_decimator,
+                                                       decimator_count,
+                                                       buffer,
+                                                       audio,
+                                                       dc);
 }
 
 void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[], unsigned decimator_count,
