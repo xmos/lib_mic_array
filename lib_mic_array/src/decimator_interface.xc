@@ -5,6 +5,10 @@
 
 #define XASSERT_UNIT DEBUG_MIC_ARRAY
 
+#define DEBUG_UNIT MIC_ARRAY
+#define DEBUG_PRINT_ENABLE_MIC_ARRAY 1
+#include "debug_print.h"
+
 #if DEBUG_MIC_ARRAY
 #include "xassert.h"
 #endif
@@ -20,12 +24,22 @@ void mic_array_init_far_end_channels(mic_array_internal_audio_channels ch[4],
     }
 }
 
-int mic_array_send_sample( streaming chanend c_to_decimator, int sample){
+int mic_array_send_sample(streaming chanend c_to_decimator, int sample){
     select {
         case c_to_decimator :> int:{
             c_to_decimator <: sample;
             return 0;
         }
+        default:
+            return 1;
+    }
+}
+
+int mic_array_recv_samples(streaming chanend c_from_decimator, int &ch_a, int &ch_b) {
+    select {
+        case c_from_decimator :> ch_a:
+            c_from_decimator :> ch_b;
+            return 0;
         default:
             return 1;
     }
