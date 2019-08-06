@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+# Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
 import xmostest
 
 if __name__ == "__main__":
