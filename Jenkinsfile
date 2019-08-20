@@ -1,12 +1,14 @@
-@Library('xmos_jenkins_shared_library@master') _
+@Library('xmos_jenkins_shared_library@develop') _
+
 getApproval()
+
 pipeline {
   agent {
-    label 'x86&&macOS&&Apps'
+    label 'x86_64&&brew'
   }
   environment {
-    VIEW = 'mic_array'
     REPO = 'lib_mic_array'
+    VIEW = "${env.JOB_NAME.contains('PR-') ? REPO+'_'+env.CHANGE_TARGET : REPO+'_'+env.BRANCH_NAME}"
   }
   options {
     skipDefaultCheckout()
@@ -14,7 +16,7 @@ pipeline {
   stages {
     stage('Get View') {
       steps {
-        prepareAppsSandbox("${VIEW}", "${REPO}")
+        xcorePrepareSandbox("${VIEW}", "${REPO}")
       }
     }
     stage('Library Checks') {
