@@ -1,7 +1,7 @@
-MODULE_XCC_XC_FLAGS = $(XCC_XC_FLAGS)
+MODULE_XCC_FLAGS = $(XCC_FLAGS)
 
 INCLUDE_DIRS = api src/fir
 
 DEPENDENT_MODULES = lib_xassert(>=3.0.0) lib_logging(>=2.1.0) lib_dsp(>=4.0.0)
 
-VERSION = 3.1.1
+VERSION = 3.2.0
