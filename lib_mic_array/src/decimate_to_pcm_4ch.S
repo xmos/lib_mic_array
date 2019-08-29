@@ -153,7 +153,8 @@
 #define S_FRAME_0_INDEX     	7	//index to write to the current frame
 #define S_FRAME_POINTER_1 		8	//pointer to the next frame
 #define S_FRAME_1_INDEX     	9	//index to write to the next frame
-#define FRAME_STACK_SIZE		10
+#define S_FRAME_SIZE    		10	//this is the current frame size log2
+#define FRAME_STACK_SIZE		12
 
 #define S_MIC_CALIB_OFFSET (S_FRAME_OFFSET+FRAME_STACK_SIZE)
 #define S_MIC_CALIB_0 		0
@@ -328,6 +329,32 @@
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #if MIC_ARRAY_WORD_LENGTH_SHORT
+	#define SAVE_SAMPLES_PACKED(POINTER)\
+		{ldc r8, 2 ;ldw r11, sp[S_CHAN_COUNT]};\
+		{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+2)};\
+		{shl r8, r11, r8;ldw r7, r4[POINTER]  };\
+		{add r8, r7, r8; nop};\
+		{shr r0, r0, 16; shr r1, r1, 16};\
+		{shr r2, r2, 16; shr r3, r3, 16};\
+		{shl r1, r1, 16; shl r3, r3, 16};\
+		{add r1, r1, r0; add r3, r3, r2};\
+		stw r3, r8[r6];\
+		stw r1, r7[r6]
+
+#else
+	#define SAVE_SAMPLES_PACKED(POINTER)\
+			{ldc r8, 2 ; ldw r11, sp[S_CHAN_COUNT]};\
+			{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+3)};\
+			{shl r8, r11, r8;ldw r7, r4[POINTER]  };\
+			{add r8, r7, r8; nop};\
+			std r3, r2, r8[r6];\
+			std r1, r0, r7[r6]
+
+#endif
+
+//r4 is the address of the S_FRAME_OFFSET_SECTION
+//r6 is the AUDIO_POINTER_INDEX
+#if MIC_ARRAY_WORD_LENGTH_SHORT
 	#define SAVE_SAMPLES_NORMAL(POINTER, N)\
 		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
     	{add r7, r6, r5; ldw r8, r4[POINTER]};\
@@ -448,7 +475,20 @@ take_config_from_application:
 	ldaw r0, sp[S_FRAME_OFFSET]
 	ldw r11, r3[0] //frame_size_log2
 	here_is_frame_size_log2:
+    shr r10, r11, 4
+    bt r10, actualLength
 	stw r11, r0[S_FRAME_SIZE_LOG2]
+    mkmsk r11, r11
+    add r11, r11, 1
+	stw r11, r0[S_FRAME_SIZE]
+    bu lengthDone
+actualLength:
+	{stw r11, r0[S_FRAME_SIZE]   ;ldc r10, 33}
+    clz r11, r11
+    sub r11, r10, r11
+	stw r11, r0[S_FRAME_SIZE_LOG2]
+lengthDone:
+
 
 	ldaw r0, sp[S_SETTINGS_OFFSET]
 
@@ -500,9 +540,8 @@ init_frame_index:
 	ldc r1, 0
 	stw r1, r11[S_FRAME_0_INDEX]
 
-	ldw r1, r11[S_FRAME_SIZE_LOG2]
-	{sub r1, r1, 1; ldc r10, 1}
-	shl r1, r10, r1
+	ldw r1, r11[S_FRAME_SIZE]
+	shr r1, r1, 1
 	stw r1, r11[S_FRAME_1_INDEX]
 
 get_frame_pointer:
@@ -822,12 +861,16 @@ internal_channel_overwrite_begin:
 
 		ldaw r5, sp[S_SETTINGS_OFFSET]
 		ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
-		bt r5, index_bitrev_order_0
+		{ bt r5, index_bitrev_order_0 ; eq r5, r5, 2 }
 			index_normal_order_0:
 				SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0, 0);
 				bu save_to_frame_complete_0
 			index_bitrev_order_0:
-				SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0);
+                bt r5, index_packed_0
+	            SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0);
+				bu save_to_frame_complete_0
+			index_packed_0:
+	            SAVE_SAMPLES_PACKED(S_FRAME_POINTER_0);
 		save_to_frame_complete_0:
 
 		ldw r5, r4[S_FRAME_0_INDEX]
@@ -837,8 +880,8 @@ internal_channel_overwrite_begin:
 		bt r6, overlapping_frames
 		no_overlapping_frames:
 
-		ldw r6, r4[S_FRAME_SIZE_LOG2]
-		{shr r5, r5, r6; ldc r6, 0}
+		ldw r6, r4[S_FRAME_SIZE]
+		{eq r5, r5, r6; ldc r6, 0}
 		bf r5, do_the_rest;
 
 			reset_the_frame_index:
@@ -894,20 +937,24 @@ internal_channel_overwrite_begin:
 
 			ldaw r5, sp[S_SETTINGS_OFFSET]
 			ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
-			bt r5, index_bitrev_order_1
+    		{ bt r5, index_bitrev_order_1 ; eq r5, r5, 2 }
 				index_normal_order_1:
 					SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_1, 1);
 					bu save_to_frame_complete_1
-				index_bitrev_order_1:
-					SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_1);
+  				index_bitrev_order_1:
+                    bt r5, index_packed_1
+	                SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_1);
+			    	bu save_to_frame_complete_1
+			    index_packed_1:
+	                SAVE_SAMPLES_PACKED(S_FRAME_POINTER_1);
 			save_to_frame_complete_1:
 
 			ldw r5, r4[S_FRAME_1_INDEX]
-			{add r5, r5, 1;ldw r6, r4[S_FRAME_SIZE_LOG2]}
+			{add r5, r5, 1;ldw r6, r4[S_FRAME_SIZE]}
 			stw r5, r4[S_FRAME_1_INDEX]
 
 
-			{shr r5, r5, r6; ldc r6, 0}
+			{eq r5, r5, r6; ldc r6, 0}
 			bf r5, do_the_rest;
 			at_the_end_of_the_overlapping_half_frame:
 
