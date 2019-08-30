@@ -1,4 +1,3 @@
-from __future__ import division
 import sys
 from scipy.signal import blackmanharris
 from numpy.fft import rfft, irfft
@@ -7,10 +6,10 @@ import numpy as np
 
 try:
     import soundfile as sf
-    print "using soundfile"
+    print("using soundfile")
 except ImportError:
     from scikits.audiolab import Sndfile
-    print "using scikits.audiolab"
+    print("using scikits.audiolab")
 
 
 def rms_flat(a):
@@ -59,7 +58,7 @@ def THDN(signal, sample_rate):
     # minima
     f = rfft(windowed)
     i = argmax(abs(f))
-    print 'Frequency: %f Hz' % (sample_rate * (i / len(windowed)))  # Not exact
+    print('Frequency: %f Hz' % (sample_rate * (i / len(windowed))))  # Not exact
     lowermin, uppermin = find_range(abs(f), i)
     f[lowermin: uppermin] = 0
 
@@ -67,7 +66,7 @@ def THDN(signal, sample_rate):
     # TODO: Could probably calculate the RMS directly in the frequency domain instead
     noise = irfft(f)
     THDN = rms_flat(noise) / total_rms
-    print "THD+N:     %.4f%% or %.1f dB" % (THDN * 100, 20 * log10(THDN))
+    print("THD+N:     %.4f%% or %.1f dB" % (THDN * 100, 20 * log10(THDN)))
 
 
 def load(filename):
@@ -76,11 +75,10 @@ def load(filename):
 
     Can be any format that libsndfile supports, like .wav, .flac, etc.
     """
-    # try:
-    #     wave_file = sf.SoundFile(filename)
-    #     signal = wave_file.read()
-    # except ImportError:
-    if True:
+    try:
+        wave_file = sf.SoundFile(filename)
+        signal = wave_file.read()
+    except ImportError:
         wave_file = Sndfile(filename, 'r')
         signal = wave_file.read_frames(wave_file.nframes)
 
@@ -96,7 +94,7 @@ def analyze_channels(filename, function):
     file
     """
     signal, sample_rate, channels = load(filename)
-    print 'Analyzing "' + filename + '"...'
+    print('Analyzing "' + filename + '"...')
 
     if channels == 1:
         # Monaural
@@ -104,17 +102,17 @@ def analyze_channels(filename, function):
     elif channels == 2:
         # Stereo
         if np.array_equal(signal[:, 0], signal[:, 1]):
-            print '-- Left and Right channels are identical --'
+            print('-- Left and Right channels are identical --')
             function(signal[:, 0], sample_rate)
         else:
-            print '-- Left channel --'
+            print('-- Left channel --')
             function(signal[:, 0], sample_rate)
-            print '-- Right channel --'
+            print('-- Right channel --')
             function(signal[:, 1], sample_rate)
     else:
         # Multi-channel
         for ch_no, channel in enumerate(signal.transpose()):
-            print '-- Channel %d --' % (ch_no + 1)
+            print('-- Channel %d --' % (ch_no + 1))
             function(channel, sample_rate)
 
 files = sys.argv[1:]
@@ -123,8 +121,8 @@ if files:
         try:
             analyze_channels(filename, THDN)
         except Exception as e:
-            print 'Couldn\'t analyze "' + filename + '"'
-            print e
-        print ''
+            print('Couldn\'t analyze "' + filename + '"')
+            print(e)
+        print('')
 else:
     sys.exit("You must provide at least one file to analyze")
