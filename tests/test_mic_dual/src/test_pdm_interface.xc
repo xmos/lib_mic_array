@@ -10,8 +10,11 @@
 #define PDM_FILE_NAME_A "ch_a.pdm"
 #define PDM_FILE_NAME_B "ch_b.pdm"
 
-#define PCM_FILE_NAME_A "ch_a.raw"
-#define PCM_FILE_NAME_B "ch_b.raw"
+#define PCM_FILE_NAME_STD_A "ch_a_std.raw"
+#define PCM_FILE_NAME_STD_B "ch_b_std.raw"
+
+#define PCM_FILE_NAME_DUAL_A "ch_a_dual.raw"
+#define PCM_FILE_NAME_DUAL_B "ch_b_dual.raw"
 
 in buffered port:32 p_pdm_mics   = XS1_PORT_1A;
 unsafe{
@@ -20,8 +23,8 @@ unsafe{
 
 //Note unusual casting of channel to a port. i.e. we output directly onto channel rather than port
 unsafe{
-    void call_mic_dual_pdm_rx_decimate(chanend c_pdm_input, streaming chanend c_ds_output[], streaming chanend c_ref_audio[]){
-        p_ptr = ( buffered port:32 * unsafe ) &c_pdm_input;
+    void call_mic_dual_pdm_rx_decimate(chanend c_mic_dual_pdm, streaming chanend c_ds_output[], streaming chanend c_ref_audio[]){
+        p_ptr = ( buffered port:32 * unsafe ) &c_mic_dual_pdm;
         //printf("%p\n", *p_ptr);
         mic_dual_pdm_rx_decimate(*p_ptr, c_ds_output[0], c_ref_audio);
     }
@@ -33,15 +36,15 @@ extern void pdm_rx_debug(
         streaming chanend ?c_4x_pdm_mic_1);
 
 unsafe{
-    void call_pdm_rx(chanend c_pdm_input, streaming chanend c_4x_pdm_mic_0, streaming chanend ?c_4x_pdm_mic_1){
-        p_ptr = ( buffered port:32 * unsafe ) &c_pdm_input;
+    void call_pdm_rx(chanend c_mic_dual_pdm, streaming chanend c_4x_pdm_mic_0, streaming chanend ?c_4x_pdm_mic_1){
+        p_ptr = ( buffered port:32 * unsafe ) &c_mic_dual_pdm;
         //printf("%p\n", *p_ptr);
         mic_array_pdm_rx(*p_ptr, c_4x_pdm_mic_0, c_4x_pdm_mic_1);
     }
 }
 
 
-void test_pdm(chanend c_pdm_input, streaming chanend c_mic_array){
+void get_pdm_from_file(chanend c_mic_dual_pdm, streaming chanend c_mic_array_pdm){
   FILE * unsafe pdm_file[2];
   pdm_file[0] = fopen ( PDM_FILE_NAME_A , "rb" );
   pdm_file[1] = fopen ( PDM_FILE_NAME_B , "rb" );
@@ -85,7 +88,7 @@ void test_pdm(chanend c_pdm_input, streaming chanend c_mic_array){
       //printf("\n");
     }
       
-    //ZIP 2 PDMS into SINGLE STREAM
+    //ZIP 2 PDMS into SINGLE STREAM for mic_dual
     unsigned long long tmp64 = zip(pdm_word[0], pdm_word[1], 0);
 
     unsigned port_b = tmp64 >> 32;
@@ -93,8 +96,8 @@ void test_pdm(chanend c_pdm_input, streaming chanend c_mic_array){
     //printbinln(port_a);
     //printbinln(port_b);
 
-    //outuint(c_pdm_input, port_a);
-    //outuint(c_pdm_input, port_b);
+    outuint(c_mic_dual_pdm, port_a);
+    outuint(c_mic_dual_pdm, port_b);
 
 
     //Now build word for mic_array
@@ -106,8 +109,7 @@ void test_pdm(chanend c_pdm_input, streaming chanend c_mic_array){
         port_val |= pdm_chunk[0][pdm_idx] ? 0x1 << (8 * j) : 0x0;
         port_val |= pdm_chunk[1][pdm_idx] ? 0x2 << (8 * j) : 0x0;
       }
-      //outuint(c_pdm_input[1], port_val);
-      c_mic_array <: port_val;
+      c_mic_array_pdm <: port_val;
     }
   }
 }
@@ -115,18 +117,18 @@ void test_pdm(chanend c_pdm_input, streaming chanend c_mic_array){
 
 int mic_array_data[MIC_DECIMATORS*MIC_CHANNELS][THIRD_STAGE_COEFS_PER_STAGE*MIC_DECIMATION_FACTOR];
 
-void collect_output(streaming chanend c_ds_output_dual[1], streaming chanend c_ds_output[1]){
+void collect_output_std( streaming chanend c_ds_output[1]){
   unsafe{
   FILE * unsafe pcm_file[2];
-  pcm_file[0] = fopen ( PCM_FILE_NAME_A , "wb" );
-  pcm_file[1] = fopen ( PCM_FILE_NAME_B , "wb" );
+  pcm_file[0] = fopen ( PCM_FILE_NAME_STD_A, "wb" );
+  pcm_file[1] = fopen ( PCM_FILE_NAME_STD_B , "wb" );
 
   if ((pcm_file[0]==NULL)) {
-      printf("file cannot be opened (%s)\n", PCM_FILE_NAME_A);
+      printf("file cannot be opened (%s)\n", PCM_FILE_NAME_STD_A);
       exit(1);
   }
   if ((pcm_file[1]==NULL)) {
-      printf("file cannot be opened (%s)\n", PCM_FILE_NAME_B);
+      printf("file cannot be opened (%s)\n", PCM_FILE_NAME_STD_B);
       exit(1);
   }
 
@@ -160,17 +162,50 @@ void collect_output(streaming chanend c_ds_output_dual[1], streaming chanend c_d
   mic_array_init_time_domain_frame(c_ds_output, MIC_DECIMATORS, buffer, audio_frame, decimator_config);
 
   while(1){
-    unsigned addr;
-    //c_ds_output_dual[0] :> addr;
+    // Get lib_mic_array
     mic_array_frame_time_domain * current_frame;
     current_frame = mic_array_get_next_time_domain_frame(c_ds_output, MIC_DECIMATORS, buffer, audio_frame, decimator_config);
+    // printf("mic_array\n");  
 
-    //printf("c_ds_output_dual %p\n", addr);
     for(unsigned i=0;i<MIC_ARRAY_FRAME_SIZE;i++)unsafe{
-      // int ch0 = *((int *)addr + (4 * i) + 0);
-      // int ch1 = *((int *)addr + (4 * i) + 1);
       int ch0 = current_frame->data[0][i];
       int ch1 = current_frame->data[1][i];
+
+      // printf("ch0: %d\t ch1: %d\n", ch0, ch1);
+      fwrite(&ch0, sizeof(ch0), 1, (FILE *)pcm_file[0]);
+      fwrite(&ch1, sizeof(ch1), 1, (FILE *)pcm_file[1]);
+    } 
+  }
+}
+}//unsafe
+
+void collect_output_dual(streaming chanend c_ds_output_dual[1]){
+  unsafe{
+  FILE * unsafe pcm_file[2];
+  pcm_file[0] = fopen ( PCM_FILE_NAME_DUAL_A , "wb" );
+  pcm_file[1] = fopen ( PCM_FILE_NAME_DUAL_B , "wb" );
+
+  if ((pcm_file[0]==NULL)) {
+      printf("file cannot be opened (%s)\n", PCM_FILE_NAME_DUAL_A);
+      exit(1);
+  }
+  if ((pcm_file[1]==NULL)) {
+      printf("file cannot be opened (%s)\n", PCM_FILE_NAME_DUAL_B);
+      exit(1);
+  }
+
+  // No init for mic_dual
+
+
+  while(1){
+    // Get mic_dual
+    unsigned addr = 0;
+    c_ds_output_dual[0] :> addr;
+    // printf("mic_dual\n");  
+
+    for(unsigned i=0;i<MIC_ARRAY_FRAME_SIZE;i++)unsafe{
+      int ch0 = *((int *)addr + (4 * i) + 0);
+      int ch1 = *((int *)addr + (4 * i) + 1);
 
       // printf("ch0: %d\t ch1: %d\n", ch0, ch1);
       fwrite(&ch0, sizeof(ch0), 1, (FILE *)pcm_file[0]);
@@ -189,21 +224,29 @@ void ref_audio(streaming chanend c_ref_audio[]){
 
 void test2ch(){
 
-    chan c_pdm_input; //This uses primatives rather than XC operators so has normal chan
+    //mic_dual plumbing
+    chan c_mic_dual_pdm; //This uses primatives rather than XC operators so has normal chan
     streaming chan c_ds_output_dual[1],  c_ref_audio[2];
 
-    streaming chan c_mic_array;
+    //mic_array plumbing
+    streaming chan c_mic_array_pdm;
     streaming chan c_ds_output[1], c_4x_pdm_mic_0;
 
     par {
-        // call_mic_dual_pdm_rx_decimate(c_pdm_input, c_ds_output_dual, c_ref_audio);
-        test_pdm(c_pdm_input, c_mic_array);
-        // ref_audio(c_ref_audio);
-        collect_output(c_ds_output_dual, c_ds_output);
+        get_pdm_from_file(c_mic_dual_pdm, c_mic_array_pdm);
 
-        //call_pdm_rx(c_pdm_input[1], c_4x_pdm_mic_0, null);
-        pdm_rx_debug(c_mic_array, c_4x_pdm_mic_0, null);
+        //mic_dual
+        ref_audio(c_ref_audio);
+        call_mic_dual_pdm_rx_decimate(c_mic_dual_pdm, c_ds_output_dual, c_ref_audio);
+        collect_output_dual(c_ds_output_dual);
+
+
+        //standard lib_mic_array
+        pdm_rx_debug(c_mic_array_pdm, c_4x_pdm_mic_0, null);
         mic_array_decimate_to_pcm_4ch(c_4x_pdm_mic_0, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+        collect_output_std(c_ds_output);
+
+
     }
 }
 
