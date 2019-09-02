@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import os
 import numpy as np
 import argparse
@@ -160,31 +158,31 @@ def pcm_to_pdm(in_wav_file, out_pdm_file, pdm_sample_rate, verbose = False):
 
     # FIXME this need a handler for float types
     first_sample = multi_channel_pcm[0][0]
-    if isinstance( first_sample, ( int, long, np.int16, np.int32 ) ):
+    if isinstance( first_sample, ( int, np.int16, np.int32 ) ):
       pcm_full_scale = np.iinfo(first_sample).max
       if verbose:
-        print "Full scale PCM value: " + str(pcm_full_scale) + ' (Integer type PCM)'
+        print("Full scale PCM value: " + str(pcm_full_scale) + ' (Integer type PCM)')
     else:
       pcm_full_scale = 1.0
       if verbose:
-        print "Full scale PCM value: " + str(pcm_full_scale) + ' (Float type PCM)'
+        print("Full scale PCM value: " + str(pcm_full_scale) + ' (Float type PCM)')
 
     nchannels = multi_channel_pcm.shape[0]
 
     upsample_ratio , downsample_ratio = up_down_ratio(pcm_sample_rate, pdm_sample_rate)
 
     if nchannels > 8:
-      print "Error: More than 8 channels is not supported, found " + str(nchannels) + "."
+      print("Error: More than 8 channels is not supported, found " + str(nchannels) + ".")
       return
 
     seconds = np.round(float(nsamples) / float(pcm_sample_rate), 3)
 
     if verbose:
-      print "PCM -> PDM"
-      print "Number of sample: " + str(nsamples) + ' ~ ' + str(seconds) + ' seconds.'
-      print "Channel count: " + str(nchannels)
-      print "Upsample ratio: " + str(upsample_ratio)
-      print "Downsample ratio: " + str(downsample_ratio)
+      print("PCM -> PDM")
+      print("Number of sample: " + str(nsamples) + ' ~ ' + str(seconds) + ' seconds.')
+      print("Channel count: " + str(nchannels))
+      print("Upsample ratio: " + str(upsample_ratio))
+      print("Downsample ratio: " + str(downsample_ratio))
 
     # Stability limit
     pdm_magnitude_stability_limit = 0.4 # This seems to be safe
@@ -196,7 +194,7 @@ def pcm_to_pdm(in_wav_file, out_pdm_file, pdm_sample_rate, verbose = False):
     max_abs_pcm_all_channels = 0.
     for ch in range(nchannels):
       if verbose:
-        print 'processing channel ' + str(ch)
+        print('processing channel ' + str(ch))
       pcm = multi_channel_pcm[ch]
 
       # limit the max pcm input to 0.4 - for stability of the modulator
@@ -208,10 +206,10 @@ def pcm_to_pdm(in_wav_file, out_pdm_file, pdm_sample_rate, verbose = False):
         pcm /= max(abs(pcm))
         pcm *= pdm_magnitude_stability_limit
         if verbose:
-          print 'Abs max sample: '+ str(max_abs_pcm) +' limiting the abs max sample to 0.4'
+          print('Abs max sample: '+ str(max_abs_pcm) +' limiting the abs max sample to 0.4')
       else :
         if verbose:
-          print 'No sample limiting applied'
+          print('No sample limiting applied')
       # TODO do this in chunks to save memory
       up_sampled_pcm = signal.resample_poly(pcm, upsample_ratio, downsample_ratio)
 
@@ -227,7 +225,7 @@ def pcm_to_pdm(in_wav_file, out_pdm_file, pdm_sample_rate, verbose = False):
     my_bytes = np.array(pdm_samples, dtype=np.uint8)
     b = np.packbits(my_bytes.T, axis = -1)
 
-    print "Max abs value {}".format(max_abs_pcm_all_channels)
+    print("Max abs value {}".format(max_abs_pcm_all_channels))
 
     fp = open(out_pdm_file,'wb')
 
@@ -245,12 +243,12 @@ def pdm_to_pcm(input_file, out_file, pdm_sample_rate, pcm_sample_rate,
                preserve_all_channels=False, verbose=False, apply_recording_conditioning=False):
 
     if verbose:
-      print "PDM -> PCM"
+      print("PDM -> PCM")
 
     binary_file =  open(input_file, "rb")
 
     if verbose:
-      print 'File length: ' + str(os.stat(input_file).st_size) + ' bytes'
+      print('File length: ' + str(os.stat(input_file).st_size) + ' bytes')
 
     # Read the whole file at once
     input_data = bytearray(binary_file.read())
@@ -267,12 +265,12 @@ def pdm_to_pcm(input_file, out_file, pdm_sample_rate, pcm_sample_rate,
         if sum(multi_channel_pdm[ch]) != 0:
           non_zero_channel.append(ch)
           if verbose:
-            print 'Keeping channel ' + str(ch)
+            print('Keeping channel ' + str(ch))
     else:
       for ch in range(8):
         non_zero_channel.append(ch)
         if verbose:
-          print 'Keeping channel ' + str(ch)
+          print('Keeping channel ' + str(ch))
 
     nchannels = len(non_zero_channel)
 
@@ -281,12 +279,12 @@ def pdm_to_pcm(input_file, out_file, pdm_sample_rate, pcm_sample_rate,
     seconds = np.round(float(nsamples) / float(pdm_sample_rate), 3)
 
     if verbose:
-      print "Number of sample: " + str(nsamples) + ' ~ ' + str(seconds) + ' seconds.'
-      print "Input rate: " + str(pdm_sample_rate) + 'Hz'
-      print "Output rate: " + str(pcm_sample_rate) + 'Hz'
-      print "Channel count: " + str(nchannels)
-      print "Upsample ratio: " + str(upsample_ratio)
-      print "Downsample ratio: " + str(downsample_ratio)
+      print("Number of sample: " + str(nsamples) + ' ~ ' + str(seconds) + ' seconds.')
+      print("Input rate: " + str(pdm_sample_rate) + 'Hz')
+      print("Output rate: " + str(pcm_sample_rate) + 'Hz')
+      print("Channel count: " + str(nchannels))
+      print("Upsample ratio: " + str(upsample_ratio))
+      print("Downsample ratio: " + str(downsample_ratio))
 
     pcm = np.zeros((nchannels, nsamples*upsample_ratio/downsample_ratio), dtype=np.float64)
 
@@ -296,7 +294,7 @@ def pdm_to_pcm(input_file, out_file, pdm_sample_rate, pcm_sample_rate,
 
     for ch in range(nchannels):
       if verbose:
-        print 'processing channel ' + str(ch)
+        print('processing channel ' + str(ch))
       pdm_ch = non_zero_channel[ch]
 
       pdm = np.zeros(nsamples, dtype=np.float64)
@@ -362,8 +360,8 @@ if __name__ == '__main__':
     pdm_clock_rate = 3072000.0
 
     if verbose_enabled:
-      print 'Input file: ' + str(in_file)
-      print 'Output file: ' + str(out_file)
+      print('Input file: ' + str(in_file))
+      print('Output file: ' + str(out_file))
 
     if not args.make_pcm:
       pcm_to_pdm(in_file, out_file, pdm_clock_rate, verbose=verbose_enabled)
