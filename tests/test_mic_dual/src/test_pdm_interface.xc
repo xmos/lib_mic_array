@@ -74,7 +74,7 @@ void test_pdm(chanend c_pdm_input, streaming chanend c_mic_array){
     }
     pdm_word_count += 1;
 
-    if((pdm_word_count & 0xfff) == 0) printf("Simulation progress: %d% \r",  (pdm_word_count * 100) / (sz /32));
+    if((pdm_word_count & 0xfff) == 0) printf("Simulation progress: %d%%\r",  (pdm_word_count * 100) / (sz /32));
 
     unsigned pdm_word[2] = {0, 0};
     for (unsigned p=0;p<2;p++){
@@ -167,13 +167,12 @@ void collect_output(streaming chanend c_ds_output_dual[1], streaming chanend c_d
 
     //printf("c_ds_output_dual %p\n", addr);
     for(unsigned i=0;i<MIC_ARRAY_FRAME_SIZE;i++)unsafe{
-      int ch0 = *((int *)addr + (4 * i) + 0);
-      int ch1 = *((int *)addr + (4 * i) + 1);
-      // int ch0 = current_frame->data[0][i];
-      // int ch1 = current_frame->data[1][i];
+      // int ch0 = *((int *)addr + (4 * i) + 0);
+      // int ch1 = *((int *)addr + (4 * i) + 1);
+      int ch0 = current_frame->data[0][i];
+      int ch1 = current_frame->data[1][i];
 
-      // //printf("ch0: %d\t ch1: %d\n", ch0, ch1);
-      //printintln(ch0);
+      // printf("ch0: %d\t ch1: %d\n", ch0, ch1);
       fwrite(&ch0, sizeof(ch0), 1, (FILE *)pcm_file[0]);
       fwrite(&ch1, sizeof(ch1), 1, (FILE *)pcm_file[1]);
     } 
