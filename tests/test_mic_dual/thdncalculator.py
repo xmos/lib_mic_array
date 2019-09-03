@@ -17,7 +17,7 @@ except ImportError:
     print("using scikits.audiolab")
 
 
-def rms_flat(a):
+def rms_flat(a, sample_rate):
     """
     Return the root mean square of all the elements of *a*, flattened out.
     """
@@ -56,7 +56,7 @@ def THDN(signal, sample_rate):
     windowed = signal * blackmanharris(len(signal))  # TODO Kaiser?
 
     # Measure the total signal before filtering but after windowing
-    total_rms = rms_flat(windowed)
+    total_rms = rms_flat(windowed, sample_rate)
 
     # Find the peak of the frequency spectrum (fundamental frequency), and
     # filter the signal by throwing away values between the nearest local
@@ -70,7 +70,7 @@ def THDN(signal, sample_rate):
     # Transform noise back into the signal domain and measure it
     # TODO: Could probably calculate the RMS directly in the frequency domain instead
     noise = irfft(f)
-    THDN = rms_flat(noise) / total_rms
+    THDN = rms_flat(noise, sample_rate) / total_rms
 
     result = "THD+N:     %.4f%% or %.1f dB" % (THDN * 100, 20 * log10(THDN))
     print(result)
