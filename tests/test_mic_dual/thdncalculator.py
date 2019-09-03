@@ -1,12 +1,17 @@
-import sys
+import sys, os
 from scipy.signal import blackmanharris
 from numpy.fft import rfft, irfft
 from numpy import argmax, sqrt, mean, absolute, arange, log10
 import numpy as np
 
+use_soundfile = False
+
+
 try:
     import soundfile as sf
     print("using soundfile")
+    global use_soundfile
+    use_soundfile = True
 except ImportError:
     from scikits.audiolab import Sndfile
     print("using scikits.audiolab")
@@ -66,7 +71,11 @@ def THDN(signal, sample_rate):
     # TODO: Could probably calculate the RMS directly in the frequency domain instead
     noise = irfft(f)
     THDN = rms_flat(noise) / total_rms
-    print("THD+N:     %.4f%% or %.1f dB" % (THDN * 100, 20 * log10(THDN)))
+
+    result = "THD+N:     %.4f%% or %.1f dB" % (THDN * 100, 20 * log10(THDN))
+    print(result)
+
+    return 20 * log10(THDN)
 
 
 def load(filename):
@@ -75,10 +84,10 @@ def load(filename):
 
     Can be any format that libsndfile supports, like .wav, .flac, etc.
     """
-    try:
+    if use_soundfile:
         wave_file = sf.SoundFile(filename)
         signal = wave_file.read()
-    except ImportError:
+    else:
         wave_file = Sndfile(filename, 'r')
         signal = wave_file.read_frames(wave_file.nframes)
 
@@ -95,10 +104,11 @@ def analyze_channels(filename, function):
     """
     signal, sample_rate, channels = load(filename)
     print('Analyzing "' + filename + '"...')
+    result = None
 
     if channels == 1:
         # Monaural
-        function(signal, sample_rate)
+        result = function(signal, sample_rate)
     elif channels == 2:
         # Stereo
         if np.array_equal(signal[:, 0], signal[:, 1]):
@@ -114,6 +124,9 @@ def analyze_channels(filename, function):
         for ch_no, channel in enumerate(signal.transpose()):
             print('-- Channel %d --' % (ch_no + 1))
             function(channel, sample_rate)
+
+    if(result):
+        return result
 
 files = sys.argv[1:]
 if files:
