@@ -6,15 +6,16 @@
 #include <string.h>
 #include "mic_array.h"
 
+//Note XMOS test runs from directory up hence adding dir to filename
 //Expects binary file with one byte per bit. Byte value is either 0 or 1
-#define PDM_FILE_NAME_A "ch_a.pdm"
-#define PDM_FILE_NAME_B "ch_b.pdm"
+#define PDM_FILE_NAME_A "test_mic_dual/ch_a.pdm"
+#define PDM_FILE_NAME_B "test_mic_dual/ch_b.pdm"
 
-#define PCM_FILE_NAME_STD_A "ch_a_std.raw"
-#define PCM_FILE_NAME_STD_B "ch_b_std.raw"
+#define PCM_FILE_NAME_STD_A "test_mic_dual/ch_a_std.raw"
+#define PCM_FILE_NAME_STD_B "test_mic_dual/ch_b_std.raw"
 
-#define PCM_FILE_NAME_DUAL_A "ch_a_dual.raw"
-#define PCM_FILE_NAME_DUAL_B "ch_b_dual.raw"
+#define PCM_FILE_NAME_DUAL_A "test_mic_dual/ch_a_dual.raw"
+#define PCM_FILE_NAME_DUAL_B "test_mic_dual/ch_b_dual.raw"
 
 in buffered port:32 p_pdm_mics   = XS1_PORT_1A;
 unsafe{
