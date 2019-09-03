@@ -9,13 +9,12 @@ extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_co
 #include "dsp_qformat.h"                  //Gain compensation
 
 
-
 #define MIC_PAIR_OUTPUT_BLOCK_SIZE        240
-#define MIC_GAIN_COMPENSATION             1.00f                     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
-                                                                    //Max is 7.999 due to Q28 format
-#define MIC_PAIR_NUM_OUT_BUFFERS          2                         //Single (1) or double (2) buffered
-#define MIC_PAIR_NUM_CHANNELS             2                         //Always 2 because it's a pair of mics we are decimating
-#define MIC_PAIR_NUM_REF_CHANNELS         2                         //Always 2 in xvf3510 case
+#define MIC_GAIN_COMPENSATION             0.529f        //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
+                                                        //Max is 7.999 due to Q28 format
+#define MIC_PAIR_NUM_OUT_BUFFERS          2             //Single (1) or double (2) buffered
+#define MIC_PAIR_NUM_CHANNELS             2             //Always 2 because it's a pair of mics we are decimating
+#define MIC_PAIR_NUM_REF_CHANNELS         2             //Always 2 in xvf3510 case
 
 #pragma unsafe arrays
 //This effectively implements a delayline of 6 chars of bits, the later three reversed
