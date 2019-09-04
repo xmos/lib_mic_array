@@ -210,6 +210,17 @@ def configure(conf):
 def build(bld):
     if not bld.variant:
         if not bld.cmd == "clean":
+            print("Checking for unit_test.expect...")
+            if os.path.exists("unit_test.expect"):
+                print("unit_test.expect found!")
+            else:
+                print("unit_test.expect not found, generating...")
+                os.chdir("generate_output")
+                ret = subprocess.check_call(["xwaf", "configure", "build"])
+                assert ret == 0
+                os.chdir("../")
+                ret = subprocess.check_call(["axe", "generate_output/bin/generate_output.xe"])
+                assert ret == 0
             print('Adding test runners to build queue')
             for name in UNITY_TESTS:
                 Options.commands.insert(0, 'build_' + name + '_single_issue')

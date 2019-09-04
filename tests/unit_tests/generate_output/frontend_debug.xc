@@ -15,7 +15,6 @@ void push_random_data(streaming chanend c_pdm_mics) {
     unsigned x = 1234;
     while (1) {
         crc32(x, -1, CRC_POLY);
-        //printf("%d\n", x);
         c_pdm_mics <: x;
     }
 }

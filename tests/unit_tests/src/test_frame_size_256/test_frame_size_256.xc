@@ -3,10 +3,13 @@
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
-#ifdef __XC__
 #include "mic_array.h"
 #include "frontend_debug.h"
-#endif
+
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 
 void test_frame_size() {
     streaming chan c_pdm_mics;
@@ -34,53 +37,35 @@ void test_frame_size() {
                                              audio_frame,
                                              decimator_config);
 
-            //first wait until the filter delay has passed
-            for(unsigned i=0;i<64;i++) {
-                mic_array_get_next_time_domain_frame(
-                    c_ds_output, MIC_DECIMATORS, mic_buffer_index,
-                    audio_frame, decimator_config);
-            }
-
-            unsigned x;
-            mic_array_frame_time_domain frame_0;
-            mic_array_frame_time_domain frame_1;
+            int fd = open("unit_test.expect", O_RDONLY);
 
             mic_array_frame_time_domain *current;
-
-            // Get frame_0
-            current = mic_array_get_next_time_domain_frame(
+            // Global sample index
+            unsigned g_idx = 0;
+            while(1) {
+                current = mic_array_get_next_time_domain_frame(
                     c_ds_output, MIC_DECIMATORS, mic_buffer_index,
                     audio_frame, decimator_config);
-            memcpy(&frame_0, current, sizeof(mic_array_frame_time_domain));
-
-            // Get frame_1
-            current = mic_array_get_next_time_domain_frame(
-                    c_ds_output, MIC_DECIMATORS, mic_buffer_index,
-                    audio_frame, decimator_config);
-            memcpy(&frame_1, current, sizeof(mic_array_frame_time_domain));
-
-            // Build frame_diff
-            mic_array_frame_time_domain frame_diff;
-            mic_array_frame_time_domain frame_zero;
-            // Check that for indices 0 <= i < frame_size
-            // That all values are different between frames
-            for (int m=0; m<MIC_ARRAY_NUM_MICS; m++) {
                 for (int i=0; i<MIC_ARRAY_FRAME_SIZE; i++) {
-                    frame_diff.data[m][i] = (frame_0.data[m][i] == frame_1.data[m][i]);
-                    frame_zero.data[m][i] = 0;
+                    if (g_idx >= 1000) {
+                        for (int m=0; m<MIC_ARRAY_NUM_MICS; m++) {
+                            int expected_val;
+                            unsafe {
+                                read(fd, &expected_val, 4);
+                            }
+                            printf("g_idx: %d\n", g_idx);
+                            TEST_ASSERT_EQUAL_INT32(expected_val, current->data[m][i]);
+                        }
+                    }
+                    g_idx++;
+                    if (g_idx == 2000) {
+                        // Exit successfully
+                        close(fd);
+                        UnityConcludeTest();
+                        _Exit(0);
+                    }
                 }
             }
-
-            unsafe {
-                TEST_ASSERT_EQUAL_INT32_ARRAY_MESSAGE(frame_zero.data[0], frame_diff.data[0], MIC_ARRAY_FRAME_SIZE, "Mic 0");
-                TEST_ASSERT_EQUAL_INT32_ARRAY_MESSAGE(frame_zero.data[1], frame_diff.data[1], MIC_ARRAY_FRAME_SIZE, "Mic 1");
-                TEST_ASSERT_EQUAL_INT32_ARRAY_MESSAGE(frame_zero.data[2], frame_diff.data[2], MIC_ARRAY_FRAME_SIZE, "Mic 2");
-                TEST_ASSERT_EQUAL_INT32_ARRAY_MESSAGE(frame_zero.data[3], frame_diff.data[3], MIC_ARRAY_FRAME_SIZE, "Mic 3");
-            }
-
-            UnityConcludeTest();
-            _Exit(0);
-
         }
     }
 }

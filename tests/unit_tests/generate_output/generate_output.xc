@@ -1,12 +1,17 @@
 // Copyright (c) 2019, XMOS Ltd, All rights reserved
-#include "unity.h"
+#include <stdio.h>
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
 #include "mic_array.h"
 #include "frontend_debug.h"
 
-void test_pdm_muting() {
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+
+int main() {
     streaming chan c_pdm_mics;
     streaming chan c_ds_output[1];
 
@@ -32,53 +37,34 @@ void test_pdm_muting() {
                                              audio_frame,
                                              decimator_config);
 
-            //first wait until the filter delay has passed
-            for(unsigned i=0;i<64;i++) {
+            // Skip the first 1000 samples
+            for(unsigned i=0;i<1000;i++) {
                 mic_array_get_next_time_domain_frame(
                     c_ds_output, MIC_DECIMATORS, mic_buffer_index,
                     audio_frame, decimator_config);
             }
 
-            unsigned x;
-            mic_array_frame_time_domain frame_0;
-            mic_array_frame_time_domain frame_1;
 
             mic_array_frame_time_domain *current;
+            int fd = open("unit_test.expect", O_RDWR | O_CREAT, S_IRWXU|S_IRWXG|S_IRWXO);
 
-            // Get frame_0
-            current = mic_array_get_next_time_domain_frame(
+            // Save the next 1000 samples
+            for(unsigned i=0;i<1000;i++) {
+                current = mic_array_get_next_time_domain_frame(
                     c_ds_output, MIC_DECIMATORS, mic_buffer_index,
                     audio_frame, decimator_config);
-            memcpy(&frame_0, current, sizeof(mic_array_frame_time_domain));
-
-            // Get frame_1
-            current = mic_array_get_next_time_domain_frame(
-                    c_ds_output, MIC_DECIMATORS, mic_buffer_index,
-                    audio_frame, decimator_config);
-            memcpy(&frame_1, current, sizeof(mic_array_frame_time_domain));
-
-            mic_array_frame_time_domain frame_zero;
-            // Check that for indices 0 <= i < frame_size
-            // All values of muted mic == 0
-            // And at least one value for non-muted mics is non-zero
-            int all_zero[4] = {1};
-            for (int m=0; m<MIC_ARRAY_NUM_MICS; m++) {
-                for (int i=0; i<MIC_ARRAY_FRAME_SIZE; i++) {
-                    frame_zero.data[m][i] = 0;
-                    all_zero[m] = all_zero[m] && frame_0.data[m][i];
+                for (int m=0; m<MIC_CHANNELS; m++) {
+                    unsafe {
+                        write(fd, &(current->data[m][0]), 4);
+                    }
                 }
             }
 
-            TEST_ASSERT_EQUAL_INT32_MESSAGE(0, all_zero[1], "Mic 0 not muted");
-            unsafe {
-                TEST_ASSERT_EACH_EQUAL_INT32_MESSAGE(0, frame_0.data[1], MIC_ARRAY_FRAME_SIZE, "Mic 1 muted");
-            }
-            TEST_ASSERT_EQUAL_INT32_MESSAGE(0, all_zero[2], "Mic 2 not muted");
-            TEST_ASSERT_EQUAL_INT32_MESSAGE(0, all_zero[3], "Mic 3 not muted");
+            close(fd);
 
-            UnityConcludeTest();
             _Exit(0);
 
         }
     }
+    return 0;
 }
