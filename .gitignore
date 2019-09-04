@@ -32,6 +32,10 @@ examples/AN00221_freq_domain_example/doc/pdf/AN00218.pdf
 examples/AN00218_app_hires_DAS_fixed/doc/pdf/AN00218.pdf
 **/.venv/**
 
+
+# Unit test runners
+**/runners/*
+
 # waf build files
 .lock-waf_*
 .waf-*/

@@ -1,4 +1,5 @@
 // Copyright (c) 2015-2019, XMOS Ltd, All rights reserved
+#if __XC__
 #ifndef MIC_ARRAY_H_
 #define MIC_ARRAY_H_
 
@@ -285,3 +286,4 @@ void mic_array_decimator_configure(
         mic_array_decimator_config_t dc[]);
 
 #endif /* MIC_ARRAY_H_ */
+#endif
