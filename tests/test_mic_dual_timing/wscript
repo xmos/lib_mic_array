@@ -3,7 +3,7 @@ def configure(conf):
 
 
 def build(bld):
-    bld.env.XCC_FLAGS = ['-O2', '-g', '-report']
+    bld.env.XCC_FLAGS = ['-Os', '-g', '-report']
     bld.env.TARGET_ARCH = 'XCORE-200-EXPLORER'
     bld.env.PROJECT_ROOT = '../../..'
 
