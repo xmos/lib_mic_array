@@ -1,3 +1,4 @@
+// Copyright (c) 2019, XMOS Ltd, All rights reserved
 #include "unity.h"
 #include "math.h"
 #include "string.h"
