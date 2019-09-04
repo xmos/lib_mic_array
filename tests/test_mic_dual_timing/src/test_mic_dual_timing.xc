@@ -68,14 +68,14 @@ unsafe{
     long long total_headroom_ticks = 0;
     int min_head_room = INT_MAX;
 
+    set_thread_fast_mode_on(); //burn!!
+    c_ds_output_dual[0] :> unsigned _; //Flush first value as we have to wait for pipe to fill
+
     timer tmr;
     unsigned this_time, old_time;
     tmr :> this_time;
-    old_time = this_time + max_ticks; //Set old time to be in future because first iter takes longer
+    old_time = this_time; //Set old time to be in future because first iter takes longer
 
-    c_ds_output_dual[0] :> unsigned _; //Flush first value as we have to wait for pipe to fill
-
-    set_thread_fast_mode_on(); //burn!!
     for (int i = 0; i < N_LOOPS_TO_TEST; i++) { //Start at -1 because we ignore first loop
         // Get mic_dual
         unsigned addr = 0;
