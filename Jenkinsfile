@@ -58,6 +58,16 @@ pipeline {
         xcoreLibraryChecks("${REPO}")
       }
     }
+    stage('Unit tests') {
+      steps {
+        dir("${REPO}/tests/unit_tests") {
+          runXwaf('.')
+          viewEnv() {
+            runPytest()
+          }
+        }
+      }
+    }
     stage('Tests') {
       steps {
         runXmostest("${REPO}", 'tests')
