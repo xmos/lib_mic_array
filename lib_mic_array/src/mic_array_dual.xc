@@ -4,12 +4,12 @@
 #include <platform.h>
 #include <string.h>
 #include <print.h>
-#include "fir_coefs.h"                    //From lib_mic_array
-extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.xc
+#include "mic_array.h"                    //FRAME SIZE and coeffs
+extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.xc. We make a LL aligned copy of this
 #include "dsp_qformat.h"                  //Gain compensation
 
 
-#define MIC_PAIR_OUTPUT_BLOCK_SIZE        240
+#define MIC_PAIR_OUTPUT_BLOCK_SIZE        MIC_ARRAY_FRAME_SIZE
 #define MIC_GAIN_COMPENSATION             0.529f        //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
                                                         //Max is 7.999 due to Q28 format
 #define MIC_PAIR_NUM_OUT_BUFFERS          2             //Single (1) or double (2) buffered
