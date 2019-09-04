@@ -86,7 +86,10 @@
 #define S_FAR_END_CHANNEL_1     11
 #define S_FAR_END_CHANNEL_2     12
 #define S_FAR_END_CHANNEL_3     13
-#define S_STORAGE_SIZE 			14
+
+#define S_ASYNC_INTERFACE       14
+
+#define S_STORAGE_SIZE 			16
 
 //////////////////////////////////////////////////////////////////////////////////////
 //this address must be double word aligned
@@ -524,6 +527,9 @@ lengthDone:
 	{ldw r11, r2[6];} //channel count
 	stw r11, sp[S_CHAN_COUNT]
 
+	{ldw r11, r2[7];} // async interface enabled
+	stw r11, sp[S_ASYNC_INTERFACE]
+
 load_mic_gain_calib:
 	ldaw r1, sp[S_MIC_CALIB_OFFSET]
 	ldw r0, r2[2]
@@ -552,8 +558,8 @@ get_frame_pointer:
 
 	bt r5, overlapping
 	non_overlapping:
-	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
-	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
+	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]} // frames pointer
+	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]} // metadata pointer
 	    saving_non_overlapping_metadata_pointer:
 		{stw r1, r11[S_METADATA_POINTER_0];ldc r2, 0 }
 		std r2, r2, r1[0]	//init the sig bits
@@ -877,6 +883,9 @@ internal_channel_overwrite_begin:
 		{add r5, r5, 1;ldw r6, r4[S_OVERLAPPING_FRAMES]}
 		stw r5, r4[S_FRAME_0_INDEX]
 
+        ldw r11, sp[S_ASYNC_INTERFACE]
+        bt r11, async_send_samples
+
 		bt r6, overlapping_frames
 		no_overlapping_frames:
 
@@ -994,6 +1003,22 @@ internal_channel_overwrite_begin:
 				{outct res[r7], 8; stw r5, r4[S_METADATA_POINTER_1]}//WARNING: do not change this
 				std r0, r0, r5[0]  //reset the frame sig bits to 0
 				std r0, r0, r5[1]  //reset the frame sig bits to 0
+
+        async_send_samples:
+            ldc r6, 0
+            stw r6, r4[S_FRAME_0_INDEX]
+
+            ldw r9, sp[S_C_OUTPUT]
+            {ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)}
+            {add r7, r6, r5; ldw r8, r4[S_FRAME_POINTER_0]}
+
+            ldw r10, r8[r7] // Load mic 1 sample
+            ldw r11, r8[r6] // Load mic 0 sample
+
+            out res[r9], r10
+            out res[r9], r11
+
+            bu do_the_rest
 
 	do_the_rest:
 	ldaw r11, sp[S_THIRD_STAGE]
