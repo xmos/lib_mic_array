@@ -21,6 +21,8 @@
 #define t                 	 r11
 #define temp_three           r11
 
+#include "mic_array_conf.h"
+
 #ifndef MIC_ARRAY_MUTE_CH_0
 #define MIC_ARRAY_MUTE_CH_0 0
 #endif
@@ -56,8 +58,6 @@
 #define PIN5 5
 #define PIN6 3
 #define PIN7 7
-
-#include "mic_array_conf.h"
 
 	//This mapping allows pins to be mapped to channels
 #ifndef MIC_ARRAY_CH0
