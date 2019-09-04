@@ -8,7 +8,8 @@ pipeline {
   }
   environment {
     REPO = 'lib_mic_array'
-    VIEW = "${env.JOB_NAME.contains('PR-') ? REPO+'_'+env.CHANGE_TARGET : REPO+'_'+env.BRANCH_NAME}"
+    VIEW = 'lib_mic_array_xwaf_xcommon'
+    //VIEW = "${env.JOB_NAME.contains('PR-') ? REPO+'_'+env.CHANGE_TARGET : REPO+'_'+env.BRANCH_NAME}"
   }
   triggers {
     /* Trigger this Pipeline on changes to the repos dependencies
@@ -51,6 +52,15 @@ pipeline {
     stage('Get View') {
       steps {
         xcorePrepareSandbox("${VIEW}", "${REPO}")
+      }
+    }
+    stage('Patch tools') {
+      steps {
+        dir('tools_released/xwaf_patch') {
+          viewEnv() {
+            sh './xpatch'
+          }
+        }
       }
     }
     stage('Library Checks') {
