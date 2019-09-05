@@ -10,7 +10,6 @@ use_soundfile = False
 try:
     import soundfile as sf
     print("using soundfile")
-    global use_soundfile
     use_soundfile = True
 except ImportError:
     from scikits.audiolab import Sndfile

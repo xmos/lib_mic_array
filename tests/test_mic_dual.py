@@ -196,6 +196,6 @@ def runtest():
     create_test_pdm_signals((["whitenoise"], ["white"]))
     do_mic_dual_test("smoke", Spectral_Tester.get_fft)
     
-    # cleanup_files()
+    cleanup_files()
 
 
