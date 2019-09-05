@@ -185,7 +185,8 @@ def pcm_to_pdm(in_wav_file, out_pdm_file, pdm_sample_rate, verbose = False):
       print("Downsample ratio: " + str(downsample_ratio))
 
     # Stability limit
-    pdm_magnitude_stability_limit = 0.4 # This seems to be safe
+    pdm_magnitude_stability_limit = 0.55 # Goes unstable at 0.57. We need this above 0.5 so we
+                                         # can test for overflow/wrap of top bit
 
     output_length = int(nsamples*upsample_ratio/downsample_ratio)
 
@@ -206,7 +207,7 @@ def pcm_to_pdm(in_wav_file, out_pdm_file, pdm_sample_rate, verbose = False):
         pcm /= max(abs(pcm))
         pcm *= pdm_magnitude_stability_limit
         if verbose:
-          print('Abs max sample: '+ str(max_abs_pcm) +' limiting the abs max sample to 0.4')
+          print('Abs max sample: '+ str(max_abs_pcm) +' limiting the abs max sample to ' + str(pdm_magnitude_stability_limit))
       else :
         if verbose:
           print('No sample limiting applied')
