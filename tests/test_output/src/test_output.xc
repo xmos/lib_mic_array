@@ -54,8 +54,8 @@ void test_output(streaming chanend c_ds_output[2],
                 g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
                 DECIMATOR_NO_FRAME_OVERLAP, 2};
         mic_array_decimator_config_t dc[2] = {
-                    {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                    {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+                    {&dcc, data_0, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4, 0},
+                    {&dcc, data_1, {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4, 0}
             };
         mic_array_decimator_configure(c_ds_output, 2, dc);
 

@@ -40,7 +40,7 @@ void run_test(streaming chanend c_ds_output[1], unsigned frames,
                 comp,
                 buffering,
                 frames};
-        mic_array_decimator_config_t dc[1] = {{&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}};
+        mic_array_decimator_config_t dc[1] = {{&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4, 0}};
 
         mic_array_decimator_configure(c_ds_output, 1, dc);
 

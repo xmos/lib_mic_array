@@ -83,7 +83,7 @@ void get_backend_output(streaming chanend c_ds_output[1]){
 #endif
 
             mic_array_decimator_conf_common_t dcc = {0, 0, 0, 0, divider, coef_lut[div_index], 0, 0, DECIMATOR_NO_FRAME_OVERLAP, 2  };
-            mic_array_decimator_config_t dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX },4 }};
+            mic_array_decimator_config_t dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX }, 4, 0}};
             mic_array_decimator_configure(c_ds_output, 1, dc);
             mic_array_init_time_domain_frame(c_ds_output, 1 , buffer, audio, dc);
 

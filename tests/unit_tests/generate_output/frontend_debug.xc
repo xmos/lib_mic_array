@@ -59,6 +59,6 @@ void setup_mic_array_decimator(mic_array_decimator_conf_common_t &decimator_comm
         decimator_config[0].mic_gain_compensation[2]=0;
         decimator_config[0].mic_gain_compensation[3]=0;
         decimator_config[0].channel_count = MIC_CHANNELS;
-        //decimator_config[0].async_interface_enabled = 1;
+        decimator_config[0].async_interface_enabled = 0;
     }
 }
