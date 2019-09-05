@@ -103,7 +103,7 @@ def analyze_channels(filename, function):
     file
     """
     signal, sample_rate, channels = load(filename)
-    print('Analyzing "' + filename + '"...')
+    print('Analyzing "' + filename + '" SR: ' + str(sample_rate) + 'Hz...')
     result = None
 
     if channels == 1:

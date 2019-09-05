@@ -12,8 +12,8 @@ from scipy.signal import welch
 import soundfile as sf
 
 test_dir = "test_mic_dual/"
-target_snr = -102.0     # SNR in dB. We be getting -120.7 or nearest offer
-target_ratio = 0.95     # Ratio between signal amplitudes of normal and dual mic_array
+target_snr = -104.0     # SNR in dB. We be getting -104.8 or nearest offer for 0.55 FSD
+target_ratio = 0.9999   # Ratio between RMS signal amplitudes of normal and dual mic_array
 AUDIO_LENGTH_S = 1.0    # Have found that 1s, 4s, 10s gets a fair result. Others may cut at non-zero cross
 closeness = 0.015       # Relative closeness between spectral responses of mic_array and dual
 
@@ -45,7 +45,7 @@ class THD_N_Tester(xmostest.Tester):
         results = [analyze_channels(test_dir + test_file, THDN) for test_file in out_files]
         for result, out_file in zip(results, out_files):
             if result > self.target_snr:
-                self.record_failure(out_file + "SNR is {}dB which is worse than target of {}dB".format(result, self.target_snr))
+                self.record_failure(out_file + " SNR is {}dB which is worse than target of {}dB".format(result, self.target_snr))
         xmostest.set_test_result(self.product, self.group, self.test, self.config, self.result,
                              output = output, env = self.env)
 
@@ -115,7 +115,9 @@ class rms_tester(xmostest.Tester):
         ch_b_dual_std_ratio = 1 / ch_b_dual_std_ratio if ch_b_dual_std_ratio > 1 else ch_b_dual_std_ratio
 
         if ch_a_dual_std_ratio < target_ratio or ch_b_dual_std_ratio < target_ratio:
-            self.record_failure("RMS amplitudes of ch_a {} & ch_b {} of dual too large compared with mic_array. Raw results: {}".format(ch_a_dual_std_ratio, ch_b_dual_std_ratio, results))
+            self.record_failure("RMS amplitudes of ch_a {} & ch_b {} of dual too different from mic_array. Raw results: {}".format(ch_a_dual_std_ratio, ch_b_dual_std_ratio, results))
+        else:
+            print("RMS amplitude differences for ch_a: {} & ch_b: {}".format(ch_a_dual_std_ratio, ch_b_dual_std_ratio) )
         xmostest.set_test_result(self.product, self.group, self.test, self.config, self.result,
                              output = output, env = self.env)
 
@@ -187,13 +189,13 @@ def cleanup_files():
 def runtest():
     create_test_pdm_signals((["sine", "300"], ["sine", "1000"]))
     do_mic_dual_test("smoke", THDN)
-
-    # re-use the previous sine signals
+    
+    # re-use the previous sine pdm signals
     do_mic_dual_test("smoke", rms_flat)
 
     create_test_pdm_signals((["whitenoise"], ["white"]))
     do_mic_dual_test("smoke", Spectral_Tester.get_fft)
     
-    cleanup_files()
+    # cleanup_files()
 
 
