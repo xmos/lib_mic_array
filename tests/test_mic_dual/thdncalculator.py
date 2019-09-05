@@ -1,18 +1,23 @@
-import sys
+import sys, os
 from scipy.signal import blackmanharris
 from numpy.fft import rfft, irfft
 from numpy import argmax, sqrt, mean, absolute, arange, log10
 import numpy as np
 
+use_soundfile = False
+
+
 try:
     import soundfile as sf
     print("using soundfile")
+    global use_soundfile
+    use_soundfile = True
 except ImportError:
     from scikits.audiolab import Sndfile
     print("using scikits.audiolab")
 
 
-def rms_flat(a):
+def rms_flat(a, sample_rate):
     """
     Return the root mean square of all the elements of *a*, flattened out.
     """
@@ -51,7 +56,7 @@ def THDN(signal, sample_rate):
     windowed = signal * blackmanharris(len(signal))  # TODO Kaiser?
 
     # Measure the total signal before filtering but after windowing
-    total_rms = rms_flat(windowed)
+    total_rms = rms_flat(windowed, sample_rate)
 
     # Find the peak of the frequency spectrum (fundamental frequency), and
     # filter the signal by throwing away values between the nearest local
@@ -65,8 +70,12 @@ def THDN(signal, sample_rate):
     # Transform noise back into the signal domain and measure it
     # TODO: Could probably calculate the RMS directly in the frequency domain instead
     noise = irfft(f)
-    THDN = rms_flat(noise) / total_rms
-    print("THD+N:     %.4f%% or %.1f dB" % (THDN * 100, 20 * log10(THDN)))
+    THDN = rms_flat(noise, sample_rate) / total_rms
+
+    result = "THD+N:     %.4f%% or %.1f dB" % (THDN * 100, 20 * log10(THDN))
+    print(result)
+
+    return 20 * log10(THDN)
 
 
 def load(filename):
@@ -75,10 +84,10 @@ def load(filename):
 
     Can be any format that libsndfile supports, like .wav, .flac, etc.
     """
-    try:
+    if use_soundfile:
         wave_file = sf.SoundFile(filename)
         signal = wave_file.read()
-    except ImportError:
+    else:
         wave_file = Sndfile(filename, 'r')
         signal = wave_file.read_frames(wave_file.nframes)
 
@@ -94,11 +103,12 @@ def analyze_channels(filename, function):
     file
     """
     signal, sample_rate, channels = load(filename)
-    print('Analyzing "' + filename + '"...')
+    print('Analyzing "' + filename + '" SR: ' + str(sample_rate) + 'Hz...')
+    result = None
 
     if channels == 1:
         # Monaural
-        function(signal, sample_rate)
+        result = function(signal, sample_rate)
     elif channels == 2:
         # Stereo
         if np.array_equal(signal[:, 0], signal[:, 1]):
@@ -114,6 +124,9 @@ def analyze_channels(filename, function):
         for ch_no, channel in enumerate(signal.transpose()):
             print('-- Channel %d --' % (ch_no + 1))
             function(channel, sample_rate)
+
+    if(result):
+        return result
 
 files = sys.argv[1:]
 if files:
