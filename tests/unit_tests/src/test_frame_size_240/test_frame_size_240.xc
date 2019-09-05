@@ -53,7 +53,6 @@ void test_frame_size() {
                             unsafe {
                                 read(fd, &expected_val, 4);
                             }
-                            printf("g_idx: %d\n", g_idx);
                             TEST_ASSERT_EQUAL_INT32(expected_val, current->data[m][i]);
                         }
                     }

@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 
-void test_frame_size() {
+void test_async_interface() {
     streaming chan c_pdm_mics;
     streaming chan c_ds_output[1];
 
@@ -28,6 +28,7 @@ void test_frame_size() {
         {
             setup_mic_array_decimator(decimator_common_config, decimator_config,
                                       mic_array_data);
+            decimator_config[0].async_interface_enabled = 1;
             mic_array_decimator_configure(c_ds_output,
                                           MIC_DECIMATORS,
                                           decimator_config);
@@ -43,26 +44,30 @@ void test_frame_size() {
             // Global sample index
             unsigned g_idx = 0;
             while(1) {
-                current = mic_array_get_next_time_domain_frame(
-                    c_ds_output, MIC_DECIMATORS, mic_buffer_index,
-                    audio_frame, decimator_config);
-                for (int i=0; i<MIC_ARRAY_FRAME_SIZE; i++) {
-                    if (g_idx >= 1000) {
-                        for (int m=0; m<MIC_ARRAY_NUM_MICS; m++) {
-                            int expected_val;
-                            unsafe {
-                                read(fd, &expected_val, 4);
-                            }
-                            TEST_ASSERT_EQUAL_INT32(expected_val, current->data[m][i]);
+                int ch_a, ch_b, err;
+                do {
+                    err = mic_array_recv_samples(c_ds_output[0], ch_a, ch_b);
+                } while (err);
+                if (g_idx >= 1000) {
+                    for (int m=0; m<MIC_ARRAY_NUM_MICS; m++) {
+                        int expected_val;
+                        unsafe {
+                            read(fd, &expected_val, 4);
+                        }
+                        if (m == 0) {
+                            TEST_ASSERT_EQUAL_INT32(expected_val, ch_a);
+                        } else if (m==1) {
+                            TEST_ASSERT_EQUAL_INT32(expected_val, ch_b);
                         }
                     }
-                    g_idx++;
-                    if (g_idx == 2000) {
-                        // Exit successfully
-                        close(fd);
-                        UnityConcludeTest();
-                        _Exit(0);
-                    }
+                }
+
+                g_idx++;
+                if (g_idx == 2000) {
+                    // Exit successfully
+                    close(fd);
+                    UnityConcludeTest();
+                    _Exit(0);
                 }
             }
         }

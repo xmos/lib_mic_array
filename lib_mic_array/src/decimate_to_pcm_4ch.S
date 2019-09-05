@@ -1012,8 +1012,8 @@ internal_channel_overwrite_begin:
             {ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)}
             {add r7, r6, r5; ldw r8, r4[S_FRAME_POINTER_0]}
 
-            ldw r10, r8[r7] // Load mic 1 sample
-            ldw r11, r8[r6] // Load mic 0 sample
+            ldw r10, r8[r6] // Load mic 1 sample
+            ldw r11, r8[r7] // Load mic 0 sample
 
             out res[r9], r10
             out res[r9], r11
