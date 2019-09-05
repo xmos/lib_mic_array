@@ -4,18 +4,17 @@
 #include <platform.h>
 #include <string.h>
 #include <print.h>
-#include "fir_coefs.h"                    //From lib_mic_array
-extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.xc
+#include "mic_array.h"                    //FRAME SIZE and coeffs
+extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.xc. We make a LL aligned copy of this
 #include "dsp_qformat.h"                  //Gain compensation
 
 
-
-#define MIC_PAIR_OUTPUT_BLOCK_SIZE        240
-#define MIC_GAIN_COMPENSATION             1.00f                     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
-                                                                    //Max is 7.999 due to Q28 format
-#define MIC_PAIR_NUM_OUT_BUFFERS          2                         //Single (1) or double (2) buffered
-#define MIC_PAIR_NUM_CHANNELS             2                         //Always 2 because it's a pair of mics we are decimating
-#define MIC_PAIR_NUM_REF_CHANNELS         2                         //Always 2 in xvf3510 case
+#define MIC_PAIR_OUTPUT_BLOCK_SIZE        MIC_ARRAY_FRAME_SIZE
+#define MIC_GAIN_COMPENSATION             2.117307f     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
+                                                        //Max is 7.999 due to Q28 format
+#define MIC_PAIR_NUM_OUT_BUFFERS          2             //Single (1) or double (2) buffered
+#define MIC_PAIR_NUM_CHANNELS             2             //Always 2 because it's a pair of mics we are decimating
+#define MIC_PAIR_NUM_REF_CHANNELS         2             //Always 2 in xvf3510 case
 
 #pragma unsafe arrays
 //This effectively implements a delayline of 6 chars of bits, the later three reversed
@@ -58,7 +57,7 @@ static inline int mid_stage_fir(const int mid_stage_fir[], int mid_stage_delay[]
     int * unsafe filter_ptr = (int*)mid_stage_fir;
     int * unsafe state_ptr = &mid_stage_delay[mid_stage_delay_idx];
 
-    unsigned format = 31; //for extract
+    unsigned format = 32; //for extract
     //Note because FIR is symmetrical, we only need load the first half of the coeffs 
     //and we do not need to reload them into registers, so it's very fast (2.5 cyc per MAC)
 
@@ -135,7 +134,7 @@ unsafe static inline int final_stage_poly_fir(
     //printf("state: 0x%x filter: 0x%x\n", state_ptr, filter_ptr);
   }
 
-  unsigned format = 31; //for extract
+  unsigned format = 32; //for extract
 
   unsafe{
     filter_ptr += 16;
@@ -369,6 +368,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
     for (int ch = 0; ch < MIC_PAIR_NUM_CHANNELS; ch++){
       final_stage_in_pcm[ch] = mid_stage_fir(g_second_stage_fir, mid_stage_delay[ch], mid_stage_delay_idx);
     }
+    //printintln(final_stage_in_pcm[0]);
     if (mid_stage_delay_idx == mid_stage_ntaps) {
       mid_stage_delay_idx = 0;
     }
@@ -382,6 +382,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
     //Move on phase of polyFIR and reset if done
     final_stage_phase++;
     if (final_stage_phase == 6) unsafe{
+      //printintln(pcm_output[0]);
 
       //If we have reached stage 6 then we are ready to send a pair of decimated 16kHz mic signals
       //and also receive reference audio

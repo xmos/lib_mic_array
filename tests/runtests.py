@@ -40,6 +40,9 @@ Tests the lib_mic_array channel ordering, tests for:
  * check ``decimate_to_pcm_4ch`` maintains channel ordering 
 """)
 
+
+    xmostest.register_group("lib_mic_array", "mic_dual", "mic_dual", """Tests various aspects of the single threaded mic_dual component""")
+
     xmostest.runtests()
 
     xmostest.finish()

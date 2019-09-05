@@ -3,5 +3,7 @@ MODULE_XCC_FLAGS = $(XCC_FLAGS)
 INCLUDE_DIRS = api src/fir
 
 DEPENDENT_MODULES = lib_xassert(>=3.0.0) lib_logging(>=2.1.0) lib_dsp(>=4.0.0)
+EXCLUDE_FILES = make_mic_dual_stage_3_coefs.c
+
 
 VERSION = 3.2.0
