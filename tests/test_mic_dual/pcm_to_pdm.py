@@ -1,3 +1,4 @@
+# Copyright (c) 2019, XMOS Ltd, All rights reserved
 import os
 import numpy as np
 import argparse

@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+3.3.0
+-----
+
+  * Added mic_dual, an optimised single core, 16kHz, two channel version
+
 3.2.0
 -----
 

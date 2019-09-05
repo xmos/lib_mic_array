@@ -1,3 +1,4 @@
+# Copyright (c) 2019, XMOS Ltd, All rights reserved
 import sys, os
 from scipy.signal import blackmanharris
 from numpy.fft import rfft, irfft
