@@ -1,8 +1,8 @@
 lib_mic_array change log
 ========================
 
-3.2.0_demo_1
-------------
+3.2.0_demo
+----------
 
   * Optimised two-microphone version that runs in a single thread
 
