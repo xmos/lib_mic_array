@@ -559,9 +559,12 @@ where the former configuration is common to all microphones and the later is spe
 microphones it interfaces to. The application has the option to control the
 following settings through ``decimator_config_common``:
 
-* ``frame_size_log2``: This sets the frame size to a power of two. A frame will contain 
-  2 to the power of frame_size_log2 samples of each channel. Set this to a maximum of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``.
-  
+* ``len``: The length of a frame: an arbitrary value < 2^15. The maximum allowed at run-time is given by two to the
+power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``. At run-time the length can be dynamically configured by
+setting the ``len`` member of ``mic_array_decimator_config_common``. If ``len``
+is less than 16, the frame size will be ``2^len``. If ``len`` is 16 or greater, the
+frame size will be ``len``.
+
 * ``apply_dc_offset_removal``: This controls if the DC offset removal should be enabled
   or not. Set to non-zero to enable, or ``0`` to not apply DC offset removal.
   
