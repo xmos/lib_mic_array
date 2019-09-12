@@ -4,6 +4,9 @@ lib_mic_array change log
 4.0.0
 -----
 
+  * ADDED: Support for arbitrary frame sizes
+  * ADDED: #defines for mic muting
+  * ADDED: Non-blocking interface to decimators for 2 mic setup
   * CHANGED: Build files updated to support new "xcommon" behaviour in xwaf.
 
 3.2.0
