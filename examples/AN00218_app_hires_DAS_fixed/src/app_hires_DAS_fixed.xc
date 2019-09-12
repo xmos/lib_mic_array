@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2015-2019, XMOS Ltd, All rights reserved
 #include <platform.h>
 #include <xs1.h>
 #include <string.h>
