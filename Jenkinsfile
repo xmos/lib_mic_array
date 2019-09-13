@@ -70,7 +70,7 @@ pipeline {
     stage('Unit tests') {
       steps {
         dir("${REPO}/tests/unit_tests") {
-          runXwaf('.')
+          runWaf('.')
           viewEnv() {
             runPytest()
           }
