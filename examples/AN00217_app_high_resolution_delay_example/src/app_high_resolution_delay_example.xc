@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018, XMOS Ltd, All rights reserved
+// Copyright (c) 2015-2019, XMOS Ltd, All rights reserved
 #include <platform.h>
 #include <xs1.h>
 #include <string.h>
@@ -45,13 +45,15 @@ void example(streaming chanend c_ds_output[DECIMATOR_COUNT], streaming chanend c
                     &dcc,
                     data[0],     // The storage area for the output decimator
                     {INT_MAX, INT_MAX, INT_MAX, INT_MAX},  // Microphone gain compensation (turned off)
-                    4           // Enabled channel count (currently must be 4)
+                    4,           // Enabled channel count (currently must be 4)
+                    0,           // Disable async interface
             },
             {
                     &dcc,
                     data[4],     // The storage area for the output decimator
                     {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, // Microphone gain compensation (turned off)
-                    4           // Enabled channel count (currently must be 4)
+                    4,           // Enabled channel count (currently must be 4)
+                    0,           // Disable async interface
             }
         };
         mic_array_decimator_configure(c_ds_output, DECIMATOR_COUNT, dc);

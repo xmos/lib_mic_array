@@ -350,7 +350,7 @@ The four channel decimators (``mic_array_pdm_rx()``) output frames of either *ti
 store the frames. This means that all frames structures will allocate
 enough memory to allow for a frame size of two to the power of
 ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` regardless of the size used in the
-``decimator_config_common``. It is recommended that the ``frame_size_log2``
+``decimator_config_common``. It is recommended that the ``len``
 field of ``decimator_config_common`` is always set to ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``.
 Equally, the define ``MIC_ARRAY_NUM_MICS`` is used for allocating the memory
 for the frame structure. This must be set to a multiple of 4.
@@ -358,7 +358,7 @@ for the frame structure. This must be set to a multiple of 4.
 All frame types contain a two-dimensional ``data`` array. 
 
 For simplicity of reading ``M`` will represent two to the power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2`` and
-``F`` will represent two to the power of ``frame_size_log2``.
+``F`` will represent two to the power of ``len``.
 
 Time domain frames
 ..................
@@ -559,9 +559,12 @@ where the former configuration is common to all microphones and the later is spe
 microphones it interfaces to. The application has the option to control the
 following settings through ``decimator_config_common``:
 
-* ``frame_size_log2``: This sets the frame size to a power of two. A frame will contain 
-  2 to the power of frame_size_log2 samples of each channel. Set this to a maximum of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``.
-  
+* ``len``: The length of a frame: an arbitrary value < 2^15. The maximum allowed at run-time is given by two to the
+power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``. At run-time the length can be dynamically configured by
+setting the ``len`` member of ``mic_array_decimator_config_common``. If ``len``
+is less than 16, the frame size will be ``2^len``. If ``len`` is 16 or greater, the
+frame size will be ``len``.
+
 * ``apply_dc_offset_removal``: This controls if the DC offset removal should be enabled
   or not. Set to non-zero to enable, or ``0`` to not apply DC offset removal.
   
@@ -652,6 +655,9 @@ following settings through ``decimator_config_common``:
 * ``channel_count``: this is the number of channels that is enabled. Set
   this to 4 to enable all channels. If set to a value less than 4, only the
   first ``channel_count`` channels are enabled.
+
+* ``async_interface_enabled``: This enables the non-blocking decimator interface
+  which requires ``frame size == 0`` and the use of ``mic_array_recv_samples``.
 
 The decimator configuration is applied by calling
 the function ``mic_array_decimator_configure()`` with an array of chanends referring to
