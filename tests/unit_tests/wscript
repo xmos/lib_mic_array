@@ -216,7 +216,7 @@ def build(bld):
             else:
                 print("unit_test.expect not found, generating...")
                 os.chdir("generate_output")
-                ret = subprocess.check_call(["xwaf", "configure", "build"])
+                ret = subprocess.check_call(["waf", "configure", "build"])
                 assert ret == 0
                 os.chdir("../")
                 ret = subprocess.check_call(["axe", "generate_output/bin/generate_output.xe"])
