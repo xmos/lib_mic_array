@@ -395,7 +395,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
         break;
         default:
           //The host doesn't start sending ref audio for a while at startup so we have to be prepared for nothing on channel
-          printstr("."); //This is debug and can be removed
+          //printstr("."); //This is debug and can be removed
         break;
       }
 
