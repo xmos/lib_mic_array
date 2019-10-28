@@ -181,9 +181,11 @@ before the memory is reused for the present samples at the cost of increased mem
 Changing the frame size
 .......................
 
-The length of a frame is always a power of two. The maximum allowed at run time is given by two to the
+The length of a frame is an arbitrary value < 2**15. The maximum allowed at run time is given by two to the
 power of ``MIC_ARRAY_MAX_FRAME_SIZE_LOG2``. At run time the length can be dynamically configured by
-setting the ``frame_size_log2`` member of ``mic_array_decimator_config_common``. 
+setting the ``len`` member of ``mic_array_decimator_config_common``. If ``len``
+is less than 16, the frame size will be ``2^len``. If ``len`` is 16 or greater, the
+frame size will be ``len``.
 
 Changing the buffering type
 ...........................

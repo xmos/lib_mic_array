@@ -53,9 +53,28 @@ pipeline {
         xcorePrepareSandbox("${VIEW}", "${REPO}")
       }
     }
+    stage('Patch tools') {
+      steps {
+        dir('tools_released/xwaf_patch') {
+          viewEnv() {
+            sh './xpatch'
+          }
+        }
+      }
+    }
     stage('Library Checks') {
       steps {
         xcoreLibraryChecks("${REPO}")
+      }
+    }
+    stage('Unit tests') {
+      steps {
+        dir("${REPO}/tests/unit_tests") {
+          runWaf('.')
+          viewEnv() {
+            runPytest()
+          }
+        }
       }
     }
     stage('Tests') {
@@ -80,7 +99,7 @@ pipeline {
       updateViewfiles()
     }
     cleanup {
-      cleanWs()
+      xcoreCleanSandbox()
     }
   }
 }

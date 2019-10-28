@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
 #include <platform.h>
 #include "mic_array.h"
 #include <xs1.h>
@@ -360,10 +360,10 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                         dcc.windowing_function = window;
 
                     mic_array_decimator_config_t dc[4] = {
-                            {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
-                            {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4},
-                            {&dcc, data_2, {gain_comp[8], gain_comp[9], gain_comp[10], gain_comp[11]}, 4},
-                            {&dcc, data_3, {gain_comp[12], gain_comp[13], gain_comp[14], gain_comp[15]}, 4}
+                            {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4, 0},
+                            {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4, 0},
+                            {&dcc, data_2, {gain_comp[8], gain_comp[9], gain_comp[10], gain_comp[11]}, 4, 0},
+                            {&dcc, data_3, {gain_comp[12], gain_comp[13], gain_comp[14], gain_comp[15]}, 4, 0}
                     };
                     mic_array_decimator_configure(c_ds_output, channel_count/4, dc);
 
@@ -431,10 +431,10 @@ void output(streaming chanend c_ds_output[4], chanend c_actual, unsigned channel
                         dcc.windowing_function = window;
 
                     mic_array_decimator_config_t dc[4] = {
-                            {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4},
-                            {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4},
-                            {&dcc, data_2, {gain_comp[8], gain_comp[9], gain_comp[10], gain_comp[11]}, 4},
-                            {&dcc, data_3, {gain_comp[12], gain_comp[13], gain_comp[14], gain_comp[15]}, 4}
+                            {&dcc, data_0, {gain_comp[0], gain_comp[1], gain_comp[2], gain_comp[3]}, 4, 0},
+                            {&dcc, data_1, {gain_comp[4], gain_comp[5], gain_comp[6], gain_comp[7]}, 4, 0},
+                            {&dcc, data_2, {gain_comp[8], gain_comp[9], gain_comp[10], gain_comp[11]}, 4, 0},
+                            {&dcc, data_3, {gain_comp[12], gain_comp[13], gain_comp[14], gain_comp[15]}, 4, 0}
                     };
                     mic_array_decimator_configure(c_ds_output, channel_count/4, dc);
 
