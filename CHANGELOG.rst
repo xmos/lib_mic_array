@@ -9,7 +9,6 @@ lib_mic_array change log
   * ADDED: #defines for mic muting
   * ADDED: Non-blocking interface to decimators for 2 mic setup
   * CHANGED: Build files updated to support new "xcommon" behaviour in xwaf.
->>>>>>> develop
 
 3.2.0
 -----
