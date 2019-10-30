@@ -13,9 +13,7 @@ EXPORT_INCLUDE_DIRS = api \
 
 EXCLUDE_FILES = make_mic_dual_stage_3_coefs.c
 
-
 INCLUDE_DIRS = $(EXPORT_INCLUDE_DIRS)
 
 SOURCE_DIRS = src \
               src/fir
->>>>>>> develop
