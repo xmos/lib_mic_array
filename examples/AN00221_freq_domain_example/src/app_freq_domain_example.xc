@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
 
 #include <platform.h>
 #include <xs1.h>
@@ -112,8 +112,8 @@ void freq_domain_example(streaming chanend c_ds_output[2], streaming chanend c_a
         };
 
         mic_array_decimator_config_t dc[2] = {
-                {&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                {&dcc, data[4], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+                {&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4, 0},
+                {&dcc, data[4], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4, 0}
         };
 
         mic_array_decimator_configure(c_ds_output, 2, dc);

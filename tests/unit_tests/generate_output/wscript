@@ -1,0 +1,19 @@
+def options(opt):
+    opt.load('xwaf.xcommon')
+
+
+def configure(conf):
+    conf.env.PROJECT_ROOT = "../../../.."
+    conf.load('xwaf.xcommon')
+
+
+def build(bld):
+    bld.do_xcommon()
+
+
+def dist(dst):
+    dst.load('xwaf.xcommon')
+
+
+def distcheck(dst):
+    dst.load('xwaf.xcommon')
