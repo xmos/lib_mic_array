@@ -58,6 +58,16 @@ pipeline {
         xcoreLibraryChecks("${REPO}")
       }
     }
+    stage('Unit tests') {
+      steps {
+        dir("${REPO}/tests/unit_tests") {
+          runWaf('.')
+          viewEnv() {
+            runPytest()
+          }
+        }
+      }
+    }
     stage('Tests') {
       steps {
         runXmostest("${REPO}", 'tests')
@@ -80,7 +90,7 @@ pipeline {
       updateViewfiles()
     }
     cleanup {
-      cleanWs()
+      xcoreCleanSandbox()
     }
   }
 }

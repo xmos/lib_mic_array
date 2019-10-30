@@ -1,7 +1,17 @@
+VERSION = 4.0.0
+
+DEPENDENT_MODULES = lib_xassert(>=4.0.0) \
+                    lib_logging(>=3.0.0) \
+                    lib_dsp(>=5.0.0)
+
 MODULE_XCC_FLAGS = $(XCC_FLAGS)
 
-INCLUDE_DIRS = api src/fir
+OPTIONAL_HEADERS +=
 
-DEPENDENT_MODULES = lib_xassert(>=3.0.0) lib_logging(>=2.1.0) lib_dsp(>=4.0.0)
+EXPORT_INCLUDE_DIRS = api \
+                      src/fir
 
-VERSION = 3.2.0
+INCLUDE_DIRS = $(EXPORT_INCLUDE_DIRS)
+
+SOURCE_DIRS = src \
+              src/fir
