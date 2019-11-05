@@ -18,18 +18,17 @@ USED_MODULES = lib_mic_array
 # xcc for the final link (mapping) stage.
 COMMON_FLAGS = -O2 -g -DTEST_MODE
 
+
+# xmake doesn't like 'END' in a config name?
+XCC_FLAGS_backend = $(COMMON_FLAGS) -DBACKEND
 XCC_FLAGS_FRONTEND_8BIT_4CH = $(COMMON_FLAGS) -DFRONTEND_8BIT_4CH -DTEST_MODE
 XCC_FLAGS_FRONTEND_8BIT_8CH = $(COMMON_FLAGS) -DFRONTEND_8BIT_8CH -DTEST_MODE
-XCC_FLAGS_BACKEND = $(COMMON_FLAGS) -DBACKEND
 XCC_FLAGS_FRONTEND_8BIT_4CH_CHANREORDER = $(COMMON_FLAGS) -DFRONTEND_8BIT_4CH -DTEST_MODE -DCHANNEL_REORDER_TEST
 XCC_FLAGS_FRONTEND_8BIT_8CH_CHANREORDER = $(COMMON_FLAGS) -DFRONTEND_8BIT_8CH -DTEST_MODE -DCHANNEL_REORDER_TEST
 
 # The XCORE_ARM_PROJECT variable, if set to 1, configures this
 # project to create both xCORE and ARM binaries.
 XCORE_ARM_PROJECT = 0
-
-# The VERBOSE variable, if set to 1, enables verbose output from the make system.
-VERBOSE = 0
 
 XMOS_MAKE_PATH ?= ../..
 -include $(XMOS_MAKE_PATH)/xcommon/module_xcommon/build/Makefile.common

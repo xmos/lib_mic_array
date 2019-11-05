@@ -25,8 +25,5 @@ XCC_FLAGS_CH8 = $(COMMON_FLAGS) -DCHANNELS=8
 # project to create both xCORE and ARM binaries.
 XCORE_ARM_PROJECT = 0
 
-# The VERBOSE variable, if set to 1, enables verbose output from the make system.
-VERBOSE = 0
-
 XMOS_MAKE_PATH ?= ../..
 -include $(XMOS_MAKE_PATH)/xcommon/module_xcommon/build/Makefile.common

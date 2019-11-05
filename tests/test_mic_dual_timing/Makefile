@@ -23,9 +23,6 @@ XCC_FLAGS_BLOCK_SIZE_1   = -Os -g -report -DMIC_ARRAY_FRAME_SIZE=1 -DN_LOOPS_TO_
 # project to create both xCORE and ARM binaries.
 XCORE_ARM_PROJECT = 0
 
-# The VERBOSE variable, if set to 1, enables verbose output from the make system.
-VERBOSE = 0
-
 SOURCE_DIRS = src
 
 XMOS_MAKE_PATH ?= ../..

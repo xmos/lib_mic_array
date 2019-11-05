@@ -1,50 +1,45 @@
-import xwaf.utils.configs as config_utils
+import os
+from waflib import Options, Errors
+from waflib.Build import BuildContext, CleanContext
 
+CONFIGS = [
+    'COUNT4_LONG',
+    'COUNT64_LONG',
+    'COUNT4_SHORT',
+    'COUNT64_SHORT',
+]
 
-def options(ctx):
-    ctx.add_option('--config', action='store', default='')
+def create_waf_contexts(configs):
+    for test_name in configs:
+        for ctx in (BuildContext, CleanContext):
+            raw_context = ctx.__name__.replace('Context', '').lower()
+
+            class tmp(ctx):
+                cmd = raw_context + '_' + test_name
+                variant = test_name
+                variant = os.path.split(os.getcwd())[1] + '_' + variant 
+
+create_waf_contexts(CONFIGS)
+
+def options(opt):
+    opt.load('xwaf.xcommon')
 
 
 def configure(conf):
-    def make_config(name, flags):
-        conf.setenv(name)
-        conf.load('xwaf.compiler_xcc')
-        conf.env.XCC_FLAGS = flags
+    conf.load('xwaf.xcommon')
 
-    for key, value in CONFIGS.iteritems():
-        make_config(key, value)
+
+def configure(conf):
+    conf.load('xwaf.compiler_xcc')
 
 
 def build(bld):
-    if not config_utils.check_build_config(bld, CONFIGS):
-        return
-
-    bld.env.PROJECT_ROOT = '../../..'
-
-    depends_on = ['lib_logging', 'lib_mic_array']
-
-    bld.env.TARGET_ARCH = 'XCORE-200-EXPLORER'
-
-    prog = bld.program(depends_on=depends_on)
+    bld.do_xcommon()
 
 
-CONFIGS = {
-    'COUNT64_LONG': [
-        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
-        '-DCOUNT=64', '-DMIC_ARRAY_WORD_LENGTH_SHORT=0'
-    ],
-    'COUNT4_SHORT': [
-        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
-        '-DCOUNT=4', '-DMIC_ARRAY_WORD_LENGTH_SHORT=1'
-    ],
-    'COUNT4_LONG': [
-        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
-        '-DCOUNT=4', '-DMIC_ARRAY_WORD_LENGTH_SHORT=0'
-    ],
-    'COUNT64_SHORT': [
-        '-O2', '-g', '-DDEBUG_PRINT_ENABLE=1', '-report', '-Wno-timing',
-        '-DCOUNT=64', '-DMIC_ARRAY_WORD_LENGTH_SHORT=1'
-    ],
-}
+def dist(dst):
+    dst.load('xwaf.xcommon')
 
-config_utils.register_configs(CONFIGS)
+
+def distcheck(dst):
+    dst.load('xwaf.xcommon')
