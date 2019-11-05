@@ -138,7 +138,7 @@ void collect_output_std( streaming chanend c_ds_output[1]){
   memset(mic_array_data, 0, MIC_DECIMATORS*MIC_CHANNELS*THIRD_STAGE_COEFS_PER_STAGE*MIC_DECIMATION_FACTOR*sizeof(int));
 
   mic_array_decimator_conf_common_t decimator_common_config = {
-      MIC_ARRAY_FRAME_SIZE,
+      MIC_DUAL_FRAME_SIZE,
       1,
       0,
       0,
@@ -168,7 +168,7 @@ void collect_output_std( streaming chanend c_ds_output[1]){
     current_frame = mic_array_get_next_time_domain_frame(c_ds_output, MIC_DECIMATORS, buffer, audio_frame, decimator_config);
     // printf("mic_array\n");  
 
-    for(unsigned i=0;i<MIC_ARRAY_FRAME_SIZE;i++)unsafe{
+    for(unsigned i=0;i<MIC_DUAL_FRAME_SIZE;i++)unsafe{
       int ch0 = current_frame->data[0][i];
       int ch1 = current_frame->data[1][i];
 
@@ -204,7 +204,7 @@ void collect_output_dual(streaming chanend c_ds_output_dual[1]){
     c_ds_output_dual[0] :> addr;
     // printf("mic_dual\n");  
 
-    for(unsigned i=0;i<MIC_ARRAY_FRAME_SIZE;i++)unsafe{
+    for(unsigned i=0;i<MIC_DUAL_FRAME_SIZE;i++)unsafe{
       int ch0 = *((int *)addr + (4 * i) + 0);
       int ch1 = *((int *)addr + (4 * i) + 1);
 
