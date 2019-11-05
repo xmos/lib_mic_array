@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
 #include <xs1.h>
 #include <stdlib.h>
 #include <print.h>
@@ -22,8 +22,8 @@ void test_output(streaming chanend c_ds_output[2]){
                 g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2,
                 DECIMATOR_NO_FRAME_OVERLAP, 2};
         mic_array_decimator_config_t dc[2] = {
-                    {&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4},
-                    {&dcc, data[4], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}
+                    {&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4, 0},
+                    {&dcc, data[4], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4, 0}
             };
         mic_array_decimator_configure(c_ds_output, 2, dc);
 

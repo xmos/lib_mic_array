@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
 #include <xscope.h>
 #include <platform.h>
 #include <xs1.h>
@@ -56,7 +56,7 @@ void test_output(streaming chanend c_ds_output[1]){
                 mic_array_decimator_conf_common_t dcc = {0, 0, 0, 0, df[index],
                         coefs[index], 0, comp[index],
                         DECIMATOR_NO_FRAME_OVERLAP, 2};
-                mic_array_decimator_config_t dc[1] = {{&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4}};
+                mic_array_decimator_config_t dc[1] = {{&dcc, data[0], {INT_MAX, INT_MAX, INT_MAX, INT_MAX}, 4, 0}};
 
                 mic_array_decimator_configure(c_ds_output, 1, dc);
 

@@ -1,13 +1,7 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
 #include <platform.h>
 #include <xs1.h>
-#include "mic_array.h"
-
-in buffered port:32 p_pdm_mics0  = XS1_PORT_8A;
-in buffered port:32 p_pdm_mics1  = XS1_PORT_8B;
-
-// This sets the FIR decimation factor.
-// Note that the coefficient array passed into dcc must match this.
+dcc must match this.
 #define DECIMATION_FACTOR 12
 #define DECIMATOR_COUNT 4
 
@@ -35,6 +29,7 @@ void example(streaming chanend c_ds_output[DECIMATOR_COUNT]) {
         mic_array_decimator_config_t dc[DECIMATOR_COUNT];
 
         for(unsigned i=0;i<DECIMATOR_COUNT;i++){
+            dc[i].async_interface_enabled = 0;
             dc[i].channel_count = 4;
             dc[i].data = data[i];
             dc[i].dcc = &dcc;

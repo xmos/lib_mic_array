@@ -1,4 +1,5 @@
 // Copyright (c) 2015-2019, XMOS Ltd, All rights reserved
+#if __XC__
 #ifndef MIC_ARRAY_H_
 #define MIC_ARRAY_H_
 
@@ -86,7 +87,6 @@ typedef struct {
 
     unsigned len; /**< If len is less than 16 then this sets the frame size to 2 to the power of len, i.e. A frame will contain 2 to the power of len samples of each channel.
                                    If len is 16 or greater then the frame size is equal to len. */
-    
     int apply_dc_offset_removal; /**< Remove the DC offset from the audio before the final decimation. Set to non-zero to enable. */
 
     int index_bit_reversal; /**< If non-zero then bit reverse the index of the elements within the frame. Used in the case of preparing for an FFT.*/
@@ -120,6 +120,11 @@ typedef struct {
     int mic_gain_compensation[4]; /**< An array describing the relative gain compensation to apply to the microphones. The microphone with the least gain is defined as 0x7fffffff (INT_MAX), all others are given as INT_MAX*min_gain/current_mic_gain.*/
 
     unsigned channel_count; /**< The count of enabled channels (0->4).  */
+
+
+    unsigned async_interface_enabled; /** If set to 1, this disables the mic_array_get_next_time_domain_frame interface
+                                        and enables the mic_array_recv_sample interface. **/
+
 
 } mic_array_decimator_config_t;
 
@@ -179,6 +184,23 @@ void mic_array_init_far_end_channels(mic_array_internal_audio_channels internal_
  *
  */
 int mic_array_send_sample( streaming chanend c_to_decimator, int sample);
+
+/** This receives a pair of audio samples from a decimator. async_interface_enabled
+ * must be set in the decimator config for this function to work as intended.
+ *
+ * If this function isn't called at least at the rate at which the decimator is outputting samples
+ * it will cause timing related errors.
+ *
+ *  \param c_from_decimator  The channel used to transfer audio sample between
+ *                           the decimator and the application.
+ *  \param ch_a              The first audio sample to be received.
+ *  \param ch_b              The second audio sample to be received.
+ *  \returns                 0 for success and 1 for failure. Failure may occur when the decimators
+ *                           are not yet running or when a new sample isn't ready.
+ *
+ */
+int mic_array_recv_samples(streaming chanend c_from_decimator, int &ch_a, int &ch_b);
+
 
 /** Four Channel Decimation initializer for raw audio frames.
  *
@@ -292,3 +314,4 @@ void mic_array_decimator_configure(
         mic_array_decimator_config_t dc[]);
 
 #endif /* MIC_ARRAY_H_ */
+#endif

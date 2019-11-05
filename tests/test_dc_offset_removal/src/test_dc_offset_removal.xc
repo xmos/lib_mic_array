@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
 #include "mic_array.h"
 #include <stdio.h>
 #include <xs1.h>
@@ -62,7 +62,7 @@ void test(){
                 mic_array_frame_time_domain audio[2];
                 unsigned buffer;
                 mic_array_decimator_conf_common_t dcc = {0, 1, 0, 0, 2, g_third_stage_div_2_fir, 0, FIR_COMPENSATOR_DIV_2, DECIMATOR_NO_FRAME_OVERLAP, 2  };
-                mic_array_decimator_config_t dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX },4 }};
+                mic_array_decimator_config_t dc[1] = { { &dcc, data, { INT_MAX, INT_MAX, INT_MAX, INT_MAX }, 4, 0}};
                 mic_array_decimator_configure(c_ds_output, 1, dc);
                 mic_array_init_time_domain_frame(c_ds_output, 1 , buffer, audio, dc);
 
