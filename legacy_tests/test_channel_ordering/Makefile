@@ -30,5 +30,5 @@ XCC_FLAGS_FRONTEND_8BIT_8CH_CHANREORDER = $(COMMON_FLAGS) -DFRONTEND_8BIT_8CH -D
 # project to create both xCORE and ARM binaries.
 XCORE_ARM_PROJECT = 0
 
-XMOS_MAKE_PATH ?= ../..
+XMOS_MAKE_PATH ?= ../../..
 -include $(XMOS_MAKE_PATH)/xcommon/module_xcommon/build/Makefile.common
