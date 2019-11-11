@@ -155,7 +155,8 @@ void collect_output_std( streaming chanend c_ds_output[1]){
           &decimator_common_config,
           mic_array_data[0],     // The storage area for the output decimator
           {INT_MAX, INT_MAX, INT_MAX, INT_MAX},  // Microphone gain compensation (turned off)
-          MIC_CHANNELS
+          MIC_CHANNELS,
+          0 // Async interface disabled
       }
   };
 
