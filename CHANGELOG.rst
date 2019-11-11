@@ -1,10 +1,15 @@
 lib_mic_array change log
 ========================
 
+4.1.0
+-----
+
+  * Added mic_dual, an optimised single core, 16kHz, two channel version (not
+    compatible with async interface)
+
 4.0.0
 -----
 
-  * Added mic_dual, an optimised single core, 16kHz, two channel version
   * ADDED: Support for arbitrary frame sizes
   * ADDED: #defines for mic muting
   * ADDED: Non-blocking interface to decimators for 2 mic setup
