@@ -66,7 +66,7 @@ void test_timing(streaming chanend c_ds_output_dual[1]){
 unsafe{
     // No init for mic_dual
     const unsigned fs = 16000;
-    const unsigned max_ticks = (unsigned)((unsigned long long)ticks_per_s * MIC_ARRAY_FRAME_SIZE / fs);
+    const unsigned max_ticks = (unsigned)((unsigned long long)ticks_per_s * MIC_DUAL_FRAME_SIZE / fs);
     const int headroom_ticks = 5; //Arbitrary 50ns headroom
     long long total_headroom_ticks = 0;
     int min_head_room = INT_MAX;

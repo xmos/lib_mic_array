@@ -12,6 +12,7 @@
 #define MIC_DECIMATORS 1                    // Don't care for mic_dual
 
 #define MIC_DUAL_ENABLED 1
-#define MIC_DUAL_FRAME_SIZE 240            // We *do* care about this in mic_dual
+// Defined in compiler flags:
+// #define MIC_DUAL_FRAME_SIZE 1
 
 #endif /* MIC_ARRAY_CONF_H_ */
