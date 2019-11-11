@@ -34,9 +34,15 @@ pipeline {
         }
       }
     }
-    stage('Tests') {
+    stage('Legacy Tests') {
       steps {
-        runXmostest("${REPO}", 'tests')
+        dir("${REPO}/legacy_tests") {
+          viewEnv() {
+            // Use Pipfile in legacy_tests, not lib_mic_array/Pipfile
+            installPipfile(true)
+            runPython("./runtests.py --junit-output=${REPO}_tests.xml")
+          }
+        }
       }
     }
     stage('Build') {
