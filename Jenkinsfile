@@ -71,9 +71,11 @@ pipeline {
     stage('Legacy Tests') {
       steps {
         dir("${REPO}/legacy_tests") {
-          // Use Pipfile in legacy_tests, not lib_mic_array/Pipfile
-          installPipfile(true)
-          runPython("./runtests.py --junit-output=${REPO}_tests.xml")
+          viewEnv() {
+            // Use Pipfile in legacy_tests, not lib_mic_array/Pipfile
+            installPipfile(true)
+            runPython("./runtests.py --junit-output=${REPO}_tests.xml")
+          }
         }
       }
     }
