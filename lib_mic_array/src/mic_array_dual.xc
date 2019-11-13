@@ -1,3 +1,4 @@
+// Copyright (c) 2019, XMOS Ltd, All rights reserved
 #include <xs1.h>
 #include <xclib.h>
 #include <stdlib.h>
@@ -8,13 +9,29 @@
 extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.xc. We make a LL aligned copy of this
 #include "dsp_qformat.h"                  //Gain compensation
 
+#if (defined(MIC_DUAL_ENABLED) && (MIC_DUAL_ENABLED == 1))
+#error MIC_DUAL_ENABLED is defined as 1
+#endif
 
-#define MIC_PAIR_OUTPUT_BLOCK_SIZE        MIC_ARRAY_FRAME_SIZE
-#define MIC_GAIN_COMPENSATION             2.117307f     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
+#if (defined(MIC_DUAL_ENABLED) && (MIC_DUAL_ENABLED == 0))
+#undef MIC_DUAL_ENABLED
+#endif
+
+#ifndef MIC_DUAL_ENABLED
+    #ifndef MIC_DUAL_FRAME_SIZE
+        #define MIC_DUAL_FRAME_SIZE 1
+    #else
+        #error "Set MIC_DUAL_ENABLED to 1."
+    #endif
+#endif
+
+#define MIC_DUAL_OUTPUT_BLOCK_SIZE        MIC_DUAL_FRAME_SIZE
+#define MIC_DUAL_GAIN_COMPENSATION        2.117307f     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
                                                         //Max is 7.999 due to Q28 format
-#define MIC_PAIR_NUM_OUT_BUFFERS          2             //Single (1) or double (2) buffered
-#define MIC_PAIR_NUM_CHANNELS             2             //Always 2 because it's a pair of mics we are decimating
-#define MIC_PAIR_NUM_REF_CHANNELS         2             //Always 2 in xvf3510 case
+#define MIC_DUAL_NUM_OUT_BUFFERS          2             //Single (1) or double (2) buffered
+#define MIC_DUAL_NUM_CHANNELS             2             //Always 2 because it's a pair of mics we are decimating
+#define MIC_DUAL_NUM_REF_CHANNELS         2             //Always 2 in xvf3510 case
+
 
 #pragma unsafe arrays
 //This effectively implements a delayline of 6 chars of bits, the later three reversed
@@ -286,39 +303,49 @@ static int dc_eliminate(int x, int &prev_x, long long &state){
 }
 
 
+// If not MIC_DUAL_ENABLED, cause a link error
+#ifdef MIC_DUAL_ENABLED
+
 #pragma unsafe arrays
 void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c_2x_pdm_mic, streaming chanend c_ref_audio[]){
+
+#else
+
+#pragma unsafe arrays
+void mic_dual_pdm_rx_decimate_DEFAULT_DEFINES(buffered in port:32 p_pdm_mic, streaming chanend c_2x_pdm_mic, streaming chanend c_ref_audio[]){
+
+#endif
 
   //Send initial request to UBM
   c_ref_audio[0] <: 0;
   c_ref_audio[1] <: 0;
 
-  unsigned delay_line[MIC_PAIR_NUM_CHANNELS][2] = {{0xaaaaaaaa, 0x55555555}, {0xaaaaaaaa, 0x55555555}}; //48 taps, init to pdm zero
-  int [[aligned(8)]] out_first_stage[MIC_PAIR_NUM_CHANNELS][4] = {{0}};
+  unsigned delay_line[MIC_DUAL_NUM_CHANNELS][2] = {{0xaaaaaaaa, 0x55555555}, {0xaaaaaaaa, 0x55555555}}; //48 taps, init to pdm zero
+  int [[aligned(8)]] out_first_stage[MIC_DUAL_NUM_CHANNELS][4] = {{0}};
 
   unsigned mid_stage_delay_idx = 0;
   const unsigned mid_stage_decimation_factor = 4;
   const unsigned mid_stage_ntaps = 16;
-  int [[aligned(8)]] mid_stage_delay[MIC_PAIR_NUM_CHANNELS][16 * 2]; //Double length for circular buffer simulation
+  int [[aligned(8)]] mid_stage_delay[MIC_DUAL_NUM_CHANNELS][16 * 2]; //Double length for circular buffer simulation
   memset(mid_stage_delay, 0, sizeof(mid_stage_delay));
 
-  int final_stage_in_pcm[MIC_PAIR_NUM_CHANNELS] = {0, 0};
+  int final_stage_in_pcm[MIC_DUAL_NUM_CHANNELS] = {0, 0};
 
   unsigned block_sample_count = 0;  //Used for assembling blocks from individual samples
   unsigned block_buffer_idx = 0;    //Optional double buffer for output blocks
 
   int * unsafe phase_coeff_ptrs[6];
-  int [[aligned(8)]] final_stage_delay_poly[MIC_PAIR_NUM_CHANNELS][6][32] = {{{0}}};
+  int [[aligned(8)]] final_stage_delay_poly[MIC_DUAL_NUM_CHANNELS][6][32] = {{{0}}};
   memset(final_stage_delay_poly, 0, sizeof(final_stage_delay_poly));
   unsigned final_stage_phase = 0;
 
-  int pcm_output[MIC_PAIR_NUM_CHANNELS] = {0, 0};
+  int pcm_output[MIC_DUAL_NUM_CHANNELS] = {0, 0};
 
-  int dc_elim_prev[MIC_PAIR_NUM_CHANNELS] = {0, 0};
-  long long dc_elim_state[MIC_PAIR_NUM_CHANNELS] = {0, 0};
+  int dc_elim_prev[MIC_DUAL_NUM_CHANNELS] = {0, 0};
+  long long dc_elim_state[MIC_DUAL_NUM_CHANNELS] = {0, 0};
 
 
-  int output_block[MIC_PAIR_NUM_OUT_BUFFERS][MIC_PAIR_OUTPUT_BLOCK_SIZE][MIC_PAIR_NUM_CHANNELS + MIC_PAIR_NUM_REF_CHANNELS];
+  int output_block[MIC_DUAL_NUM_OUT_BUFFERS][MIC_DUAL_OUTPUT_BLOCK_SIZE][MIC_DUAL_NUM_CHANNELS + MIC_DUAL_NUM_REF_CHANNELS];
   memset(output_block, 0, sizeof(output_block));
 
   //Setup nice array of pointers for each phase of coefficients
@@ -346,7 +373,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
 #pragma loop unroll
     for (int i = 0; i < 4; i++){
       #pragma loop unroll
-      for (int ch = 0; ch < MIC_PAIR_NUM_CHANNELS; ch++){
+      for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
         unsigned char pdm = port_data[ch] >> (8 * i);
         //printbinln(pdm);
         int out_first_stage_tmp = first_stage_fir(pdm, delay_line[ch]);
@@ -358,14 +385,14 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
    
     //CALL MID STAGE FIR
     #pragma loop unroll
-    for (int ch = 0; ch < MIC_PAIR_NUM_CHANNELS; ch++){
+    for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
       int * first_stage_out_src_ptr = out_first_stage[ch];
       ciruclar_buffer_sim_cpy(first_stage_out_src_ptr, (int * unsafe)&mid_stage_delay[ch][mid_stage_delay_idx]);
     }
     mid_stage_delay_idx += mid_stage_decimation_factor; //Increment before FIR so we get a proper buffer history 
 
     #pragma loop unroll
-    for (int ch = 0; ch < MIC_PAIR_NUM_CHANNELS; ch++){
+    for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
       final_stage_in_pcm[ch] = mid_stage_fir(g_second_stage_fir, mid_stage_delay[ch], mid_stage_delay_idx);
     }
     //printintln(final_stage_in_pcm[0]);
@@ -375,7 +402,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
 
     //CALL FINAL STAGE POLYPHASE FIR
     #pragma loop unroll
-    for (int ch = 0; ch < MIC_PAIR_NUM_CHANNELS; ch++){
+    for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
       pcm_output[ch] += final_stage_poly_fir(final_stage_in_pcm[ch], final_stage_delay_poly[ch][final_stage_phase], phase_coeff_ptrs[final_stage_phase]);
     }
 
@@ -386,12 +413,12 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
 
       //If we have reached stage 6 then we are ready to send a pair of decimated 16kHz mic signals
       //and also receive reference audio
-      unsigned ref_audio[MIC_PAIR_NUM_REF_CHANNELS];
+      unsigned ref_audio[MIC_DUAL_NUM_REF_CHANNELS];
       select{
         case c_ref_audio[0] :> ref_audio[0]:
-          for (int ch = 1; ch < MIC_PAIR_NUM_REF_CHANNELS; ch++) c_ref_audio[ch] :> ref_audio[ch];
+          for (int ch = 1; ch < MIC_DUAL_NUM_REF_CHANNELS; ch++) c_ref_audio[ch] :> ref_audio[ch];
           //Request some more samples
-          for (int ch = 0; ch < MIC_PAIR_NUM_REF_CHANNELS; ch++) c_ref_audio[ch] <: 0;
+          for (int ch = 0; ch < MIC_DUAL_NUM_REF_CHANNELS; ch++) c_ref_audio[ch] <: 0;
         break;
         default:
           //The host doesn't start sending ref audio for a while at startup so we have to be prepared for nothing on channel
@@ -400,24 +427,24 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
       }
 
       #pragma loop unroll
-      for (int ch = 0; ch < MIC_PAIR_NUM_CHANNELS; ch++){
+      for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
         //Now remove DC and apply some gain
         pcm_output[ch] = dc_eliminate(pcm_output[ch], dc_elim_prev[ch], dc_elim_state[ch]);
-        pcm_output[ch] = (int)( ( (long long)pcm_output[ch] * Q28(MIC_GAIN_COMPENSATION) ) >> (28));
+        pcm_output[ch] = (int)( ( (long long)pcm_output[ch] * Q28(MIC_DUAL_GAIN_COMPENSATION) ) >> (28));
         output_block[block_buffer_idx][block_sample_count][ch] = pcm_output[ch];
       }
-      for (int ch = 0; ch < MIC_PAIR_NUM_REF_CHANNELS; ch++){
-        output_block[block_buffer_idx][block_sample_count][MIC_PAIR_NUM_CHANNELS + ch] = ref_audio[ch];
+      for (int ch = 0; ch < MIC_DUAL_NUM_REF_CHANNELS; ch++){
+        output_block[block_buffer_idx][block_sample_count][MIC_DUAL_NUM_CHANNELS + ch] = ref_audio[ch];
       }
       block_sample_count++;
       //We have assembled a block so pass a pointer to the consumer
-      if (block_sample_count == MIC_PAIR_OUTPUT_BLOCK_SIZE){
+      if (block_sample_count == MIC_DUAL_OUTPUT_BLOCK_SIZE){
         c_2x_pdm_mic <: (unsigned)output_block[block_buffer_idx];        
         block_sample_count = 0;
-        block_buffer_idx ^= (MIC_PAIR_NUM_OUT_BUFFERS - 1); //Toggle if double buffer, else do nothing
+        block_buffer_idx ^= (MIC_DUAL_NUM_OUT_BUFFERS - 1); //Toggle if double buffer, else do nothing
       }
       #pragma loop unroll
-      for (int ch = 0; ch < MIC_PAIR_NUM_CHANNELS; ch++){
+      for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
         pcm_output[ch] = 0;
       }
       final_stage_phase = 0;
