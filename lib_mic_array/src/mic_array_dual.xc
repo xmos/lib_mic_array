@@ -9,10 +9,6 @@
 extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.xc. We make a LL aligned copy of this
 #include "dsp_qformat.h"                  //Gain compensation
 
-#if (defined(MIC_DUAL_ENABLED) && (MIC_DUAL_ENABLED == 1))
-#error MIC_DUAL_ENABLED is defined as 1
-#endif
-
 #if (defined(MIC_DUAL_ENABLED) && (MIC_DUAL_ENABLED == 0))
 #undef MIC_DUAL_ENABLED
 #endif
