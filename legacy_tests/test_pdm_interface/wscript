@@ -1,0 +1,71 @@
+import os
+from waflib import Options, Errors
+from waflib.Build import BuildContext, CleanContext
+
+CONFIGS = [
+    'CH4',
+    'CH8',
+]
+
+def create_waf_contexts(configs):
+    for test_name in configs:
+        for ctx in (BuildContext, CleanContext):
+            raw_context = ctx.__name__.replace('Context', '').lower()
+
+            class tmp(ctx):
+                cmd = raw_context + '_' + test_name
+                variant = test_name
+                variant = os.path.split(os.getcwd())[1] + '_' + variant 
+
+create_waf_contexts(CONFIGS)
+
+def options(opt):
+    opt.add_option('--config', action='store',
+                   help='Choose among the supported configurations')
+    opt.load('xwaf.xcommon')
+
+
+def configure(conf):
+    conf.load('xwaf.compiler_xcc')
+
+
+def build(bld):
+
+    if not bld.variant:
+        build_configs = []
+        try:
+            build_configs = [
+                c for c in CONFIGS if c == bld.options.config
+            ]
+        except AttributeError:
+            pass
+
+        if len(build_configs) == 0:
+            bld.fatal('specify a config with --config.\nAvailable configs: {}'.format(', '.join(CONFIGS)))
+            return
+
+        build_commands = ['{}_{}'.format(bld.cmd, c) for c in build_configs]
+        print("build_commands = {}".format(build_commands))
+
+        if not build_commands:
+            bld.fatal/(
+                '{} does not match any configs'.format(bld.options.config))
+
+        cmd_str = {'build': 'Building', 'clean': 'Cleaning', 'list': "Listing"}[bld.cmd]
+        print('{} configs:\n    {}'.format(cmd_str, '\n    '.join(
+            build_configs)))
+        if not bld.cmd == 'list':
+            Options.commands = build_commands + Options.commands
+        return
+
+    bld.do_xcommon()
+
+
+
+
+def dist(dst):
+    dst.load('xwaf.xcommon')
+
+
+def distcheck(dst):
+    dst.load('xwaf.xcommon')
