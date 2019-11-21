@@ -15,7 +15,7 @@
 #endif
 
 #ifndef MIC_ARRAY_MAX_FRAME_SIZE_LOG2
-    #define MIC_ARRAY_FRAME_SIZE_LOG2 (0)
+    #define MIC_ARRAY_MAX_FRAME_SIZE_LOG2 (0)
 #endif
 
 #ifndef MIC_ARRAY_WORD_LENGTH_SHORT
