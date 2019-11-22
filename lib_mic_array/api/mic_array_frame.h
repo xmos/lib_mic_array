@@ -10,8 +10,12 @@
     #define MIC_DUAL_ENABLED (0)
 #endif
 
+// MIC_DUAL_FRAME_SIZE has no meaning if MIC_DUAL_ENABLED is false.
+// Only define MIC_DUAL_FRAME_SIZE to a default value if MIC_DUAL_ENABLED is true.
 #ifndef MIC_DUAL_FRAME_SIZE
-    #define MIC_DUAL_FRAME_SIZE (1)
+    #if defined(MIC_DUAL_ENABLED) && (MIC_DUAL_ENABLED != 0)
+        #define MIC_DUAL_FRAME_SIZE (1)
+    #endif
 #endif
 
 #ifndef MIC_ARRAY_FRAME_SIZE
