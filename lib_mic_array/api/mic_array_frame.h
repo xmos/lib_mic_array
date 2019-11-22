@@ -6,6 +6,10 @@
 #include "mic_array_conf.h"
 #include "dsp_fft.h"
 
+#ifndef MIC_DUAL_ENABLED
+    #define MIC_DUAL_ENABLED (0)
+#endif
+
 #ifndef MIC_DUAL_FRAME_SIZE
     #define MIC_DUAL_FRAME_SIZE (1)
 #endif
