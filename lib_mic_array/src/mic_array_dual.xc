@@ -9,15 +9,12 @@
 extern const int [[aligned(8)]] g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.xc. We make a LL aligned copy of this
 #include "dsp_qformat.h"                  //Gain compensation
 
-
 #if (defined(MIC_DUAL_ENABLED) && (MIC_DUAL_ENABLED == 0))
 #undef MIC_DUAL_ENABLED
 #endif
 
 #ifndef MIC_DUAL_ENABLED
-    #ifndef MIC_DUAL_FRAME_SIZE
-        #define MIC_DUAL_FRAME_SIZE 1
-    #else
+    #ifdef MIC_DUAL_FRAME_SIZE
         #error "Set MIC_DUAL_ENABLED to 1."
     #endif
 #endif
@@ -306,13 +303,6 @@ static int dc_eliminate(int x, int &prev_x, long long &state){
 #pragma unsafe arrays
 void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c_2x_pdm_mic, streaming chanend c_ref_audio[]){
 
-#else
-
-#pragma unsafe arrays
-void mic_dual_pdm_rx_decimate_DEFAULT_DEFINES(buffered in port:32 p_pdm_mic, streaming chanend c_2x_pdm_mic, streaming chanend c_ref_audio[]){
-
-#endif
-
   //Send initial request to UBM
   c_ref_audio[0] <: 0;
   c_ref_audio[1] <: 0;
@@ -454,3 +444,4 @@ void mic_dual_pdm_rx_decimate_DEFAULT_DEFINES(buffered in port:32 p_pdm_mic, str
     //printintln(t1-t0);
   }
 }
+#endif
