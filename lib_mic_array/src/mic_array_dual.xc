@@ -410,6 +410,10 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
         default:
           //The host doesn't start sending ref audio for a while at startup so we have to be prepared for nothing on channel
           //printstr("."); //This is debug and can be removed
+          #pragma loop unroll
+          for (int ch = 0; ch < MIC_DUAL_NUM_REF_CHANNELS; ch++){
+              ref_audio[ch] = 0;
+          }
         break;
       }
 
