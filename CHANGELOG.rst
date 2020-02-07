@@ -4,7 +4,8 @@ lib_mic_array change log
 4.2.0
 -----
 
-  * ADDED support for global define to set single/dual output buffer for mic_dual
+  * ADDED support for global define to set single/dual output buffer for
+    mic_dual
 
 4.1.0
 -----
