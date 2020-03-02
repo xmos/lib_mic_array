@@ -1,4 +1,4 @@
-VERSION = 4.0.0
+VERSION = 4.2.0
 
 DEPENDENT_MODULES = lib_xassert(>=4.0.0) \
                     lib_logging(>=3.0.0) \
@@ -10,6 +10,8 @@ OPTIONAL_HEADERS +=
 
 EXPORT_INCLUDE_DIRS = api \
                       src/fir
+
+EXCLUDE_FILES += make_mic_dual_stage_3_coefs.c
 
 INCLUDE_DIRS = $(EXPORT_INCLUDE_DIRS)
 

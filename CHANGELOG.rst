@@ -1,6 +1,18 @@
 lib_mic_array change log
 ========================
 
+4.2.0
+-----
+
+  * ADDED support for global define to set single/dual output buffer for
+    mic_dual
+
+4.1.0
+-----
+
+  * Added mic_dual, an optimised single core, 16kHz, two channel version (not
+    compatible with async interface)
+
 4.0.0
 -----
 
