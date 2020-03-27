@@ -1,6 +1,12 @@
 lib_mic_array change log
 ========================
 
+4.2.1
+-----
+
+  * CHANGED: Jenkinsfile pinned to Jenkins shared library 0.10.0
+  * CHANGED: Updated the minimum version of libraries this library depends upon.
+
 4.2.0
 -----
 
