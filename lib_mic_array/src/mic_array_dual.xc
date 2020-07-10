@@ -315,8 +315,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
   unsigned mid_stage_delay_idx = 0;
   const unsigned mid_stage_decimation_factor = 4;
   const unsigned mid_stage_ntaps = 16;
-  int [[aligned(8)]] mid_stage_delay[MIC_DUAL_NUM_CHANNELS][16 * 2]; //Double length for circular buffer simulation
-  memset(mid_stage_delay, 0, sizeof(mid_stage_delay));
+  static int [[aligned(8)]] mid_stage_delay[MIC_DUAL_NUM_CHANNELS][16 * 2]; //Double length for circular buffer simulation
 
   int final_stage_in_pcm[MIC_DUAL_NUM_CHANNELS] = {0, 0};
 
@@ -324,8 +323,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
   unsigned block_buffer_idx = 0;    //Optional double buffer for output blocks
 
   int * unsafe phase_coeff_ptrs[6];
-  int [[aligned(8)]] final_stage_delay_poly[MIC_DUAL_NUM_CHANNELS][6][32] = {{{0}}};
-  memset(final_stage_delay_poly, 0, sizeof(final_stage_delay_poly));
+  static int [[aligned(8)]] final_stage_delay_poly[MIC_DUAL_NUM_CHANNELS][6][32];
   unsigned final_stage_phase = 0;
 
   int pcm_output[MIC_DUAL_NUM_CHANNELS] = {0, 0};
@@ -334,8 +332,7 @@ void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c
   long long dc_elim_state[MIC_DUAL_NUM_CHANNELS] = {0, 0};
 
 
-  int output_block[MIC_DUAL_NUM_OUT_BUFFERS][MIC_DUAL_OUTPUT_BLOCK_SIZE][MIC_DUAL_NUM_CHANNELS + MIC_DUAL_NUM_REF_CHANNELS];
-  memset(output_block, 0, sizeof(output_block));
+  static int output_block[MIC_DUAL_NUM_OUT_BUFFERS][MIC_DUAL_OUTPUT_BLOCK_SIZE][MIC_DUAL_NUM_CHANNELS + MIC_DUAL_NUM_REF_CHANNELS];
 
   //Setup nice array of pointers for each phase of coefficients
   unsafe{
