@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019, XMOS Ltd, All rights reserved
+# Copyright (c) 2018-2020, XMOS Ltd, All rights reserved
 import os.path
 import pytest
 import subprocess
@@ -10,7 +10,7 @@ def pytest_collect_file(parent, path):
     if ((path.ext == ".c" or path.ext == ".xc")
             and (path.basename.startswith("test_")
                  and "_Runner" not in path.basename)):
-        return UnityTestSource(path, parent)
+        return UnityTestSource.from_parent(parent, fspath)
 
 
 class UnityTestSource(pytest.File):
@@ -38,7 +38,7 @@ class UnityTestSource(pytest.File):
             test_src_name + '_dual_issue.xe')
         test_bin_path_di = os.path.join('bin',
                                         test_bin_name_di)
-        yield UnityTestExecutable(test_bin_path_di, self)
+        yield UnityTestExecutable.from_parent(self, name=test_bin_path_di)
 
 
 class UnityTestExecutable(pytest.Item):
