@@ -10,7 +10,7 @@ def pytest_collect_file(parent, path):
     if ((path.ext == ".c" or path.ext == ".xc")
             and (path.basename.startswith("test_")
                  and "_Runner" not in path.basename)):
-        return UnityTestSource.from_parent(parent, fspath)
+        return UnityTestSource.from_parent(parent, fspath=path)
 
 
 class UnityTestSource(pytest.File):
@@ -32,7 +32,7 @@ class UnityTestSource(pytest.File):
             test_src_name + '_single_issue.xe')
         test_bin_path_si = os.path.join('bin',
                                         test_bin_name_si)
-        yield UnityTestExecutable(test_bin_path_si, self)
+        yield UnityTestExecutable.from_parent(self, name=test_bin_path_si)
 
         test_bin_name_di = os.path.join(
             test_src_name + '_dual_issue.xe')
