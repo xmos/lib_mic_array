@@ -1,5 +1,37 @@
-# python_version 3.7
+# python_version 3.7.6
+#
+# The parse_version_from_requirements() function in the installPipfile.groovy
+# file of the Jenkins Shared Library uses the python_version comment to set
+# the version of python used.
 
-pytest==6.0.1
+# Distributed (released) dependencies
+#
+# The python modules listed below specify a known working combination required
+# by the python code in this repository.  The procedure used to set up a
+# suitable python environment for it installs the version of each module in
+# the list.  Using a specific version ensures a controlled infrastructure for
+# development, testing and release of this repository.
+#
+# Another repository might depend on python code defined in this one.  The
+# procedure to set up a suitable python environment for that repository may
+# pip-install this one as editable using this repository's setup.py file.  The
+# same modules should appear in the setup.py list as given below.
+flake8==3.8.3
+pytest==6.0.0
 pytest-xdist==1.34.0
-flake8
+
+# Development dependencies
+#
+# Each link listed below specifies the path to a setup.py file which are
+# installed in editable mode with '-e $PATH' (without the quotes).
+#
+# If python code in this repository depends on python code under development
+# in another repository, then an entry for that other respository should
+# appear in this list instead of the released dependencies list.
+#
+# If this repository uses the setup functionality (e.g., script entry points)
+# of its own setup.py file, then this list must include an entry for that
+# setup.py file, e.g., '-e .' or '-e ./python' (without the quotes).
+-e ./../lib_dsp
+-e ./../lib_logging
+-e ./../lib_xassert
