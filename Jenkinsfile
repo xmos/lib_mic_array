@@ -27,8 +27,8 @@ pipeline {
     stage('Unit tests') {
       steps {
         dir("${REPO}/tests/unit_tests") {
-          runWaf('.')
           viewEnv() {
+            runWaf('.')
             runPytest()
           }
         }
