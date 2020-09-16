@@ -18,13 +18,11 @@ setuptools.setup(
         "pytest~=6.0",
         "pytest-xdist~=1.34",
         "scipy~=1.4",
-        "lib_dsp",
         "lib_logging",
         "lib_xassert",
     ],
 
     dependency_links=[
-        './../lib_dsp#egg=lib_dsp',
         './../lib_logging#egg=lib_logging',
         './../lib_xassert#egg=lib_xassert',
     ],
