@@ -9,7 +9,7 @@ def do_dc_offset_removal_test(testlevel):
     args = xmostest.getargs()
     if not args.remote_resourcer:
         # Abort the test
-        print 'remote resourcer not avaliable'
+        print('remote resourcer not avaliable')
         return
 
     binary = 'test_dc_offset_removal/bin/test_dc_offset_removal.xe'

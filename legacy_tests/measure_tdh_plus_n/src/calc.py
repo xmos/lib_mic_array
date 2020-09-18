@@ -44,11 +44,11 @@ def THDN(signal, sample_rate, filename):
     total_rms = rms_flat(bandwidth_limited)
 
     #for i in range(6000):
-       #print abs(f[i])
+       #print(abs(f[i]))
     i = argmax(abs(f))
 
     #This will be exact if the frequency under test falls into the middle of an fft bin 
-    print 'Frequency: %f Hz' % (sample_rate * (i / len(windowed)))
+    print('Frequency: %f Hz' % (sample_rate * (i / len(windowed))))
     lowermin, uppermin = find_range(abs(f), i)
 
 
@@ -59,7 +59,7 @@ def THDN(signal, sample_rate, filename):
 
     noise = irfft(f)
     THDN = rms_flat(noise) / total_rms
-    print "THD+N:     %.12f%% or %.12f dB" % (THDN * 100, 20 * log10(THDN))
+    print("THD+N:     %.12f%% or %.12f dB" % (THDN * 100, 20 * log10(THDN)))
 
 def load(filename):
     signals = []
@@ -89,7 +89,7 @@ def load(filename):
             else:
                 data_dropped+=1
     if data_dropped>0:
-        print "data dropped " + str(data_dropped)
+        print("data dropped " + str(data_dropped))
     return signals
     
 files = sys.argv[1:]
@@ -101,10 +101,10 @@ if files:
             for s in signals:
                 if len(s[0])>0:
                     #verify that all the outputs happened
-                    #print len(s[0])
+                    #print(len(s[0]))
                     THDN(s[0], s[1], filename)
         #except:
-       #    print 'Couldn\'t analyze "' + filename + '"'
-       # print ''
+       #    print('Couldn\'t analyze "' + filename + '"')
+       # print('')
 else:
     sys.exit("You must provide at least one file to analyze")
