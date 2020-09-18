@@ -1,4 +1,4 @@
-# python_version 2.7
+# python_version 3.7.6
 
 numpy==1.18.5
 scipy==1.4.1
