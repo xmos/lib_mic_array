@@ -1,5 +1,5 @@
 # python_version 3.7.6
 
-numpy==1.18.5
-scipy==1.4.1
+numpy==1.16.6
+scipy==1.2.3
 soundfile==0.10.3.post1
