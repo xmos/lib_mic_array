@@ -18,6 +18,7 @@ setuptools.setup(
         "pytest~=6.0",
         "pytest-xdist~=1.34",
         "scipy~=1.4",
+        "soundfile~=0.10",
         "lib_logging",
         "lib_xassert",
     ],
