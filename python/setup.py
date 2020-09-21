@@ -10,10 +10,11 @@ import setuptools
 # The same modules should appear in the requirements.txt file as given below.
 setuptools.setup(
     name='lib_mic_array',
+    packages=setuptools.find_packages(),
     install_requires=[
         "flake8~=3.8",
         "matplotlib~=3.3",
-        "numpy~=1.19",
+        "numpy~=1.18",
         "pylint~=2.5",
         "pytest~=6.0",
         "pytest-xdist~=1.34",
