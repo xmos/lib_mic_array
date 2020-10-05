@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+4.2.2
+-----
+
+  * CHANGED: Pin Python package versions
+
 4.2.1
 -----
 
