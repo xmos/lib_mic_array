@@ -5,6 +5,7 @@ lib_mic_array change log
 -----
 
   * CHANGED: Pin Python package versions
+  * REMOVED: not necessary cpanfile
 
 4.2.1
 -----
