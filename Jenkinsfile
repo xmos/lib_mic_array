@@ -1,5 +1,4 @@
-@Library('xmos_jenkins_shared_library@v0.10.0') _
-
+@Library('xmos_jenkins_shared_library@v0.14.2') _
 getApproval()
 
 pipeline {
@@ -27,8 +26,8 @@ pipeline {
     stage('Unit tests') {
       steps {
         dir("${REPO}/tests/unit_tests") {
-          runWaf('.')
           viewEnv() {
+            runWaf('.')
             runPytest()
           }
         }
@@ -38,7 +37,7 @@ pipeline {
       steps {
         dir("${REPO}/legacy_tests") {
           viewEnv() {
-            // Use Pipfile in legacy_tests, not lib_mic_array/Pipfile
+            // Use requirements.txt in legacy_tests, not lib_mic_array/requirements.txt
             installPipfile(true)
             runPython("./runtests.py --junit-output=${REPO}_tests.xml")
           }
