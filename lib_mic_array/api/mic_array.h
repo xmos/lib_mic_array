@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2019, XMOS Ltd, All rights reserved
-#if __XC__
+
 #ifndef MIC_ARRAY_H_
 #define MIC_ARRAY_H_
 
@@ -14,7 +14,12 @@
 
 #define MIC_ARRAY_NO_INTERNAL_CHANS (0)
 
+void mic_dual_pdm_rx_decimate(
+        port_t p_pdm_mic,
+        /*streaming*/ chanend_t c_2x_pdm_mic,
+        /*streaming*/ chanend_t c_ref_audio[]);
 
+#if __XC__
 /** PDM Microphone Interface component.
  *
  *  This task handles the interface to up to 8 PDM microphones whilst also decimating
@@ -31,11 +36,6 @@ void mic_array_pdm_rx(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend ?c_4x_pdm_mic_1);
-
-void mic_dual_pdm_rx_decimate(
-        in buffered port:32 p_pdm_mics,
-        streaming chanend c_2x_pdm_mic,
-        streaming chanend c_ref_audio[]);
 
 
 /** High resolution delay component.
@@ -314,5 +314,5 @@ void mic_array_decimator_configure(
         unsigned decimator_count,
         mic_array_decimator_config_t dc[]);
 
+#endif /* __XC__ */
 #endif /* MIC_ARRAY_H_ */
-#endif

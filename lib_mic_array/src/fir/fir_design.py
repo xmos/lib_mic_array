@@ -475,7 +475,7 @@ if __name__ == "__main__":
 
 
   header = open ("fir_coefs.h", 'w')
-  body   = open ("fir_coefs.xc", 'w')
+  body   = open ("fir_coefs.c", 'w')
 
   year = datetime.datetime.now().year
   header.write("// Copyright (c) " +str(year) +", XMOS Ltd, All rights reserved\n")
