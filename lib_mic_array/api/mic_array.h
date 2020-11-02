@@ -14,12 +14,13 @@
 
 #define MIC_ARRAY_NO_INTERNAL_CHANS (0)
 
+#if !__XC__
 void mic_dual_pdm_rx_decimate(
         port_t p_pdm_mic,
         /*streaming*/ chanend_t c_2x_pdm_mic,
         /*streaming*/ chanend_t c_ref_audio[]);
 
-#if __XC__
+#else
 /** PDM Microphone Interface component.
  *
  *  This task handles the interface to up to 8 PDM microphones whilst also decimating

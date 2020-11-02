@@ -137,7 +137,7 @@ __attribute__((always_inline))
 static inline int final_stage_poly_fir(
   int input_sample,
   int *delayline,
-  int *filter_ptr)
+  const int *filter_ptr)
 {
 
   int ah = 0;
@@ -304,6 +304,7 @@ static inline int dc_eliminate(int x, int *prev_x, long long *state){
 
 
 // If not MIC_DUAL_ENABLED, cause a link error
+#define MIC_DUAL_ENABLED
 #ifdef MIC_DUAL_ENABLED
 
 //void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c_2x_pdm_mic, streaming chanend c_ref_audio[]){
@@ -331,7 +332,7 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
   unsigned block_sample_count = 0;  //Used for assembling blocks from individual samples
   unsigned block_buffer_idx = 0;    //Optional double buffer for output blocks
 
-  int *phase_coeff_ptrs[6];
+  const int *phase_coeff_ptrs[6];
   int final_stage_delay_poly[MIC_DUAL_NUM_CHANNELS][6][32] __attribute__((aligned(8))) = {{{0}}};
   unsigned final_stage_phase = 0;
 
@@ -344,11 +345,13 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
   int output_block[MIC_DUAL_NUM_OUT_BUFFERS][MIC_DUAL_OUTPUT_BLOCK_SIZE][MIC_DUAL_NUM_CHANNELS + MIC_DUAL_NUM_REF_CHANNELS] = {{{0}}};
 
   //Setup nice array of pointers for each phase of coefficients
-  for(int i = 0; i < 6; i++) phase_coeff_ptrs[i] = g_third_stage_div_6_fir_dual[i * 32];
+  for(int i = 0; i < 6; i++) phase_coeff_ptrs[i] = &g_third_stage_div_6_fir_dual[i * 32];
 
 
   //We are reading in 2 x 32b values in one chunk every 10.4us (96kHz) so we need to 32b storage elements
   unsigned port_data[2];
+
+  //port_data[1] = port_in(p_pdm_mic);
 
   while (1) {
     unsigned t0, t1;
@@ -358,10 +361,18 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
     //Input comes in from bit 31 (MSb) and shifts right, so LSB is oldest
     t0 = get_reference_time();
 
+    //rtos_printf("%08x, %08x -> ", port_data[0], port_data[1]);
+
     //UNZIP INTO TWO PDM STREAMS
     //unsigned long long tmp64 = (unsigned long long) (port_data[0]) << 32 | port_data[1];
     //{port_data[0], port_data[1]} = unzip(tmp64, 0);
     asm volatile("unzip %0, %1, 0" :"+r"(port_data[0]), "+r"(port_data[1]));
+
+//    port_data[0] ^= port_data[1];
+//    port_data[1] ^= port_data[0];
+//    port_data[0] ^= port_data[1];
+
+    //rtos_printf("%08x, %08x\n", port_data[0], port_data[1]);
 
     //DO FIRST STAGE FIR AND POPULATE BUFFER FOR MID STAGE
     #pragma unroll(4)
@@ -458,7 +469,7 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
       #pragma unroll(MIC_DUAL_NUM_CHANNELS)
       for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
         //Now remove DC and apply some gain
-        pcm_output[ch] = dc_eliminate(pcm_output[ch], dc_elim_prev[ch], dc_elim_state[ch]);
+        pcm_output[ch] = dc_eliminate(pcm_output[ch], &dc_elim_prev[ch], &dc_elim_state[ch]);
         pcm_output[ch] = (int)( ( (long long)pcm_output[ch] * Q28(MIC_DUAL_GAIN_COMPENSATION) ) >> (28));
         output_block[block_buffer_idx][block_sample_count][ch] = pcm_output[ch];
       }
@@ -468,7 +479,7 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
       block_sample_count++;
       //We have assembled a block so pass a pointer to the consumer
       if (block_sample_count == MIC_DUAL_OUTPUT_BLOCK_SIZE){
-        s_chan_out_word(c_2x_pdm_mic, output_block[block_buffer_idx]);
+        s_chan_out_word(c_2x_pdm_mic, (uint32_t) output_block[block_buffer_idx]);
         block_sample_count = 0;
         block_buffer_idx ^= (MIC_DUAL_NUM_OUT_BUFFERS - 1); //Toggle if double buffer, else do nothing
       }
