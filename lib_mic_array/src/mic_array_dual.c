@@ -72,7 +72,6 @@ static inline int mid_stage_fir(const int mid_stage_fir[], int mid_stage_delay[]
     unsigned al = 0;
     int c0, c1, s0, s1;
 
-    int *filter_ptr = (int*)mid_stage_fir;
     int *state_ptr = &mid_stage_delay[mid_stage_delay_idx];
 
     unsigned format = 32; //for extract
@@ -80,51 +79,51 @@ static inline int mid_stage_fir(const int mid_stage_fir[], int mid_stage_delay[]
     //and we do not need to reload them into registers, so it's very fast (2.5 cyc per MAC)
 
     //stages 0, 1, 14, 15
-    asm volatile("ldd %0,%1,%2[0]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+    asm volatile("ldd %0,%1,%2[0]":"=r"(c0),"=r"(c1):"r"(mid_stage_fir));
     asm volatile("ldd %0,%1,%2[0]":"=r"(s0),"=r"(s1):"r"(state_ptr));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s1):"r"(state_ptr));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s0),"0"(ah),"1"(al));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s1),"0"(ah),"1"(al));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s0));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s1));
 
 
     //stages 2, 3, 12, 13
-    asm volatile("ldd %0,%1,%2[1]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+    asm volatile("ldd %0,%1,%2[1]":"=r"(c0),"=r"(c1):"r"(mid_stage_fir));
     asm volatile("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s1):"r"(state_ptr));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[6]":"=r"(s0),"=r"(s1):"r"(state_ptr));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s0),"0"(ah),"1"(al));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s1),"0"(ah),"1"(al));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s0));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s1));
 
 
     //stages 4, 5, 10, 11
-    asm volatile("ldd %0,%1,%2[2]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+    asm volatile("ldd %0,%1,%2[2]":"=r"(c0),"=r"(c1):"r"(mid_stage_fir));
     asm volatile("ldd %0,%1,%2[2]":"=r"(s0),"=r"(s1):"r"(state_ptr));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s1):"r"(state_ptr));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s0),"0"(ah),"1"(al));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s1),"0"(ah),"1"(al));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s0));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s1));
 
 
     //stages 6, 7, 8, 9
-    asm volatile("ldd %0,%1,%2[3]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+    asm volatile("ldd %0,%1,%2[3]":"=r"(c0),"=r"(c1):"r"(mid_stage_fir));
     asm volatile("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s1):"r"(state_ptr));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[4]":"=r"(s0),"=r"(s1):"r"(state_ptr));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s0),"0"(ah),"1"(al));
-    asm volatile("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s1),"0"(ah),"1"(al));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s0));
+    asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s1));
 
 
     //extract and saturate
-    asm volatile("lsats %0,%1,%2":"=r"(ah),"=r"(al):"r"(format),"0"(ah),"1"(al));
+    asm volatile("lsats %0,%1,%2":"+r"(ah),"+r"(al):"r"(format));
     asm volatile("lextract %0,%1,%2,%3,32":"=r"(ah):"r"(ah),"r"(al),"r"(format));
 
     return ah;
@@ -157,53 +156,53 @@ static inline int final_stage_poly_fir(
     filter_ptr += 16;
   }
 
-  asm("ldd %0,%1,%2[7]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[0]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-  asm("std %0,%1,%2[0]"::"r"(s1), "r"(s0),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[7]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[0]":"=r"(s2),"=r"(s1):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[0]"::"r"(s1), "r"(s0),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
-  asm("ldd %0,%1,%2[6]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-  asm("std %0,%1,%2[1]"::"r"(s3), "r"(s2),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s2),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s3),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[6]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s3):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[1]"::"r"(s3), "r"(s2),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
-  asm("ldd %0,%1,%2[5]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[2]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-  asm("std %0,%1,%2[2]"::"r"(s1), "r"(s0),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[5]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[2]":"=r"(s2),"=r"(s1):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[2]"::"r"(s1), "r"(s0),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
-  asm("ldd %0,%1,%2[4]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-  asm("std %0,%1,%2[3]"::"r"(s3), "r"(s2),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s2),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s3),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[4]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s3):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[3]"::"r"(s3), "r"(s2),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
-  asm("ldd %0,%1,%2[3]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[4]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-  asm("std %0,%1,%2[4]"::"r"(s1), "r"(s0),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[3]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[4]":"=r"(s2),"=r"(s1):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[4]"::"r"(s1), "r"(s0),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
-  asm("ldd %0,%1,%2[2]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-  asm("std %0,%1,%2[5]"::"r"(s3), "r"(s2),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s2),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s3),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[2]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s3):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[5]"::"r"(s3), "r"(s2),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
-  asm("ldd %0,%1,%2[1]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[6]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-  asm("std %0,%1,%2[6]"::"r"(s1), "r"(s0),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[1]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[6]":"=r"(s2),"=r"(s1):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[6]"::"r"(s1), "r"(s0),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
-  asm("ldd %0,%1,%2[0]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-  asm("std %0,%1,%2[7]"::"r"(s3), "r"(s2),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s2),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s3),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[0]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s3):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[7]"::"r"(s3), "r"(s2),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
 
   {
@@ -211,56 +210,56 @@ static inline int final_stage_poly_fir(
     state_ptr += 16;
   }
 
-  asm("ldd %0,%1,%2[7]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[0]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-  asm("std %0,%1,%2[0]"::"r"(s1), "r"(s0),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[7]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[0]":"=r"(s2),"=r"(s1):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[0]"::"r"(s1), "r"(s0),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
-  asm("ldd %0,%1,%2[6]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-  asm("std %0,%1,%2[1]"::"r"(s3), "r"(s2),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s2),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s3),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[6]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s3):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[1]"::"r"(s3), "r"(s2),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
-  asm("ldd %0,%1,%2[5]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[2]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-  asm("std %0,%1,%2[2]"::"r"(s1), "r"(s0),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[5]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[2]":"=r"(s2),"=r"(s1):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[2]"::"r"(s1), "r"(s0),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
-  asm("ldd %0,%1,%2[4]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-  asm("std %0,%1,%2[3]"::"r"(s3), "r"(s2),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s2),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s3),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[4]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s3):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[3]"::"r"(s3), "r"(s2),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
-  asm("ldd %0,%1,%2[3]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[4]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-  asm("std %0,%1,%2[4]"::"r"(s1), "r"(s0),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[3]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[4]":"=r"(s2),"=r"(s1):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[4]"::"r"(s1), "r"(s0),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
-  asm("ldd %0,%1,%2[2]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-  asm("std %0,%1,%2[5]"::"r"(s3), "r"(s2),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s2),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s3),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[2]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s3):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[5]"::"r"(s3), "r"(s2),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
-  asm("ldd %0,%1,%2[1]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[6]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-  asm("std %0,%1,%2[6]"::"r"(s1), "r"(s0),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s0),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s1),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[1]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[6]":"=r"(s2),"=r"(s1):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[6]"::"r"(s1), "r"(s0),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
-  asm("ldd %0,%1,%2[0]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-  asm("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-  asm("std %0,%1,%2[7]"::"r"(s3), "r"(s2),"r"(state_ptr));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c0),"r"(s2),"0"(ah),"1"(al));
-  asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(c1),"r"(s3),"0"(ah),"1"(al));
+  asm volatile("ldd %0,%1,%2[0]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
+  asm volatile("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s3):"r"(state_ptr));
+  asm volatile("std %0,%1,%2[7]"::"r"(s3), "r"(s2),"r"(state_ptr));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
+  asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
-  asm("lsats %0,%1,%2":"=r"(ah),"=r"(al):"r"(format),"0"(ah),"1"(al));
-  asm("lextract %0,%1,%2,%3,32":"=r"(ah):"r"(ah),"r"(al),"r"(format));
+  asm volatile("lsats %0,%1,%2":"+r"(ah),"+r"(al):"r"(format));
+  asm volatile("lextract %0,%1,%2,%3,32":"=r"(ah):"r"(ah),"r"(al),"r"(format));
 
   return ah;
 }
@@ -361,21 +360,11 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
     //Input comes in from bit 31 (MSb) and shifts right, so LSB is oldest
     t0 = get_reference_time();
 
-    //rtos_printf("%08x, %08x -> ", port_data[0], port_data[1]);
-
     //UNZIP INTO TWO PDM STREAMS
-    //unsigned long long tmp64 = (unsigned long long) (port_data[0]) << 32 | port_data[1];
-    //{port_data[0], port_data[1]} = unzip(tmp64, 0);
     asm volatile("unzip %0, %1, 0" :"+r"(port_data[0]), "+r"(port_data[1]));
 
-//    port_data[0] ^= port_data[1];
-//    port_data[1] ^= port_data[0];
-//    port_data[0] ^= port_data[1];
-
-    //rtos_printf("%08x, %08x\n", port_data[0], port_data[1]);
-
     //DO FIRST STAGE FIR AND POPULATE BUFFER FOR MID STAGE
-    #pragma unroll(4)
+   //#pragma unroll(4)
     for (int i = 0; i < 4; i++){
       #pragma unroll(MIC_DUAL_NUM_CHANNELS)
       for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
@@ -388,14 +377,14 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
     }
    
     //CALL MID STAGE FIR
-    #pragma unroll(MIC_DUAL_NUM_CHANNELS)
+    //#pragma unroll(MIC_DUAL_NUM_CHANNELS)
     for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
       int * first_stage_out_src_ptr = out_first_stage[ch];
       ciruclar_buffer_sim_cpy(first_stage_out_src_ptr, &mid_stage_delay[ch][mid_stage_delay_idx]);
     }
     mid_stage_delay_idx += mid_stage_decimation_factor; //Increment before FIR so we get a proper buffer history 
 
-    #pragma unroll(MIC_DUAL_NUM_CHANNELS)
+    //#pragma unroll(MIC_DUAL_NUM_CHANNELS)
     for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
       final_stage_in_pcm[ch] = mid_stage_fir(g_second_stage_fir, mid_stage_delay[ch], mid_stage_delay_idx);
     }
@@ -405,7 +394,7 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
     }
 
     //CALL FINAL STAGE POLYPHASE FIR
-    #pragma unroll(MIC_DUAL_NUM_CHANNELS)
+    //#pragma unroll(MIC_DUAL_NUM_CHANNELS)
     for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
       pcm_output[ch] += final_stage_poly_fir(final_stage_in_pcm[ch], final_stage_delay_poly[ch][final_stage_phase], phase_coeff_ptrs[final_stage_phase]);
     }
@@ -437,7 +426,7 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
             default_label:
                 //The host doesn't start sending ref audio for a while at startup so we have to be prepared for nothing on channel
                 //printstr("."); //This is debug and can be removed
-                #pragma unroll(MIC_DUAL_NUM_CHANNELS)
+                //#pragma unroll(MIC_DUAL_NUM_CHANNELS)
                 for (int ch = 0; ch < MIC_DUAL_NUM_REF_CHANNELS; ch++){
                   ref_audio[ch] = 0;
                 }
@@ -466,7 +455,7 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
       }
 #endif
 
-      #pragma unroll(MIC_DUAL_NUM_CHANNELS)
+      //#pragma unroll(MIC_DUAL_NUM_CHANNELS)
       for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
         //Now remove DC and apply some gain
         pcm_output[ch] = dc_eliminate(pcm_output[ch], &dc_elim_prev[ch], &dc_elim_state[ch]);
@@ -479,11 +468,12 @@ void mic_dual_pdm_rx_decimate(port_t p_pdm_mic, /*streaming*/ chanend_t c_2x_pdm
       block_sample_count++;
       //We have assembled a block so pass a pointer to the consumer
       if (block_sample_count == MIC_DUAL_OUTPUT_BLOCK_SIZE){
+        //rtos_printf("out: %p\n", output_block[block_buffer_idx]);
         s_chan_out_word(c_2x_pdm_mic, (uint32_t) output_block[block_buffer_idx]);
         block_sample_count = 0;
         block_buffer_idx ^= (MIC_DUAL_NUM_OUT_BUFFERS - 1); //Toggle if double buffer, else do nothing
       }
-      #pragma unroll(MIC_DUAL_NUM_CHANNELS)
+      //#pragma unroll(MIC_DUAL_NUM_CHANNELS)
       for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++){
         pcm_output[ch] = 0;
       }
