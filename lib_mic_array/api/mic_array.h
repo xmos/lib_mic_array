@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include "fir_coefs.h"
+#include "fir_coefs_dual.h"
 #include "mic_array_frame.h"
 
 #ifndef MIC_ARRAY_HIRES_MAX_DELAY
@@ -15,8 +16,17 @@
 #define MIC_ARRAY_NO_INTERNAL_CHANS (0)
 
 #if !__XC__
+
+#include <xcore/chanend.h>
+#include <xcore/port.h>
+#include <xcore/parallel.h>
+
+DECLARE_JOB(mic_dual_pdm_rx_decimate, (port_t, const unsigned, mic_dual_third_stage_coef_t *, const int, chanend_t, chanend_t *));
 void mic_dual_pdm_rx_decimate(
         port_t p_pdm_mic,
+        const unsigned output_decimation_factor,
+        mic_dual_third_stage_coef_t phase_coeff_ptrs[],
+        const int fir_gain_compensation,
         /*streaming*/ chanend_t c_2x_pdm_mic,
         /*streaming*/ chanend_t c_ref_audio[]);
 

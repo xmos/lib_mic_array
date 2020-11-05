@@ -5,12 +5,13 @@
 #include <xcore/port.h>
 #include <xcore/hwtimer.h>
 #include <xcore/select.h>
+#include <xcore/assert.h>
 #include <stdlib.h>
 #include <platform.h>
 #include <string.h>
 #include <print.h>
 #include "mic_array.h"                    //FRAME SIZE and coeffs
-extern const int g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.c. We make a LL aligned copy of this
+
 #include "dsp_qformat.h"                  //Gain compensation
 
 #if (defined(MIC_DUAL_ENABLED) && (MIC_DUAL_ENABLED == 0))
@@ -24,8 +25,6 @@ extern const int g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.c. We 
 #endif
 
 #define MIC_DUAL_OUTPUT_BLOCK_SIZE        MIC_DUAL_FRAME_SIZE
-#define MIC_DUAL_GAIN_COMPENSATION        2.117307f     //Value needed to bring mic level up to inputNear[] compared with lib_mic_array
-//Max is 7.999 due to Q28 format
 #ifndef MIC_DUAL_NUM_OUT_BUFFERS
     #define MIC_DUAL_NUM_OUT_BUFFERS      2             //Single (1) or double (2) buffered
 #endif
@@ -33,6 +32,8 @@ extern const int g_third_stage_div_6_fir_dual[192]; //From fir_coefs_dual.c. We 
 #ifndef MIC_DUAL_NUM_REF_CHANNELS
     #define MIC_DUAL_NUM_REF_CHANNELS     2
 #endif
+
+#define MAX_OUTPUT_DECIMATION_FACTOR 12
 
 //This effectively implements a delayline of 6 chars of bits, the later three reversed
 __attribute__((always_inline))
@@ -136,119 +137,115 @@ __attribute__((always_inline))
 static inline int final_stage_poly_fir(
         int input_sample,
         int *delayline,
-        const int *filter_ptr)
+        mic_dual_third_stage_coef_t filter_ptr)
 {
 
     int ah = 0;
     unsigned al = 0;
     int c0, c1, s0 = input_sample, s1, s2, s3;
 
-    int *state_ptr;
-    {
-        state_ptr = delayline;
-        //printf("state: 0x%x filter: 0x%x\n", state_ptr, filter_ptr);
-    }
+    //printf("state: 0x%x filter: 0x%x\n", delayline, filter_ptr);
 
     const unsigned format = 32; //for extract
 
     filter_ptr += 16;
 
     asm volatile("ldd %0,%1,%2[7]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[0]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[0]"::"r"(s1), "r"(s0),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[0]":"=r"(s2),"=r"(s1):"r"(delayline));
+    asm volatile("std %0,%1,%2[0]"::"r"(s1), "r"(s0),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[6]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[1]"::"r"(s3), "r"(s2),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s3):"r"(delayline));
+    asm volatile("std %0,%1,%2[1]"::"r"(s3), "r"(s2),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
     asm volatile("ldd %0,%1,%2[5]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[2]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[2]"::"r"(s1), "r"(s0),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[2]":"=r"(s2),"=r"(s1):"r"(delayline));
+    asm volatile("std %0,%1,%2[2]"::"r"(s1), "r"(s0),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[4]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[3]"::"r"(s3), "r"(s2),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s3):"r"(delayline));
+    asm volatile("std %0,%1,%2[3]"::"r"(s3), "r"(s2),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
     asm volatile("ldd %0,%1,%2[3]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[4]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[4]"::"r"(s1), "r"(s0),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[4]":"=r"(s2),"=r"(s1):"r"(delayline));
+    asm volatile("std %0,%1,%2[4]"::"r"(s1), "r"(s0),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[2]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[5]"::"r"(s3), "r"(s2),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s3):"r"(delayline));
+    asm volatile("std %0,%1,%2[5]"::"r"(s3), "r"(s2),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
     asm volatile("ldd %0,%1,%2[1]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[6]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[6]"::"r"(s1), "r"(s0),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[6]":"=r"(s2),"=r"(s1):"r"(delayline));
+    asm volatile("std %0,%1,%2[6]"::"r"(s1), "r"(s0),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[0]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[7]"::"r"(s3), "r"(s2),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s3):"r"(delayline));
+    asm volatile("std %0,%1,%2[7]"::"r"(s3), "r"(s2),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
     filter_ptr -= 16;
-    state_ptr += 16;
+    delayline += 16;
 
     asm volatile("ldd %0,%1,%2[7]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[0]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[0]"::"r"(s1), "r"(s0),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[0]":"=r"(s2),"=r"(s1):"r"(delayline));
+    asm volatile("std %0,%1,%2[0]"::"r"(s1), "r"(s0),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[6]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[1]"::"r"(s3), "r"(s2),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[1]":"=r"(s0),"=r"(s3):"r"(delayline));
+    asm volatile("std %0,%1,%2[1]"::"r"(s3), "r"(s2),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
     asm volatile("ldd %0,%1,%2[5]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[2]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[2]"::"r"(s1), "r"(s0),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[2]":"=r"(s2),"=r"(s1):"r"(delayline));
+    asm volatile("std %0,%1,%2[2]"::"r"(s1), "r"(s0),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[4]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[3]"::"r"(s3), "r"(s2),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[3]":"=r"(s0),"=r"(s3):"r"(delayline));
+    asm volatile("std %0,%1,%2[3]"::"r"(s3), "r"(s2),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
     asm volatile("ldd %0,%1,%2[3]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[4]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[4]"::"r"(s1), "r"(s0),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[4]":"=r"(s2),"=r"(s1):"r"(delayline));
+    asm volatile("std %0,%1,%2[4]"::"r"(s1), "r"(s0),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[2]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[5]"::"r"(s3), "r"(s2),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[5]":"=r"(s0),"=r"(s3):"r"(delayline));
+    asm volatile("std %0,%1,%2[5]"::"r"(s3), "r"(s2),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
     asm volatile("ldd %0,%1,%2[1]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[6]":"=r"(s2),"=r"(s1):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[6]"::"r"(s1), "r"(s0),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[6]":"=r"(s2),"=r"(s1):"r"(delayline));
+    asm volatile("std %0,%1,%2[6]"::"r"(s1), "r"(s0),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s0));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s1));
 
     asm volatile("ldd %0,%1,%2[0]":"=r"(c0),"=r"(c1):"r"(filter_ptr));
-    asm volatile("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s3):"r"(state_ptr));
-    asm volatile("std %0,%1,%2[7]"::"r"(s3), "r"(s2),"r"(state_ptr));
+    asm volatile("ldd %0,%1,%2[7]":"=r"(s0),"=r"(s3):"r"(delayline));
+    asm volatile("std %0,%1,%2[7]"::"r"(s3), "r"(s2),"r"(delayline));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c0),"r"(s2));
     asm volatile("maccs %0,%1,%2,%3":"+r"(ah),"+r"(al):"r"(c1),"r"(s3));
 
@@ -302,28 +299,41 @@ static inline int dc_eliminate(
     return (*state >> (32 - S));
 }
 
+__attribute__((always_inline))
+static inline int32_t multiply(int32_t input1_value, int32_t input2_value, int32_t q_format)
+{
+    int32_t ah; uint32_t al;
+    int32_t result;
+    // For rounding, accumulator is pre-loaded (1<<(q_format-1))
+    asm("maccs %0,%1,%2,%3":"=r"(ah),"=r"(al):"r"(input1_value),"r"(input2_value),"0"(0),"1"(1<<(q_format-1)));
+    asm("lextract %0,%1,%2,%3,32":"=r"(result):"r"(ah),"r"(al),"r"(q_format));
+    return result;
+}
+
 // If not MIC_DUAL_ENABLED, cause a link error
-#ifdef MIC_DUAL_ENABLED
+//#ifdef MIC_DUAL_ENABLED
 void mic_dual_pdm_rx_decimate(
         port_t p_pdm_mic,
-        /*streaming*/chanend_t c_2x_pdm_mic,
-        /*streaming*/chanend_t c_ref_audio[])
+        const unsigned output_decimation_factor,
+        mic_dual_third_stage_coef_t phase_coeff_ptrs[],
+        const int fir_gain_compensation,
+        /*streaming*/ chanend_t c_2x_pdm_mic,
+        /*streaming*/ chanend_t c_ref_audio[])
 {
-    unsigned delay_line[MIC_DUAL_NUM_CHANNELS][2] = { {0xaaaaaaaa, 0x55555555}, {0xaaaaaaaa, 0x55555555}}; //48 taps, init to pdm zero
-    int out_first_stage[MIC_DUAL_NUM_CHANNELS][4] __attribute__((aligned(8))) = { {0}};
+    unsigned delay_line[MIC_DUAL_NUM_CHANNELS][2] = {{0xaaaaaaaa, 0x55555555}, {0xaaaaaaaa, 0x55555555}}; //48 taps, init to pdm zero
+    int out_first_stage[MIC_DUAL_NUM_CHANNELS][4] __attribute__((aligned(8))) = {{0}};
 
     unsigned mid_stage_delay_idx = 0;
     const unsigned mid_stage_decimation_factor = 4;
     const unsigned mid_stage_ntaps = 16;
-    int mid_stage_delay[MIC_DUAL_NUM_CHANNELS][16 * 2] __attribute__((aligned(8))) = { {0}}; //Double length for circular buffer simulation
+    int mid_stage_delay[MIC_DUAL_NUM_CHANNELS][16 * 2] __attribute__((aligned(8))) = {{0}}; //Double length for circular buffer simulation
 
     int final_stage_in_pcm[MIC_DUAL_NUM_CHANNELS] = {0};
 
     unsigned block_sample_count = 0;  //Used for assembling blocks from individual samples
     unsigned block_buffer_idx = 0;    //Optional double buffer for output blocks
 
-    const int *phase_coeff_ptrs[6];
-    int final_stage_delay_poly[MIC_DUAL_NUM_CHANNELS][6][32] __attribute__((aligned(8))) = { { {0}}};
+    int final_stage_delay_poly[MIC_DUAL_NUM_CHANNELS][MAX_OUTPUT_DECIMATION_FACTOR][32] __attribute__((aligned(8))) = {{{0}}};
     unsigned final_stage_phase = 0;
 
     int pcm_output[MIC_DUAL_NUM_CHANNELS] = {0};
@@ -331,15 +341,12 @@ void mic_dual_pdm_rx_decimate(
     int dc_elim_prev[MIC_DUAL_NUM_CHANNELS] = {0};
     long long dc_elim_state[MIC_DUAL_NUM_CHANNELS] = {0};
 
-    int output_block[MIC_DUAL_NUM_OUT_BUFFERS][MIC_DUAL_OUTPUT_BLOCK_SIZE][MIC_DUAL_NUM_CHANNELS + MIC_DUAL_NUM_REF_CHANNELS] = { { {0}}};
-
-    //Setup nice array of pointers for each phase of coefficients
-    for (int i = 0; i < 6; i++) {
-        phase_coeff_ptrs[i] = &g_third_stage_div_6_fir_dual[i * 32];
-    }
+    int output_block[MIC_DUAL_NUM_OUT_BUFFERS][MIC_DUAL_OUTPUT_BLOCK_SIZE][MIC_DUAL_NUM_CHANNELS + MIC_DUAL_NUM_REF_CHANNELS] = {{{0}}};
 
     //We are reading in 2 x 32b values in one chunk every 10.4us (96kHz) so we need to 32b storage elements
     unsigned port_data[2];
+
+    xassert(output_decimation_factor <= MAX_OUTPUT_DECIMATION_FACTOR);
 
     //Send initial request to UBM
     if (MIC_DUAL_NUM_REF_CHANNELS > 0) {
@@ -401,10 +408,10 @@ void mic_dual_pdm_rx_decimate(
 
         //Move on phase of polyFIR and reset if done
         final_stage_phase++;
-        if (final_stage_phase == 6) {
+        if (final_stage_phase == output_decimation_factor) {
             //printintln(pcm_output[0]);
 
-            //If we have reached stage 6 then we are ready to send a pair of decimated 16kHz mic signals
+            //If we have reached the final stage then we are ready to send a pair of decimated mic signals
             //and also receive reference audio
             unsigned ref_audio[MIC_DUAL_NUM_REF_CHANNELS];
 
@@ -442,7 +449,8 @@ void mic_dual_pdm_rx_decimate(
             for (int ch = 0; ch < MIC_DUAL_NUM_CHANNELS; ch++) {
                 //Now remove DC and apply some gain
                 pcm_output[ch] = dc_eliminate(pcm_output[ch], &dc_elim_prev[ch], &dc_elim_state[ch]);
-                pcm_output[ch] = (int) (((long long) pcm_output[ch] * Q28(MIC_DUAL_GAIN_COMPENSATION)) >> (28));
+                //pcm_output[ch] = (int) (((long long) pcm_output[ch] * fir_gain_compensation) >> (27));
+                pcm_output[ch] = multiply(pcm_output[ch], fir_gain_compensation, 27);
                 output_block[block_buffer_idx][block_sample_count][ch] = pcm_output[ch];
             }
 
@@ -473,4 +481,4 @@ void mic_dual_pdm_rx_decimate(
         //printintln(t1-t0);
     }
 }
-#endif
+//#endif
