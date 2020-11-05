@@ -311,7 +311,7 @@ static inline int32_t multiply(int32_t input1_value, int32_t input2_value, int32
 }
 
 // If not MIC_DUAL_ENABLED, cause a link error
-//#ifdef MIC_DUAL_ENABLED
+#ifdef MIC_DUAL_ENABLED
 void mic_dual_pdm_rx_decimate(
         port_t p_pdm_mic,
         const unsigned output_decimation_factor,
@@ -481,4 +481,4 @@ void mic_dual_pdm_rx_decimate(
         //printintln(t1-t0);
     }
 }
-//#endif
+#endif
