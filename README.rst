@@ -1,5 +1,5 @@
 Microphone array library
-------------------------
+========================
 
 The XMOS microphone array library is designed to allow interfacing to PDM 
 microphones coupled with efficient decimation to user selectable output
