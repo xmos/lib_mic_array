@@ -1,11 +1,4 @@
 Microphone array library
-========================
-
-.. rheader::
-
-   Microphone array library |version|
-
-Microphone array library
 ------------------------
 
 The XMOS microphone array library is designed to allow interfacing to PDM 
@@ -44,7 +37,8 @@ Components
 Software version and dependencies
 .................................
 
-.. libdeps::
+The CHANGELOG contains information about the current and previous versions.
+For a list of direct dependencies, look for DEPENDENT_MODULES in lib_mic_array/module_build_info.
 
 Related application notes
 .........................

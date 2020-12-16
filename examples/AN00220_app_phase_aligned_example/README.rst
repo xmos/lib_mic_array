@@ -1,8 +1,6 @@
 Microphone array phase-aligned capture example
 ==============================================
 
-.. version:: 1.0.3
-
 Summary
 -------
 
@@ -10,10 +8,10 @@ This example demonstrates how to use the microphone array library to capture sam
 microphone array and present them simultaneously with equal phase delay on each sample. The example
 is designed to show up to 8 channel array processing.
 
-Required tools and libraries
-............................
+Software dependencies
+.....................
 
-.. appdeps::
+For a list of direct dependencies, look for USED_MODULES in the Makefile.
 
 Required hardware
 .................
