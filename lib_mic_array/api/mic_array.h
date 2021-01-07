@@ -22,6 +22,36 @@
 #include <xcore/parallel.h>
 
 DECLARE_JOB(mic_dual_pdm_rx_decimate, (port_t, const unsigned, mic_dual_third_stage_coef_t *, const int, chanend_t, chanend_t *));
+
+/** Dual PDM microphone interface task.
+ *
+ *  This task handles the interface to two PDM microphones on a single 1 bit port.
+ *  The microphones must be configured to run in DDR mode.
+ *
+ *  A pointer to each received frame is sent via a streaming channel to a receiving
+ *  task or interrupt handler.
+ *
+ *  \note The size of each received frame is set by the MIC_DUAL_FRAME_SIZE macro.
+ *  The MIC_DUAL_ENABLED macro must be defined to true in order for this function
+ *  to be available.
+ *
+ *  \param p_pdm_mics               The 1 bit wide port connected to the PDM microphones.
+ *  \param output_decimation_factor The final stage FIR Decimation factor.
+ *  \param phase_coeff_ptrs         The coefficients for the final stage FIR decimator.
+ *                                  See the available coefficient arrays in fir_coefs_dual.h.
+ *  \param fir_gain_compensation    The gain compensation for the FIR filter.
+ *                                  See the available compensation values in fir_coefs.h.
+ *
+ *  \param c_2x_pdm_mic             The channel where the decimated PDM of microphones 0-2 will
+ *                                  be sent. Any reference audio sent to \p c_ref_audio will
+ *                                  also be included.
+ *  \param c_ref_audio              The channels where reference audio may be sent to this PDM
+ *                                  interface task. The number of reference audio channels is
+ *                                  set by the macro MIC_DUAL_NUM_REF_CHANNELS. The samples sent
+ *                                  to these reference audio channels will be included in the frame
+ *                                  sent to \p c_2x_pdm_mic.
+ *                                  If MIC_DUAL_NUM_REF_CHANNELS is 0 then this may be set to NULL.
+ */
 void mic_dual_pdm_rx_decimate(
         port_t p_pdm_mic,
         const unsigned output_decimation_factor,
