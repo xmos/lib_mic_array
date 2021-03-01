@@ -1,4 +1,4 @@
-@Library('xmos_jenkins_shared_library@v0.14.2') _
+@Library('xmos_jenkins_shared_library@feature/get-pip-py2') _
 getApproval()
 
 pipeline {
