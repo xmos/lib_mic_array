@@ -38,6 +38,7 @@ pipeline {
         dir("${REPO}/legacy_tests") {
           viewEnv() {
             // Use requirements.txt in legacy_tests, not lib_mic_array/requirements.txt
+            installPipfile(true)
             runPython("./runtests.py --junit-output=${REPO}_tests.xml")
           }
         }
