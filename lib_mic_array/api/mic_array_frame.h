@@ -1,4 +1,5 @@
 // Copyright (c) 2015-2019, XMOS Ltd, All rights reserved
+// This software is available under the terms provided in LICENSE.txt.
 #ifndef MIC_ARRAY_FRAME_H_
 #define MIC_ARRAY_FRAME_H_
 

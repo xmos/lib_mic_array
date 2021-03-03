@@ -1,4 +1,5 @@
 # Copyright (c) 2018-2020, XMOS Ltd, All rights reserved
+# This software is available under the terms provided in LICENSE.txt.
 import os.path
 import pytest
 import subprocess

@@ -1,4 +1,5 @@
 // Copyright (c) 2019-2020, XMOS Ltd, All rights reserved
+// This software is available under the terms provided in LICENSE.txt.
 #include <xs1.h>
 #include <xclib.h>
 #include <stdlib.h>
