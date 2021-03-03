@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2021, XMOS Ltd, All rights reserved
 // This software is available under the terms provided in LICENSE.txt.
 #include <platform.h>
 #include "mic_array.h"

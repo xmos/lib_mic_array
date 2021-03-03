@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2021, XMOS Ltd, All rights reserved
 // This software is available under the terms provided in LICENSE.txt.
 const int g_first_stage_fir_0[256] = {
 	0x007c8875, 0x0019620a, 0x00390209, 0xffd5db9f, 0x0052f4ad, 0xffefce43, 0x000f6e42, 0xffac47d7, 

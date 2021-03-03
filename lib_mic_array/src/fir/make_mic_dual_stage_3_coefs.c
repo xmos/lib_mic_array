@@ -1,4 +1,4 @@
-// Copyright (c) 2019, XMOS Ltd, All rights reserved
+// Copyright (c) 2019-2021, XMOS Ltd, All rights reserved
 // This software is available under the terms provided in LICENSE.txt.
 
 //This program takes the coeffs for normal mic_array and generates a version for mic_dual
