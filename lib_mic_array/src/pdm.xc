@@ -1,5 +1,5 @@
-// Copyright (c) 2015-2021, XMOS Ltd, All rights reserved
-// This software is available under the terms provided in LICENSE.txt.
+// Copyright 2015-2021 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include <xs1.h>
 #include <stdint.h>
 
