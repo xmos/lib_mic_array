@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+4.3.0
+-----
+
+  * CHANGED: Use XMOS Public Licence Version 1
+
 4.2.3
 -----
 
