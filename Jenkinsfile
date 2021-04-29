@@ -49,10 +49,11 @@ pipeline {
         dir("${REPO}") {
           xcoreAllAppsBuild('examples')
           xcoreAllAppNotesBuild('examples')
-          dir("${REPO}") {
-            runXdoc('doc')
-          }
         }
+        runXdoc("${REPO}/${REPO}/doc")
+
+        // Archive all the generated .pdf docs
+        archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
       }
     }
   }
