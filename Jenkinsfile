@@ -3,7 +3,7 @@ getApproval()
 
 pipeline {
   agent {
-    label 'x86_64&&brew&&macOS'
+    label 'x86_64&&brew'
   }
   environment {
     REPO = 'lib_mic_array'
@@ -49,8 +49,9 @@ pipeline {
         dir("${REPO}") {
           xcoreAllAppsBuild('examples')
           xcoreAllAppNotesBuild('examples')
-          runXdoc('${REPO}/doc')
         }
+        runXdoc("${REPO}/${REPO}/doc")
+
         // Archive all the generated .pdf docs
         archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
       }
