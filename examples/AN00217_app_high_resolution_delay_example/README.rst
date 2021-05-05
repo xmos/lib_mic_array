@@ -1,18 +1,16 @@
 High Resolution Delay Example
 =============================
 
-.. version:: 1.0.3
-
 Summary
 -------
 
 This example demonstrates how to use the microphone array library with the high resolution delay lines 
 to capture samples from the microphone array. The example is designed to show up to 8 channel array processing.
 
-Required tools and libraries
-............................
+Software dependencies
+.....................
 
-.. appdeps::
+For a list of direct dependencies, look for USED_MODULES in the Makefile.
 
 Required hardware
 .................
@@ -26,7 +24,7 @@ Prerequisites
    the XMOS tool chain and the xC language. Documentation related to these
    aspects which are not specific to this application note are linked to in
    the references appendix.
-  
+
  * The ``lib_mic_array`` user guide should be thoroughly read and understood.
 
  * For a description of XMOS related terms found in this document

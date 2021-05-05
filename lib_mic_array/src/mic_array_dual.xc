@@ -1,4 +1,5 @@
-// Copyright (c) 2019-2020, XMOS Ltd, All rights reserved
+// Copyright 2019-2021 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include <xs1.h>
 #include <xclib.h>
 #include <stdlib.h>
@@ -279,6 +280,9 @@ static inline void ciruclar_buffer_sim_cpy(int * unsafe src_ptr, int * unsafe de
 }
 
 
+// If not MIC_DUAL_ENABLED, cause a link error
+#ifdef MIC_DUAL_ENABLED
+
 static int dc_eliminate(int x, int &prev_x, long long &state){
 #define S 0
 #define N 8
@@ -298,9 +302,6 @@ static int dc_eliminate(int x, int &prev_x, long long &state){
     return (state>>(32-S));
 }
 
-
-// If not MIC_DUAL_ENABLED, cause a link error
-#ifdef MIC_DUAL_ENABLED
 
 #pragma unsafe arrays
 void mic_dual_pdm_rx_decimate(buffered in port:32 p_pdm_mic, streaming chanend c_2x_pdm_mic, streaming chanend c_ref_audio[]){
