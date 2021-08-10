@@ -1,4 +1,4 @@
-@Library('xmos_jenkins_shared_library@v0.14.2') _
+@Library('xmos_jenkins_shared_library@v0.16.2') _
 getApproval()
 
 pipeline {
@@ -49,10 +49,11 @@ pipeline {
         dir("${REPO}") {
           xcoreAllAppsBuild('examples')
           xcoreAllAppNotesBuild('examples')
-          dir("${REPO}") {
-            runXdoc('doc')
-          }
         }
+        runXdoc("${REPO}/${REPO}/doc")
+
+        // Archive all the generated .pdf docs
+        archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
       }
     }
   }

@@ -1,6 +1,12 @@
 lib_mic_array change log
 ========================
 
+4.3.0
+-----
+
+  * CHANGED: Use XMOS Public Licence Version 1
+  * FIXED: Compiler warnings when MIC_DUAL_ENABLED is not defined
+
 4.2.2
 -----
 

@@ -1,4 +1,5 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright 2016-2021 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #ifndef MIC_ARRAY_CONF_H_
 #define MIC_ARRAY_CONF_H_
 

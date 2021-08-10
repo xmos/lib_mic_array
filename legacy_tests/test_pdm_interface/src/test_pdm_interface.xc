@@ -1,4 +1,5 @@
-// Copyright (c) 2016-2019, XMOS Ltd, All rights reserved
+// Copyright 2016-2021 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include "mic_array.h"
 #include <stdio.h>
 #include <xs1.h>
