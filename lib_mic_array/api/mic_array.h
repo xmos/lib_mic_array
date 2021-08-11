@@ -79,6 +79,13 @@ void mic_array_pdm_rx(
         streaming chanend c_4x_pdm_mic_0,
         streaming chanend ?c_4x_pdm_mic_1);
 
+void mic_dual_pdm_rx_decimate(
+        in buffered port:32 p_pdm_mics,
+        const unsigned output_decimation_factor,
+        mic_dual_third_stage_coef_t * unsafe phase_coeff_ptrs,
+        const int fir_gain_compensation,
+        streaming chanend c_2x_pdm_mic,
+        streaming chanend c_ref_audio[]);
 
 /** High resolution delay component.
  *

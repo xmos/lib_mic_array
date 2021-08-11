@@ -25,7 +25,7 @@ unsafe{
     void call_mic_dual_pdm_rx_decimate(chanend c_mic_dual_pdm, streaming chanend c_ds_output[], streaming chanend c_ref_audio[]){
         p_ptr = ( buffered port:32 * unsafe ) &c_mic_dual_pdm;
         //printf("%p\n", *p_ptr);
-        mic_dual_pdm_rx_decimate(*p_ptr, c_ds_output[0], c_ref_audio);
+        mic_dual_pdm_rx_decimate(*p_ptr, 6, g_third_stage_div_6_fir_dual, FIR_COMPENSATOR_DIV_6, c_ds_output[0], c_ref_audio);
     }
 }
 
