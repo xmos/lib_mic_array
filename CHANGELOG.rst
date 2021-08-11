@@ -1,6 +1,13 @@
 lib_mic_array change log
 ========================
 
+5.0.0
+-----
+
+  * CHANGED: mic_dual API changed to support different FIR Decimation factors
+    and coefficients.
+  * CHANGED: mic_dual API supported in both C and XC.
+
 4.3.0
 -----
 
