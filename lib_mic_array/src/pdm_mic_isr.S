@@ -58,10 +58,8 @@
 
 
 .text
-.issue_mode single
+.issue_mode dual
 .align 16
-
-// with 2 mics and a 120 MIPS core, the ISR *must* be fewer than 625 instructions or it isn't keeping up.
 
 
 #define A   r4
@@ -73,88 +71,79 @@
 
 .cc_top FUNCTION_NAME.function,FUNCTION_NAME
 FUNCTION_NAME: 
-  kentsp 0
-  std r4, r5, sp[STKD_R4R5]
-  std r6, r7, sp[STKD_R6R7]
+    kentsp 0
+    dualentsp 0
+    std r4, r5, sp[STKD_R4R5]
+    std r6, r7, sp[STKD_R6R7]
 
-  // astew: Seems like there might be some advantage to doing this bit in dual-issue mode...
-  //        but the extra instructions to make it dual-issue seem to cancel out the advantage
-  //        that I'm able to find.  How could this be done differently to make dual-issue work
-  //        better?
-
-  ldw A, sp[STK_PORT]
-  in A, res[A]
+  { ldc B, 0                              ; ldw A, sp[STK_PORT]                   }
+  { in A, res[A]                          ;                                       }
   // Now we have 16 samples for each mic, interleaved bit by bit
 
   // unzip to separate them
-  ldc B, 0
-  unzip B, A, 0
+    unzip B, A, 0
 
   // put them in the buffer where appropriate
 
-  ldw C, sp[STK_PHASE1]
-  ldw D, sp[STK_PDM_BUFF]
+  {                                       ;  ldw C, sp[STK_PHASE1]                }
+  {                                       ;  ldw D, sp[STK_PDM_BUFF]              }
 
-  st16 A, D[C]   // Mic 1    (TODO: check whether I've unzipped appropriately)
-  ldaw D, D[8]   // TODO: if more than one block is used in the PDM->PCM decimation filter,
-                 //       this will be wrong.
-  st16 B, D[C]   // Mic 2
-  add C, C, 1
-  zext C, 1
-  stw C, sp[STK_PHASE1]
+    st16 A, D[C]   // Mic 1    (TODO: check whether I've unzipped appropriately)
+    ldaw D, D[8]   // TODO: if more than one block is used in the PDM->PCM decimation filter,
+                  //       this will be wrong.
+    st16 B, D[C]   // Mic 2
+  
+  { add C, C, 1                           ;                                       }
+  { zext C, 1                             ;                                       }
+  {                                       ; stw C, sp[STK_PHASE1]                 }
 
-  // ldc B, 16
-  // ldw A, dp[pdm_sample_count]
-  // add A, A, B
-  // stw A, dp[pdm_sample_count]
+  // TODO: This is just for debugging for the moment
+  { ldc B, 16                             ;                                       }
+    ldw A, dp[pdm_sample_count]
+  { add A, A, B                           ;                                       }
+    stw A, dp[pdm_sample_count]
 
   // If the phase is nonzero, we're done for now
-  bf C, .L_decimate
+  {                                       ; bf C, .L_decimate                     }
   
-  ldd r6, r7, sp[STKD_R6R7]
-  ldd r4, r5, sp[STKD_R4R5]
-  krestsp 0
-  kret
+    ldd r6, r7, sp[STKD_R6R7]
+    ldd r4, r5, sp[STKD_R4R5]
+    krestsp 0
+    kret
 
   .L_decimate:
 
-  // Phase is 0, that means we've filled up the sample buffers and it's time to do some decimation.
-  // Here we should save the rest of the caller's thread state
-  
-  std r0, r1, sp[STKD_R0R1]
-  std r2, r3, sp[STKD_R2R3]
-  std r8, r9, sp[STKD_R8R9]
-  std r11, r10, sp[STKD_R10R11]
+  // Phase is 0, that means we've filled up the PDM sample buffers and it's time to do some decimation.
+  // Here we should save the rest of the general purpose registers from the interrupted thread's state
+    std r0, r1, sp[STKD_R0R1]
+    std r2, r3, sp[STKD_R2R3]
+    std r8, r9, sp[STKD_R8R9]
+    std r11, r10, sp[STKD_R10R11]
 
 #define E   r8
 #define F   r9
 
-  ldw D, sp[STK_PDM_BUFF]
-  ldc C, N_MICS
-  ldw B, sp[STK_PCM_VECT]
-
-  // E <-- Current phase2 value
-  ldw E, sp[STK_PHASE2]
-
+  { ldc C, N_MICS                         ; ldw D, sp[STK_PDM_BUFF]               }
+  {                                       ; ldw B, sp[STK_PCM_VECT]               }
+  
   // F <-- stage 2 decimation factor
   // The PCM sample vector has shape int32[N_MICS][STG2_DEC_FACTOR]
-  ldw F, sp[STK_STG2_DEC]
+  { ldc A, 32                             ; ldw F, sp[STK_STG2_DEC]               }
+
+  // E <-- Current phase2 value
+  { shl F, F, 2                           ; ldw E, sp[STK_PHASE2]                 }
 
 
   .L_pdm_to_pcm_loop_top:
-    mov r0, D
-    ldw r1, sp[STK_FIR_COEF]
-    ldc r2, PDM_COEF_BLOCKS
-    
-    bl fir_1x16_bit
+    { mov r0, D                             ; ldw r1, sp[STK_FIR_COEF]              }
+    { ldc r2, PDM_COEF_BLOCKS               ; sub C, C, 1                           } 
+
+    // TODO: Might have to put the branch by itself. Depends on how memory gets laid out
+      bl fir_1x16_bit
 
     //r0 now has the 32-bit result. Put it in the PCM vector
-    stw r0, B[E]
-    add E, E, F
-
-    ldaw D, D[8] // TODO: with more than one stage1 filter block, this is wrong
-    sub C, C, 1
-    bt C, .L_pdm_to_pcm_loop_top
+    { add D, D, A                           ; stw r0, B[0]                          }
+    { add B, B, F                           ; bt C, .L_pdm_to_pcm_loop_top          }
   .L_pdm_to_pcm_loop_bot:
 
   // Now we should shift each channel's PDM buffer up one word
@@ -162,33 +151,27 @@ FUNCTION_NAME:
   // in 32-bit mode. This op is circular, but we don't care what
   // ends up in the first word.
 
-  ldc C, N_MICS
-  ldc r11, 0
-  vsetc r11
-  ldw r11, sp[STK_PDM_BUFF]
+  { ldc r11, 0                            ; ldc C, N_MICS                         }
+  { ldc B, 32                             ; vsetc r11                             }
+  {                                       ; ldw r11, sp[STK_PDM_BUFF]             }
 
   .L_pdm_shift_loop_top:
-
-    vldr r11[0]
-    vlmaccr r11[0]
-    vstr r11[0]
-    ldaw r11, r11[8]
-    sub C, C, 1
-    bt C, .L_pdm_shift_loop_top
-
+    { sub C, C, 1                           ; vldr r11[0]                           }
+    {                                       ; vlmaccr r11[0]                        }
+    { add r11, r11, B                       ; vstr r11[0]                           }
+    {                                       ; bt C, .L_pdm_shift_loop_top           }
   .L_pdm_shift_loop_bot:
 
   // Increment phase2, and if it's greater than the decimation factor, we'll need to 
   // perform a context switch and call proc_pcm().
   // If E<F, we can just reload the stored registers.
-  ldw E, sp[STK_PHASE2]
-  add E, E, 1
-  eq r0, E, F
-  mul F, F, r0
-  sub E, E, F
-  stw E, sp[STK_PHASE2]
-
-  bf r0, .L_finish_isr
+  {                                       ; ldw E, sp[STK_PHASE2]                 }
+  { add E, E, 1                           ; ldw F, sp[STK_STG2_DEC]               }
+  { eq r0, E, F                           ;                                       }
+    mul F, F, r0
+  { sub E, E, F                           ;                                       }
+  {                                       ; stw E, sp[STK_PHASE2]                 }
+  {                                       ; bf r0, .L_finish_isr                  }
 
   
   // Okay, now we have to force a context switch for the thread that was interrupted.
@@ -198,74 +181,62 @@ FUNCTION_NAME:
   //  - when that completes, restore the original interrupted thread's state
 
   // Save the SPC, SSR, SED, ET
-  stw spc, sp[STK_SPC]
-  stw ssr, sp[STK_SSR]
-  stw sed, sp[STK_SED]
-  stw et, sp[STK_ET]
+  {                                       ; stw spc, sp[STK_SPC]                  }
+  {                                       ; stw ssr, sp[STK_SSR]                  }
+  {                                       ; stw sed, sp[STK_SED]                  }
+  {                                       ; stw et, sp[STK_ET]                    }
 
   // Save DP, CP, LR, vector regs
-  stw dp, sp[STK_DP]
-  stw cp, sp[STK_CP]
-  stw lr, sp[STK_LR]
+  {                                       ; stw dp, sp[STK_DP]                    }
+  {                                       ; stw cp, sp[STK_CP]                    }
+  {                                       ; stw lr, sp[STK_LR]                    }
 
 
-  vgetc r11
-  stw r11, sp[STK_VCTRL]
-  ldaw r11, sp[STK_VR]
-  vstr r11[0]
-  ldaw r11, sp[STK_VD]
-  vstd r11[0]
-  ldaw r11, sp[STK_VC]
-  vstc r11[0]
+  {                                       ; vgetc r11                             }
+  { ldaw r11, sp[STK_VR]                  ; stw r11, sp[STK_VCTRL]                }
+  { ldaw r11, sp[STK_VD]                  ; vstr r11[0]                           }
+  { ldaw r11, sp[STK_VC]                  ; vstd r11[0]                           }
+  { ldc r11, 1                            ; vstc r11[0]                           }
 
   // Now we want to call proc_pcm(). 
+  { shl r11, r11, 8                       ; ldw r0, sp[STK_PCM_VECT]              }
+  { add r11, r11, 2                       ; extsp 4                               }
+  // NOTE: Be careful with the STK_* defines in here
 
-  ldw r0, sp[STK_PCM_VECT]
-  extsp 4 // NOTE: Be careful with the STK_* defines in here
-  ldap r11, .L_outside_kernel
+  // r11 = 0x102 -- dual-issue and enable interrupts
+  {                                       ; stw r11, sp[2]                        }
+  {                                       ; ldw ssr, sp[2]                        }
+    ldap r11, .L_outside_kernel
+  {                                       ; stw r11, sp[1]                        }
+  {                                       ; ldw spc, sp[1]                        }
+  // No KRESTSP because sp is already what we want it to be, and we issued KENTSP with 0
+    kret 
 
-  // NOTE: I THINK I"M DOING SOMETHING WRONG HERE. MAYBE I JUST GOT TO SET SSR TO
-  //       THE RIGHT THING BEFORE CALLING KRET?
-
-  ldc r11, 0x02  // enable interrupts when we kret
-  stw r11, sp[2]
-  ldw ssr, sp[2]
-
-  // stw r11, sp[1]
-  // ldw spc, sp[1]
-  // kret // No KRESTSP because sp is already what we want it to be, and we issued KENTSP with 0
-
-.align 4
 .L_outside_kernel:
   // Here we're outside the kernel and interrupts may happen
-
   bl proc_pcm
 
   // proc_pcm() has returned. Now we need to restore the original thread.
   // NOTE: interrupts can still fire in here, we're not in the kernel.
 
-  // move SP back up 2 words
-  ldaw sp, sp[4]
+
+  {                                       ; ldw r11, sp[STK_VCTRL+4]              }
+  { ldaw sp, sp[4]                        ; vsetc r11                             }
 
   // Restore the SPC, SSR, SED, ET
-  ldw spc, sp[STK_SPC]
-  ldw ssr, sp[STK_SSR]
-  ldw sed, sp[STK_SED]
-  ldw et, sp[STK_ET]
+  {                                       ; ldw spc, sp[STK_SPC]                  }
+  {                                       ; ldw ssr, sp[STK_SSR]                  }
+  {                                       ; ldw sed, sp[STK_SED]                  }
+  {                                       ; ldw et, sp[STK_ET]                    }
 
   // Restore , vector regs, DP, CP, LR
-  ldw lr, sp[STK_LR]
-  ldw dp, sp[STK_DP]
-  ldw cp, sp[STK_CP]
+  {                                       ; ldw lr, sp[STK_LR]                    }
+  {                                       ; ldw dp, sp[STK_DP]                    }
+  { ldaw r11, sp[STK_VC]                  ; ldw cp, sp[STK_CP]                    }
 
-  ldaw r11, sp[STK_VC]
-  vldc r11[0]
-  ldaw r11, sp[STK_VD]
-  vldd r11[0]
-  ldaw r11, sp[STK_VR]
-  vldr r11[0]
-  ldw r11, sp[STK_VCTRL]
-  vsetc r11
+  { ldaw r11, sp[STK_VD]                  ; vldc r11[0]                           }
+  { ldaw r11, sp[STK_VR]                  ; vldd r11[0]                           }
+  {                                       ; vldr r11[0]                           }
 
   // Can I just load r0-r11 and krestsp/kret at this point??
   // the ISA doesn't say the instructions don't work if you're not in kernel mode..
