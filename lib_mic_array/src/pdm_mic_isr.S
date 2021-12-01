@@ -44,16 +44,21 @@
 #define STK_VC          36
 #define STK_VCTRL       44
 
-#define STK_CTX_END     44
+#define STK_STATE       45
 
-#define STK_PHASE1      (STK_CTX_END+1)
-#define STK_PHASE2      (STK_CTX_END+2)
-#define STK_PORT        (STK_CTX_END+3)
-#define STK_FIR_COEF    (STK_CTX_END+4)
-#define STK_PDM_BUFF    (STK_CTX_END+5)
-#define STK_STG2_DEC    (STK_CTX_END+6)
-#define STK_PCM_VECT    (STK_CTX_END+7)
+#define STK_PHASE1      (STK_STATE+0)
+#define STK_PDM_RAW     (STK_STATE+1)
+#define STK_PHASE2      (STK_STATE+9)
 
+#define STK_CONFIG      (STK_STATE+10)
+
+#define STK_MIC_COUNT   (STK_CONFIG+0)
+#define STK_PORT        (STK_CONFIG+1)
+#define STK_FIR_COEF    (STK_CONFIG+2)
+#define STK_COEF_BLKS   (STK_CONFIG+3)
+#define STK_PDM_BUFF    (STK_CONFIG+4)
+#define STK_STG2_DEC    (STK_CONFIG+5)
+#define STK_PCM_VECT    (STK_CONFIG+6)
 
 
 
@@ -66,64 +71,80 @@
 #define B   r5
 #define C   r6
 #define D   r7
-
-
+#define E   r8
+#define F   r9
 
 .cc_top FUNCTION_NAME.function,FUNCTION_NAME
-FUNCTION_NAME: 
-    kentsp 0
-    dualentsp 0
+pdm_rx_isr:
+
+    kentsp 0          
+    dualentsp 0        
     std r4, r5, sp[STKD_R4R5]
     std r6, r7, sp[STKD_R6R7]
-
-  { ldc B, 0                              ; ldw A, sp[STK_PORT]                   }
-  { in A, res[A]                          ;                                       }
-  // Now we have 16 samples for each mic, interleaved bit by bit
-
-  // unzip to separate them
-    unzip B, A, 0
-
-  // put them in the buffer where appropriate
-
-  {                                       ;  ldw C, sp[STK_PHASE1]                }
-  {                                       ;  ldw D, sp[STK_PDM_BUFF]              }
-
-    st16 A, D[C]   // Mic 1    (TODO: check whether I've unzipped appropriately)
-    ldaw D, D[8]   // TODO: if more than one block is used in the PDM->PCM decimation filter,
-                  //       this will be wrong.
-    st16 B, D[C]   // Mic 2
-  
-  { add C, C, 1                           ;                                       }
-  { zext C, 1                             ;                                       }
+  { ldaw D, sp[STK_PDM_RAW]               ; ldw A, sp[STK_PORT]                   }
+  { in A, res[A]                          ; ldw C, sp[STK_PHASE1]                 }
+    stw r4, D[C]
+  { sub C, C, 1                           ; bf C, .L_decimate                     }
   {                                       ; stw C, sp[STK_PHASE1]                 }
-
-  // TODO: This is just for debugging for the moment
-  { ldc B, 16                             ;                                       }
-    ldw A, dp[pdm_sample_count]
-  { add A, A, B                           ;                                       }
-    stw A, dp[pdm_sample_count]
-
-  // If the phase is nonzero, we're done for now
-  {                                       ; bf C, .L_decimate                     }
-  
     ldd r6, r7, sp[STKD_R6R7]
     ldd r4, r5, sp[STKD_R4R5]
     krestsp 0
     kret
 
-  .L_decimate:
-
-  // Phase is 0, that means we've filled up the PDM sample buffers and it's time to do some decimation.
-  // Here we should save the rest of the general purpose registers from the interrupted thread's state
+.L_decimate:
     std r0, r1, sp[STKD_R0R1]
     std r2, r3, sp[STKD_R2R3]
     std r8, r9, sp[STKD_R8R9]
     std r11, r10, sp[STKD_R10R11]
 
-#define E   r8
-#define F   r9
+  // Reset phase1 number
+  { ldc D, 31                             ; ldw A, sp[STK_MIC_COUNT]              }
+  { sub B, A, 1                           ; clz A, A                              }
+  { sub A, D, A                           ; stw B, sp[STK_PHASE1]                 }
 
-  { ldc C, N_MICS                         ; ldw D, sp[STK_PDM_BUFF]               }
+  // Now behavior depends on the number of active mics. Note that the raw PDM sample
+  // words are stored in reverse order, so that sp[STK_PDM_RAW+0] is the most recent
+
+  // A currently contains log2(sp[STK_MIC_COUNT])
+
+  { ldc C, 32                             ; ldw D, sp[STK_PDM_BUFF]               }
+  {                                       ; bru A                                 }
+  .jmptable32 .L_unzip_pdm_1mic, .L_unzip_pdm_2mic, .L_unzip_pdm_4mic, .L_unzip_pdm_8mic
+
+  .L_unzip_pdm_1mic:
+    // For 1 mic, there's no unzipping to do, just move it to the correct location
+    {                                       ; ldw A, sp[STK_PDM_RAW+0]            }
+    {                                       ; stw A, D[0]                         }
+      bu .L_unzip_done
+  .L_unzip_pdm_2mic:
+    {                                       ; ldw A, sp[STK_PDM_RAW+1]            }
+    {                                       ; ldw B, sp[STK_PDM_RAW+0]            }
+      unzip B, A, 0 // So, I *think* I've done unzip correctly here, but I'm not certain
+    { add D, D, C                           ; stw A, D[0]                         }
+    {                                       ; stw B, D[0]                         }
+      bu .L_unzip_done
+
+  .L_unzip_pdm_4mic:
+      ecallt C  // TODO: NOT YET IMPLEMENTED
+
+  .L_unzip_pdm_8mic:
+      ecallt C  // TODO: NOT YET IMPLEMENTED
+
+  .L_unzip_done:
+
+  // Now the PDM samples are unzipped and in the PDM buffer.
+
+#define ENABLE_COUNTERS   1
+#if ENABLE_COUNTERS
+  // TODO: This is just for debugging for the moment
+  { ldc B, 32                             ;                                       }
+    ldw A, dp[pdm_sample_count]
+  { add A, A, B                           ;                                       }
+    stw A, dp[pdm_sample_count]
+#endif // ENABLE_COUNTERS
+
+  {                                       ; ldw C, sp[STK_MIC_COUNT]              }
+  {                                       ; ldw D, sp[STK_PDM_BUFF]               }
   {                                       ; ldw B, sp[STK_PCM_VECT]               }
   
   // F <-- stage 2 decimation factor
@@ -136,7 +157,7 @@ FUNCTION_NAME:
 
   .L_pdm_to_pcm_loop_top:
     { mov r0, D                             ; ldw r1, sp[STK_FIR_COEF]              }
-    { ldc r2, PDM_COEF_BLOCKS               ; sub C, C, 1                           } 
+    { sub C, C, 1                           ; ldw r2, sp[STK_COEF_BLKS]             }
 
     // TODO: Might have to put the branch by itself. Depends on how memory gets laid out
       bl fir_1x16_bit

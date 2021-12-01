@@ -68,6 +68,10 @@ typedef struct {
      */
     unsigned phase1;
 
+    // This is where raw PDM data (still-channel-interleaved) will go until it's time to decimate. This
+    // makes the usual ISR faster, saving MIPS
+    unsigned pdm_raw[8];
+
     /**
      * A second stage of decimation is assumed to occur in proc_pcm(). Rather than call proc_pcm() 
      * for every PCM sample we generate (incurring the cost of a thread context switch each time), 
@@ -83,11 +87,17 @@ typedef struct {
   struct {
 
     struct {
+      /** The number of PDM mics being used. */
+      unsigned mic_count;
+
       /** Resource handle for the PDM mic port */
       unsigned p_pdm_mics;
 
       /** Pointer to the first stage (PDM->PCM) FIR filter coefficients */
       int16_t* fir_coef;
+
+      /** The number of coefficient blocks in the first stage decimator filter */
+      unsigned pdm_coef_blocks;
 
       /**
        * Pointer to buffers for the PDM sample history.

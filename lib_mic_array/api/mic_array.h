@@ -31,9 +31,11 @@ void mic_array_setup_ddr(
 
 void mic_array_pdm_rx_isr_init(
     ma_pdm_rx_context_t* context,
+    const unsigned mic_count,
     const port_t p_pdm_mics,
-    int16_t* stage1_fir_coef,
-    unsigned stage2_decimation_factor,
+    const int16_t* stage1_fir_coef,
+    const unsigned stage1_fir_coef_blocks,
+    const unsigned stage2_decimation_factor,
     ma_pdm_buffer_t* pdm_buffer,
     int32_t* pcm_buffer);
 

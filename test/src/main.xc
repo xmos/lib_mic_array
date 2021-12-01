@@ -12,7 +12,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#define N_MICS    2
+#define N_MICS                    2
+#define STAGE1_COEF_BLOCKS        1
 #define STAGE2_DECIMATION_FACTOR  6
 
 struct {
@@ -60,8 +61,10 @@ unsafe int main() {
       par {
         {
           mic_array_pdm_rx_isr_init(&mic_array_data.context, 
+                                    N_MICS,
                                     (unsigned) p_pdm_mics, 
                                     (int16_t*) pdm_to_pcm_coef,
+                                    STAGE1_COEF_BLOCKS,
                                     STAGE2_DECIMATION_FACTOR,
                                     (ma_pdm_buffer_t*) mic_array_data.pdm_buffer,
                                     (int32_t*) mic_array_data.pcm_buffer);
