@@ -59,10 +59,13 @@ target_sources(${APP_NAME}
   PRIVATE ${APP_SOURCES}
 )
 
+set_source_files_properties( ${SOURCES_XC}  PROPERTIES LANGUAGE C ) 
+
 target_include_directories(${APP_NAME}
   PRIVATE ${MIC_ARRAY_INCLUDES}
   PRIVATE ${APP_INCLUDES}
 )
+
 
 #**********************
 # run

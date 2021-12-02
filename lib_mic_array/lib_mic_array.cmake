@@ -27,6 +27,7 @@ list( APPEND  MIC_ARRAY_SOURCES   ${MIC_ARRAY_C_SOURCES}
 
 ## cmake doesn't recognize .S files as assembly by default
 set_source_files_properties( ${MIC_ARRAY_ASM_SOURCES} PROPERTIES LANGUAGE ASM )
+set_source_files_properties( ${MIC_ARRAY_XC_SOURCES}  PROPERTIES LANGUAGE C   ) 
 
 ## Apply compile flags
 foreach(COMPILE_FLAG ${MIC_ARRAY_COMPILE_FLAGS})

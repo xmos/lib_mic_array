@@ -21,6 +21,13 @@ typedef unsigned port_t;
 extern unsigned pcm_sample_count;
 extern unsigned pdm_sample_count;
 
+void mic_array_setup_sdr(
+        xclock_t pdmclk,
+        port_t p_mclk,
+        port_t p_pdm_clk,
+        port_t p_pdm_mics,
+        int divide);
+
 void mic_array_setup_ddr(
         xclock_t pdmclk,
         xclock_t pdmclk6,

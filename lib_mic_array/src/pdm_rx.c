@@ -51,8 +51,20 @@ void mic_array_pdm_rx_isr_init(
   // Now enable the ISR for port reads.
 
   asm volatile("setc res[%0], %1" :: "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT) );
+
+  #if 0 // probably not worth it?
+  if( mic_count == 1 ){
+    asm volatile("ldap r11, pdm_rx_isr_1mic\n"
+                "setv res[%0], r11" :: "r"(p_pdm_mics) : "r11");
+  } else {
+    asm volatile("ldap r11, pdm_rx_isr\n"
+                "setv res[%0], r11" :: "r"(p_pdm_mics) : "r11");
+  }
+  #endif
+  
   asm volatile("ldap r11, pdm_rx_isr\n"
-               "setv res[%0], r11" :: "r"(p_pdm_mics) : "r11");
+              "setv res[%0], r11" :: "r"(p_pdm_mics) : "r11");
+
   asm volatile("eeu res[%0]" :: "r"(p_pdm_mics));
   asm volatile("setsr" _XCORE_STRINGIFY(XS1_SR_IEBLE_MASK));
 

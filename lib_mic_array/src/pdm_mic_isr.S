@@ -17,10 +17,6 @@
 
 */
 
-#define N_MICS            (2)
-#define PDM_COEF_BLOCKS   (1)
-
-#define FUNCTION_NAME   pdm_rx_isr
 
 #define STK_SSP         0
 #define STK_SPC         1
@@ -74,7 +70,26 @@
 #define E   r8
 #define F   r9
 
-.cc_top FUNCTION_NAME.function,FUNCTION_NAME
+.cc_top pdm_rx_isr.function,pdm_rx_isr
+
+#if 0  // Including this makes the 1 mic version use fewer MIPS. Debatable whether it's worthwhile
+pdm_rx_isr_1mic:
+
+    kentsp 0          
+    dualentsp 0        
+    std r4, r5, sp[STKD_R4R5]
+    std r6, r7, sp[STKD_R6R7]
+    std r0, r1, sp[STKD_R0R1]
+    std r2, r3, sp[STKD_R2R3]
+    std r8, r9, sp[STKD_R8R9]
+    std r11, r10, sp[STKD_R10R11]
+
+  { ldaw D, sp[STK_PDM_RAW]               ; ldw A, sp[STK_PORT]                   }
+  { in A, res[A]                          ; ldw D, sp[STK_PDM_BUFF]               }
+    stw A, D[0]
+    bu .L_decimate
+#endif
+
 pdm_rx_isr:
 
     kentsp 0          
@@ -83,15 +98,15 @@ pdm_rx_isr:
     std r6, r7, sp[STKD_R6R7]
   { ldaw D, sp[STK_PDM_RAW]               ; ldw A, sp[STK_PORT]                   }
   { in A, res[A]                          ; ldw C, sp[STK_PHASE1]                 }
-    stw r4, D[C]
-  { sub C, C, 1                           ; bf C, .L_decimate                     }
+    stw A, D[C]
+  { sub C, C, 1                           ; bf C, .L_unzip_stuff                  }
   {                                       ; stw C, sp[STK_PHASE1]                 }
     ldd r6, r7, sp[STKD_R6R7]
     ldd r4, r5, sp[STKD_R4R5]
     krestsp 0
     kret
 
-.L_decimate:
+.L_unzip_stuff:
     std r0, r1, sp[STKD_R0R1]
     std r2, r3, sp[STKD_R2R3]
     std r8, r9, sp[STKD_R8R9]
@@ -107,7 +122,8 @@ pdm_rx_isr:
 
   // A currently contains log2(sp[STK_MIC_COUNT])
 
-  { ldc C, 32                             ; ldw D, sp[STK_PDM_BUFF]               }
+  {                                       ; ldw C, sp[STK_COEF_BLKS]              }
+  { shl C, C, 5                           ; ldw D, sp[STK_PDM_BUFF]               }
   {                                       ; bru A                                 }
   .jmptable32 .L_unzip_pdm_1mic, .L_unzip_pdm_2mic, .L_unzip_pdm_4mic, .L_unzip_pdm_8mic
 
@@ -115,14 +131,14 @@ pdm_rx_isr:
     // For 1 mic, there's no unzipping to do, just move it to the correct location
     {                                       ; ldw A, sp[STK_PDM_RAW+0]            }
     {                                       ; stw A, D[0]                         }
-      bu .L_unzip_done
+      bu .L_decimate
   .L_unzip_pdm_2mic:
     {                                       ; ldw A, sp[STK_PDM_RAW+1]            }
     {                                       ; ldw B, sp[STK_PDM_RAW+0]            }
       unzip B, A, 0 // So, I *think* I've done unzip correctly here, but I'm not certain
     { add D, D, C                           ; stw A, D[0]                         }
     {                                       ; stw B, D[0]                         }
-      bu .L_unzip_done
+      bu .L_decimate
 
   .L_unzip_pdm_4mic:
       ecallt C  // TODO: NOT YET IMPLEMENTED
@@ -130,11 +146,11 @@ pdm_rx_isr:
   .L_unzip_pdm_8mic:
       ecallt C  // TODO: NOT YET IMPLEMENTED
 
-  .L_unzip_done:
+  // Now the PDM samples are unzipped and in the PDM buffer. Time to decimate
+  
+  .L_decimate:
 
-  // Now the PDM samples are unzipped and in the PDM buffer.
-
-#define ENABLE_COUNTERS   1
+#define ENABLE_COUNTERS   1 // Adds about 0.288 MIPS
 #if ENABLE_COUNTERS
   // TODO: This is just for debugging for the moment
   { ldc B, 32                             ;                                       }
@@ -143,13 +159,16 @@ pdm_rx_isr:
     stw A, dp[pdm_sample_count]
 #endif // ENABLE_COUNTERS
 
+
+
   {                                       ; ldw C, sp[STK_MIC_COUNT]              }
   {                                       ; ldw D, sp[STK_PDM_BUFF]               }
   {                                       ; ldw B, sp[STK_PCM_VECT]               }
   
   // F <-- stage 2 decimation factor
-  // The PCM sample vector has shape int32[N_MICS][STG2_DEC_FACTOR]
-  { ldc A, 32                             ; ldw F, sp[STK_STG2_DEC]               }
+  // The PCM sample vector has shape int32[MIC_COUNT][STG2_DEC_FACTOR]
+  {                                       ; ldw A, sp[STK_COEF_BLKS]              }
+  { shl A, A, 5                           ; ldw F, sp[STK_STG2_DEC]               }
 
   // E <-- Current phase2 value
   { shl F, F, 2                           ; ldw E, sp[STK_PHASE2]                 }
@@ -159,7 +178,8 @@ pdm_rx_isr:
     { mov r0, D                             ; ldw r1, sp[STK_FIR_COEF]              }
     { sub C, C, 1                           ; ldw r2, sp[STK_COEF_BLKS]             }
 
-    // TODO: Might have to put the branch by itself. Depends on how memory gets laid out
+    // TODO:  Do I need to make sure I save the link register before doing this..?
+    //        I think I probably do.
       bl fir_1x16_bit
 
     //r0 now has the 32-bit result. Put it in the PCM vector
@@ -172,14 +192,22 @@ pdm_rx_isr:
   // in 32-bit mode. This op is circular, but we don't care what
   // ends up in the first word.
 
-  { ldc r11, 0                            ; ldc C, N_MICS                         }
-  { ldc B, 32                             ; vsetc r11                             }
-  {                                       ; ldw r11, sp[STK_PDM_BUFF]             }
+  { ldc r11, 0                            ; ldw C, sp[STK_MIC_COUNT]              }
+  { ldc D, 32                             ; ldw A, sp[STK_COEF_BLKS]              }
+  { shl B, A, 5                           ; ldw E, sp[STK_PDM_BUFF]               }
+  { add E, E, B                           ; vsetc r11                             }
+  { sub E, E, D                           ;                                       }
 
   .L_pdm_shift_loop_top:
-    { sub C, C, 1                           ; vldr r11[0]                           }
-    {                                       ; vlmaccr r11[0]                        }
-    { add r11, r11, B                       ; vstr r11[0]                           }
+    { sub C, C, 1                           ; vldd E[0]                             }
+    { sub r11, E, D                         ; vlmaccr E[0]                          }
+    { sub r10, A, 1                         ; vstd E[0]                             }
+    { add E, E, B                           ; bf r10, .L_pdm_shift_inner_bot        }
+    .L_pdm_shift_inner_top:
+      { add F, r11, 4                         ; vldd r11[0]                           }
+      { sub r11, r11, D                       ; vstd F[0]                             }
+      { sub r10, r10, 1                       ; bt r10, .L_pdm_shift_inner_top        }
+    .L_pdm_shift_inner_bot:
     {                                       ; bt C, .L_pdm_shift_loop_top           }
   .L_pdm_shift_loop_bot:
 
@@ -277,12 +305,13 @@ pdm_rx_isr:
 
 
 .L_func_end:
-.cc_bottom FUNCTION_NAME.function
+.cc_bottom pdm_rx_isr.function
 
-.global FUNCTION_NAME
-// .type FUNCTION_NAME,@function
+.global pdm_rx_isr
+.global pdm_rx_isr_1mic
+// .type pdm_rx_isr,@function
 
-.size FUNCTION_NAME, .L_func_end - FUNCTION_NAME
+// .size pdm_rx_isr, .L_func_end - pdm_rx_isr
 
 #endif //defined(__XS3A__)
 

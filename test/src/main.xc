@@ -11,14 +11,15 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
 
-#define N_MICS                    2
+#define N_MICS                    1
 #define STAGE1_COEF_BLOCKS        1
 #define STAGE2_DECIMATION_FACTOR  6
 
 struct {
   ma_pdm_rx_context_t context;
-  ma_pdm_buffer_t pdm_buffer[N_MICS];
+  ma_pdm_buffer_t pdm_buffer[N_MICS][STAGE1_COEF_BLOCKS];
   int32_t pcm_buffer[N_MICS][STAGE2_DECIMATION_FACTOR];
 } mic_array_data;
 
@@ -54,9 +55,18 @@ unsafe int main() {
 
       app_pll_init();
 
-      mic_array_setup_ddr((unsigned) pdmclk, (unsigned) pdmclk6, 
-                          (unsigned) p_mclk, (unsigned) p_pdm_clk, 
-                          (unsigned) p_pdm_mics, MCLK_DIV);
+      if( N_MICS == 1 ){
+        mic_array_setup_sdr((unsigned) pdmclk,
+                            (unsigned) p_mclk, (unsigned) p_pdm_clk, 
+                            (unsigned) p_pdm_mics, MCLK_DIV);
+      } else if( N_MICS == 2 ){
+        mic_array_setup_ddr((unsigned) pdmclk, (unsigned) pdmclk6, 
+                            (unsigned) p_mclk, (unsigned) p_pdm_clk, 
+                            (unsigned) p_pdm_mics, MCLK_DIV);
+      } else {
+        assert(0);
+      }
+
 
       par {
         {

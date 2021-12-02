@@ -12,6 +12,30 @@
 #include <string.h>
 
 
+void mic_array_setup_sdr(
+        xclock_t pdmclk,
+        port_t p_mclk,
+        port_t p_pdm_clk,
+        port_t p_pdm_mics,
+        int divide)
+{
+    clock_enable(pdmclk);
+    port_enable(p_mclk);
+    clock_set_source_port(pdmclk, p_mclk);
+    clock_set_divide(pdmclk, divide/2);
+
+    port_enable(p_pdm_clk);
+    port_set_clock(p_pdm_clk, pdmclk);
+    port_set_out_clock(p_pdm_clk);
+
+    port_start_buffered(p_pdm_mics, 32);
+    port_set_clock(p_pdm_mics, pdmclk);
+    port_clear_buffer(p_pdm_mics);
+
+    /* start the faster capture clock */
+    clock_start(pdmclk);
+}
+
 void mic_array_setup_ddr(
         xclock_t pdmclk,
         xclock_t pdmclk6,

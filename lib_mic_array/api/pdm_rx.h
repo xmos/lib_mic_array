@@ -16,7 +16,7 @@ extern "C" {
 
 
 /** Default coefficients for first stage (PDM->PCM) decimation */
-extern const int16_t pdm_to_pcm_coef[256];
+extern const int16_t pdm_to_pcm_coef[512];
 
 /**
  * Buffer large enough for 256 PDM samples
