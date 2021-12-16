@@ -1,5 +1,5 @@
 
-set(MIC_ARRAY_PATH ${CMAKE_SOURCE_DIR}/lib_mic_array)
+set(MIC_ARRAY_PATH ${CMAKE_CURRENT_LIST_DIR})
 
 ## Source files
 file( GLOB_RECURSE    MIC_ARRAY_C_SOURCES       ${MIC_ARRAY_PATH}/src/*.c   )

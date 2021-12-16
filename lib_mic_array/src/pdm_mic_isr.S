@@ -11,13 +11,13 @@
   
 
   For the layout (and descriptions) of the stack used in this ISR, see the struct 
-  `pdm_rx_workspace` in pdm_rx.c.
+  `ma_pdm_rx_context_t` in pdm_rx.h.
 
   NOTE: these likely need to be rearranged to optimize access, but I'll deal with that later.
 
 */
 
-
+// These STK_ macros basically represent the ma_pdm_rx_static_t type from pdm_rx.h
 #define STK_SSP         0
 #define STK_SPC         1
 #define STK_SSR         2
@@ -56,12 +56,9 @@
 #define STK_STG2_DEC    (STK_CONFIG+5)
 #define STK_PCM_VECT    (STK_CONFIG+6)
 
-
-
 .text
 .issue_mode dual
-.align 16
-
+.align 16         // 16-byte alignment guarantees that FNOPs always happen in the same spots
 
 #define A   r4
 #define B   r5
@@ -71,24 +68,6 @@
 #define F   r9
 
 .cc_top pdm_rx_isr.function,pdm_rx_isr
-
-#if 0  // Including this makes the 1 mic version use fewer MIPS. Debatable whether it's worthwhile
-pdm_rx_isr_1mic:
-
-    kentsp 0          
-    dualentsp 0        
-    std r4, r5, sp[STKD_R4R5]
-    std r6, r7, sp[STKD_R6R7]
-    std r0, r1, sp[STKD_R0R1]
-    std r2, r3, sp[STKD_R2R3]
-    std r8, r9, sp[STKD_R8R9]
-    std r11, r10, sp[STKD_R10R11]
-
-  { ldaw D, sp[STK_PDM_RAW]               ; ldw A, sp[STK_PORT]                   }
-  { in A, res[A]                          ; ldw D, sp[STK_PDM_BUFF]               }
-    stw A, D[0]
-    bu .L_decimate
-#endif
 
 pdm_rx_isr:
 

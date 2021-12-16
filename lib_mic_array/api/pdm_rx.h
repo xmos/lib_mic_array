@@ -18,14 +18,6 @@ extern "C" {
 /** Default coefficients for first stage (PDM->PCM) decimation */
 extern const int16_t pdm_to_pcm_coef[512];
 
-/**
- * Buffer large enough for 256 PDM samples
- */
-typedef struct {
-  unsigned lag[8];
-} ma_pdm_buffer_t;
-
-
 
 /**
  * This struct maps out the data used by the mic array code.
@@ -102,7 +94,7 @@ typedef struct {
       /**
        * Pointer to buffers for the PDM sample history.
        */
-      ma_pdm_buffer_t* pdm_buffer;
+      uint32_t* pdm_buffer;
     } stage1;
 
     struct {
@@ -128,6 +120,32 @@ typedef struct {
   long long calee_stack[(MA_PDM_RX_STACK_WORDS)/2];
   ma_pdm_rx_static_t workspace;
 } ma_pdm_rx_context_t;
+
+
+
+
+typedef struct {
+
+  unsigned mic_count;
+
+  unsigned phase2;
+
+  struct {
+    unsigned p_pdm_mics;
+    int16_t* fir_coef;
+    unsigned pdm_coef_blocks;
+    unsigned* pdm_buffer;
+  } stage1;
+
+  struct {
+    unsigned decimation_factor;
+    int32_t* pcm_vector;
+  } stage2;
+
+} pdm_rx_config_t;
+
+
+void pdm_rx(pdm_rx_config_t* config);
 
 
 #ifdef __XC__

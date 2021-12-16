@@ -1,10 +1,12 @@
 #pragma once
 
 
+#define USE_C_VERSION   0
+
 #ifdef __XC__
 
 extern "C" {
-
+// I was having issues just including "xccompat.h" or whatever, so this was a quick fix.
 typedef unsigned xclock_t;
 typedef unsigned port_t;
 
@@ -20,6 +22,7 @@ typedef unsigned port_t;
 
 extern unsigned pcm_sample_count;
 extern unsigned pdm_sample_count;
+extern unsigned proc_time;
 
 void mic_array_setup_sdr(
         xclock_t pdmclk,
@@ -43,8 +46,10 @@ void mic_array_pdm_rx_isr_init(
     const int16_t* stage1_fir_coef,
     const unsigned stage1_fir_coef_blocks,
     const unsigned stage2_decimation_factor,
-    ma_pdm_buffer_t* pdm_buffer,
+    uint32_t* pdm_buffer,
     int32_t* pcm_buffer);
+
+void proc_pcm_init();
 
 
 #ifdef __XC__

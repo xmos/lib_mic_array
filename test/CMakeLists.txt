@@ -57,6 +57,7 @@ list( APPEND  APP_SOURCES  ${SOURCES_C}
 target_sources(${APP_NAME} 
   PRIVATE ${MIC_ARRAY_SOURCES}
   PRIVATE ${APP_SOURCES}
+  PRIVATE ${LIB_XS3_MATH_SOURCES}
 )
 
 set_source_files_properties( ${SOURCES_XC}  PROPERTIES LANGUAGE C ) 
@@ -64,6 +65,7 @@ set_source_files_properties( ${SOURCES_XC}  PROPERTIES LANGUAGE C )
 target_include_directories(${APP_NAME}
   PRIVATE ${MIC_ARRAY_INCLUDES}
   PRIVATE ${APP_INCLUDES}
+  PRIVATE ${LIB_XS3_MATH_INCLUDES}
 )
 
 

@@ -9,14 +9,7 @@
 #define N_MICS                   (2)
 #define STAGE2_DECIMATION_FACTOR (6)
 
-unsigned pcm_sample_count = 0;
 unsigned pdm_sample_count = 0;
-
-
-void proc_pcm(int32_t pcm_samples[N_MICS][STAGE2_DECIMATION_FACTOR])
-{
-  pcm_sample_count++;
-}
 
 
 void mic_array_pdm_rx_isr_init(
@@ -26,7 +19,7 @@ void mic_array_pdm_rx_isr_init(
     const int16_t* stage1_fir_coef,
     const unsigned stage1_fir_coef_blocks,
     const unsigned stage2_decimation_factor,
-    ma_pdm_buffer_t* pdm_buffer,
+    uint32_t* pdm_buffer,
     int32_t* pcm_buffer)
 {
   context->workspace.config.stage1.mic_count = mic_count;
@@ -52,16 +45,6 @@ void mic_array_pdm_rx_isr_init(
 
   asm volatile("setc res[%0], %1" :: "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT) );
 
-  #if 0 // probably not worth it?
-  if( mic_count == 1 ){
-    asm volatile("ldap r11, pdm_rx_isr_1mic\n"
-                "setv res[%0], r11" :: "r"(p_pdm_mics) : "r11");
-  } else {
-    asm volatile("ldap r11, pdm_rx_isr\n"
-                "setv res[%0], r11" :: "r"(p_pdm_mics) : "r11");
-  }
-  #endif
-  
   asm volatile("ldap r11, pdm_rx_isr\n"
               "setv res[%0], r11" :: "r"(p_pdm_mics) : "r11");
 

@@ -40,6 +40,6 @@
  *
  * @returns  The inner product
  */
-extern int fir_1x16_bit(int32_t signal[], int32_t coeff_1[], int N_256);
+int fir_1x16_bit(int32_t signal[], int32_t coeff_1[], int N_256);
 
 #endif

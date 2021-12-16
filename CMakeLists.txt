@@ -33,9 +33,14 @@ enable_language(CXX C ASM)
 #**********************
 # Options
 #**********************
+set(USE_LIB_DSP FALSE)
+set(USE_LIB_LOGGING FALSE)
+set(USE_LIB_RANDOM FALSE) 
+set(USE_LEGACY_COMPAT FALSE)
+set(USE_LIB_XS3_MATH TRUE)
 
 
-
+include("$ENV{XCORE_SDK_PATH}/modules/modules.cmake")
 #**********************
 # Apps
 #**********************
