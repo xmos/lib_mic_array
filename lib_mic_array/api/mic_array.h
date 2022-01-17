@@ -19,6 +19,7 @@ typedef unsigned port_t;
 #endif //__XC__
 
 #include "pdm_rx.h"
+#include "mic_array_filter.h"
 
 extern unsigned pcm_sample_count;
 extern unsigned pdm_sample_count;
@@ -43,7 +44,7 @@ void mic_array_pdm_rx_isr_init(
     ma_pdm_rx_context_t* context,
     const unsigned mic_count,
     const port_t p_pdm_mics,
-    const int16_t* stage1_fir_coef,
+    const uint32_t* stage1_fir_coef,
     const unsigned stage1_fir_coef_blocks,
     const unsigned stage2_decimation_factor,
     uint32_t* pdm_buffer,

@@ -38,14 +38,18 @@ set(USE_LIB_LOGGING FALSE)
 set(USE_LIB_RANDOM FALSE) 
 set(USE_LEGACY_COMPAT FALSE)
 set(USE_LIB_XS3_MATH TRUE)
+set(USE_I2S_HIL TRUE)
+set(USE_I2C_HIL TRUE)
 
 
 include("$ENV{XCORE_SDK_PATH}/modules/modules.cmake")
+include("$ENV{XCORE_SDK_PATH}/modules/hil/hil.cmake")
 #**********************
 # Apps
 #**********************
 
-add_subdirectory( test )
+add_subdirectory( test  )
+add_subdirectory( test2 )
 
 #**********************
 # Helper Targets

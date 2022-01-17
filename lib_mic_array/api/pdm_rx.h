@@ -6,7 +6,8 @@
  * Number of words of stack for callees of the ISR and of proc_pcm().
  */
 #ifndef MA_PDM_RX_STACK_WORDS
-# define MA_PDM_RX_STACK_WORDS  40
+# define MA_PDM_RX_STACK_WORDS  100 // TODO: Assert during initialization that this is at least as large as 
+                                    //       proc_pcm.nstackwords
 #endif // MA_PDM_RX_STACK_WORDS
 
 
@@ -14,9 +15,6 @@
 extern "C" {
 #endif //__XC__
 
-
-/** Default coefficients for first stage (PDM->PCM) decimation */
-extern const int16_t pdm_to_pcm_coef[512];
 
 
 /**

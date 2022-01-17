@@ -14,7 +14,7 @@
 #include <assert.h>
 
 // Number of microphones to use
-#define N_MICS                    2
+#define N_MICS                    1
 // Number of stage1 coefficient blocks
 #define STAGE1_COEF_BLOCKS        1
 // Decimation factor for second stage (6:  96kHz -> 16kHz)

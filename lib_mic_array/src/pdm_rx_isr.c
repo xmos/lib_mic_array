@@ -5,8 +5,9 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
-#define N_MICS                   (2)
+#define N_MICS                   (1)
 #define STAGE2_DECIMATION_FACTOR (6)
 
 unsigned pdm_sample_count = 0;
@@ -16,7 +17,7 @@ void mic_array_pdm_rx_isr_init(
     ma_pdm_rx_context_t* context,
     const unsigned mic_count,
     const port_t p_pdm_mics,
-    const int16_t* stage1_fir_coef,
+    const uint32_t* stage1_fir_coef,
     const unsigned stage1_fir_coef_blocks,
     const unsigned stage2_decimation_factor,
     uint32_t* pdm_buffer,

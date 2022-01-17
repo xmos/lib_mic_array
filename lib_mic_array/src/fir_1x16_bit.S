@@ -56,10 +56,13 @@ fir_1x16_bit:
     { vstd r2[0]                   ; nop }
     ldw r1, sp[1]
     { ldw r0, sp[0]                ; shl r1, r1, 16 }
-    { retsp NSTACKWORDS            ; or r0, r0, r1 }
+    {                              ; or r0, r0, r1 }
+    { retsp NSTACKWORDS            ; shl r0, r0, 8 }
 
+// The order of these coefficients tells us that whatever gets VLMACCR1'ed last is going to be multiplied by
+//  the largest coefficient. Thus, if the bipolar coefficient matrix B[,] has shape 16x32, then B[0,:] must
+//  correspond to the LEAST significant bits of each coefficient
 macc_coeffs:
     .short 0x7fff, 0x4000, 0x2000, 0x1000, 0x0800, 0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0008, 0x0004, 0x0002, 0x0001
-
     .cc_bottom fir_1x16_bit.func
 

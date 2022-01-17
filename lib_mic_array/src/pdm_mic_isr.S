@@ -138,31 +138,46 @@ pdm_rx_isr:
     stw A, dp[pdm_sample_count]
 #endif // ENABLE_COUNTERS
 
-
-
+  // C <-- mic count
+  // D <-- pointer to PDM sample buffers
+  // B <-- pointer to PCM sample buffer
   {                                       ; ldw C, sp[STK_MIC_COUNT]              }
   {                                       ; ldw D, sp[STK_PDM_BUFF]               }
   {                                       ; ldw B, sp[STK_PCM_VECT]               }
   
-  // F <-- stage 2 decimation factor
-  // The PCM sample vector has shape int32[MIC_COUNT][STG2_DEC_FACTOR]
+  // A <-- stage1 block count
   {                                       ; ldw A, sp[STK_COEF_BLKS]              }
+
+  // Save the link register because it will be clobbered when we call the filter function,
+  // potentially screwing up the interrupted thread.
+  {                                       ; stw lr, sp[STK_LR]                    }
+
+  // F <-- stage2 decimation factor
+  // The PCM sample vector has shape int32[MIC_COUNT][STG2_DEC_FACTOR]
+  // A <-- [stage1 block count] * [bytes per 256 PDM samples]
   { shl A, A, 5                           ; ldw F, sp[STK_STG2_DEC]               }
 
   // E <-- Current phase2 value
+  // F <-- [stage2 dec factor] * sizeof(int32_t)
   { shl F, F, 2                           ; ldw E, sp[STK_PHASE2]                 }
+    ldaw B, B[E]
 
-
+  // Loop: Apply PDM to 32-bit PCM decimation. Loops once per microphone.
   .L_pdm_to_pcm_loop_top:
+    // Make function call, placing arguments in r0, r1, r2
+    // fir_1x16_bit(PDM_buffer_pointer, stage1_coef_pointer, stage1_coef_blocks)
     { mov r0, D                             ; ldw r1, sp[STK_FIR_COEF]              }
     { sub C, C, 1                           ; ldw r2, sp[STK_COEF_BLKS]             }
 
-    // TODO:  Do I need to make sure I save the link register before doing this..?
-    //        I think I probably do.
+    // Call the stage1 decimation filter 
       bl fir_1x16_bit
+    //r0 now has the 32-bit result.
 
-    //r0 now has the 32-bit result. Put it in the PCM vector
+    // D <-- [move D to point at next microphone's buffer]
+    // Store the PCM sample in the PCM vector for this microphone
     { add D, D, A                           ; stw r0, B[0]                          }
+
+    // B <-- [move B to point at next microphones PCM vector]
     { add B, B, F                           ; bt C, .L_pdm_to_pcm_loop_top          }
   .L_pdm_to_pcm_loop_bot:
 
@@ -190,14 +205,17 @@ pdm_rx_isr:
     {                                       ; bt C, .L_pdm_shift_loop_top           }
   .L_pdm_shift_loop_bot:
 
-  // Increment phase2, and if it's greater than the decimation factor, we'll need to 
+  // Increment phase2, and if [it's] == [the decimation factor], we'll need to 
   // perform a context switch and call proc_pcm().
   // If E<F, we can just reload the stored registers.
   {                                       ; ldw E, sp[STK_PHASE2]                 }
   { add E, E, 1                           ; ldw F, sp[STK_STG2_DEC]               }
+
+  // note: This may seem like a weird way to do this, but it's because it avoids branching
   { eq r0, E, F                           ;                                       }
     mul F, F, r0
   { sub E, E, F                           ;                                       }
+
   {                                       ; stw E, sp[STK_PHASE2]                 }
   {                                       ; bf r0, .L_finish_isr                  }
 
@@ -217,7 +235,13 @@ pdm_rx_isr:
   // Save DP, CP, LR, vector regs
   {                                       ; stw dp, sp[STK_DP]                    }
   {                                       ; stw cp, sp[STK_CP]                    }
-  {                                       ; stw lr, sp[STK_LR]                    }
+  // {                                       ; stw lr, sp[STK_LR]                    }
+
+  // Set DP and CP  // Maybe not necessary? I was hoping it would prevent this crash I keep seeing..
+    ldap r11, _dp
+    set dp, r11
+    ldap r11, _cp
+    set cp, r11
 
 
   {                                       ; vgetc r11                             }
@@ -246,7 +270,6 @@ pdm_rx_isr:
 
   // proc_pcm() has returned. Now we need to restore the original thread.
   // NOTE: interrupts can still fire in here, we're not in the kernel.
-
 
   {                                       ; ldw r11, sp[STK_VCTRL+4]              }
   { ldaw sp, sp[4]                        ; vsetc r11                             }
