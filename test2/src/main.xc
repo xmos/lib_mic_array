@@ -47,19 +47,17 @@ int main() {
 
       app_pll_init();
       
+      unsigned ready;
+      c_tile_sync :> ready;
 
+      
       app_mic_array_setup_resources();
-
+      app_mic_array_start();
 
       par {
 
         {
           app_mic_array_enable_isr();
-
-          unsigned ready;
-          c_tile_sync :> ready;
-          
-          app_mic_array_start();
           count_mips();
         }
 

@@ -16,7 +16,6 @@
 
 #include <math.h>
 
-#define N_MICS 1
 
 #define I2S_CLKBLK    XS1_CLKBLK_3
 
@@ -42,7 +41,7 @@ static app_i2s_data_t app_i2s_data;
 void proc_pcm_user(int32_t pcm_frame[])
 {
   for(int k = 0; k < N_MICS; k++){
-    app_i2s_data.last_pcm_frame[k] = pcm_frame[k] << 8;
+    app_i2s_data.last_pcm_frame[k] = pcm_frame[k] << 6;
   }
 
   app_i2s_data.t++;

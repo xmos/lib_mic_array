@@ -8,10 +8,8 @@
 #include <string.h>
 #include <xcore/interrupt.h>
 
-#define N_MICS                   (1)
-#define STAGE2_DECIMATION_FACTOR (6)
 
-unsigned pdm_sample_count = 7;
+unsigned pdm_sample_count = 0;
 
 
 void mic_array_pdm_rx_isr_init(

@@ -11,7 +11,7 @@
 
 #include <xcore/interrupt.h>
 
-#define N_MICS                   (1)
+#define N_MICS                   (2)
 
 unsigned pcm_sample_count = 0;
 

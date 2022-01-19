@@ -64,7 +64,6 @@ void mic_array_setup_ddr(
 
   port_start_buffered(p_pdm_mics, 32);
   port_set_clock(p_pdm_mics, pdmclk6);
-  port_clear_buffer(p_pdm_mics);
 }
 
 
@@ -75,6 +74,9 @@ void mic_array_start_ddr(
         port_t p_pdm_mics)
 {
   uint32_t tmp;
+  
+  port_clear_buffer(p_pdm_mics);
+  
   /* start the faster capture clock */
   clock_start(pdmclk6);
 

@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define N_MICS  1
+#define N_MICS  2
 
 
 #define APP_AUDIO_CLOCK_FREQUENCY        24576000
