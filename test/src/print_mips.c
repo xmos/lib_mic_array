@@ -76,14 +76,14 @@ void print_mips()
     float pcm_sample_rate_khz = (pcm_sample_count / (usec / 1e3));
     float pdm_sample_rate_khz = (pdm_sample_count / (usec / 1e3));
 
-    // printf(" %0.04f MIPS free;  mic_array: %0.04f MIPS;  PCM samples: %u\n", 
-    //     mips, 
-    //     120 - mips, 
-    //     pcm_sample_count);
+    printf(" %0.04f MIPS free;  mic_array: %0.04f MIPS;  PCM samples: %u\n", 
+        mips, 
+        120 - mips, 
+        pcm_sample_count);
     
-    // printf("\tPCM Sample Rate: %0.02f kHz;  PDM Sample Rate: %0.02f kHz\n\n", 
-    //     pcm_sample_rate_khz,
-    //     pdm_sample_rate_khz);
+    printf("\tPCM Sample Rate: %0.02f kHz;  PDM Sample Rate: %0.02f kHz\n\n", 
+        pcm_sample_rate_khz,
+        pdm_sample_rate_khz);
   }
 
 }

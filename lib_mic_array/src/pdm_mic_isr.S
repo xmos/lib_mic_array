@@ -173,7 +173,7 @@ pdm_rx_isr:
       bl fir_1x16_bit
     //r0 now has the 32-bit result.
 
-    // D <-- [move D to point at next microphone's buffer]
+    // D <-- [move D to point at next microphone's PDM buffer]
     // Store the PCM sample in the PCM vector for this microphone
     { add D, D, A                           ; stw r0, B[0]                          }
 
@@ -187,23 +187,37 @@ pdm_rx_isr:
   // ends up in the first word.
 
   { ldc r11, 0                            ; ldw C, sp[STK_MIC_COUNT]              }
-  { ldc D, 32                             ; ldw A, sp[STK_COEF_BLKS]              }
-  { shl B, A, 5                           ; ldw E, sp[STK_PDM_BUFF]               }
-  { add E, E, B                           ; vsetc r11                             }
-  { sub E, E, D                           ;                                       }
+  { ldc D, 32                             ; ldw E, sp[STK_PDM_BUFF]               }
+  {                                       ; vsetc r11                             }
 
+  // This version of this loop assumes only 1 block of coefficients
   .L_pdm_shift_loop_top:
     { sub C, C, 1                           ; vldd E[0]                             }
-    { sub r11, E, D                         ; vlmaccr E[0]                          }
-    { sub r10, A, 1                         ; vstd E[0]                             }
-    { add E, E, B                           ; bf r10, .L_pdm_shift_inner_bot        }
-    .L_pdm_shift_inner_top:
-      { add F, r11, 4                         ; vldd r11[0]                           }
-      { sub r11, r11, D                       ; vstd F[0]                             }
-      { sub r10, r10, 1                       ; bt r10, .L_pdm_shift_inner_top        }
-    .L_pdm_shift_inner_bot:
+    {                                       ; vlmaccr E[0]                          }
+    { add E, E, D                           ; vstd E[0]                             }
     {                                       ; bt C, .L_pdm_shift_loop_top           }
   .L_pdm_shift_loop_bot:
+
+  // { ldc r11, 0                            ; ldw C, sp[STK_MIC_COUNT]              }
+  // { ldc D, 32                             ; ldw A, sp[STK_COEF_BLKS]              }
+  // { shl B, A, 5                           ; ldw E, sp[STK_PDM_BUFF]               }
+  // { add E, E, B                           ; vsetc r11                             }
+  // { sub E, E, D                           ;                                       }
+
+  // .L_pdm_shift_loop_top:
+  //   { sub C, C, 1                           ; vldd E[0]                             }
+  //   { sub r11, E, D                         ; vlmaccr E[0]                          }
+  //   { sub r10, A, 1                         ; vstd E[0]                             }
+  //   { add E, E, B                           ; bf r10, .L_pdm_shift_inner_bot        }
+  //   .L_pdm_shift_inner_top:
+  //     { add F, r11, 4                         ; vldd r11[0]                           }
+  //     { sub r11, r11, D                       ; vstd F[0]                             }
+  //     { sub r10, r10, 1                       ; bt r10, .L_pdm_shift_inner_top        }
+  //   .L_pdm_shift_inner_bot:
+  //   {                                       ; bt C, .L_pdm_shift_loop_top           }
+  // .L_pdm_shift_loop_bot:
+
+
 
   // Increment phase2, and if [it's] == [the decimation factor], we'll need to 
   // perform a context switch and call proc_pcm().
@@ -235,7 +249,6 @@ pdm_rx_isr:
   // Save DP, CP, LR, vector regs
   {                                       ; stw dp, sp[STK_DP]                    }
   {                                       ; stw cp, sp[STK_CP]                    }
-  // {                                       ; stw lr, sp[STK_LR]                    }
 
   // Set DP and CP  // Maybe not necessary? I was hoping it would prevent this crash I keep seeing..
     ldap r11, _dp

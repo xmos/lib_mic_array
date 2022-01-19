@@ -31,6 +31,7 @@ tests/test_results.csv
 examples/AN00221_freq_domain_example/doc/pdf/AN00218.pdf
 examples/AN00218_app_hires_DAS_fixed/doc/pdf/AN00218.pdf
 **/.venv/**
+**/__pycache__/
 
 
 # Unit test runners

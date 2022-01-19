@@ -9,7 +9,7 @@ extern "C" {
 #endif //__XC__
 
 
-void app_i2s_task(unsigned c_samp_out);
+void app_i2s_task();
 
 
 #ifdef __XC__

@@ -6,11 +6,12 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <xcore/interrupt.h>
 
 #define N_MICS                   (1)
 #define STAGE2_DECIMATION_FACTOR (6)
 
-unsigned pdm_sample_count = 0;
+unsigned pdm_sample_count = 7;
 
 
 void mic_array_pdm_rx_isr_init(
@@ -34,22 +35,32 @@ void mic_array_pdm_rx_isr_init(
   context->workspace.state.phase1 = mic_count-1;
   context->workspace.state.phase2 = 0;
 
+
+  assert( (((unsigned) &context->workspace) % 4) == 0 );
+
   // First, set up the kernel stack on this core
-  uint32_t tmp;
-  asm volatile("ldaw %0, sp[0]" : "=r"(tmp) );
-  asm volatile("set sp, %0" :: "r"(&context->workspace) );
-  asm volatile("stw %0, sp[0]" :: "r"(tmp) : "memory" );
-  asm volatile("krestsp 0");
 
+  asm volatile(
+    "ldaw r11, sp[0]        \n"
+    "nop                    \n"
+    "set sp, %0             \n"
+    "nop                    \n"
+    "stw r11, sp[0]         \n"
+    "nop                    \n"
+    "krestsp 0              \n"
+    "nop                    \n"
+    "setc res[%1], %2       \n"
+    "nop                    \n"
+    "ldap r11, pdm_rx_isr   \n"
+    "nop                    \n"
+    "setv res[%1], r11      \n"
+    "nop                    \n"
+    "eeu res[%1]            \n"
+    "nop                      "
+      :
+      : "r"(&context->workspace), "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT)
+      : "memory", "r11" );
 
-  // Now enable the ISR for port reads.
-
-  asm volatile("setc res[%0], %1" :: "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT) );
-
-  asm volatile("ldap r11, pdm_rx_isr\n"
-              "setv res[%0], r11" :: "r"(p_pdm_mics) : "r11");
-
-  asm volatile("eeu res[%0]" :: "r"(p_pdm_mics));
-  asm volatile("setsr" _XCORE_STRINGIFY(XS1_SR_IEBLE_MASK));
+  interrupt_unmask_all();
 
 }

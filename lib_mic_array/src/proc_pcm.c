@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <xcore/interrupt.h>
 
@@ -30,6 +31,7 @@ void proc_pcm_init()
                             stage2_coef, 
                             STAGE2_SHR);
   }
+  
 }
 
 
@@ -41,45 +43,29 @@ void proc_pcm_user(int32_t pcm_frame[])
   // Do nothing...
 }
 
+
 void proc_pcm(int32_t* pcm_samples)
 {
-  
-  int32_t (*input_samples)[STAGE2_DEC_FACTOR] = 
-    (void*) pcm_samples;
+
+  // This quickly frees up the pcm_samples buffer.
+  int32_t input_samples[N_MICS][STAGE2_DEC_FACTOR];
+  memcpy(input_samples, pcm_samples, sizeof(input_samples));
 
   pcm_sample_count++;
 
   int32_t output_samps[N_MICS];
 
-  // // REMOVE ME
-  // for(int k = 0; k < 1; k++){
-  //   unsigned zeros = 0;
-  //   for(int s = 1; s < STAGE2_DEC_FACTOR; s++){
-  //     zeros += (input_samples[k][s] == 0);
-  //   }
-  //   // printf("Zeros: %d\n", zeros);
-  //   if(pcm_sample_count >= 1000 && zeros >= 5){
-  //     interrupt_mask_all();
+  if(STAGE2_DEC_FACTOR == 1){
+    memcpy(output_samps, pcm_samples, sizeof(output_samps));
+  } else {
+    for(int mic = 0; mic < N_MICS; mic++){
 
-  //     printf("Mic: %d\n", k);
-  //     printf("Samps: %u\n", pcm_sample_count);
-  //     for(int s = 0; s < STAGE2_DEC_FACTOR; s++)
-  //       printf("%ld, ", input_samples[k][s]);
-  //     printf("\n");
-  //     delay_milliseconds(1);
-  //     assert(zeros < 5);
-  //   }
-  // }
-  // // REMOVE ME
-
-  for(int k = 0; k < N_MICS; k++){
-
-    for(int s = 0; s < STAGE2_DEC_FACTOR-1; s++) {
-      xs3_filter_fir_s32_add_sample(&decimation_filter[k], input_samples[k][s]);
+      for(int s = 0; s < STAGE2_DEC_FACTOR-1; s++) 
+        xs3_filter_fir_s32_add_sample(&decimation_filter[mic], input_samples[mic][s]);
+      
+      output_samps[mic] = xs3_filter_fir_s32(&decimation_filter[mic], 
+                                          input_samples[mic][STAGE2_DEC_FACTOR-1]);
     }
-    
-    output_samps[k] = xs3_filter_fir_s32(&decimation_filter[k], 
-                                         input_samples[k][STAGE2_DEC_FACTOR-1]);
   }
 
   proc_pcm_user(output_samps);

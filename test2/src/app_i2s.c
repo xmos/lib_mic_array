@@ -29,33 +29,23 @@ static int i2s_mclk_bclk_ratio(
 
 typedef struct {
   uint32_t t;
+  uint32_t u;
   int32_t last_pcm_frame[N_MICS];
-  chanend_t out_chan;
 } app_i2s_data_t;
 
 
 static app_i2s_data_t app_i2s_data;
 
 
-int32_t signal[] = { 0x00000000,
-                     0x01000000,
-                     0x00000000,
-                    -0x01000000 };
-
 
 
 void proc_pcm_user(int32_t pcm_frame[])
 {
   for(int k = 0; k < N_MICS; k++){
-    // app_i2s_data.last_pcm_frame[k] = signal[app_i2s_data.t];
-    app_i2s_data.last_pcm_frame[k] = pcm_frame[k] << 4;
+    app_i2s_data.last_pcm_frame[k] = pcm_frame[k] << 8;
   }
 
   app_i2s_data.t++;
-  if(app_i2s_data.t == ((sizeof(signal)/sizeof(int32_t))))
-    app_i2s_data.t = 0;
-
-  // s_chan_out_word(app_i2s_data.out_chan, app_i2s_data.last_pcm_frame[0]);
 }
 
 
@@ -70,6 +60,7 @@ void app_i2s_init(app_i2s_data_t* app_data,
   config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(APP_AUDIO_CLOCK_FREQUENCY, APP_I2S_AUDIO_SAMPLE_RATE);
 
   app_data->t = 0;
+  app_data->u = 0;
   memset(&app_data->last_pcm_frame[0], 0, sizeof(app_data->last_pcm_frame));
 }
 
@@ -99,8 +90,16 @@ void app_i2s_send(app_i2s_data_t* app_data,
                   size_t num_out, 
                   int32_t* samples)
 {
-  for(int c = 0; c < num_out; c++){
-    samples[c] = app_data->last_pcm_frame[(N_MICS==1)?0:c];
+  if(app_data->t == 0){
+    for(int c = 0; c < num_out; c++){
+      samples[c] = 0;
+    }
+  } else {
+    assert(app_data->t == app_data->u+1);
+    for(int c = 0; c < num_out; c++){
+      samples[c] = app_data->last_pcm_frame[(N_MICS==1)?0:c];
+    }
+    app_data->u++;
   }
 }
 
@@ -114,9 +113,8 @@ i2s_callback_group_t i2s_context = {
 };
 
 
-void app_i2s_task(unsigned c_samp_out)
+void app_i2s_task()
 {
-  app_i2s_data.out_chan = (chanend_t) c_samp_out;
 
   port_t p_i2s_dout[] = { I2S_DATA_IN };
   // port_t p_i2s_din[]  = { I2S_DATA_IN };
