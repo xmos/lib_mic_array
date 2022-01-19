@@ -17,7 +17,7 @@ struct {
   ma_pdm_rx_context_t context;
 
   // 256 samples (256 bits) per microphone per stage 1 coefficient block
-  uint32_t pdm_buffer[N_MICS][STAGE1_TAP_BLOCKS][8];
+  uint32_t pdm_buffer[N_MICS][8];
   int32_t pcm_buffer[N_MICS][STAGE2_DEC_FACTOR];
 } mic_array_data;
 
@@ -68,10 +68,22 @@ void app_mic_array_enable_isr()
                             N_MICS,
                             (unsigned) p_pdm_mics, 
                             (uint32_t*) stage1_coef,
-                            STAGE1_TAP_BLOCKS,
                             STAGE2_DEC_FACTOR,
-                            &mic_array_data.pdm_buffer[0][0][0],
+                            &mic_array_data.pdm_buffer[0][0],
                             &mic_array_data.pcm_buffer[0][0]);
-}
+
 
 }
+
+void app_mic_array_start()
+{
+  if( N_MICS == 1 ){
+    mic_array_start_sdr((unsigned) MIC_ARRAY_CLK1);
+  } else if( N_MICS >= 2 ){
+    mic_array_start_ddr((unsigned) MIC_ARRAY_CLK1, 
+                        (unsigned) MIC_ARRAY_CLK2, 
+                        (unsigned) p_pdm_mics );
+  }
+}
+
+} //unsafe

@@ -32,6 +32,9 @@ void mic_array_setup_sdr(
         port_t p_pdm_mics,
         int divide);
 
+void mic_array_start_sdr(
+        xclock_t pdmclk);
+
 void mic_array_setup_ddr(
         xclock_t pdmclk,
         xclock_t pdmclk6,
@@ -40,12 +43,16 @@ void mic_array_setup_ddr(
         port_t p_pdm_mics,
         int divide);
 
+void mic_array_start_ddr(
+        xclock_t pdmclk,
+        xclock_t pdmclk6,
+        port_t p_pdm_mics);
+
 void mic_array_pdm_rx_isr_init(
     ma_pdm_rx_context_t* context,
     const unsigned mic_count,
     const port_t p_pdm_mics,
     const uint32_t* stage1_fir_coef,
-    const unsigned stage1_fir_coef_blocks,
     const unsigned stage2_decimation_factor,
     uint32_t* pdm_buffer,
     int32_t* pcm_buffer);

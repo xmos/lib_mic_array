@@ -51,10 +51,9 @@
 #define STK_MIC_COUNT   (STK_CONFIG+0)
 #define STK_PORT        (STK_CONFIG+1)
 #define STK_FIR_COEF    (STK_CONFIG+2)
-#define STK_COEF_BLKS   (STK_CONFIG+3)
-#define STK_PDM_BUFF    (STK_CONFIG+4)
-#define STK_STG2_DEC    (STK_CONFIG+5)
-#define STK_PCM_VECT    (STK_CONFIG+6)
+#define STK_PDM_BUFF    (STK_CONFIG+3)
+#define STK_STG2_DEC    (STK_CONFIG+4)
+#define STK_PCM_VECT    (STK_CONFIG+5)
 
 .text
 .issue_mode dual
@@ -101,9 +100,8 @@ pdm_rx_isr:
 
   // A currently contains log2(sp[STK_MIC_COUNT])
 
-  {                                       ; ldw C, sp[STK_COEF_BLKS]              }
-  { shl C, C, 5                           ; ldw D, sp[STK_PDM_BUFF]               }
-  {                                       ; bru A                                 }
+  {                                       ; ldw D, sp[STK_PDM_BUFF]               }
+  { ldc C, 32                             ; bru A                                 }
   .jmptable32 .L_unzip_pdm_1mic, .L_unzip_pdm_2mic, .L_unzip_pdm_4mic, .L_unzip_pdm_8mic
 
   .L_unzip_pdm_1mic:
@@ -143,10 +141,7 @@ pdm_rx_isr:
   // B <-- pointer to PCM sample buffer
   {                                       ; ldw C, sp[STK_MIC_COUNT]              }
   {                                       ; ldw D, sp[STK_PDM_BUFF]               }
-  {                                       ; ldw B, sp[STK_PCM_VECT]               }
-  
-  // A <-- stage1 block count
-  {                                       ; ldw A, sp[STK_COEF_BLKS]              }
+  { ldc A, 32                             ; ldw B, sp[STK_PCM_VECT]               }
 
   // Save the link register because it will be clobbered when we call the filter function,
   // potentially screwing up the interrupted thread.
@@ -154,8 +149,7 @@ pdm_rx_isr:
 
   // F <-- stage2 decimation factor
   // The PCM sample vector has shape int32[MIC_COUNT][STG2_DEC_FACTOR]
-  // A <-- [stage1 block count] * [bytes per 256 PDM samples]
-  { shl A, A, 5                           ; ldw F, sp[STK_STG2_DEC]               }
+  {                                       ; ldw F, sp[STK_STG2_DEC]               }
 
   // E <-- Current phase2 value
   // F <-- [stage2 dec factor] * sizeof(int32_t)
@@ -167,7 +161,7 @@ pdm_rx_isr:
     // Make function call, placing arguments in r0, r1, r2
     // fir_1x16_bit(PDM_buffer_pointer, stage1_coef_pointer, stage1_coef_blocks)
     { mov r0, D                             ; ldw r1, sp[STK_FIR_COEF]              }
-    { sub C, C, 1                           ; ldw r2, sp[STK_COEF_BLKS]             }
+    { sub C, C, 1                           ; ldc r2, 1                             }
 
     // Call the stage1 decimation filter 
       bl fir_1x16_bit
@@ -197,26 +191,6 @@ pdm_rx_isr:
     { add E, E, D                           ; vstd E[0]                             }
     {                                       ; bt C, .L_pdm_shift_loop_top           }
   .L_pdm_shift_loop_bot:
-
-  // { ldc r11, 0                            ; ldw C, sp[STK_MIC_COUNT]              }
-  // { ldc D, 32                             ; ldw A, sp[STK_COEF_BLKS]              }
-  // { shl B, A, 5                           ; ldw E, sp[STK_PDM_BUFF]               }
-  // { add E, E, B                           ; vsetc r11                             }
-  // { sub E, E, D                           ;                                       }
-
-  // .L_pdm_shift_loop_top:
-  //   { sub C, C, 1                           ; vldd E[0]                             }
-  //   { sub r11, E, D                         ; vlmaccr E[0]                          }
-  //   { sub r10, A, 1                         ; vstd E[0]                             }
-  //   { add E, E, B                           ; bf r10, .L_pdm_shift_inner_bot        }
-  //   .L_pdm_shift_inner_top:
-  //     { add F, r11, 4                         ; vldd r11[0]                           }
-  //     { sub r11, r11, D                       ; vstd F[0]                             }
-  //     { sub r10, r10, 1                       ; bt r10, .L_pdm_shift_inner_top        }
-  //   .L_pdm_shift_inner_bot:
-  //   {                                       ; bt C, .L_pdm_shift_loop_top           }
-  // .L_pdm_shift_loop_bot:
-
 
 
   // Increment phase2, and if [it's] == [the decimation factor], we'll need to 

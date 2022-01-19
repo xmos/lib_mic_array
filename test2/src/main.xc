@@ -21,6 +21,8 @@
 unsafe{
 
 int main() {
+
+  chan c_tile_sync;
   
   par {
 
@@ -33,6 +35,8 @@ int main() {
       printf("Initializing I2C... ");
       i2c_init();
       printf("DONE.\n");
+
+      c_tile_sync <: 1;
     }
 
 
@@ -42,14 +46,23 @@ int main() {
       xscope_config_io(XSCOPE_IO_BASIC);
 
       app_pll_init();
+      
 
       app_mic_array_setup_resources();
 
+
       par {
+
         {
           app_mic_array_enable_isr();
+
+          unsigned ready;
+          c_tile_sync :> ready;
+          
+          app_mic_array_start();
           count_mips();
         }
+
         {
           app_i2s_task();
           printf("I2S stopped.\n");

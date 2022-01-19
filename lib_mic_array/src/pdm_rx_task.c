@@ -121,13 +121,13 @@ void pdm_rx( pdm_rx_config_t* config )
       // Apply first stage decimation
       for(int c = 0; c < config->mic_count; c++){
         
-        const unsigned pdm_dex = 8 * config->stage1.pdm_coef_blocks * c;
+        const unsigned pdm_dex = 8 * c;
         const unsigned pcm_dex = config->stage2.decimation_factor * c + k;
         unsigned* pdm_start = (unsigned*) &config->stage1.pdm_buffer[ pdm_dex ];
 
         int32_t pcm_samp = fir_1x16_bit((int32_t*) pdm_start, 
                                         (int32_t*)config->stage1.fir_coef, 
-                                        config->stage1.pdm_coef_blocks);
+                                        1);
 
         config->stage2.pcm_vector[ pcm_dex ] = pcm_samp;
       }

@@ -86,9 +86,6 @@ typedef struct {
       /** Pointer to the first stage (PDM->PCM) FIR filter coefficients */
       int16_t* fir_coef;
 
-      /** The number of coefficient blocks in the first stage decimator filter */
-      unsigned pdm_coef_blocks;
-
       /**
        * Pointer to buffers for the PDM sample history.
        */
@@ -131,7 +128,6 @@ typedef struct {
   struct {
     unsigned p_pdm_mics;
     int16_t* fir_coef;
-    unsigned pdm_coef_blocks;
     unsigned* pdm_buffer;
   } stage1;
 

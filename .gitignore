@@ -32,6 +32,7 @@ examples/AN00221_freq_domain_example/doc/pdf/AN00218.pdf
 examples/AN00218_app_hires_DAS_fixed/doc/pdf/AN00218.pdf
 **/.venv/**
 **/__pycache__/
+**/.ipynb_checkpoints/
 
 
 # Unit test runners

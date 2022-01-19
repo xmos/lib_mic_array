@@ -12,7 +12,6 @@ extern "C" {
 #define STAGE1_DEC_FACTOR   32
 #define STAGE1_TAP_COUNT    256
 #define STAGE1_WORDS        (STAGE1_TAP_COUNT)/2
-#define STAGE1_TAP_BLOCKS   (((STAGE1_TAP_COUNT) + (STAGE1_COEF_PER_BLOCK-1)) / 256)
 
 extern const uint32_t stage1_coef[STAGE1_WORDS];
 

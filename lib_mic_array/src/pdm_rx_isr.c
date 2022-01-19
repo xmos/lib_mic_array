@@ -19,7 +19,6 @@ void mic_array_pdm_rx_isr_init(
     const unsigned mic_count,
     const port_t p_pdm_mics,
     const uint32_t* stage1_fir_coef,
-    const unsigned stage1_fir_coef_blocks,
     const unsigned stage2_decimation_factor,
     uint32_t* pdm_buffer,
     int32_t* pcm_buffer)
@@ -27,7 +26,6 @@ void mic_array_pdm_rx_isr_init(
   context->workspace.config.stage1.mic_count = mic_count;
   context->workspace.config.stage1.p_pdm_mics = p_pdm_mics;
   context->workspace.config.stage1.fir_coef = (int16_t*) stage1_fir_coef;
-  context->workspace.config.stage1.pdm_coef_blocks = stage1_fir_coef_blocks;
   context->workspace.config.stage1.pdm_buffer = pdm_buffer;
   context->workspace.config.stage2.decimation_factor = stage2_decimation_factor;
   context->workspace.config.stage2.pcm_vector = pcm_buffer;
@@ -42,21 +40,13 @@ void mic_array_pdm_rx_isr_init(
 
   asm volatile(
     "ldaw r11, sp[0]        \n"
-    "nop                    \n"
     "set sp, %0             \n"
-    "nop                    \n"
     "stw r11, sp[0]         \n"
-    "nop                    \n"
     "krestsp 0              \n"
-    "nop                    \n"
     "setc res[%1], %2       \n"
-    "nop                    \n"
     "ldap r11, pdm_rx_isr   \n"
-    "nop                    \n"
     "setv res[%1], r11      \n"
-    "nop                    \n"
-    "eeu res[%1]            \n"
-    "nop                      "
+    "eeu res[%1]              "
       :
       : "r"(&context->workspace), "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT)
       : "memory", "r11" );
