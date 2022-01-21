@@ -20,6 +20,7 @@
 
 unsafe{
 
+
 int main() {
 
   chan c_tile_sync;
@@ -56,17 +57,8 @@ int main() {
 
       par {
 
-        {
-          app_mic_array_enable_isr();
-          count_mips();
-        }
-
-        {
-          app_i2s_task();
-          printf("I2S stopped.\n");
-        }
-
-        print_mips();
+        app_mic_array_task();
+        app_i2s_task();
       }
     }
   }

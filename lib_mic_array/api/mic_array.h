@@ -21,10 +21,6 @@ typedef unsigned port_t;
 #include "pdm_rx.h"
 #include "mic_array_filter.h"
 
-extern unsigned pcm_sample_count;
-extern unsigned pdm_sample_count;
-extern unsigned proc_time;
-
 void mic_array_setup_sdr(
         xclock_t pdmclk,
         port_t p_mclk,
@@ -48,16 +44,6 @@ void mic_array_start_ddr(
         xclock_t pdmclk6,
         port_t p_pdm_mics);
 
-void mic_array_pdm_rx_isr_init(
-    ma_pdm_rx_context_t* context,
-    const unsigned mic_count,
-    const port_t p_pdm_mics,
-    const uint32_t* stage1_fir_coef,
-    const unsigned stage2_decimation_factor,
-    uint32_t* pdm_buffer,
-    int32_t* pcm_buffer);
-
-void proc_pcm_init();
 
 
 #ifdef __XC__

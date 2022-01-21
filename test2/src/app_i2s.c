@@ -41,7 +41,10 @@ static app_i2s_data_t app_i2s_data;
 void proc_pcm_user(int32_t pcm_frame[])
 {
   for(int k = 0; k < N_MICS; k++){
-    app_i2s_data.last_pcm_frame[k] = pcm_frame[k] << 6;
+    app_i2s_data.last_pcm_frame[k] = pcm_frame[k] << 8;
+
+    // int tmp = (pcm_frame[k] >= 0)? 0x10000000 : -0x10000000;
+    // app_i2s_data.last_pcm_frame[k] = tmp;
   }
 
   app_i2s_data.t++;
@@ -96,7 +99,8 @@ void app_i2s_send(app_i2s_data_t* app_data,
   } else {
     assert(app_data->t == app_data->u+1);
     for(int c = 0; c < num_out; c++){
-      samples[c] = app_data->last_pcm_frame[(N_MICS==1)?0:c];
+      int32_t samp = app_data->last_pcm_frame[(N_MICS==1)?0:c];
+      samples[c] = samp;
     }
     app_data->u++;
   }

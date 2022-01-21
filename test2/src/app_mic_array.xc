@@ -1,6 +1,7 @@
 
 #include "app_config.h"
 #include "app_mic_array.h"
+#include "pdm_rx.h"
 
 #include <platform.h>
 #include <xs1.h>
@@ -8,18 +9,14 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 
 
+// Mic array config
+pdm_rx_config_t ma_config;
 
-struct {
-  // Mic array thread context
-  ma_pdm_rx_context_t context;
-
-  // 256 samples (256 bits) per microphone per stage 1 coefficient block
-  uint32_t pdm_buffer[N_MICS][8];
-  int32_t pcm_buffer[N_MICS][STAGE2_DEC_FACTOR];
-} mic_array_data;
+uint32_t pdm_buffer[ MA_PDM_BUFFER_SIZE_WORDS( N_MICS, STAGE2_DEC_FACTOR ) ];
 
 
 #define MIC_ARRAY_CLK1  XS1_CLKBLK_1
@@ -40,6 +37,15 @@ unsafe {
 
 void app_mic_array_setup_resources()
 {
+
+  ma_config.mic_count = N_MICS;
+  ma_config.p_pdm_mics = (unsigned) p_pdm_mics;
+  ma_config.stage1_coef = (uint32_t*) stage1_coef;
+  ma_config.stage2_coef = (int32_t*) stage2_coef;
+  ma_config.stage2_decimation_factor = STAGE2_DEC_FACTOR;
+  ma_config.pdm_buffer = &pdm_buffer[0];
+
+
   unsigned div = MCLK_DIV;
   if(N_MICS == 4)
     div >>= 1;
@@ -60,21 +66,6 @@ void app_mic_array_setup_resources()
 }
 
 
-void app_mic_array_enable_isr()
-{
-
-  proc_pcm_init();
-  mic_array_pdm_rx_isr_init(&mic_array_data.context, 
-                            N_MICS,
-                            (unsigned) p_pdm_mics, 
-                            (uint32_t*) stage1_coef,
-                            STAGE2_DEC_FACTOR,
-                            &mic_array_data.pdm_buffer[0][0],
-                            &mic_array_data.pcm_buffer[0][0]);
-
-
-}
-
 void app_mic_array_start()
 {
   if( N_MICS == 1 ){
@@ -84,6 +75,12 @@ void app_mic_array_start()
                         (unsigned) MIC_ARRAY_CLK2, 
                         (unsigned) p_pdm_mics );
   }
+}
+
+
+void app_mic_array_task()
+{
+  mic_array_proc_pdm( &ma_config );
 }
 
 } //unsafe
