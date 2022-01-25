@@ -1,7 +1,10 @@
     // This function is the optimal FIR on a 1-bit signal with 16-bit coefficients.
+    //
+    // NOTE: This version is optimized for the mic array and takes only a single block of coefficients
+    //
     // r0: argument 1, signal (word aligned)
     // r1: argument 2, coefficients (arranged as 16 1-bit arrays, word aligned)
-    // r2: argument 3, number of 256-bit chunks to operate on
+    // r2: spare
     // r3: spare
     // r11: spare
 
@@ -21,43 +24,38 @@
     
     .text
     .issue_mode dual
-    .align 8                                           // This alignment optimises lack of FNOPS
+    .align 16
 
 fir_1x16_bit:
-    { dualentsp NSTACKWORDS        ; ldc r3, 32 }              // Allocate stack
-    { vclrdr                       ; shl r11, r3, 3 }
-    { vsetc r11                    ; ldaw r11, sp[0] }
-
-.Linner_loop_xs3:
-    { vldc r0[0]                   ; add r0, r0, r3 }    
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; add r1, r1, r3 }
-    { vlmaccr1 r1[0]               ; sub r2, r2, 1  } // do sub before bt
-    { bt r2, .Linner_loop_xs3      ; add r1, r1, r3 }
-    
-    vstr r11[0]
-    vclrdr
-    { vldc r11[0]                  ; ldap r11, macc_coeffs }
-    { vlmaccr r11[0]               ; ldaw r2, sp[0] }
-    { vstr r2[0]                   ; add r2, r2, 4 } 
-    { vstd r2[0]                   ; nop }
-    ldw r1, sp[1]
-    { ldw r0, sp[0]                ; shl r1, r1, 16 }
-    {                              ; or r0, r0, r1 }
-    { retsp NSTACKWORDS            ; shl r0, r0, 8 }
+    { ldc r3, 32                  ; dualentsp NSTACKWORDS       }
+    { shl r11, r3, 3              ; vclrdr                      }
+    {                             ; vsetc r11                   }
+    {                             ; vldc r0[0]                  }    
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { add r1, r1, r3              ; vlmaccr1 r1[0]              }
+    { ldaw r11, sp[0]             ; vlmaccr1 r1[0]              }
+    {                             ; vstr r11[0]                 }
+    {                             ; vclrdr                      }
+    { ldap r11, macc_coeffs       ; vldc r11[0]                 }
+    { ldaw r2, sp[0]              ; vlmaccr r11[0]              }
+    { add r2, r2, 4               ; vstr r2[0]                  } 
+    {                             ; vstd r2[0]                  }
+      ldd r1, r0, sp[0]
+      zip r1, r0, 4
+    { retsp NSTACKWORDS           ; shl r0, r0, 8               }
 
 // The order of these coefficients tells us that whatever gets VLMACCR1'ed last is going to be multiplied by
 //  the largest coefficient. Thus, if the bipolar coefficient matrix B[,] has shape 16x32, then B[0,:] must

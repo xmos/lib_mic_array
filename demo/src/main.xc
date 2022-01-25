@@ -18,6 +18,8 @@
 #include <assert.h>
 
 
+// Set this to 1 to measure MIPS consumption by the mic array
+// (Note: measuring MIPS will disable I2S)
 #define MEASURE_MIPS    0
 
 

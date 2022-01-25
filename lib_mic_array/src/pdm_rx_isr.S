@@ -18,11 +18,11 @@
 .align 8
 pdm_rx_context:
 .L_port:          .word 0
-.L_c_out:         .word 0
 .L_buffA:         .word 0
 .L_buffB:         .word 0
 .L_phase1:        .word 0
 .L_phase1_reset:  .word 0
+.L_c_out:         .word 0
 .L_c_in:          .word 0
 
 .global pdm_rx_context
@@ -32,7 +32,7 @@ pdm_rx_context:
 
 
 .text
-.issue_mode dual
+.issue_mode single
 .align 16         // 16-byte alignment guarantees that FNOPs always happen in the same spots
 
 #define A   r4
@@ -44,38 +44,37 @@ pdm_rx_context:
 
 pdm_rx_isr:
 
-    dualentsp 0
-    extsp 4
-    std r4, r5, sp[0]
-    std r6, r7, sp[1]
+    extsp 4                     // 2
+    std r4, r5, sp[0]           // 4
+    std r6, r7, sp[1]           // 4
+    ldw A, dp[.L_port]          // 2
+    in A, res[A]                // 2
+    ldw D, dp[.L_buffA]         // 2
+    ldw C, dp[.L_phase1]        // 2
+    stw A, D[C]                 // 4
+    bf C, .L_emit               // 2
+    sub C, C, 1                 // 2
+    stw C, dp[.L_phase1]        // 2
+    ldd r6, r7, sp[1]           // 4 
+    ldd r4, r5, sp[0]           // 4
+    ldaw sp, sp[NSTACKWORDS]    // 2
+    kret                        // 4
 
-  {                                       ; ldw A, dp[.L_port]                    }
-  {                                       ; ldw D, dp[.L_buffA]                   }
-  { in A, res[A]                          ; ldw C, dp[.L_phase1]                  }
-    stw A, D[C]
-  { sub C, C, 1                           ; bf C, .L_emit                         }
-  {                                       ; stw C, dp[.L_phase1]                  }
-
-    ldd r6, r7, sp[1]
-    ldd r4, r5, sp[0]
-    ldaw sp, sp[NSTACKWORDS]
-    kret
-
-.L_emit:
+  .L_emit:
 
   // Reset phase1 number
-  {                                       ; ldw A, dp[.L_phase1_reset]            }
-  {                                       ; stw A, dp[.L_phase1]                  }
+    ldw A, dp[.L_phase1_reset]
+    stw A, dp[.L_phase1]
 
   // Swap PDM buffers A and B
-  { mov B, D                              ; ldw A, dp[.L_buffB]                   }
-  {                                       ; stw A, dp[.L_buffA]                   }
-  {                                       ; stw B, dp[.L_buffB]                   }
+    ldw A, dp[.L_buffB]
+    stw A, dp[.L_buffA]
+    stw D, dp[.L_buffB]
 
   // Signal that the next set of samples is ready, which will be those in PDM buffer B
   // the channel output should be non-blocking because it's only a word
-  {                                       ; ldw A, dp[.L_c_out]                   }
-  { out res[A], B                         ;                                       }
+    ldw A, dp[.L_c_out]
+    out res[A], D
 
   // And we're done
     ldd r6, r7, sp[1]

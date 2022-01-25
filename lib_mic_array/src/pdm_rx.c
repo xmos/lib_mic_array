@@ -23,17 +23,17 @@
 */
 extern struct {
   port_t p_pdm_data;
-  chanend_t c_pdm_out;
   uint32_t* buffA;
   uint32_t* buffB;
   unsigned phase1;
   unsigned phase1_reset;
+  chanend_t c_pdm_out;
   chanend_t c_pdm_in;
 } pdm_rx_context;
 
 
 
-void deinterleave_pdm_samples(
+static inline void deinterleave_pdm_samples(
     uint32_t* samples,
     const unsigned n_mics, 
     const unsigned stage2_dec_factor)
@@ -59,10 +59,13 @@ void deinterleave_pdm_samples(
   }
 }
 
-static inline void rotate_buffer(uint32_t* buff)
+/**
+ * Move buff[0:7] to buff[1:8]. Don't care what ends up in buff[0]
+ */
+static inline void shift_buffer(uint32_t* buff)
 {
-  asm volatile("ldc r11, 0; vsetc r11;" ::: "r11");
-  asm volatile("vldd %0[0]; vlmaccr %0[0]; vstd %0[0]" :: "r"(buff));
+  uint32_t* src = &buff[-1];
+  asm volatile("vldd %0[0]; vstd %1[0];" :: "r"(src), "r"(buff) : "memory" );
 }
 
 
@@ -182,10 +185,12 @@ void mic_array_proc_pdm(
         ////// Compute next streamA sample for this microphone
         int idx = (config->stage2.decimation_factor - 1 - k) * config->mic_count + mic;
         pdm_history[8*mic] = pdm_samples[idx];
-        int32_t streamA_sample = fir_1x16_bit(&pdm_history[8*mic], config->stage1.filter_coef, 1);
+        int32_t streamA_sample = fir_1x16_bit(&pdm_history[8*mic], config->stage1.filter_coef);
 
-        // Rotate the history vector
-        rotate_buffer(&pdm_history[8*mic]);
+        ////// Rotate the PDM history vector
+        // This shifts the first 7 words of the history vector up by a word, clobbering
+        // whatever was in the 8th word (which isn't needed anymore).
+        shift_buffer(&pdm_history[8*mic]);
 
         // Up until the last iteration of k we're just adding the sample to our stage2 FIR.
         // On the last iteration we'll actually produce a new output sample.
@@ -201,3 +206,38 @@ void mic_array_proc_pdm(
     proc_pcm_user(samples_out);
   }
 }
+
+
+
+
+
+/////////// This version hardcodes 1 mic and s2df of 6. Uses significantly fewer MIPS
+// #pragma stackfunction 400
+// void mic_array_proc_pdm( 
+//     pdm_rx_config_t* config )
+// {
+//   mic_array_pdm_rx_setup( config );
+//   const unsigned buffA_size_words = 6;
+//   uint32_t* pdm_history = &config->stage1.pdm_buffers[2*buffA_size_words];
+//   memset(pdm_history, 0x55, 1 * 8 * sizeof(uint32_t));
+//   xs3_filter_fir_s32_t* s2_filters = config->stage2.filters;
+//   int32_t samples_out[MAX_MIC_COUNT] = {0};
+//   interrupt_unmask_all();
+//   while(1) {
+//     uint32_t* pdm_samples = (uint32_t*) s_chan_in_word(pdm_rx_context.c_pdm_in);
+//     deinterleave_pdm_samples(pdm_samples, 1, 6);
+//     for(unsigned k = 0; k < 5; k++) {
+//       pdm_history[0] = pdm_samples[5-k];
+//       int32_t streamA_sample = fir_1x16_bit(&pdm_history[0], config->stage1.filter_coef);
+//       shift_buffer(&pdm_history[0]);
+//       xs3_filter_fir_s32_add_sample(&s2_filters[0], streamA_sample);
+//     }
+//     for(unsigned k = 5; k < 6; k++) {
+//       pdm_history[0] = pdm_samples[5-k];
+//       int32_t streamA_sample = fir_1x16_bit(&pdm_history[0], config->stage1.filter_coef);
+//       shift_buffer(&pdm_history[0]);
+//       samples_out[0] = xs3_filter_fir_s32(&s2_filters[0], streamA_sample);
+//     }
+//     proc_pcm_user(samples_out);
+//   }
+// }
