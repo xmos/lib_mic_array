@@ -19,6 +19,12 @@ pdm_rx_config_t ma_config;
 uint32_t pdm_buffer[ MA_PDM_BUFFER_SIZE_WORDS( N_MICS, STAGE2_DEC_FACTOR ) ];
 
 
+struct {
+  xs3_filter_fir_s32_t filter[N_MICS];
+  int32_t state_buffer[N_MICS][STAGE2_TAP_COUNT];
+} stage2_filters;
+
+
 #define MIC_ARRAY_CLK1  XS1_CLKBLK_1
 #define MIC_ARRAY_CLK2  XS1_CLKBLK_2
 
@@ -39,11 +45,12 @@ void app_mic_array_setup_resources()
 {
 
   ma_config.mic_count = N_MICS;
-  ma_config.p_pdm_mics = (unsigned) p_pdm_mics;
-  ma_config.stage1_coef = (uint32_t*) stage1_coef;
-  ma_config.stage2_coef = (int32_t*) stage2_coef;
-  ma_config.stage2_decimation_factor = STAGE2_DEC_FACTOR;
-  ma_config.pdm_buffer = &pdm_buffer[0];
+  ma_config.stage1.p_pdm_mics = (unsigned) p_pdm_mics;
+  ma_config.stage1.filter_coef = (uint32_t*) stage1_coef;
+  ma_config.stage1.pdm_buffers = &pdm_buffer[0];
+
+  ma_config.stage2.decimation_factor = STAGE2_DEC_FACTOR;
+  ma_config.stage2.filters = &stage2_filters.filter[0];
 
 
   unsigned div = MCLK_DIV;
@@ -63,8 +70,21 @@ void app_mic_array_setup_resources()
   } else {
     assert(0);
   }
+
+  
 }
 
+static void init_filters(
+    pdm_rx_config_t* config)
+{
+  for(int k = 0; k < config->mic_count; k++){
+    xs3_filter_fir_s32_init(&stage2_filters.filter[k],
+                            &stage2_filters.state_buffer[k][0],
+                            STAGE2_TAP_COUNT,
+                            stage2_coef,
+                            STAGE2_SHR);
+  }
+}
 
 void app_mic_array_start()
 {
@@ -80,6 +100,7 @@ void app_mic_array_start()
 
 void app_mic_array_task()
 {
+  init_filters( &ma_config );
   mic_array_proc_pdm( &ma_config );
 }
 

@@ -18,6 +18,9 @@
 #include <assert.h>
 
 
+#define MEASURE_MIPS    0
+
+
 unsafe{
 
 
@@ -56,9 +59,23 @@ int main() {
       app_mic_array_start();
 
       par {
-
         app_mic_array_task();
+#if !(MEASURE_MIPS)
         app_i2s_task();
+#else
+        // The 5 burn_mips() and the count_mips() should all consume as many MIPS as they're offered. And
+        // they should all get the SAME number of MIPS.
+        // print_mips() uses almost no MIPS -- we can assume it's zero.
+        // So, with 600 MIPS total, 6 cores using X MIPS, 1 core using none and the mic array using Y MIPS...
+        //  600 = 6*X + Y  -->  Y = 600 - 6*X
+        burn_mips();
+        burn_mips();
+        burn_mips();
+        burn_mips();
+        burn_mips();
+        count_mips();
+        print_mips();
+#endif
       }
     }
   }

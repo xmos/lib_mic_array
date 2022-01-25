@@ -1,27 +1,31 @@
 #pragma once
 
-#include <stdint.h>
+#include "xs3_math.h"
 
+#include <stdint.h>
 
 #ifdef __XC__
 extern "C" {
 #endif //__XC__
 
 
-#define MA_PDM_BUFFER_SIZE_WORDS(MIC_COUNT, S2_DEC_FACTOR)  (2*(MIC_COUNT)*(S2_DEC_FACTOR))
+#define MA_PDM_BUFFER_SIZE_WORDS(MIC_COUNT, S2_DEC_FACTOR)  ((2*(MIC_COUNT)*(S2_DEC_FACTOR))+(8*(MIC_COUNT)))
 
 
 typedef struct {
 
   unsigned mic_count;
-  unsigned p_pdm_mics;
 
-  uint32_t* stage1_coef;
-  int32_t* stage2_coef;
+  struct {
+    unsigned p_pdm_mics;
+    uint32_t* filter_coef;
+    uint32_t* pdm_buffers;
+  } stage1;
 
-  unsigned stage2_decimation_factor;
-
-  uint32_t* pdm_buffer;
+  struct {
+    unsigned decimation_factor;
+    xs3_filter_fir_s32_t* filters;
+  } stage2;
 
 } pdm_rx_config_t;
 

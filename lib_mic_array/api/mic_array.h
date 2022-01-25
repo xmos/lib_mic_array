@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define USE_C_VERSION   0
+#define MAX_MIC_COUNT     8
 
 #ifdef __XC__
 
