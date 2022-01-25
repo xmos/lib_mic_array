@@ -1,6 +1,6 @@
 
 #include "app_config.h"
-#include "mips.h"
+#include "util/mips.h"
 #include "app_pll_ctrl.h"
 
 #include "app_mic_array.h"

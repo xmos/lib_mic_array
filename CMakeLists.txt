@@ -48,8 +48,7 @@ include("$ENV{XCORE_SDK_PATH}/modules/hil/hil.cmake")
 # Apps
 #**********************
 
-add_subdirectory( test  )
-add_subdirectory( test2 )
+add_subdirectory( demo )
 
 #**********************
 # Helper Targets

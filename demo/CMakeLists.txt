@@ -1,11 +1,11 @@
 
-set(APP_NAME test)
+set(APP_NAME demo)
 
 set(HIL_DIR "${XCORE_SDK_PATH}/modules/hil")
 
 
 #********************************
-# Gather test sources
+# Gather demo sources
 #********************************
 include("${CMAKE_SOURCE_DIR}/lib_mic_array/lib_mic_array.cmake")
 
@@ -43,21 +43,29 @@ set( APP_INCLUDES  "src" )
 # sources
 #**********************
 
+
 file( GLOB_RECURSE    SOURCES_C    "src/*.c"    )
 file( GLOB_RECURSE    SOURCES_XC   "src/*.xc"   )
 file( GLOB_RECURSE    SOURCES_CPP  "src/*.cpp"  )
 file( GLOB_RECURSE    SOURCES_ASM  "src/*.S"    )
 
+# There's a weird compile error in one of the platform headers when the I2C
+# slave mode source is compiled. Not needed for this app.
+list( FILTER I2C_HIL_SOURCES EXCLUDE REGEX .*slave.* )
+
 unset(APP_SOURCES)
 list( APPEND  APP_SOURCES  ${SOURCES_C}
                            ${SOURCES_XC}
                            ${SOURCES_CPP}
-                           ${SOURCES_ASM}       )
+                           ${SOURCES_ASM}      
+)
 
 target_sources(${APP_NAME} 
   PRIVATE ${MIC_ARRAY_SOURCES}
   PRIVATE ${APP_SOURCES}
   PRIVATE ${LIB_XS3_MATH_SOURCES}
+  PRIVATE ${I2C_HIL_SOURCES}
+  PRIVATE ${I2S_HIL_SOURCES}
 )
 
 set_source_files_properties( ${SOURCES_XC}  PROPERTIES LANGUAGE C ) 
@@ -66,26 +74,28 @@ target_include_directories(${APP_NAME}
   PRIVATE ${MIC_ARRAY_INCLUDES}
   PRIVATE ${APP_INCLUDES}
   PRIVATE ${LIB_XS3_MATH_INCLUDES}
+  PRIVATE ${I2C_HIL_INCLUDES}
+  PRIVATE ${I2S_HIL_INCLUDES}
 )
 
-## 
-## #**********************
-## # run
-## #**********************
-## 
-## add_custom_target( run
-##   COMMAND xrun --xscope ${APP_NAME}.xe
-##   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
-## 
-## add_dependencies( run ${APP_NAME} test )
-## 
-## 
-## #**********************
-## # debug
-## #**********************
-## 
-## add_custom_target( debug
-##   COMMAND xgdb --ex=\"connect --xscope\" --ex=run ${APP_NAME}.xe
-##   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
-## 
-## add_dependencies( debug ${APP_NAME} test )
+
+#**********************
+# run
+#**********************
+
+add_custom_target( run
+  COMMAND xrun --xscope ${APP_NAME}.xe
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+
+add_dependencies( run ${APP_NAME} demo )
+
+
+#**********************
+# debug
+#**********************
+
+add_custom_target( debug
+  COMMAND xgdb --ex=\"connect --xscope\" --ex=run ${APP_NAME}.xe
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+
+add_dependencies( debug ${APP_NAME} demo )
