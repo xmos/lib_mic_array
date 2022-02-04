@@ -3,9 +3,7 @@
 #include "util/mips.h"
 #include "app_pll_ctrl.h"
 
-#include "app_mic_array.h"
-#include "app_i2c.h"
-#include "app_i2s.h"
+#include "app.h"
 
 #include <platform.h>
 #include <xs1.h>
@@ -23,7 +21,75 @@
 #define MEASURE_MIPS    0
 
 
+
 unsafe{
+
+
+
+// MCLK connected to pin 14 --> X1D11 --> port 1D
+// MIC_CLK connected to pin 39 --> X1D22 --> port 1G
+// MIC_DATA connected to pin 32 --> X1D13 --> port 1F
+on tile[1]: in port p_mclk                     = XS1_PORT_1D;
+on tile[1]: out port p_pdm_clk                 = XS1_PORT_1G;
+on tile[1]: in buffered port:32 p_pdm_mics     = XS1_PORT_1F;
+
+
+// Divider to bring the 24.576 MHz clock down to 3.072 MHz
+#define MCLK_DIV  8
+
+static void config_clocks_ports()
+{
+  unsigned div = MCLK_DIV;
+  if(N_MICS == 4)
+    div >>= 1;
+  else if(N_MICS == 8)
+    div >>= 2;
+
+  if( N_MICS == 1 ){
+    mic_array_setup_sdr((unsigned) MIC_ARRAY_CLK1,
+                        (unsigned) p_mclk, (unsigned) p_pdm_clk, 
+                        (unsigned) p_pdm_mics, div);
+  } else if( N_MICS >= 2 ){
+    mic_array_setup_ddr((unsigned) MIC_ARRAY_CLK1, (unsigned) MIC_ARRAY_CLK2, 
+                        (unsigned) p_mclk, (unsigned) p_pdm_clk, 
+                        (unsigned) p_pdm_mics, div );
+  } else {
+    assert(0);
+  }
+}
+
+
+static void app_mic_array_setup()
+{
+  // Set up our clocks and ports
+  config_clocks_ports();
+
+  chanend_t c_pdm = ma_pdm_rx_isr_init( (unsigned) p_pdm_mics,
+                      (uint32_t*) &ma_data.stage1.pdm_buffers[0],
+                      (uint32_t*) &ma_data.stage1.pdm_buffers[1],
+                      N_MICS * STAGE2_DEC_FACTOR);
+
+  app_pdm_filter_context_init( c_pdm );
+
+  ma_pdm_rx_isr_enable( (port_t) p_pdm_mics );
+}
+
+
+
+
+static void app_mic_array_start()
+{
+  if( N_MICS == 1 ){
+    mic_array_start_sdr((unsigned) MIC_ARRAY_CLK1);
+  } else if( N_MICS >= 2 ){
+    mic_array_start_ddr((unsigned) MIC_ARRAY_CLK1, 
+                        (unsigned) MIC_ARRAY_CLK2, 
+                        (unsigned) p_pdm_mics );
+  }
+}
+
+
+
 
 
 int main() {
@@ -39,7 +105,7 @@ int main() {
       printf("Running..\n");
 
       printf("Initializing I2C... ");
-      i2c_init();
+      app_i2c_init();
       printf("DONE.\n");
 
       c_tile_sync <: 1;
@@ -50,20 +116,33 @@ int main() {
 
       // Force it to use xscope, never mind and config.xscope files
       xscope_config_io(XSCOPE_IO_BASIC);
+      
+      // The app context comprises objects shared between the mic array
+      // and I2S components for buffering output audio 
+      app_context_init();
 
+      // Set up the media clock
       app_pll_init();
       
+      // Wait until tile[0] is done initializing I2C
       unsigned ready;
       c_tile_sync :> ready;
 
-      
-      app_mic_array_setup_resources();
-      app_mic_array_start();
+      //// (This is a work-around for XC's draconian, unnecessary parallel usage rules)
+      void * unsafe app_ctx;
+      asm volatile("mov %0, %1" : "=r"(app_ctx) : "r"(&app_context) );
 
       par {
-        app_mic_array_task();
+        {
+          // Set up the mic array component
+          app_mic_array_setup();
+          // Start the PDM clock
+          app_mic_array_start();
+
+          ma_pdm_filter_task( &pdm_filter_context, &app_context );
+        }
 #if !(MEASURE_MIPS)
-        app_i2s_task();
+        app_i2s_task( (void*) app_ctx );
 #else
         // The 5 burn_mips() and the count_mips() should all consume as many MIPS as they're offered. And
         // they should all get the SAME number of MIPS.

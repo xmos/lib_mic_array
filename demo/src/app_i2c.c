@@ -19,7 +19,7 @@ i2c_master_t i2c_context;
 
 
 
-void i2c_init()
+void app_i2c_init()
 {
   int res = 0;
   
