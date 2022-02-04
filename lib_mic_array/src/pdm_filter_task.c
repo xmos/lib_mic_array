@@ -28,7 +28,9 @@ void ma_proc_sample_user(
     void* app_context,
     int32_t pcm_sample[])
 {
+  if(config->framing != NULL){
     ma_framing_add_sample(config->framing, app_context, pcm_sample);
+  }
 }
 
 
