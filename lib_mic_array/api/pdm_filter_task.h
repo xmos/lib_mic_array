@@ -5,6 +5,7 @@
 #include "xcore_compat.h"
 
 #include "mic_array_framing.h"
+#include "mic_array_misc.h"
 
 #include <stdint.h>
 
@@ -36,8 +37,10 @@ typedef struct {
   } stage2;
 
   ma_framing_context_t* framing;
+  ma_dc_elim_chan_state_t* dc_elim;
 
 } ma_pdm_filter_context_t;
+
 
 
 /**

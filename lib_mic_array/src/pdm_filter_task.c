@@ -28,6 +28,10 @@ void ma_proc_sample_user(
     void* app_context,
     int32_t pcm_sample[])
 {
+  // if(config->dc_elim != NULL){
+  //   ma_dc_elimination_next_sample(pcm_sample, config->dc_elim, pcm_sample, config->mic_count);
+  // }
+
   if(config->framing != NULL){
     ma_framing_add_sample(config->framing, app_context, pcm_sample);
   }
@@ -141,6 +145,14 @@ void ma_pdm_filter_task(
         // This shifts the first 7 words of the history vector up by a word, clobbering
         // whatever was in the 8th word (which isn't needed anymore).
         shift_buffer(&pdm_history[8*mic]);
+
+        
+        // // Doing DC offset elmination here uses STAGE2_DEC_FACTOR times the MIPS of doing
+        // // it after the second stage decimation.
+        // if(config->dc_elim != NULL){
+        //   ma_dc_elimination_next_sample(&streamA_sample, &config->dc_elim[mic], 
+        //                                 &streamA_sample, 1);
+        // }
 
         // Up until the last iteration of k we're just adding the sample to our stage2 FIR.
         // On the last iteration we'll actually produce a new output sample.

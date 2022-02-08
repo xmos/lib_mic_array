@@ -34,6 +34,22 @@ static int i2s_mclk_bclk_ratio(
 
 
 I2S_CALLBACK_ATTR
+void app_i2s_send(app_context_t* app_data,
+                  size_t num_out, 
+                  int32_t* samples)
+{
+  int32_t frame[N_MICS];
+  abuff_frame_get(&app_data->audio_buffer_ctx, frame);
+  
+  for(int c = 0; c < num_out; c++){
+    int32_t samp = frame[(N_MICS==1)?0:c];
+    samples[c] = samp;
+  }
+}
+
+
+
+I2S_CALLBACK_ATTR
 static 
 void app_i2s_init(app_context_t* app_data, 
                   i2s_config_t* config)

@@ -2,6 +2,7 @@
 
 #include "app_config.h"
 
+#include "etc/mic_array_filters_default.h"
 #include "util/audio_buffer.h"
 #include "mic_array.h"
 
@@ -24,21 +25,9 @@ typedef struct {
 
 extern app_context_t app_context;
 
-typedef struct {
-  struct {
-    uint32_t pdm_buffers[2][MA_PDM_BUFFER_SIZE_WORDS( N_MICS, STAGE2_DEC_FACTOR )];
-    uint32_t pdm_history[ MA_PDM_HISTORY_SIZE_WORDS( N_MICS )];
-  } stage1;
-
-  struct {
-    xs3_filter_fir_s32_t filters[N_MICS];
-    int32_t state_buffer[N_MICS][STAGE2_TAP_COUNT];
-  } stage2;
-
-  struct {
-    int32_t context[MA_FRAMING_BUFFER_SIZE(N_MICS, SAMPLES_PER_FRAME, FRAME_BUFFERS)];
-  } framing;
-} app_mic_array_data_t;
+typedef MIC_ARRAY_DATA(N_MICS, STAGE2_DEC_FACTOR, STAGE2_TAP_COUNT, 
+                       SAMPLES_PER_FRAME, FRAME_BUFFERS, 
+                       APP_USE_DC_OFFSET_ELIMINATION) app_mic_array_data_t;
 
 extern app_mic_array_data_t ma_data;
 
