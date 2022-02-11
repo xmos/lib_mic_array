@@ -33,8 +33,6 @@ typedef MIC_ARRAY_DATA(N_MICS, STAGE2_DEC_FACTOR,
                        APP_USE_DC_OFFSET_ELIMINATION) app_mic_array_data_t;
 #endif //APP_USE_BASIC_CONFIG
 
-// extern ma_pdm_filter_context_t pdm_filter_context;
-
 streaming_channel_t app_s_chan_alloc();
 
 void app_context_init(

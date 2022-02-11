@@ -6,9 +6,8 @@
 
 #include "xcore_compat.h"
 
-#include "pdm_rx.h"
-#include "pdm_filter_task.h"
-#include "mic_array_filter.h"
+#include "mic_array_pdm_rx.h"
+#include "mic_array_decimator.h"
 #include "mic_array_framing.h"
 #include "mic_array_misc.h"
 

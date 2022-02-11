@@ -25,7 +25,7 @@
 #define MEASURE_MIPS                    0
 
 // Set this to 1 to use the "basic" configuration options
-#define APP_USE_BASIC_CONFIG            1
+#define APP_USE_BASIC_CONFIG            0
 
 // Set this to 1 to use the ISR version of PDM rx. 0 will use the thread version.
-#define APP_USE_PDM_RX_ISR              0
+#define APP_USE_PDM_RX_ISR              1

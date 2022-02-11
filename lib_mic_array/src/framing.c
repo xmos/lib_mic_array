@@ -30,6 +30,10 @@ void ma_framing_init(
   ctx->current.sample = 0;
 }
 
+/**
+ * If for whatever reason using a strong symbol isn't overriding ma_proc_frame(), 
+ * this can be set to 1 to suppress the library definition.
+ */
 #ifndef MA_CONFIG_SUPPRESS_PROC_FRAME
 #define MA_CONFIG_SUPPRESS_PROC_FRAME 0
 #endif
@@ -37,7 +41,7 @@ void ma_framing_init(
 #if !(MA_CONFIG_SUPPRESS_PROC_FRAME)
 
 __attribute__((weak))
-void ma_proc_frame_user(
+void ma_proc_frame(
   void* app_context,
   int32_t pcm_frame[])
 {
@@ -74,6 +78,6 @@ unsigned ma_framing_add_sample(
   if( ++ctx->current.frame == ctx->config.frame_count )
     ctx->current.frame = 0; // Cycle back to first frame
 
-  ma_proc_frame_user(app_context, curr_frame);
+  ma_proc_frame(app_context, curr_frame);
   return 1;
 }

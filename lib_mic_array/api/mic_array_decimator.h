@@ -38,7 +38,17 @@ typedef struct {
   ma_framing_context_t* framing;
   ma_dc_elim_chan_state_t* dc_elim;
 
-} ma_pdm_filter_context_t;
+} ma_decimator_context_t;
+
+
+
+// void ma_stage2_filters_init(
+//     xs3_filter_fir_s32_t filters[],
+//     int32_t state_buffers[],
+//     const unsigned mic_count,
+//     const unsigned stage2_tap_count,
+//     const int32_t* stage2_coef,
+//     const right_shift_t stage2_shr);
 
 
 
@@ -47,8 +57,8 @@ typedef struct {
  * processes the PDM stream, turning it into a PCM stream using a two stage 
  * decimation filter.
  */
-void ma_pdm_filter_task( 
-    ma_pdm_filter_context_t* filter_context,
+void ma_decimator_task( 
+    ma_decimator_context_t* filter_context,
     chanend_t c_pdm_data,
     void* app_context);
 

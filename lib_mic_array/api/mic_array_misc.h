@@ -118,9 +118,12 @@ struct {                                                                        
       ma_framing_init((CONTEXT)->framing, (MIC_COUNT),                            \
                       (SAMPS_PER_FRAME), (MA_FRAME_BUFF_COUNT_DEFAULT),           \
                       (FRAME_FMT));                                               \
-      ma_stage2_filters_init(&(MA_BUFFERS)->stage2.filters[0],                    \
-                             &(MA_BUFFERS)->stage2.state_buffer[0][0],            \
-                             (MIC_COUNT), (S2_TAP_COUNT), (S2_COEF), (S2_SHR));   \
+                                                                                  \
+      for(int k = 0; k < MIC_COUNT; k++){                                         \
+        xs3_filter_fir_s32_init(&(MA_BUFFERS)->stage2.filters[k],                 \
+                                &(MA_BUFFERS)->stage2.state_buffer[k][0],         \
+                                (S2_TAP_COUNT), (S2_COEF), (S2_SHR));             \
+      }                                                                           \
     } while(0)
 
 /**

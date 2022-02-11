@@ -25,7 +25,7 @@ static int32_t audio_buffer[AUDIO_BUFFER_SAMPLES][N_MICS];
 app_context_t app_context;
 
 static app_mic_array_data_t ma_data;
-static ma_pdm_filter_context_t decimator_context;
+static ma_decimator_context_t decimator_context;
 
 #if !(APP_USE_PDM_RX_ISR)
 static ma_pdm_rx_context_t pdm_rx_context;
@@ -56,7 +56,7 @@ void app_context_init(
   mic_array_context_init( &decimator_context, &ma_data, N_MICS,
                           stage1_coef, STAGE2_DEC_FACTOR,
                           STAGE2_TAP_COUNT, stage2_coef, stage2_shr, 
-                          SAMPLES_PER_FRAME, FRAME_BUFFERS, MA_FMT_SAMPLE_CHANNEL, 1);
+                          SAMPLES_PER_FRAME, MA_FMT_SAMPLE_CHANNEL, 1);
 #endif //APP_USE_BASIC_CONFIG
 
 
@@ -70,7 +70,7 @@ void app_context_init(
 }
 
 
-void ma_proc_frame_user(
+void ma_proc_frame(
   void* app_context,
   int32_t pcm_frame[])
 {
@@ -112,7 +112,7 @@ void app_decimator_task(
   interrupt_unmask_all();
 #endif
 
-  ma_pdm_filter_task( &decimator_context, c_pdm_data.end_b, &app_context );
+  ma_decimator_task( &decimator_context, c_pdm_data.end_b, &app_context );
 }
 
 

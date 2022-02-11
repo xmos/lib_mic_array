@@ -1,5 +1,5 @@
 
-#include "pdm_rx.h"
+#include "mic_array_pdm_rx.h"
 #include "mic_array.h"
 #include "fir_1x16_bit.h"
 
@@ -19,15 +19,18 @@
 
 
 
-
+/**
+ * If for whatever reason using a strong symbol isn't overriding ma_proc_sample(), 
+ * this can be set to 1 to suppress the library definition.
+ */
 #ifndef MA_CONFIG_SUPPRESS_PROC_SAMPLE
 #define MA_CONFIG_SUPPRESS_PROC_SAMPLE 0
 #endif
 
 #if !(MA_CONFIG_SUPPRESS_PROC_SAMPLE)
 __attribute__((weak))
-void ma_proc_sample_user(
-    ma_pdm_filter_context_t* config,
+void ma_proc_sample(
+    ma_decimator_context_t* config,
     void* app_context,
     int32_t pcm_sample[]) 
 {
@@ -88,8 +91,8 @@ static inline void shift_buffer(uint32_t* buff)
 //      just overriding mic_array_proc_pdm.maxstackwords to a constant much larger than it should
 //      ever need.
 #pragma stackfunction 400
-void ma_pdm_filter_task( 
-    ma_pdm_filter_context_t* config,
+void ma_decimator_task( 
+    ma_decimator_context_t* config,
     chanend_t c_pdm_data,
     void* app_context)
 {
@@ -166,10 +169,30 @@ void ma_pdm_filter_task(
     }
 
     // Once we're done with all that, we just need to call proc_pcm_user()
-    ma_proc_sample_user(config, 
-                        app_context, 
-                        samples_out);
+    ma_proc_sample(config, 
+                   app_context, 
+                   samples_out);
 
   }
 }
 
+
+
+
+
+// void ma_stage2_filters_init(
+//     xs3_filter_fir_s32_t filters[],
+//     int32_t state_buffers[],
+//     const unsigned mic_count,
+//     const unsigned stage2_tap_count,
+//     const int32_t* stage2_coef,
+//     const right_shift_t stage2_shr)
+// {
+//   for(int k = 0; k < mic_count; k++){
+//     xs3_filter_fir_s32_init(&filters[k],
+//                             &state_buffers[k*stage2_tap_count],
+//                             stage2_tap_count,
+//                             stage2_coef,
+//                             stage2_shr);
+//   }
+// }

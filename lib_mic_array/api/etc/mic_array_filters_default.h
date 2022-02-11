@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mic_array_filter.h"
+#include "xs3_math.h"
 
 #include <stdint.h>
 

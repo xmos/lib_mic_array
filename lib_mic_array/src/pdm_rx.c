@@ -1,5 +1,5 @@
 
-#include "pdm_rx.h"
+#include "mic_array_pdm_rx.h"
 #include "mic_array.h"
 #include "fir_1x16_bit.h"
 
