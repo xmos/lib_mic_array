@@ -76,7 +76,7 @@
 
           </Tile>
         </Node>
-        <Node Id="1" InPackageId="1" Type="periph:XS1-SU" Reference="usb_tile" Oscillator="24MHz">
+        <NodeId="1" InPackageId="1" Type="periph:XS1-SU" Reference="usb_tile" Oscillator="24MHz">
         </Node>
       </Nodes>
       <Links>
