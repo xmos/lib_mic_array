@@ -72,7 +72,7 @@
             <Port Location="XS1_PORT_1K" Name="PORT_ETH_RXERR"/>
             <Port Location="XS1_PORT_8C" Name="PORT_ETH_DUMMY"/>
 
-            :<Port Location="XS1_PORT_4C" Name="PORT_SMI"/>
+            <Port Location="XS1_PORT_4C" Name="PORT_SMI"/>
 
           </Tile>
         </Node>

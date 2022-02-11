@@ -54,6 +54,6 @@
     </Device>
   </ExternalDevices>
   <JTAGChain>
-    <JTAGDevice Nod:eId="0"/>
+    <JTAGDevice NodeId="0"/>
   </JTAGChain>
 </Network>

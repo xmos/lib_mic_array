@@ -111,5 +111,5 @@
   </ExternalDevices>
   <JTAGChain>
     <JTAGDevice NodeId="0"/>
-  </JTAGChain>:
+  </JTAGChain>
 </Network>
