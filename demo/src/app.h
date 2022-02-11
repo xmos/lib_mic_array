@@ -25,19 +25,31 @@ typedef struct {
 
 extern app_context_t app_context;
 
-typedef MIC_ARRAY_DATA(N_MICS, STAGE2_DEC_FACTOR, STAGE2_TAP_COUNT, 
-                       SAMPLES_PER_FRAME, FRAME_BUFFERS, 
+#if APP_USE_BASIC_CONFIG
+typedef MIC_ARRAY_DATA_BASIC(N_MICS, SAMPLES_PER_FRAME) app_mic_array_data_t;
+#else                  
+typedef MIC_ARRAY_DATA(N_MICS, STAGE2_DEC_FACTOR, 
+                       STAGE2_TAP_COUNT, SAMPLES_PER_FRAME, 
                        APP_USE_DC_OFFSET_ELIMINATION) app_mic_array_data_t;
+#endif //APP_USE_BASIC_CONFIG
 
-extern app_mic_array_data_t ma_data;
+// extern ma_pdm_filter_context_t pdm_filter_context;
 
-extern ma_pdm_filter_context_t pdm_filter_context;
+streaming_channel_t app_s_chan_alloc();
 
-void app_pdm_filter_context_init( chanend_t c_pdm_data );
-
-void app_context_init();
+void app_context_init(
+    port_t p_pdm_mics,
+    chanend_t c_pdm_data);
 
 void app_i2c_init();
+
+void app_pdm_rx_task(
+    port_t p_pdm_mics,
+    chanend_t c_pdm_data);
+
+void app_decimator_task(
+    port_t p_pdm_mics,
+    streaming_channel_t c_pdm_data);
 
 void app_i2s_task( app_context_t* app_context );
 

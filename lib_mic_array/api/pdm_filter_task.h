@@ -26,7 +26,6 @@ typedef struct {
   unsigned mic_count;
 
   struct {
-    chanend_t c_pdm_data;
     uint32_t* filter_coef;
     uint32_t* pdm_history;
   } stage1;
@@ -50,6 +49,7 @@ typedef struct {
  */
 void ma_pdm_filter_task( 
     ma_pdm_filter_context_t* filter_context,
+    chanend_t c_pdm_data,
     void* app_context);
 
 

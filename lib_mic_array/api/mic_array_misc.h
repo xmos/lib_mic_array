@@ -1,10 +1,21 @@
 #pragma once
 
+#include "mic_array_framing.h"
+
 #include <stdint.h>
 
 
 #ifdef __XC__
 extern "C" {
+#endif
+
+
+#ifndef MA_FRAME_BUFF_COUNT_DEFAULT
+#define MA_FRAME_BUFF_COUNT_DEFAULT   2
+#endif
+
+#ifndef MA_FRAME_FORMAT_DEFAULT
+#define MA_FRAME_FORMAT_DEFAULT       MA_FMT_SAMPLE_CHANNEL
 #endif
 
 /**
@@ -48,13 +59,12 @@ extern "C" {
  * 
  * @par Notes
  * 
- * If framing is not used, specifying a `FRAME_BUFF_COUNT` of `0` will avoid 
+ * If framing is not used, specifying a `SAMPS_PER_FRAME` of `0` will avoid 
  * allocating unnecessary space.
  * 
  */
 #define MIC_ARRAY_DATA(MIC_COUNT, S2_DEC_FACTOR, S2_TAP_COUNT,                    \
-                       SAMPS_PER_FRAME, FRAME_BUFF_COUNT,                         \
-                       USE_DC_ELIMINATION)                                        \
+                       SAMPS_PER_FRAME, USE_DC_ELIMINATION)                       \
 struct {                                                                          \
   struct {                                                                        \
     uint32_t pdm_buffers[2][MA_PDM_BUFFER_SIZE_WORDS((MIC_COUNT),                 \
@@ -68,10 +78,15 @@ struct {                                                                        
   struct {                                                                        \
     int32_t state_buffer[MA_FRAMING_BUFFER_SIZE((MIC_COUNT),                      \
                                                 (SAMPS_PER_FRAME),                \
-                                                (FRAME_BUFF_COUNT))];             \
+                                                (MA_FRAME_BUFF_COUNT_DEFAULT))];  \
   } framing;                                                                      \
   ma_dc_elim_chan_state_t dc_elim[(USE_DC_ELIMINATION)*(MIC_COUNT)];              \
 }
+
+
+#define MIC_ARRAY_DATA_BASIC(MIC_COUNT, SAMPS_PER_FRAME)                          \
+    MIC_ARRAY_DATA(MIC_COUNT, STAGE2_DEC_FACTOR, STAGE2_TAP_COUNT,                \
+                   SAMPS_PER_FRAME, 1)                                              
 
 
 /**
@@ -79,22 +94,21 @@ struct {                                                                        
  * a defined type (though the tree of fields is known).
  */
 #define mic_array_context_init( CONTEXT, MA_BUFFERS, MIC_COUNT,                   \
-                                S1_COEF, C_PDM_DATA,                              \
+                                S1_COEF,                                          \
                                 S2_DEC_FACTOR, S2_TAP_COUNT, S2_COEF, S2_SHR,     \
-                                SAMPS_PER_FRAME, FRAME_BUFF_COUNT, FRAME_FMT,     \
+                                SAMPS_PER_FRAME, FRAME_FMT,                       \
                                 USE_DC_ELIMINATION  )                             \
     do {                                                                          \
       (CONTEXT)->mic_count = (MIC_COUNT);                                         \
                                                                                   \
       (CONTEXT)->stage1.filter_coef = (uint32_t*) (S1_COEF);                      \
-      (CONTEXT)->stage1.c_pdm_data = (unsigned) (c_pdm_data);                     \
       (CONTEXT)->stage1.pdm_history = &(MA_BUFFERS)->stage1.pdm_history[0];       \
                                                                                   \
       (CONTEXT)->stage2.decimation_factor = (S2_DEC_FACTOR);                      \
       (CONTEXT)->stage2.filters = &(MA_BUFFERS)->stage2.filters[0];               \
                                                                                   \
       (CONTEXT)->framing = NULL;                                                  \
-      if( FRAME_BUFF_COUNT ) (CONTEXT)->framing = (ma_framing_context_t*)         \
+      if( SAMPS_PER_FRAME ) (CONTEXT)->framing = (ma_framing_context_t*)          \
                                             &(MA_BUFFERS)->framing;               \
                                                                                   \
       (CONTEXT)->dc_elim = NULL;                                                  \
@@ -102,16 +116,26 @@ struct {                                                                        
                                                                                   \
       ma_dc_elimination_init((CONTEXT)->dc_elim, (MIC_COUNT));                    \
       ma_framing_init((CONTEXT)->framing, (MIC_COUNT),                            \
-                      (SAMPS_PER_FRAME), (FRAME_BUFF_COUNT),                      \
+                      (SAMPS_PER_FRAME), (MA_FRAME_BUFF_COUNT_DEFAULT),           \
                       (FRAME_FMT));                                               \
       ma_stage2_filters_init(&(MA_BUFFERS)->stage2.filters[0],                    \
                              &(MA_BUFFERS)->stage2.state_buffer[0][0],            \
                              (MIC_COUNT), (S2_TAP_COUNT), (S2_COEF), (S2_SHR));   \
     } while(0)
 
+/**
+ * 
+ */
+#define mic_array_context_init_basic( CONTEXT, MA_BUFFERS, MIC_COUNT,             \
+                                      SAMPS_PER_FRAME )                           \
+    mic_array_context_init(CONTEXT, MA_BUFFERS, MIC_COUNT, stage1_coef,           \
+                           STAGE2_DEC_FACTOR, STAGE2_TAP_COUNT,                   \
+                           stage2_coef, stage2_shr, SAMPS_PER_FRAME,              \
+                           MA_FRAME_FORMAT_DEFAULT, 1)
 
-
-
+/**
+ * The required state information for a channel using DC offset elimination.
+ */
 typedef struct {
   int64_t prev_y;
 } ma_dc_elim_chan_state_t;

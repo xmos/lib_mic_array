@@ -30,6 +30,12 @@ void ma_framing_init(
   ctx->current.sample = 0;
 }
 
+#ifndef MA_CONFIG_SUPPRESS_PROC_FRAME
+#define MA_CONFIG_SUPPRESS_PROC_FRAME 0
+#endif
+
+#if !(MA_CONFIG_SUPPRESS_PROC_FRAME)
+
 __attribute__((weak))
 void ma_proc_frame_user(
   void* app_context,
@@ -37,6 +43,8 @@ void ma_proc_frame_user(
 {
 
 }
+
+#endif
 
 
 unsigned ma_framing_add_sample(

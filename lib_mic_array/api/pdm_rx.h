@@ -19,43 +19,88 @@ extern "C" {
  * the PDM receive ISR.
  */
 typedef struct {
-  port_t p_pdm_data;
   uint32_t* pdm_buffer[2];
   unsigned phase;
   unsigned phase_reset;
-  streaming_channel_t c_pdm_data;
-} pdm_rx_isr_context_t;
-
+} ma_pdm_rx_context_t;
 
 
 /**
- * Initialize the context data for the PDM rx ISR.
+ * Construct a ma_pdm_rx_context_t object using the supplied paramters.
  * 
- * This function sets up the structure used by the PDM rx ISR. It does not actually
- * set up the ISR associated with the receive port.
+ * @note This function allocates one of the finite number of streamings channels available 
+ *       on the device. It is the caller's responsibility to deallocate the streaming 
+ *       channel if and when necessary. 
  * 
- * In most cases MA_PDM_BUFFER_SIZE_WORDS() can be used to determine the appropriate 
- * size for each PDM buffer.
  */
-chanend_t ma_pdm_rx_isr_init(
-  const port_t p_pdm_data,
-  uint32_t* pdm_buffer_a,
-  uint32_t* pdm_buffer_b,
-  const unsigned buffer_words);
+ma_pdm_rx_context_t ma_pdm_rx_context_create(
+    uint32_t* pdm_buffer_a,
+    uint32_t* pdm_buffer_b,
+    const unsigned buffer_words);
+
 
 
 /**
- * Loads and enables the ISR vector for the PDM data port.
- * 
+ * Initializes the PDM rx ISR context and enables the ISR on the core
+ * calling this function.
+ *  
  * Does not unmask interrupts.
+ * 
+ * @returns chanend through which filled PDM buffers can be received.
  */
 void ma_pdm_rx_isr_enable(
-  const port_t p_pdm_data);
+    const port_t p_pdm_mics,
+    uint32_t* pdm_buffer_a,
+    uint32_t* pdm_buffer_b,
+    const unsigned buffer_words,
+    const chanend_t c_pdm_data);
 
 
+/**
+ * Blocking function which waits to receive a pointer to a full PDM buffer
+ * from the supplied chanend.
+ * 
+ * If the channel's receive buffer is already full, this function won't block.
+ * 
+ * `c_pdm_data_in` must be a *streaming* chanend.
+ * 
+ * @todo: Inline function?
+ * 
+ * Dev note: This is (currently) a simple channel read, but encapsulating it in a function
+ *           to hide that implementation detail, and because options may be added later.
+ */
+uint32_t* ma_pdm_rx_buffer_receive(
+    const chanend_t c_pdm_data);
 
+
+/**
+ * Function sends the `pdm_buffer` pointer over the `c_pdm_data_out` chanend.
+ * 
+ * If the transmit buffer for `c_pdm_data_out` is full, this function will block
+ * until it isn't full.
+ * 
+ * `c_pdm_data_out` must be a *streaming* chanend.
+ * 
+ * @todo: Inline function?
+ * 
+ * Dev note: This is (currently) a simple channel write, but encapsulating it in a function
+ *           to hide that implementation detail, and because options may be added later.
+ */
+void ma_pdm_rx_buffer_send(
+    const chanend_t c_pdm_data_out,
+    const uint32_t* pdm_buffer);
+
+
+/**
+ * Task for receiving PDM data via a port.
+ * 
+ * Two buffers are kept. Once one is filled, the buffers are swapped and the address 
+ * of the filled buffer is transmitted over a streaming channel.
+ */
 void ma_pdm_rx_task(
-  pdm_rx_isr_context_t* context);
+    port_t p_pdm_mics,
+    ma_pdm_rx_context_t context,
+    chanend_t c_pdm_data);
 
 
 #ifdef __XC__

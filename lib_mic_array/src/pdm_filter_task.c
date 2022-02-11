@@ -20,22 +20,26 @@
 
 
 
+#ifndef MA_CONFIG_SUPPRESS_PROC_SAMPLE
+#define MA_CONFIG_SUPPRESS_PROC_SAMPLE 0
+#endif
 
-
+#if !(MA_CONFIG_SUPPRESS_PROC_SAMPLE)
 __attribute__((weak))
 void ma_proc_sample_user(
     ma_pdm_filter_context_t* config,
     void* app_context,
-    int32_t pcm_sample[])
+    int32_t pcm_sample[]) 
 {
-  // if(config->dc_elim != NULL){
-  //   ma_dc_elimination_next_sample(pcm_sample, config->dc_elim, pcm_sample, config->mic_count);
-  // }
+  if(config->dc_elim != NULL){
+    ma_dc_elimination_next_sample(pcm_sample, config->dc_elim, pcm_sample, config->mic_count);
+  }
 
   if(config->framing != NULL){
     ma_framing_add_sample(config->framing, app_context, pcm_sample);
   }
 }
+#endif
 
 
 static inline void deinterleave_pdm_samples(
@@ -86,6 +90,7 @@ static inline void shift_buffer(uint32_t* buff)
 #pragma stackfunction 400
 void ma_pdm_filter_task( 
     ma_pdm_filter_context_t* config,
+    chanend_t c_pdm_data,
     void* app_context)
 {
 
@@ -104,17 +109,13 @@ void ma_pdm_filter_task(
   // the next output samples from the second stage decimators.
   int32_t samples_out[MAX_MIC_COUNT] = {0};
 
-  // Once we unmask interrupts, the ISR will begin triggering and collecting PDM samples. At
-  // that point we need to be ready to pull PDM samples from the ISR via the c_pdm_in chanend.
-  interrupt_unmask_all();
-
   while(1) {
 
     ////// Wait for the next batch of PDM samples from the ISR.
     // This will deliver enough PDM samples to do a first AND second stage filter
     // for each microphone channel. (Note: All we're pulling out of the channel itself 
     // is a pointer to the PDM buffer.
-    uint32_t* pdm_samples = (uint32_t*) s_chan_in_word(config->stage1.c_pdm_data);
+    uint32_t* pdm_samples = ma_pdm_rx_buffer_receive(c_pdm_data);
 
     ////// De-interleave the channels in the received PDM buffer.
     // Because of the way multi-bit buffered ports work, each word pulled from the port in the ISR
@@ -171,3 +172,4 @@ void ma_pdm_filter_task(
 
   }
 }
+
