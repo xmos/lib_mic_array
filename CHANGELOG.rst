@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+4.4.0
+-----
+
+  * CHANGED: XN files to support 15.x.x tools
+
 4.3.0
 -----
 
