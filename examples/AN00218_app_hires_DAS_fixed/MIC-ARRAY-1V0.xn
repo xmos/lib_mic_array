@@ -110,6 +110,6 @@
     </Device>
   </ExternalDevices>
   <JTAGChain>
-    <JTAGDevice Node:Id="0"/>
+    <JTAGDevice NodeId="0"/>
   </JTAGChain>
 </Network>
