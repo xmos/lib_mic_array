@@ -1,12 +1,10 @@
 
-#include "mic_array_pdm_rx.h"
-#include "mic_array.h"
+#include "mic_array/pdm_rx.h"
 #include "fir_1x16_bit.h"
 
 #include "xs3_math.h"
 
 #include <xcore/port.h>
-// #include <xcore/channel.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/hwtimer.h>
 #include <xcore/interrupt.h>
@@ -25,7 +23,7 @@
 */
 extern struct {
   port_t p_pdm_mics;
-  ma_pdm_rx_context_t state;
+  pdm_rx_context_t state;
   chanend_t c_pdm_data;
 } pdm_rx_isr_context;
 
@@ -45,12 +43,12 @@ static inline void enable_pdm_rx_isr(
 
 
 
-ma_pdm_rx_context_t ma_pdm_rx_context_create(
+pdm_rx_context_t pdm_rx_context_create(
     uint32_t* pdm_buffer_a,
     uint32_t* pdm_buffer_b,
     const unsigned buffer_words)
 {
-  ma_pdm_rx_context_t ctx;
+  pdm_rx_context_t ctx;
   ctx.pdm_buffer[0] = pdm_buffer_a;
   ctx.pdm_buffer[1] = pdm_buffer_b;
   ctx.phase_reset = buffer_words - 1;
@@ -61,7 +59,7 @@ ma_pdm_rx_context_t ma_pdm_rx_context_create(
 
 
 
-void ma_pdm_rx_isr_enable(
+void pdm_rx_isr_enable(
     const port_t p_pdm_mics,
     uint32_t* pdm_buffer_a,
     uint32_t* pdm_buffer_b,
@@ -69,9 +67,9 @@ void ma_pdm_rx_isr_enable(
     chanend_t c_pdm_data)
 {
   pdm_rx_isr_context.p_pdm_mics = p_pdm_mics;
-  pdm_rx_isr_context.state = ma_pdm_rx_context_create(pdm_buffer_a,
-                                                      pdm_buffer_b,
-                                                      buffer_words);
+  pdm_rx_isr_context.state = pdm_rx_context_create(pdm_buffer_a,
+                                                   pdm_buffer_b,
+                                                   buffer_words);
   pdm_rx_isr_context.c_pdm_data = c_pdm_data;
   enable_pdm_rx_isr(p_pdm_mics);
 }
@@ -80,7 +78,7 @@ void ma_pdm_rx_isr_enable(
 
 
 
-void ma_pdm_rx_buffer_send(
+void pdm_rx_buffer_send(
     const chanend_t c_pdm_data_out,
     const uint32_t* pdm_buffer)
 {
@@ -90,7 +88,7 @@ void ma_pdm_rx_buffer_send(
 
 
 
-uint32_t* ma_pdm_rx_buffer_receive(
+uint32_t* pdm_rx_buffer_receive(
     const chanend_t c_pdm_data_in)
 {
   return (uint32_t*) s_chan_in_word(c_pdm_data_in);
@@ -100,9 +98,9 @@ uint32_t* ma_pdm_rx_buffer_receive(
 
 
 
-void ma_pdm_rx_task(
+void pdm_rx_task(
     port_t p_pdm_mics,
-    ma_pdm_rx_context_t context,
+    pdm_rx_context_t context,
     chanend_t c_pdm_data)
 {
   while(1){
@@ -115,7 +113,7 @@ void ma_pdm_rx_task(
       context.phase = context.phase_reset;
       context.pdm_buffer[0] = context.pdm_buffer[1];
       context.pdm_buffer[1] = buff;
-      ma_pdm_rx_buffer_send(c_pdm_data, buff);
+      pdm_rx_buffer_send(c_pdm_data, buff);
     }
   }
 }

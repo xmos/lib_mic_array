@@ -1,5 +1,5 @@
 
-#include "mic_array_pdm_rx.h"
+#include "mic_array/pdm_rx.h"
 #include "mic_array.h"
 #include "fir_1x16_bit.h"
 
@@ -118,7 +118,7 @@ void ma_decimator_task(
     // This will deliver enough PDM samples to do a first AND second stage filter
     // for each microphone channel. (Note: All we're pulling out of the channel itself 
     // is a pointer to the PDM buffer.
-    uint32_t* pdm_samples = ma_pdm_rx_buffer_receive(c_pdm_data);
+    uint32_t* pdm_samples = pdm_rx_buffer_receive(c_pdm_data);
 
     ////// De-interleave the channels in the received PDM buffer.
     // Because of the way multi-bit buffered ports work, each word pulled from the port in the ISR

@@ -4,8 +4,8 @@
 
 #include "xcore_compat.h"
 
-#include "mic_array_framing.h"
-#include "mic_array_misc.h"
+#include "mic_array/framing.h"
+#include "mic_array/misc.h"
 
 #include <stdint.h>
 

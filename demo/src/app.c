@@ -6,8 +6,8 @@
 #include "app.h"
 #include "i2s.h"
 #include "util/audio_buffer.h"
-#include "mic_array_framing.h"
-#include "etc/mic_array_filters_default.h"
+#include "mic_array/framing.h"
+#include "mic_array/etc/filters_default.h"
 
 #include <xcore/interrupt.h>
 
@@ -28,7 +28,7 @@ static app_mic_array_data_t ma_data;
 static ma_decimator_context_t decimator_context;
 
 #if !(APP_USE_PDM_RX_ISR)
-static ma_pdm_rx_context_t pdm_rx_context;
+static pdm_rx_context_t pdm_rx_context;
 #endif
 
 
@@ -62,7 +62,7 @@ void app_context_init(
 
 
 #if !(APP_USE_PDM_RX_ISR)
-  pdm_rx_context = ma_pdm_rx_context_create((uint32_t*) &ma_data.stage1.pdm_buffers[0],
+  pdm_rx_context = pdm_rx_context_create((uint32_t*) &ma_data.stage1.pdm_buffers[0],
                                             (uint32_t*) &ma_data.stage1.pdm_buffers[1],
                                             N_MICS * STAGE2_DEC_FACTOR);
 #endif
@@ -92,7 +92,7 @@ void app_pdm_rx_task(
     port_t p_pdm_mics,
     chanend_t c_pdm_data)
 {
-  ma_pdm_rx_task(p_pdm_mics, pdm_rx_context, c_pdm_data);
+  pdm_rx_task(p_pdm_mics, pdm_rx_context, c_pdm_data);
 }
 #endif
 
@@ -101,7 +101,7 @@ void app_decimator_task(
     streaming_channel_t c_pdm_data)
 {
 #if APP_USE_PDM_RX_ISR
-  ma_pdm_rx_isr_enable((port_t) p_pdm_mics, 
+  pdm_rx_isr_enable((port_t) p_pdm_mics, 
                        (uint32_t*) &ma_data.stage1.pdm_buffers[0],
                        (uint32_t*) &ma_data.stage1.pdm_buffers[1],
                        N_MICS * STAGE2_DEC_FACTOR,

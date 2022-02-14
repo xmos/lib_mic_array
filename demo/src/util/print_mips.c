@@ -1,4 +1,6 @@
 
+#include "../app_config.h"
+
 #include "mips.h"
 #include "mic_array.h"
 
@@ -19,9 +21,6 @@ void print_mips()
     uint64_t t = tick_count;
     uint64_t c = inst_count;
 
-    // printf("%llu instructions in %llu ticks.\n", c, t);
-    // printf("%llu instructions in %0.03f ms.\n", c, t / 100000.0f  ); 
-
     const float usec = t / 100.0f;  // microseconds since the count started
     const float ipus = c / usec;    // instructions per microsecond
     const float mips = ipus;        // million instructions per second
@@ -31,7 +30,9 @@ void print_mips()
     // We have 6 threads using [mips] MIPS, and one thread (mic array) using [ma_mips] MIPS..
     //    600 = 6*mips + ma_mips -->  ma_mips = 600 - 6*mips
 
-    const float ma_mips = 600 - 6*mips;
+    unsigned burns = (APP_USE_PDM_RX_ISR)? 6 : 5;
+
+    const float ma_mips = 600 - burns*mips;
 
 
     printf(" mic_array: %0.04f MIPS\n", ma_mips);

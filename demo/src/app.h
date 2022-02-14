@@ -2,9 +2,9 @@
 
 #include "app_config.h"
 
-#include "etc/mic_array_filters_default.h"
 #include "util/audio_buffer.h"
 #include "mic_array.h"
+#include "mic_array/etc/filters_default.h"
 
 #include <stdint.h>
 
@@ -39,7 +39,7 @@ void app_context_init(
     port_t p_pdm_mics,
     chanend_t c_pdm_data);
 
-void app_i2c_init();
+void app_dac3101_init();
 
 void app_pdm_rx_task(
     port_t p_pdm_mics,

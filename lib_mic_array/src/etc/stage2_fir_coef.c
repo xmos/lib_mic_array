@@ -1,6 +1,6 @@
 
 
-#include "etc/mic_array_filters_default.h"
+#include "mic_array/etc/filters_default.h"
 
 const int32_t stage2_coef[STAGE2_TAP_COUNT] = 
 {-105236054, -62347810, 0, 65953291, 117774723, 144035351, 132321511, 79069112, 0, -85237729, 

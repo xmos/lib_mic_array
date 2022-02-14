@@ -4,10 +4,8 @@
 #include "app.h"
 #include "i2s.h"
 #include "util/audio_buffer.h"
-#include "mic_array_framing.h"
 
 #include "app_config.h"
-// #include "dac3101/dac3101.h"
 
 #include <xcore/channel_streaming.h>
 #include <stdint.h>
@@ -54,7 +52,6 @@ static
 void app_i2s_init(app_context_t* app_data, 
                   i2s_config_t* config)
 {
-  printf("[I2S Init]\n");
   config->mode = I2S_MODE_I2S;
   config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(APP_AUDIO_CLOCK_FREQUENCY, APP_I2S_AUDIO_SAMPLE_RATE);
 }

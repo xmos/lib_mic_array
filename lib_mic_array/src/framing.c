@@ -1,5 +1,5 @@
 
-#include "mic_array_framing.h"
+#include "mic_array/framing.h"
 
 #include <string.h>
 

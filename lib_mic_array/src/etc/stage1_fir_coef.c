@@ -1,7 +1,7 @@
 
 #include <stdint.h>
 
-#include "etc/mic_array_filters_default.h"
+#include "mic_array/etc/filters_default.h"
 
 
 // Each coefficient is 16 bits and the number of coefficients must be a multiple of 256.

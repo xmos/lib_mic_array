@@ -17,9 +17,6 @@
 
 
 
-// Divider to bring the 24.576 MHz clock down to 3.072 MHz
-#define MCLK_DIV  8
-
 unsafe{
 
 
@@ -29,42 +26,6 @@ unsafe{
 on tile[1]: in port p_mclk                     = XS1_PORT_1D;
 on tile[1]: out port p_pdm_clk                 = XS1_PORT_1G;
 on tile[1]: in buffered port:32 p_pdm_mics     = XS1_PORT_1F;
-
-
-
-static void config_clocks_ports(
-    const unsigned mic_count,
-    unsigned divider)
-{
-  if(mic_count == 4)
-    divider >>= 1;
-  else if(mic_count == 8)
-    divider >>= 2;
-
-  if( mic_count == 1 ){
-    mic_array_setup_sdr((unsigned) MIC_ARRAY_CLK1,
-                        (unsigned) p_mclk, (unsigned) p_pdm_clk, 
-                        (unsigned) p_pdm_mics, divider);
-  } else if( mic_count >= 2 ){
-    mic_array_setup_ddr((unsigned) MIC_ARRAY_CLK1, (unsigned) MIC_ARRAY_CLK2, 
-                        (unsigned) p_mclk, (unsigned) p_pdm_clk, 
-                        (unsigned) p_pdm_mics, divider );
-  } else {
-    assert(0);
-  }
-}
-
-
-static void app_mic_array_start()
-{
-  if( N_MICS == 1 ){
-    mic_array_start_sdr((unsigned) MIC_ARRAY_CLK1);
-  } else if( N_MICS >= 2 ){
-    mic_array_start_ddr((unsigned) MIC_ARRAY_CLK1, 
-                        (unsigned) MIC_ARRAY_CLK2, 
-                        (unsigned) p_pdm_mics );
-  }
-}
 
 
 
@@ -79,17 +40,22 @@ int main() {
 
       // Force it to use xscope, never mind and config.xscope files
       xscope_config_io(XSCOPE_IO_BASIC);
-      printf("Running..\n");
 
-      printf("Initializing I2C... ");
-      app_i2c_init();
-      printf("DONE.\n");
+      app_dac3101_init();
 
       c_tile_sync <: 1;
     }
 
 
     on tile[1]: {
+      
+      pdm_rx_resources_t pdm_res = 
+#if (APP_USE_DDR)
+          PDM_RX_RESOURCES_DDR(p_mclk, p_pdm_clk, p_pdm_mics, MIC_ARRAY_CLK1, MIC_ARRAY_CLK2);
+#else
+          PDM_RX_RESOURCES_SDR(p_mclk, p_pdm_clk, p_pdm_mics, MIC_ARRAY_CLK1);
+#endif
+      
 
       streaming_channel_t c_pdm_data = app_s_chan_alloc();
       assert(c_pdm_data.end_a != 0 && c_pdm_data.end_b != 0);
@@ -106,15 +72,18 @@ int main() {
       // Set up the media clock
       app_pll_init();
       
+
+      // Set up our clocks and ports
+      const unsigned mclk_div = mic_array_mclk_divider(
+          APP_AUDIO_CLOCK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY);
+      mic_array_setup(&pdm_res, mclk_div);
+      
       // Wait until tile[0] is done initializing the DAC via I2C
       unsigned ready;
       c_tile_sync :> ready;
 
-      // Set up our clocks and ports
-      config_clocks_ports(N_MICS, MCLK_DIV);
-
       // Start the PDM clock
-      app_mic_array_start();
+      mic_array_start(&pdm_res);
 
       //// (This is a work-around for XC's silly parallel usage rules)
       void * unsafe app_ctx;

@@ -9,6 +9,7 @@
 #define AUDIO_BUFFER_SAMPLES       17
 
 #define APP_AUDIO_CLOCK_FREQUENCY        24576000
+#define APP_PDM_CLOCK_FREQUENCY          3072000
 #define APP_AUDIO_PIPELINE_SAMPLE_RATE   16000
 
 
@@ -25,7 +26,15 @@
 #define MEASURE_MIPS                    0
 
 // Set this to 1 to use the "basic" configuration options
-#define APP_USE_BASIC_CONFIG            0
+#define APP_USE_BASIC_CONFIG            1
 
 // Set this to 1 to use the ISR version of PDM rx. 0 will use the thread version.
-#define APP_USE_PDM_RX_ISR              1
+#define APP_USE_PDM_RX_ISR              0
+
+
+
+////////////////////////
+// Below are macros values derived from the above
+////////////////////////
+
+#define APP_USE_DDR                     ((N_MICS)>1)

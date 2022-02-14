@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mic_array_framing.h"
+#include "mic_array/framing.h"
 
 #include <stdint.h>
 
@@ -67,7 +67,7 @@ extern "C" {
                        SAMPS_PER_FRAME, USE_DC_ELIMINATION)                       \
 struct {                                                                          \
   struct {                                                                        \
-    uint32_t pdm_buffers[2][MA_PDM_BUFFER_SIZE_WORDS((MIC_COUNT),                 \
+    uint32_t pdm_buffers[2][PDM_RX_BUFFER_SIZE_WORDS((MIC_COUNT),                 \
                                                      (S2_DEC_FACTOR))];           \
     uint32_t pdm_history[MA_PDM_HISTORY_SIZE_WORDS((MIC_COUNT))];                 \
   } stage1;                                                                       \

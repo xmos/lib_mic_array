@@ -7,23 +7,6 @@
 #include <xcore/assert.h>
 #include "app_pll_ctrl.h"
 
-void app_pll_set_numerator(int numerator)
-{
-    const unsigned tileid = get_local_tile_id();
-    uint32_t fracval = APP_PLL_FRAC_NOM & 0xFFFF00FF;
-    uint32_t f;
-
-    if (numerator > 255) {
-        f = 255;
-    } else if (numerator < 0) {
-        f = 0;
-    } else {
-        f = numerator;
-    }
-
-    fracval |= (f << 8);
-    write_sswitch_reg_no_ack(tileid, XS1_SSWITCH_SS_APP_PLL_FRAC_N_DIVIDER_NUM, fracval);
-}
 
 void app_pll_init(void)
 {

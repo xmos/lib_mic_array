@@ -1,5 +1,5 @@
 
-#include "mic_array_misc.h"
+#include "mic_array/misc.h"
 
 #include <string.h>
 
