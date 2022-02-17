@@ -12,8 +12,7 @@ extern uint64_t inst_count;
 
 void burn_mips();
 void count_mips();
-void print_mips();
-
+void print_mips(const unsigned use_pdm_rx_isr);
 
 
 #ifdef __XC__

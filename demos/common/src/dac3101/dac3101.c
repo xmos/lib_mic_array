@@ -10,7 +10,7 @@
 #include "dac3101.h"
 #include "../pcal6408a.h"
 
-#include "../app_config.h"
+#include "app_config.h"
 
 #include <stdio.h>
 

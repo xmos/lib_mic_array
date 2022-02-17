@@ -2,8 +2,10 @@
 #include "app_config.h"
 #include "util/mips.h"
 #include "app_pll_ctrl.h"
+#include "mic_array/frame_transfer.h"
 
 #include "app.h"
+#include "app_common.h"
 
 #include <platform.h>
 #include <xs1.h>
@@ -29,25 +31,24 @@ on tile[1]: in buffered port:32 p_pdm_mics     = XS1_PORT_1F;
 
 
 
-
 int main() {
 
-  chan c_tile_sync;
+  chan c_audio_frames;
   
   par {
 
     on tile[0]: {
-
-      // Force it to use xscope, never mind and config.xscope files
       xscope_config_io(XSCOPE_IO_BASIC);
-
-      app_dac3101_init();
-
-      c_tile_sync <: 1;
+      printf("Running " APP_NAME "..\n");
+      eat_audio_frames_task((chanend_t) c_audio_frames, 
+                            N_MICS*SAMPLES_PER_FRAME);
     }
 
 
     on tile[1]: {
+
+      // Force it to use xscope, never mind and config.xscope files
+      xscope_config_io(XSCOPE_IO_BASIC);
       
       pdm_rx_resources_t pdm_res = 
 #if (APP_USE_DDR)
@@ -56,51 +57,30 @@ int main() {
           PDM_RX_RESOURCES_SDR(p_mclk, p_pdm_clk, p_pdm_mics, MIC_ARRAY_CLK1);
 #endif
       
-
+      // Channel for communicating between pdm_rx and decimator
       streaming_channel_t c_pdm_data = app_s_chan_alloc();
       assert(c_pdm_data.end_a != 0 && c_pdm_data.end_b != 0);
-
-      // Force it to use xscope, never mind and config.xscope files
-      xscope_config_io(XSCOPE_IO_BASIC);
       
-      // Initialize the 
-      //    app context -- just a buffer for audio between decimator and I2S
-      //    decimator context, and
-      //    
       app_context_init((port_t) p_pdm_mics, c_pdm_data.end_b);;
 
       // Set up the media clock
       app_pll_init();
-      
-
+         
       // Set up our clocks and ports
       const unsigned mclk_div = mic_array_mclk_divider(
           APP_AUDIO_CLOCK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY);
       mic_array_setup(&pdm_res, mclk_div);
-      
-      // Wait until tile[0] is done initializing the DAC via I2C
-      unsigned ready;
-      c_tile_sync :> ready;
 
       // Start the PDM clock
       mic_array_start(&pdm_res);
 
-      //// (This is a work-around for XC's silly parallel usage rules)
-      void * unsafe app_ctx;
-      asm volatile("mov %0, %1" : "=r"(app_ctx) : "r"(&app_context) );
-
-
-
       par {
-        app_decimator_task((port_t) p_pdm_mics, c_pdm_data);
-
 #if (!APP_USE_PDM_RX_ISR)
-        app_pdm_rx_task((port_t) p_pdm_mics, c_pdm_data.end_a);
+          app_pdm_rx_task((port_t) p_pdm_mics, c_pdm_data.end_a);
 #endif
 
-#if !(MEASURE_MIPS)
-        app_i2s_task( (void*) app_ctx );
-#else
+        app_decimator_task((port_t) p_pdm_mics, c_pdm_data, (chanend_t) c_audio_frames);
+
         // The burn_mips() and the count_mips() should all consume as many MIPS as they're offered. And
         // they should all get the SAME number of MIPS.
         // print_mips() uses almost no MIPS -- we can assume it's zero.
@@ -118,8 +98,7 @@ int main() {
         burn_mips();
         burn_mips();
         count_mips();
-        print_mips();
-#endif
+        print_mips(APP_USE_PDM_RX_ISR);
       }
     }
   }

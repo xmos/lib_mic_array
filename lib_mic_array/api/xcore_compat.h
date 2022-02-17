@@ -28,7 +28,6 @@ typedef struct streaming_channel_t {
 #endif //__XC__
 
 
-
 #ifdef __XC__
 }
 #endif //__XC__

@@ -17,6 +17,7 @@ extern "C" {
 #define MA_PDM_HISTORY_SIZE_WORDS(MIC_COUNT)  ( 8*(MIC_COUNT) )
 
 
+
 /**
  * This struct contains the configuration info needed by the mic array
  * filtering task.
@@ -42,16 +43,6 @@ typedef struct {
 
 
 
-// void ma_stage2_filters_init(
-//     xs3_filter_fir_s32_t filters[],
-//     int32_t state_buffers[],
-//     const unsigned mic_count,
-//     const unsigned stage2_tap_count,
-//     const int32_t* stage2_coef,
-//     const right_shift_t stage2_shr);
-
-
-
 /**
  * This task receives PDM samples over a channel (a buffer pointer is passed) and
  * processes the PDM stream, turning it into a PCM stream using a two stage 
@@ -60,7 +51,7 @@ typedef struct {
 void ma_decimator_task( 
     ma_decimator_context_t* filter_context,
     chanend_t c_pdm_data,
-    void* app_context);
+    ma_dec_output_t c_decimator_out);
 
 
 #ifdef __XC__

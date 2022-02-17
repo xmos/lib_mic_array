@@ -29,6 +29,8 @@ project(lib_mic_array VERSION 5.0.0)
 
 enable_language(CXX C ASM)
 
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+
 
 #**********************
 # Options
@@ -44,11 +46,22 @@ set(USE_I2C_HIL TRUE)
 
 include("$ENV{XCORE_SDK_PATH}/modules/modules.cmake")
 include("$ENV{XCORE_SDK_PATH}/modules/hil/hil.cmake")
+
+include(demos/etc/demo_app.cmake)
+include(demos/common/demo_common.cmake)
+
+#**********************
+# Static Libs
+#**********************
+include(demos/etc/lib_xs3_math.cmake)
+include(demos/etc/lib_i2c.cmake)
+include(demos/etc/lib_i2s.cmake)
+
 #**********************
 # Apps
 #**********************
 
-add_subdirectory( demo )
+add_subdirectory( demos )
 
 #**********************
 # Helper Targets

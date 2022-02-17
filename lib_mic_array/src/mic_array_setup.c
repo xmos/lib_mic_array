@@ -21,7 +21,7 @@ void mic_array_setup_sdr(
 {
     clock_enable(pdm_res->clock_a);
     port_enable(pdm_res->p_mclk);
-    clock_set_source_port(pdm_res->p_pdm_clk, pdm_res->p_mclk);
+    clock_set_source_port(pdm_res->clock_a, pdm_res->p_mclk);
     clock_set_divide(pdm_res->clock_a, divide/2);
 
     port_enable(pdm_res->p_pdm_clk);

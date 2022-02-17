@@ -1,5 +1,5 @@
 
-#include "../app_config.h"
+#include "app_config.h"
 
 #include "mips.h"
 #include "mic_array.h"
@@ -12,7 +12,8 @@
 #include <stdio.h>
 
 
-void print_mips()
+void print_mips(
+    const unsigned use_pdm_rx_isr)
 {
 
   while(1){
@@ -30,7 +31,7 @@ void print_mips()
     // We have 6 threads using [mips] MIPS, and one thread (mic array) using [ma_mips] MIPS..
     //    600 = 6*mips + ma_mips -->  ma_mips = 600 - 6*mips
 
-    unsigned burns = (APP_USE_PDM_RX_ISR)? 6 : 5;
+    unsigned burns = (use_pdm_rx_isr)? 6 : 5;
 
     const float ma_mips = 600 - burns*mips;
 

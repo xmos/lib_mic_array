@@ -11,3 +11,11 @@ Todo
       vs specify your own filters.
     * Document using the included python script to convert stage1 filters.
   * Diagram of whole mic array capture and filtering process
+
+
+Questions
+---------
+
+* Naming scheme?
+  * task functions
+  * function prefixes

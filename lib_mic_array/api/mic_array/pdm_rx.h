@@ -3,7 +3,6 @@
 #include "xs3_math.h"
 
 #include "xcore_compat.h"
-// #include "mic_array.h"
 
 #include <stdint.h>
 
@@ -34,13 +33,13 @@ typedef struct {
 } pdm_rx_resources_t;
 
 
-#define PDM_RX_RESOURCES_SDR(P_MCLK, P_PDM_CLK,        \
+#define PDM_RX_RESOURCES_SDR(P_MCLK, P_PDM_CLK,           \
                                 P_PDM_MICS, CLOCK_A)      \
       { (unsigned) (P_MCLK), (unsigned) (P_PDM_CLK),      \
         (unsigned) (P_PDM_MICS), (unsigned) (CLOCK_A), 0 }
 
 
-#define PDM_RX_RESOURCES_DDR(P_MCLK, P_PDM_CLK,        \
+#define PDM_RX_RESOURCES_DDR(P_MCLK, P_PDM_CLK,           \
                                 P_PDM_MICS, CLOCK_A,      \
                                 CLOCK_B)                  \
       { (unsigned) (P_MCLK), (unsigned) (P_PDM_CLK),      \

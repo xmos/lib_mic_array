@@ -1,5 +1,6 @@
 
 #include "mic_array/pdm_rx.h"
+#include "mic_array/frame_transfer.h"
 #include "mic_array.h"
 #include "fir_1x16_bit.h"
 
@@ -31,16 +32,18 @@
 __attribute__((weak))
 void ma_proc_sample(
     ma_decimator_context_t* config,
-    void* app_context,
+    ma_dec_output_t c_decimator_out,
     int32_t pcm_sample[]) 
 {
-  if(config->dc_elim != NULL){
-    ma_dc_elimination_next_sample(pcm_sample, config->dc_elim, pcm_sample, config->mic_count);
-  }
+  if(config->dc_elim != NULL)
+    ma_dc_elimination_next_sample(pcm_sample, config->dc_elim, 
+                                  pcm_sample, config->mic_count);
 
-  if(config->framing != NULL){
-    ma_framing_add_sample(config->framing, app_context, pcm_sample);
-  }
+  if(config->framing != NULL)
+    ma_framing_add_sample(config->framing, c_decimator_out, pcm_sample);
+  else
+    ma_sample_tx_s32(c_decimator_out, pcm_sample, config->mic_count);
+  
 }
 #endif
 
@@ -94,7 +97,7 @@ static inline void shift_buffer(uint32_t* buff)
 void ma_decimator_task( 
     ma_decimator_context_t* config,
     chanend_t c_pdm_data,
-    void* app_context)
+    ma_dec_output_t c_decimator_out)
 {
 
   // The first stage decimator applies a 256-tap FIR filter for each channel, so we need
@@ -119,6 +122,7 @@ void ma_decimator_task(
     // for each microphone channel. (Note: All we're pulling out of the channel itself 
     // is a pointer to the PDM buffer.
     uint32_t* pdm_samples = pdm_rx_buffer_receive(c_pdm_data);
+
 
     ////// De-interleave the channels in the received PDM buffer.
     // Because of the way multi-bit buffered ports work, each word pulled from the port in the ISR
@@ -150,14 +154,6 @@ void ma_decimator_task(
         // whatever was in the 8th word (which isn't needed anymore).
         shift_buffer(&pdm_history[8*mic]);
 
-        
-        // // Doing DC offset elmination here uses STAGE2_DEC_FACTOR times the MIPS of doing
-        // // it after the second stage decimation.
-        // if(config->dc_elim != NULL){
-        //   ma_dc_elimination_next_sample(&streamA_sample, &config->dc_elim[mic], 
-        //                                 &streamA_sample, 1);
-        // }
-
         // Up until the last iteration of k we're just adding the sample to our stage2 FIR.
         // On the last iteration we'll actually produce a new output sample.
         if(k < (config->stage2.decimation_factor-1)){
@@ -170,29 +166,9 @@ void ma_decimator_task(
 
     // Once we're done with all that, we just need to call proc_pcm_user()
     ma_proc_sample(config, 
-                   app_context, 
+                   c_decimator_out,
                    samples_out);
 
   }
 }
 
-
-
-
-
-// void ma_stage2_filters_init(
-//     xs3_filter_fir_s32_t filters[],
-//     int32_t state_buffers[],
-//     const unsigned mic_count,
-//     const unsigned stage2_tap_count,
-//     const int32_t* stage2_coef,
-//     const right_shift_t stage2_shr)
-// {
-//   for(int k = 0; k < mic_count; k++){
-//     xs3_filter_fir_s32_init(&filters[k],
-//                             &state_buffers[k*stage2_tap_count],
-//                             stage2_tap_count,
-//                             stage2_coef,
-//                             stage2_shr);
-//   }
-// }

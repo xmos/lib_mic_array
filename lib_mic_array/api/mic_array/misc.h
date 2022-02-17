@@ -14,10 +14,6 @@ extern "C" {
 #define MA_FRAME_BUFF_COUNT_DEFAULT   2
 #endif
 
-#ifndef MA_FRAME_FORMAT_DEFAULT
-#define MA_FRAME_FORMAT_DEFAULT       MA_FMT_SAMPLE_CHANNEL
-#endif
-
 /**
  * Several components of lib_mic_array require buffers to be supplied whose 
  * size depends upon application parameters. Rather than requiring applications
@@ -81,12 +77,7 @@ struct {                                                                        
                                                 (MA_FRAME_BUFF_COUNT_DEFAULT))];  \
   } framing;                                                                      \
   ma_dc_elim_chan_state_t dc_elim[(USE_DC_ELIMINATION)*(MIC_COUNT)];              \
-}
-
-
-#define MIC_ARRAY_DATA_BASIC(MIC_COUNT, SAMPS_PER_FRAME)                          \
-    MIC_ARRAY_DATA(MIC_COUNT, STAGE2_DEC_FACTOR, STAGE2_TAP_COUNT,                \
-                   SAMPS_PER_FRAME, 1)                                              
+}                                       
 
 
 /**
@@ -96,8 +87,7 @@ struct {                                                                        
 #define mic_array_context_init( CONTEXT, MA_BUFFERS, MIC_COUNT,                   \
                                 S1_COEF,                                          \
                                 S2_DEC_FACTOR, S2_TAP_COUNT, S2_COEF, S2_SHR,     \
-                                SAMPS_PER_FRAME, FRAME_FMT,                       \
-                                USE_DC_ELIMINATION  )                             \
+                                SAMPS_PER_FRAME, USE_DC_ELIMINATION  )            \
     do {                                                                          \
       (CONTEXT)->mic_count = (MIC_COUNT);                                         \
                                                                                   \
@@ -115,9 +105,9 @@ struct {                                                                        
       if( USE_DC_ELIMINATION ) (CONTEXT)->dc_elim = &(MA_BUFFERS)->dc_elim[0];    \
                                                                                   \
       ma_dc_elimination_init((CONTEXT)->dc_elim, (MIC_COUNT));                    \
-      ma_framing_init((CONTEXT)->framing, (MIC_COUNT),                            \
-                      (SAMPS_PER_FRAME), (MA_FRAME_BUFF_COUNT_DEFAULT),           \
-                      (FRAME_FMT));                                               \
+                                                                                  \
+      ma_framing_init((CONTEXT)->framing, (MIC_COUNT), (SAMPS_PER_FRAME),         \
+                      (MA_FRAME_BUFF_COUNT_DEFAULT));                             \
                                                                                   \
       for(int k = 0; k < MIC_COUNT; k++){                                         \
         xs3_filter_fir_s32_init(&(MA_BUFFERS)->stage2.filters[k],                 \
@@ -126,15 +116,6 @@ struct {                                                                        
       }                                                                           \
     } while(0)
 
-/**
- * 
- */
-#define mic_array_context_init_basic( CONTEXT, MA_BUFFERS, MIC_COUNT,             \
-                                      SAMPS_PER_FRAME )                           \
-    mic_array_context_init(CONTEXT, MA_BUFFERS, MIC_COUNT, stage1_coef,           \
-                           STAGE2_DEC_FACTOR, STAGE2_TAP_COUNT,                   \
-                           stage2_coef, stage2_shr, SAMPS_PER_FRAME,              \
-                           MA_FRAME_FORMAT_DEFAULT, 1)
 
 /**
  * The required state information for a channel using DC offset elimination.
