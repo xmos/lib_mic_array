@@ -1,20 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-#**********************
-# Setup XMOS toolchain
-#**********************
-
-set(XCORE_SDK_PATH "$ENV{XCORE_SDK_PATH}" CACHE FILEPATH "Absolute path to xCore SDK")
-
-if ( XCORE_SDK_PATH STREQUAL "")
-  message(FATAL_ERROR "xCore SDK path not found. User must either create an environment variable XCORE_SDK_PATH with " 
-                      "the fully qualified path to the xCore SDK, or manually specify the path when configuring the "
-                      "CMake build via -DXCORE_SDK_PATH=/path/to/sdk")
-endif()
-
-set(ENV{XCORE_SDK_PATH} ${XCORE_SDK_PATH})
-
-include("${XCORE_SDK_PATH}/tools/cmake_utils/xmos_toolchain.cmake")
+# enable_language(CXX C ASM)
 
 #**********************
 # Project
@@ -25,9 +11,14 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source build is not allowed! Please specify a build folder.\n\tex:cmake -B build")
 endif()
 
-project(lib_mic_array VERSION 5.0.0)
+project(lib_mic_array 
+    VERSION 5.0.0
+    LANGUAGES CXX C ASM)
 
-enable_language(CXX C ASM)
+string(REPLACE "-MD" "-MMD" CMAKE_DEPFILE_FLAGS_C ${CMAKE_DEPFILE_FLAGS_C})
+
+add_subdirectory(xcore_sdk EXCLUDE_FROM_ALL EXCLUDE_FROM_DEFAULT_BUILD)
+
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
@@ -35,35 +26,12 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 #**********************
 # Options
 #**********************
-set(USE_LIB_DSP FALSE)
-set(USE_LIB_LOGGING FALSE)
-set(USE_LIB_RANDOM FALSE) 
-set(USE_LEGACY_COMPAT FALSE)
-set(USE_LIB_XS3_MATH TRUE)
-set(USE_I2S_HIL TRUE)
-set(USE_I2C_HIL TRUE)
-
-
-include("$ENV{XCORE_SDK_PATH}/modules/modules.cmake")
-include("$ENV{XCORE_SDK_PATH}/modules/hil/hil.cmake")
 
 include(demos/etc/demo_app.cmake)
 include(demos/common/demo_common.cmake)
-
-#**********************
-# Static Libs
-#**********************
-include(demos/etc/lib_xs3_math.cmake)
-include(demos/etc/lib_i2c.cmake)
-include(demos/etc/lib_i2s.cmake)
 
 #**********************
 # Apps
 #**********************
 
 add_subdirectory( demos )
-
-#**********************
-# Helper Targets
-#**********************
-

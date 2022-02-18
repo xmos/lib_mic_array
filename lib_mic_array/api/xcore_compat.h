@@ -13,7 +13,7 @@ typedef unsigned xclock_t;
 typedef unsigned port_t;
 typedef unsigned chanend_t;
 
-typedef struct streaming_channel_t {
+typedef struct {
   unsigned end_a;
   unsigned end_b;
  } streaming_channel_t;

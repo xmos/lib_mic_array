@@ -16,9 +16,7 @@
 
 #include <math.h>
 
-
 #define I2S_CLKBLK    XS1_CLKBLK_3
-
 
 
 static int i2s_mclk_bclk_ratio(
@@ -27,7 +25,6 @@ static int i2s_mclk_bclk_ratio(
 {
     return audio_clock_frequency / (sample_rate * (8 * sizeof(int32_t)) * I2S_CHANS_PER_FRAME);
 }
-
 
 
 

@@ -1,6 +1,7 @@
 **/.build*/*
 bin/
 _build/
+xcore_sdk/
 *.o
 *.xe
 *.vcd
