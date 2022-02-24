@@ -1,10 +1,8 @@
 
 
-#ifndef MIC_ARRAY_SIMPLE_API_ENABLE
-# define MIC_ARRAY_SIMPLE_API_ENABLE    (0)
-#endif
+#include "mic_array/etc/basic.h"
 
-#if MIC_ARRAY_SIMPLE_API_ENABLE
+#if MIC_ARRAY_BASIC_API_ENABLE
 
 #include "mic_array.h"
 #include "mic_array/etc/filters_default.h"
@@ -39,6 +37,10 @@
 # endif
 #endif
 
+#ifndef MIC_ARRAY_CONFIG_USE_DC_ELIMINATION
+# define MIC_ARRAY_CONFIG_USE_DC_ELIMINATION    (1)
+#endif
+
 
 ////// Additional macros derived from others
 
@@ -50,31 +52,33 @@
 
 ////// Allocate needed objects
 
-static MIC_ARRAY_DATA(MIC_ARRAY_CONFIG_MIC_COUNT,
+static MA_STATE_DATA(MIC_ARRAY_CONFIG_MIC_COUNT,
                       STAGE2_DEC_FACTOR, STAGE2_TAP_COUNT,
-                      MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME, 1) mic_array_data;
+                      MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME, 
+                      MIC_ARRAY_CONFIG_USE_DC_ELIMINATION) mic_array_data;
 
 static ma_decimator_context_t decimator_context;
 
 
 
-void mic_array_simple_init(
+void ma_basic_init(
     pdm_rx_resources_t* pdm_res)
 {
-  mic_array_context_init( &decimator_context, &mic_array_data,
+  ma_decimator_context_setup( &decimator_context, &mic_array_data,
                           MIC_ARRAY_CONFIG_MIC_COUNT,
                           stage1_coef, STAGE2_DEC_FACTOR, STAGE2_TAP_COUNT,
                           stage2_coef, stage2_shr, 
-                          MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME, 1);
+                          MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME, 
+                          MIC_ARRAY_CONFIG_USE_DC_ELIMINATION);
 
   mic_array_setup(pdm_res, MIC_ARRAY_CONFIG_MCLK_DIVIDER);
   mic_array_start(pdm_res);
 }
 
 
-void mic_array_simple_decimator_task(
+void ma_basic_task(
     pdm_rx_resources_t* pdm_res,
-    chanend_t c_decimator_out)
+    chanend_t c_frames_out)
 {
   streaming_channel_t c_pdm_data = s_chan_alloc();
   assert(c_pdm_data.end_a != 0 && c_pdm_data.end_b != 0);
@@ -89,8 +93,8 @@ void mic_array_simple_decimator_task(
 
   ma_decimator_task( &decimator_context, 
                      c_pdm_data.end_b, 
-                     c_decimator_out );
+                     c_frames_out );
 }
 
 
-#endif // MIC_ARRAY_SIMPLE_API_ENABLE
+#endif // MIC_ARRAY_BASIC_API_ENABLE

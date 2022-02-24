@@ -10,7 +10,7 @@ void eat_audio_frames_task(
 
   //make up the details of the format because it doesn't matter.
   const ma_frame_format_t format = 
-        ma_frame_format(frame_words, 1, MA_FMT_SAMPLE_CHANNEL);
+        ma_frame_format(frame_words, 1, MA_LYT_SAMPLE_CHANNEL);
 
   while(1){
     ma_frame_rx_s32(audio_frame, c_from_decimator, &format);
@@ -26,10 +26,10 @@ void receive_and_buffer_audio_task(
 {
   int32_t audio_frame[frame_words];
 
-  // Frame MUST be in MA_FMT_SAMPLE_CHANNEL layout,
+  // Frame MUST be in MA_LYT_SAMPLE_CHANNEL layout,
   // which is why this doesn't take a ma_frame_format_t argument
   const ma_frame_format_t format = 
-        ma_frame_format(mic_count, samples_per_frame, MA_FMT_SAMPLE_CHANNEL);
+        ma_frame_format(mic_count, samples_per_frame, MA_LYT_SAMPLE_CHANNEL);
 
   while(1){
 

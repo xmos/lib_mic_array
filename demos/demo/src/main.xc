@@ -49,9 +49,17 @@ int main() {
       
       pdm_rx_resources_t pdm_res = 
 #if (APP_USE_DDR)
-          PDM_RX_RESOURCES_DDR(p_mclk, p_pdm_clk, p_pdm_mics, MIC_ARRAY_CLK1, MIC_ARRAY_CLK2);
+          // @todo: Should I rename these to be lower-case?
+          pdm_rx_resources_ddr((port_t) p_mclk, 
+                               (port_t) p_pdm_clk, 
+                               (port_t) p_pdm_mics, 
+                               (clock_t) MIC_ARRAY_CLK1, 
+                               (clock_t) MIC_ARRAY_CLK2);
 #else
-          PDM_RX_RESOURCES_SDR(p_mclk, p_pdm_clk, p_pdm_mics, MIC_ARRAY_CLK1);
+          pdm_rx_resources_sdr((port_t) p_mclk, 
+                               (port_t) p_pdm_clk, 
+                               (port_t) p_pdm_mics, 
+                               (clock_t) MIC_ARRAY_CLK1);
 #endif
       
 

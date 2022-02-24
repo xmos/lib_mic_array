@@ -4,24 +4,23 @@
 #define MAX_MIC_COUNT     8
 
 #include "mic_array/types.h"
-
 #include "mic_array/pdm_rx.h"
 #include "mic_array/decimator.h"
+#include "mic_array/dc_elimination.h"
 #include "mic_array/framing.h"
 #include "mic_array/frame_transfer.h"
-#include "mic_array/misc.h"
 
 #ifdef __XC__
 extern "C" {
 #endif
 
 
-static
+static inline
 void mic_array_setup(
     pdm_rx_resources_t* pdm_res,
     int divide);
 
-static
+static inline
 void mic_array_start(
     pdm_rx_resources_t* pdm_res);
 
@@ -39,13 +38,13 @@ void mic_array_setup_ddr(
 void mic_array_start_ddr(
     pdm_rx_resources_t* pdm_res);
 
-static
+static inline
 unsigned mic_array_mclk_divider(
   const unsigned master_clock_freq,
   const unsigned pdm_clock_freq);
 
 
-#include "mic_array_internal.h"
+#include "mic_array/impl/mic_array_impl.h"
 
 #ifdef __XC__
 }

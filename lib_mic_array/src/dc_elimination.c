@@ -1,20 +1,19 @@
 
-#include "mic_array/misc.h"
+#include "mic_array/dc_elimination.h"
 
 #include <string.h>
 
 
-
-void ma_dc_elimination_init(
-    ma_dc_elim_chan_state_t state[],
+void dcoe_state_init(
+    dcoe_chan_state_t state[],
     const unsigned chan_count)
 {
-  memset(state, 0, sizeof(ma_dc_elim_chan_state_t) * chan_count);
+  memset(state, 0, sizeof(dcoe_chan_state_t) * chan_count);
 }
 
-void ma_dc_elimination_next_sample(
+void dcoe_filter(
     int32_t new_output[],
-    ma_dc_elim_chan_state_t state[],
+    dcoe_chan_state_t state[],
     int32_t new_input[],
     const unsigned chan_count)
 {
@@ -28,7 +27,7 @@ void ma_dc_elimination_next_sample(
     // Doing these next two steps here avoids the need to store the 
     // inputs between samples
     state[k].prev_y = state[k].prev_y - (state[k].prev_y >> Q);
-    state[k].prev_y = state[k].prev_y - x_new;
+    state[k].prev_y = state[k].prev_y - x_new; 
 
   }
 

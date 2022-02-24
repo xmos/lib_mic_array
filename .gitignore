@@ -2,6 +2,7 @@
 bin/
 _build/
 xcore_sdk/
+.vscode/
 *.o
 *.xe
 *.vcd

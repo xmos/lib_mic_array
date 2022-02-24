@@ -1,6 +1,5 @@
 
 #include "mic_array/pdm_rx.h"
-#include "fir_1x16_bit.h"
 
 #include "xs3_math.h"
 
@@ -43,20 +42,6 @@ static inline void enable_pdm_rx_isr(
 
 
 
-pdm_rx_context_t pdm_rx_context_create(
-    uint32_t* pdm_buffer_a,
-    uint32_t* pdm_buffer_b,
-    const unsigned buffer_words)
-{
-  pdm_rx_context_t ctx;
-  ctx.pdm_buffer[0] = pdm_buffer_a;
-  ctx.pdm_buffer[1] = pdm_buffer_b;
-  ctx.phase_reset = buffer_words - 1;
-  ctx.phase = ctx.phase_reset;
-  return ctx;
-}
-
-
 
 
 void pdm_rx_isr_enable(
@@ -67,9 +52,9 @@ void pdm_rx_isr_enable(
     chanend_t c_pdm_data)
 {
   pdm_rx_isr_context.p_pdm_mics = p_pdm_mics;
-  pdm_rx_isr_context.state = pdm_rx_context_create(pdm_buffer_a,
-                                                   pdm_buffer_b,
-                                                   buffer_words);
+  pdm_rx_isr_context.state = pdm_rx_context(pdm_buffer_a,
+                                            pdm_buffer_b,
+                                            buffer_words);
   pdm_rx_isr_context.c_pdm_data = c_pdm_data;
   enable_pdm_rx_isr(p_pdm_mics);
 }

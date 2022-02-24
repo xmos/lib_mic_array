@@ -15,7 +15,7 @@
 extern "C" {
 #endif
              
-typedef MIC_ARRAY_DATA(N_MICS, STAGE2_DEC_FACTOR, 
+typedef MA_STATE_DATA(N_MICS, STAGE2_DEC_FACTOR, 
                        STAGE2_TAP_COUNT, SAMPLES_PER_FRAME, 
                        APP_USE_DC_OFFSET_ELIMINATION) app_mic_array_data_t;
 

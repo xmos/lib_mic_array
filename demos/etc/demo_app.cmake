@@ -23,9 +23,6 @@ macro( make_demo_app_target
     target_link_options( ${TARGET_NAME} PRIVATE 
             ${BUILD_FLAGS} ${EXTRA_BUILD_FLAGS} )
 
-    set_target_properties( ${TARGET_NAME} PROPERTIES 
-                            OUTPUT_NAME ${TARGET_NAME}.xe )
-
     target_compile_options( ${TARGET_NAME} PRIVATE
             ${BUILD_FLAGS} ${EXTRA_BUILD_FLAGS} )
 

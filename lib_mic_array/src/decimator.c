@@ -2,7 +2,7 @@
 #include "mic_array/pdm_rx.h"
 #include "mic_array/frame_transfer.h"
 #include "mic_array.h"
-#include "fir_1x16_bit.h"
+#include "mic_array/etc/fir_1x16_bit.h"
 
 #include "xs3_math.h"
 
@@ -32,15 +32,15 @@
 __attribute__((weak))
 void ma_proc_sample(
     ma_decimator_context_t* config,
-    ma_dec_output_t c_decimator_out,
+    ma_proc_sample_ctx_t c_decimator_out,
     int32_t pcm_sample[]) 
 {
   if(config->dc_elim != NULL)
-    ma_dc_elimination_next_sample(pcm_sample, config->dc_elim, 
+    dcoe_filter(pcm_sample, config->dc_elim, 
                                   pcm_sample, config->mic_count);
 
   if(config->framing != NULL)
-    ma_framing_add_sample(config->framing, c_decimator_out, pcm_sample);
+    ma_framing_add_and_signal(config->framing, c_decimator_out, pcm_sample);
   else
     ma_sample_tx_s32(c_decimator_out, pcm_sample, config->mic_count);
   
@@ -97,7 +97,7 @@ static inline void shift_buffer(uint32_t* buff)
 void ma_decimator_task( 
     ma_decimator_context_t* config,
     chanend_t c_pdm_data,
-    ma_dec_output_t c_decimator_out)
+    ma_proc_sample_ctx_t app_context)
 {
 
   // The first stage decimator applies a 256-tap FIR filter for each channel, so we need
@@ -166,9 +166,29 @@ void ma_decimator_task(
 
     // Once we're done with all that, we just need to call proc_pcm_user()
     ma_proc_sample(config, 
-                   c_decimator_out,
+                   app_context,
                    samples_out);
 
   }
 }
 
+
+void ma_decimator_context_init(
+    ma_decimator_context_t* context,
+    const unsigned mic_count,
+    const unsigned stage2_decimation_factor,
+    const uint32_t* stage1_filter_coef,
+    uint32_t* pdm_history,
+    xs3_filter_fir_s32_t* stage2_filters,
+    ma_framing_context_t* framing,
+    dcoe_chan_state_t* dcoe_states)
+
+{
+  context->mic_count = mic_count;
+  context->stage1.filter_coef = (uint32_t*) stage1_filter_coef;
+  context->stage1.pdm_history = pdm_history;
+  context->stage2.decimation_factor = stage2_decimation_factor;
+  context->stage2.filters = stage2_filters;
+  context->framing = framing;
+  context->dc_elim = dcoe_states;
+}

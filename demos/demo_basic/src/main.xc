@@ -4,7 +4,7 @@
 #include "app_pll_ctrl.h"
 
 #include "app.h"
-#include "mic_array/simple.h"
+#include "mic_array/etc/basic.h"
 #include "util/audio_buffer.h"
 
 #include <platform.h>
@@ -47,8 +47,11 @@ int main() {
     on tile[1]: {
       xscope_config_io(XSCOPE_IO_BASIC);
 
-      pdm_rx_resources_t pdm_res = 
-          PDM_RX_RESOURCES_DDR(p_mclk, p_pdm_clk, p_pdm_mics, MIC_ARRAY_CLK1, MIC_ARRAY_CLK2);
+      pdm_rx_resources_t pdm_res = pdm_rx_resources_ddr((port_t) p_mclk, 
+                                                        (port_t) p_pdm_clk, 
+                                                        (port_t) p_pdm_mics, 
+                                                        (clock_t) MIC_ARRAY_CLK1, 
+                                                        (clock_t) MIC_ARRAY_CLK2);
       
       // This makes it do SDR if we're only doing 1 mic
       if( MIC_ARRAY_CONFIG_MIC_COUNT == 1 )
@@ -68,15 +71,14 @@ int main() {
       unsigned ready;
       c_tile_sync :> ready;
 
-      mic_array_simple_init(&pdm_res);
+      ma_basic_init(&pdm_res);
 
       // XC complains about parallel usage rules if we pass the 
       // object's address directly
       void * unsafe app_ctx = &app_context;
 
       par {
-        mic_array_simple_decimator_task(&pdm_res, 
-                                        (chanend_t) c_audio_frames);
+        ma_basic_task(&pdm_res, (chanend_t) c_audio_frames);
 
         receive_and_buffer_audio_task((chanend_t) c_audio_frames, 
                                       &app_context, MIC_ARRAY_CONFIG_MIC_COUNT,
