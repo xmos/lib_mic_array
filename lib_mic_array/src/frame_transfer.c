@@ -81,7 +81,7 @@ void ma_frame_tx_s16(
       // Send the data
       for(int k = 0; k < frame_elms; k++)
         t_chan_out_word(&ct_frame, frame[k]);
-      
+
       break;
 
     case CODE_SEND_PTR:
@@ -115,13 +115,13 @@ void ma_frame_rx_s32(
     t_chan_in_buf_word(&ct_frame, (uint32_t*) frame, frame_words);
 
   } else {
-    const unsigned lim1 = (tx_layout == MA_LYT_CHANNEL_SAMPLE)? 
+    const unsigned lim1 = (tx_layout == MA_LYT_CHANNEL_SAMPLE)?
                           format->channel_count : format->sample_count;
 
-    const unsigned lim2 = (tx_layout == MA_LYT_CHANNEL_SAMPLE)? 
+    const unsigned lim2 = (tx_layout == MA_LYT_CHANNEL_SAMPLE)?
                           format->sample_count : format->channel_count;
 
-    // if (tx_layout == MA_LYT_CHANNEL_SAMPLE) then k1 --> channel and k2 --> sample 
+    // if (tx_layout == MA_LYT_CHANNEL_SAMPLE) then k1 --> channel and k2 --> sample
     for(int k1 = 0; k1 < lim1; k1++){
       for(int k2 = 0; k2 < lim2; k2++){
         frame[lim1 * k2 + k1] = t_chan_in_word(&ct_frame);
@@ -153,13 +153,13 @@ void ma_frame_rx_s16(
     for(int k = 0; k < frame_elms; k++)
       frame[k] = t_chan_in_word(&ct_frame) >> sample_shr;
   } else {
-    const unsigned lim1 = (tx_layout == MA_LYT_CHANNEL_SAMPLE)? 
+    const unsigned lim1 = (tx_layout == MA_LYT_CHANNEL_SAMPLE)?
                           format->channel_count : format->sample_count;
 
-    const unsigned lim2 = (tx_layout == MA_LYT_CHANNEL_SAMPLE)? 
+    const unsigned lim2 = (tx_layout == MA_LYT_CHANNEL_SAMPLE)?
                           format->sample_count : format->channel_count;
 
-    // if (tx_layout == MA_LYT_CHANNEL_SAMPLE) then k1 --> channel and k2 --> sample 
+    // if (tx_layout == MA_LYT_CHANNEL_SAMPLE) then k1 --> channel and k2 --> sample
     for(int k1 = 0; k1 < lim1; k1++){
       for(int k2 = 0; k2 < lim2; k2++){
         frame[lim1 * k2 + k1] = t_chan_in_word(&ct_frame) >> sample_shr;
@@ -178,7 +178,9 @@ int32_t* ma_frame_rx_ptr(
 
   t_chan_out_word(&ct_frame, CODE_SEND_PTR);
 
-  return (int32_t*) t_chan_in_word(&ct_frame);
+  int32_t *retptr = (int32_t*) t_chan_in_word(&ct_frame);
 
   chan_complete_transaction(ct_frame);
+
+  return retptr;
 }
