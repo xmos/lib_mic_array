@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -261,7 +261,7 @@ void ma_sample_rx_s16(
     const unsigned channel_count,
     const right_shift_t sample_shr);
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif
 

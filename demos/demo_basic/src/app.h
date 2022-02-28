@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -16,6 +16,6 @@ typedef int32_t audio_frame_t[MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME][MIC_ARRAY_CONF
 
 void app_i2s_task( void* app_context );
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif

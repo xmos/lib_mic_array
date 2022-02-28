@@ -19,8 +19,14 @@
 #include <math.h>
 
 
-// For some reason XC files don't like it when streaming_channel.h is included.
+// including <xcore/channel_streaming.h> is not supported in XC files
 streaming_channel_t app_s_chan_alloc()
 {
   return s_chan_alloc();
+}
+
+// including <xcore/channel_streaming.h> is not supported in XC files
+channel_t app_chan_alloc()
+{
+  return chan_alloc();
 }

@@ -42,7 +42,7 @@
                  + ((CHAN_COUNT)*(FRAME_SIZE)*(FRAME_COUNT)))
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -359,7 +359,7 @@ void ma_proc_frame(
 
 
   
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif
 

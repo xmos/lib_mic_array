@@ -101,7 +101,6 @@ void ma_frame_rx_s32(
     const chanend_t c_frame_in,
     const ma_frame_format_t* format)
 {
-
   transacting_chanend_t ct_frame = chan_init_transaction_slave(c_frame_in);
 
   t_chan_out_word(&ct_frame, CODE_SEND_DATA);

@@ -33,14 +33,21 @@ on tile[1]: in buffered port:32 p_pdm_mics     = XS1_PORT_1F;
 
 int main() {
 
-  chan c_audio_frames;
+  // This is how c_audio_frames.end_b is communicated to tile[0].
+  // chan c_intertile;
+  chan c_audio_intertile;
   
   par {
 
     on tile[0]: {
       xscope_config_io(XSCOPE_IO_BASIC);
       printf("Running " APP_NAME "..\n");
-      eat_audio_frames_task((chanend_t) c_audio_frames, 
+
+      // chanend_t c_audio_in;
+      // c_intertile :> c_audio_in;
+      // printf("c_audio_in: 0x%08X\n", c_audio_in);
+
+      eat_audio_frames_task((chanend_t) c_audio_intertile, 
                             N_MICS*SAMPLES_PER_FRAME);
     }
 
@@ -68,26 +75,37 @@ int main() {
       // Channel for communicating between pdm_rx and decimator
       streaming_channel_t c_pdm_data = app_s_chan_alloc();
       assert(c_pdm_data.end_a != 0 && c_pdm_data.end_b != 0);
-      
-      app_context_init((port_t) p_pdm_mics, c_pdm_data.end_b);;
 
-      // Set up the media clock
+      // Channel for sending audio frames to tile 0
+      // channel_t c_audio_frames = app_chan_alloc();
+      // assert(c_audio_frames.end_a != 0 && c_audio_frames.end_b != 0);
+
+      // printf("end_a: 0x%08X\n", c_audio_frames.end_a);
+      // printf("end_b: 0x%08X\n", c_audio_frames.end_b);
+
+      // c_intertile <: c_audio_frames.end_b;
+
+      // Set up the media clocks
       app_pll_init();
          
       // Set up our clocks and ports
       const unsigned mclk_div = mic_array_mclk_divider(
           APP_AUDIO_CLOCK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY);
       mic_array_setup(&pdm_res, mclk_div);
+      
+      // Initialize the mic array
+      app_init((port_t) p_pdm_mics, c_pdm_data);
+
 
       // Start the PDM clock
       mic_array_start(&pdm_res);
 
       par {
 #if (!APP_USE_PDM_RX_ISR)
-          app_pdm_rx_task((port_t) p_pdm_mics, c_pdm_data.end_a);
+        app_pdm_rx_task();
 #endif
 
-        app_decimator_task((port_t) p_pdm_mics, c_pdm_data, (chanend_t) c_audio_frames);
+        app_decimator_task((chanend_t) c_audio_intertile);
 
         // The burn_mips() and the count_mips() should all consume as many MIPS as they're offered. And
         // they should all get the SAME number of MIPS.

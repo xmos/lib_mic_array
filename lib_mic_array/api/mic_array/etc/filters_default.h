@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -176,7 +176,6 @@ extern const int32_t stage2_coef[STAGE2_TAP_COUNT];
  */
 extern const right_shift_t stage2_shr;
 
-
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__

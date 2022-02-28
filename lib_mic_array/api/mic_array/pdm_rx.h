@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif //__XC__
 
@@ -247,7 +247,7 @@ void pdm_rx_task(
 
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__
 

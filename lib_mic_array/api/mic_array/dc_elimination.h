@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -92,6 +92,6 @@ void dcoe_filter(
     int32_t new_input[],
     const unsigned chan_count);
   
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif

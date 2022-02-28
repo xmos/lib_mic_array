@@ -5,7 +5,7 @@
 
 #include "etc/xcore_compat.h"
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -91,6 +91,6 @@ typedef MA_PROC_SAMPLE_CONTEXT_TYPE ma_proc_sample_ctx_t;
 typedef MA_PROC_FRAME_CONTEXT_TYPE ma_proc_frame_ctx_t;
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__

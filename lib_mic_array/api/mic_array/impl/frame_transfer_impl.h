@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif //__XC__
 
@@ -54,6 +54,6 @@ void ma_sample_rx_s16(
 }
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__

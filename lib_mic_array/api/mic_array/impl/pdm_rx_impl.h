@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif //__XC__
 
@@ -63,6 +63,6 @@ pdm_rx_context_t pdm_rx_context(
 }
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__

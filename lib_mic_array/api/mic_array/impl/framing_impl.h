@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif //__XC__
 
@@ -35,6 +35,6 @@ int32_t* ma_framing_add_and_signal(
 
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__

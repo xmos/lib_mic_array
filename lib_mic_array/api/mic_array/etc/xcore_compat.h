@@ -17,11 +17,17 @@ typedef struct {
   unsigned end_a;
   unsigned end_b;
  } streaming_channel_t;
+ 
+typedef struct {
+  unsigned end_a;
+  unsigned end_b;
+ } channel_t;
 
 #else //__XC__
 
 #include <xs1_user.h>
 #include <xcore/channel_streaming.h>
+#include <xcore/channel.h>
 #include <xcore/clock.h>
 #include <xcore/port.h>
 

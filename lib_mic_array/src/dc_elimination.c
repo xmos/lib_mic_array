@@ -3,7 +3,6 @@
 
 #include <string.h>
 
-
 void dcoe_state_init(
     dcoe_chan_state_t state[],
     const unsigned chan_count)

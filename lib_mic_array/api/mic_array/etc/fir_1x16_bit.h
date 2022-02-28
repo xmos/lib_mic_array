@@ -1,7 +1,10 @@
-#ifndef _FIR_1X16_BIT_H_
-#define _FIR_1X16_BIT_H_
+#pragma once
 
 #include <stdint.h>
+
+#if defined(__XC__) || defined(__cplusplus)
+extern "C" {
+#endif
 
 /** Function that computes an FIR over a 1-bit signal with 16-bit coefficients.
  * The one-bit signal is stored as a sequence of bits, each of them representing
@@ -42,4 +45,6 @@
  */
 int fir_1x16_bit(uint32_t signal[], uint32_t coeff_1[]);
 
+#if defined(__XC__) || defined(__cplusplus)
+}
 #endif

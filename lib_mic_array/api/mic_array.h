@@ -10,7 +10,7 @@
 #include "mic_array/framing.h"
 #include "mic_array/frame_transfer.h"
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -46,6 +46,6 @@ unsigned mic_array_mclk_divider(
 
 #include "mic_array/impl/mic_array_impl.h"
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__

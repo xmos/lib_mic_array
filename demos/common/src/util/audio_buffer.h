@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -50,6 +50,6 @@ void abuff_frame_add(
   int32_t frame[]);
 
   
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif

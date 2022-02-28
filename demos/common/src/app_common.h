@@ -14,20 +14,23 @@
 #define FRAME_BUFFERS 2
 
 
-#ifdef __XC__
+#if defined(__XC__)
 #  define static_const  static const
-extern "C" {
 #else
 #  define static_const const
-#endif // __XC__
+#endif
 
+#if defined(__XC__) || defined(__cplusplus)
+extern "C" {
+#endif
 
 streaming_channel_t app_s_chan_alloc();
+channel_t app_chan_alloc();
 
 void app_dac3101_init();
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 
 #endif // __XC__

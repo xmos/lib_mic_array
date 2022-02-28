@@ -33,7 +33,6 @@ on tile[1]: in buffered port:32 p_pdm_mics     = XS1_PORT_1F;
 int main() {
 
   chan c_tile_sync;
-  chan c_audio_frames;
   
   par {
 
@@ -66,6 +65,10 @@ int main() {
       streaming_channel_t c_pdm_data = app_s_chan_alloc();
       assert(c_pdm_data.end_a != 0 && c_pdm_data.end_b != 0);
 
+      channel_t c_audio_frames = app_chan_alloc();
+      assert(c_audio_frames.end_a != 0 && c_audio_frames.end_b != 0);
+
+
       // Force it to use xscope, never mind and config.xscope files
       xscope_config_io(XSCOPE_IO_BASIC);
 
@@ -73,9 +76,6 @@ int main() {
       int32_t audio_buffer[AUDIO_BUFFER_SAMPLES][N_MICS];
       audio_ring_buffer_t output_audio_buffer = 
             abuff_init(N_MICS, AUDIO_BUFFER_SAMPLES, &audio_buffer[0][0]);
-      
-      // Initialize the decimator context
-      app_context_init((port_t) p_pdm_mics, c_pdm_data.end_b);
 
       // Set up the media clock
       app_pll_init();
@@ -84,6 +84,9 @@ int main() {
       const unsigned mclk_div = mic_array_mclk_divider(
           APP_AUDIO_CLOCK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY);
       mic_array_setup(&pdm_res, mclk_div);
+      
+      // Initialize the mic array
+      app_init((port_t) p_pdm_mics, c_pdm_data, c_audio_frames.end_a);
       
       // Wait until tile[0] is done initializing the DAC via I2C
       unsigned ready;
@@ -97,17 +100,14 @@ int main() {
       void * unsafe oab = &output_audio_buffer;
 
       par {
-        app_decimator_task((port_t) p_pdm_mics, 
-                           c_pdm_data, 
-                           (chanend_t) c_audio_frames);
+        app_decimator_task();
 
 #if (!APP_USE_PDM_RX_ISR)
-        app_pdm_rx_task((port_t) p_pdm_mics, 
-                        c_pdm_data.end_a);
+        app_pdm_rx_task();
 #endif
         app_i2s_task( (void*) oab );
 
-        receive_and_buffer_audio_task( (chanend_t) c_audio_frames,
+        receive_and_buffer_audio_task( c_audio_frames.end_b,
                                        &output_audio_buffer,
                                        N_MICS, SAMPLES_PER_FRAME,
                                        N_MICS * SAMPLES_PER_FRAME );

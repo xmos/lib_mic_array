@@ -3,7 +3,7 @@
 #include "mic_array.h"
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -171,6 +171,6 @@ void ma_basic_task(
     chanend_t c_frames_out);
 
     
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif

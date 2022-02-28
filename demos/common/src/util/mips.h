@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 extern "C" {
 #endif //__XC__
 
@@ -15,6 +15,6 @@ void count_mips();
 void print_mips(const unsigned use_pdm_rx_isr);
 
 
-#ifdef __XC__
+#if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__
