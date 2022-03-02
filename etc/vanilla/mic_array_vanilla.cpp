@@ -11,7 +11,6 @@
 #include "mic_array/etc/filters_default.h"
 
 
-
 ////// Check that all the required config macros have been defined. 
 
 #ifndef MIC_ARRAY_CONFIG_MCLK_FREQ
