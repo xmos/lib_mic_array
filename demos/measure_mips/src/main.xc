@@ -30,12 +30,9 @@ on tile[1]: out port p_pdm_clk                 = XS1_PORT_1G;
 on tile[1]: in buffered port:32 p_pdm_mics     = XS1_PORT_1F;
 
 
-
 int main() {
 
-  // This is how c_audio_frames.end_b is communicated to tile[0].
-  // chan c_intertile;
-  chan c_audio_intertile;
+  chan c_audio_frames;
   
   par {
 
@@ -43,11 +40,7 @@ int main() {
       xscope_config_io(XSCOPE_IO_BASIC);
       printf("Running " APP_NAME "..\n");
 
-      // chanend_t c_audio_in;
-      // c_intertile :> c_audio_in;
-      // printf("c_audio_in: 0x%08X\n", c_audio_in);
-
-      eat_audio_frames_task((chanend_t) c_audio_intertile, 
+      eat_audio_frames_task((chanend_t) c_audio_frames, 
                             N_MICS*SAMPLES_PER_FRAME);
     }
 
@@ -76,15 +69,6 @@ int main() {
       streaming_channel_t c_pdm_data = app_s_chan_alloc();
       assert(c_pdm_data.end_a != 0 && c_pdm_data.end_b != 0);
 
-      // Channel for sending audio frames to tile 0
-      // channel_t c_audio_frames = app_chan_alloc();
-      // assert(c_audio_frames.end_a != 0 && c_audio_frames.end_b != 0);
-
-      // printf("end_a: 0x%08X\n", c_audio_frames.end_a);
-      // printf("end_b: 0x%08X\n", c_audio_frames.end_b);
-
-      // c_intertile <: c_audio_frames.end_b;
-
       // Set up the media clocks
       app_pll_init();
          
@@ -94,7 +78,7 @@ int main() {
       mic_array_setup(&pdm_res, mclk_div);
       
       // Initialize the mic array
-      app_init((port_t) p_pdm_mics, c_pdm_data);
+      app_init((port_t) p_pdm_mics, c_pdm_data, (chanend_t) c_audio_frames);
 
 
       // Start the PDM clock
@@ -105,7 +89,7 @@ int main() {
         app_pdm_rx_task();
 #endif
 
-        app_decimator_task((chanend_t) c_audio_intertile);
+        app_decimator_task();
 
         // The burn_mips() and the count_mips() should all consume as many MIPS as they're offered. And
         // they should all get the SAME number of MIPS.

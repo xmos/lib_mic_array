@@ -30,16 +30,9 @@ namespace  mic_array {
       ChannelSampleTransfer(chanend_t c_sample_out)
           : c_sample_out(c_sample_out) { }
 
-      void SetChannel(chanend_t c_sample_out)
-      {
-        this->c_sample_out = c_sample_out;
-      }
+      void SetChannel(chanend_t c_sample_out);
 
-      void ProcessSample(int32_t sample[MIC_COUNT])
-      {
-        for(int k = 0; k < MIC_COUNT; k++)
-          chan_out_word(this->c_sample_out, sample[k]);
-      }
+      void ProcessSample(int32_t sample[MIC_COUNT]);
   };
 
 
@@ -68,22 +61,7 @@ namespace  mic_array {
       FrameOutputHandler(FrameTransmitter<MIC_COUNT, SAMPLE_COUNT> frame_tx)
           : FrameTx(frame_tx) { }
 
-      void OutputSample(int32_t sample[MIC_COUNT])
-      {
-        auto* cur_frame = reinterpret_cast<int32_t (*)[SAMPLE_COUNT]>(
-                              &this->frames[this->current_frame][0][0]);
-        
-        for(int k = 0; k < MIC_COUNT; k++) 
-          cur_frame[k][this->current_sample] = sample[k];
-        
-        if(++current_sample == SAMPLE_COUNT){
-          current_sample = 0;
-          current_frame++;
-          if(current_frame == FRAME_COUNT) current_frame = 0;
-
-          FrameTx.OutputFrame( cur_frame );
-        }
-      }
+      void OutputSample(int32_t sample[MIC_COUNT]);
   };
 
 
@@ -103,14 +81,70 @@ namespace  mic_array {
       ChannelFrameTransfer() : c_frame_out(0) { }
       ChannelFrameTransfer(chanend_t c_frame_out) : c_frame_out(c_frame_out) { }
 
-      void SetChannel(chanend_t c_frame_out)
-      {
-        this->c_frame_out = c_frame_out;
-      }
+      void SetChannel(chanend_t c_frame_out);
 
-      void OutputFrame(int32_t frame[MIC_COUNT][SAMPLE_COUNT])
-      {
-        ma_frame_tx_s32(this->c_frame_out, reinterpret_cast<int32_t*>(frame), &this->format);
-      }
+      void OutputFrame(int32_t frame[MIC_COUNT][SAMPLE_COUNT]);
   };
+}
+
+
+
+template <unsigned MIC_COUNT>
+void mic_array::ChannelSampleTransfer<MIC_COUNT>::SetChannel(
+    chanend_t c_sample_out)
+{
+  this->c_sample_out = c_sample_out;
+}
+
+
+template <unsigned MIC_COUNT>
+void mic_array::ChannelSampleTransfer<MIC_COUNT>::ProcessSample(
+    int32_t sample[MIC_COUNT])
+{
+  for(int k = 0; k < MIC_COUNT; k++)
+    chan_out_word(this->c_sample_out, sample[k]);
+}
+
+
+
+template <unsigned MIC_COUNT, 
+          unsigned SAMPLE_COUNT, 
+          template <unsigned, unsigned> class FrameTransmitter,
+          unsigned FRAME_COUNT>
+void mic_array::FrameOutputHandler<MIC_COUNT,SAMPLE_COUNT,
+                        FrameTransmitter,FRAME_COUNT>::OutputSample(
+    int32_t sample[MIC_COUNT])
+{
+  auto* cur_frame = reinterpret_cast<int32_t (*)[SAMPLE_COUNT]>(
+                        &this->frames[this->current_frame][0][0]);
+  
+  for(int k = 0; k < MIC_COUNT; k++) 
+    cur_frame[k][this->current_sample] = sample[k];
+  
+  if(++current_sample == SAMPLE_COUNT){
+    current_sample = 0;
+    current_frame++;
+    if(current_frame == FRAME_COUNT) current_frame = 0;
+
+    FrameTx.OutputFrame( cur_frame );
+  }
+}
+
+
+
+template <unsigned MIC_COUNT, unsigned SAMPLE_COUNT>
+void mic_array::ChannelFrameTransfer<MIC_COUNT,SAMPLE_COUNT>::SetChannel(
+    chanend_t c_frame_out)
+{
+  this->c_frame_out = c_frame_out;
+}
+
+
+template <unsigned MIC_COUNT, unsigned SAMPLE_COUNT>
+void mic_array::ChannelFrameTransfer<MIC_COUNT,SAMPLE_COUNT>::OutputFrame(
+    int32_t frame[MIC_COUNT][SAMPLE_COUNT])
+{
+  ma_frame_tx_s32(this->c_frame_out, 
+                  reinterpret_cast<int32_t*>(frame), 
+                  &this->format);
 }

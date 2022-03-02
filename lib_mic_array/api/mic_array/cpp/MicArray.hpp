@@ -25,18 +25,18 @@ namespace  mic_array {
   template <unsigned MIC_COUNT, 
             unsigned S2_DEC_FACTOR, 
             unsigned S2_TAP_COUNT, 
-            template <unsigned> class PdmRx_, 
-            template <unsigned> class OutputSampleFilter_, 
+            class PdmRx_, 
+            class OutputSampleFilter_, 
             class OutputHandler_> 
   class MicArray 
   {
     public:
       static constexpr unsigned MicCount = MIC_COUNT;
 
-      typedef PdmRx_<MIC_COUNT * S2_DEC_FACTOR> TPdmRx;
+      typedef PdmRx_ TPdmRx;
       typedef Decimator<MIC_COUNT, S2_DEC_FACTOR, S2_TAP_COUNT> TDecimator;
       typedef OutputHandler_ TOutputHandler;
-      typedef OutputSampleFilter_<MIC_COUNT> TOutputSampleFilter;
+      typedef OutputSampleFilter_ TOutputSampleFilter;
 
     
       TPdmRx PdmRx;
@@ -60,17 +60,28 @@ namespace  mic_array {
         : MicArray(pdm_rx, TOutputSampleFilter(), output_handler) { }
 
 
-      void ThreadEntry(){
-
-        int32_t sample_out[MIC_COUNT] = {0};
-
-        while(1){
-          uint32_t* pdm_samples = PdmRx.GetPdmBlock();
-          Decimator.ProcessBlock(sample_out, pdm_samples);
-          OutputSampleFilter.Filter(sample_out);
-          OutputHandler.OutputSample(sample_out);
-        }
-      }
+      void ThreadEntry();
   };
 
+}
+
+
+
+template <unsigned MIC_COUNT, 
+          unsigned S2_DEC_FACTOR, 
+          unsigned S2_TAP_COUNT, 
+          class PdmRx_, 
+          class OutputSampleFilter_, 
+          class OutputHandler_> 
+void mic_array::MicArray<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT,
+                         PdmRx_, OutputSampleFilter_,
+                         OutputHandler_>::ThreadEntry(){
+  int32_t sample_out[MIC_COUNT] = {0};
+
+  while(1){
+    uint32_t* pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlock(sample_out, pdm_samples);
+    OutputSampleFilter.Filter(sample_out);
+    OutputHandler.OutputSample(sample_out);
+  }
 }

@@ -1,5 +1,5 @@
 
-set(APP_NAME demo_basic)
+set(APP_NAME demo_vanilla)
 
 #********************************
 # Gather lib sources
@@ -11,7 +11,6 @@ include("${CMAKE_SOURCE_DIR}/lib_mic_array/lib_mic_array.cmake")
 #**********************
 
 set(EXTRA_BUILD_FLAGS
-  "-DMIC_ARRAY_BASIC_API_ENABLE=1"
   "-DMIC_ARRAY_CONFIG_MCLK_FREQ=24576000"
   "-DMIC_ARRAY_CONFIG_PDM_FREQ=3072000"
   "-DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16"
@@ -24,6 +23,7 @@ set(EXTRA_BUILD_FLAGS
 
 set( APP_INCLUDES  "src" )
 list( APPEND  APP_INCLUDES ${MIC_ARRAY_INCLUDES} ${DEMO_COMMON_INCLUDES} )
+list( APPEND  APP_INCLUDES "${CMAKE_SOURCE_DIR}/etc/vanilla" )
 
 #**********************
 # sources
@@ -32,6 +32,7 @@ list( APPEND  APP_INCLUDES ${MIC_ARRAY_INCLUDES} ${DEMO_COMMON_INCLUDES} )
 file( GLOB_RECURSE APP_SOURCES "src/*.c" "src/*.xc" "src/*.cpp" "src/*.S"   )
 
 list( APPEND  APP_SOURCES  ${MIC_ARRAY_SOURCES} ${DEMO_COMMON_SOURCES} )
+list( APPEND  APP_SOURCES  "${CMAKE_SOURCE_DIR}/etc/vanilla/mic_array_vanilla.cpp" )
 
 #**********************
 # create targets

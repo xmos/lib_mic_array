@@ -31,16 +31,23 @@ namespace  mic_array {
     
     public:
 
-      void Init()
-      {
-        dcoe_state_init(&state[0], MIC_COUNT);
-      }
+      void Init();
 
-      void Filter(int32_t sample[MIC_COUNT])
-      {
-        dcoe_filter(&sample[0], &state[0], &sample[0], MIC_COUNT);
-      }
+      void Filter(int32_t sample[MIC_COUNT]);
   };
+}
 
 
+template <unsigned MIC_COUNT>
+void mic_array::DcoeSampleFilter<MIC_COUNT>::Init()
+{
+  dcoe_state_init(&state[0], MIC_COUNT);
+}
+
+
+template <unsigned MIC_COUNT>
+void mic_array::DcoeSampleFilter<MIC_COUNT>::Filter(
+    int32_t sample[MIC_COUNT])
+{
+  dcoe_filter(&sample[0], &state[0], &sample[0], MIC_COUNT);
 }

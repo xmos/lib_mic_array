@@ -48,21 +48,6 @@ unsigned pdm_rx_uses_ddr(
 }
 
 
-static inline
-pdm_rx_context_t pdm_rx_context(
-    uint32_t* pdm_buffer_a,
-    uint32_t* pdm_buffer_b,
-    const unsigned buffer_words)
-{
-  pdm_rx_context_t ctx;
-  ctx.pdm_buffer[0] = pdm_buffer_a;
-  ctx.pdm_buffer[1] = pdm_buffer_b;
-  ctx.phase_reset = buffer_words - 1;
-  ctx.phase = ctx.phase_reset;
-  return ctx;
-}
-
-
 #if defined(__XC__) || defined(__cplusplus)
 }
 #endif //__XC__

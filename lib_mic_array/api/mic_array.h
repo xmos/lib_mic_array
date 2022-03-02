@@ -5,7 +5,6 @@
 
 #include "mic_array/types.h"
 #include "mic_array/pdm_rx.h"
-#include "mic_array/decimator.h"
 #include "mic_array/dc_elimination.h"
 #include "mic_array/framing.h"
 #include "mic_array/frame_transfer.h"

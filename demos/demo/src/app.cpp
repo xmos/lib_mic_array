@@ -6,13 +6,18 @@
 #include "app.h"
 
 #include "mic_array/cpp/MicArray.hpp"
-#include "mic_array/cpp/Helper.hpp"
+#include "mic_array/cpp/Prefab.hpp"
 #include "mic_array/etc/filters_default.h"
 
 
-using TMicArray = mic_array::helper::StandardMicArray<N_MICS, SAMPLES_PER_FRAME>;
+#define DCOE_ENABLED    true
+
+using TMicArray = mic_array::prefab::BasicMicArray<N_MICS, 
+                                                   SAMPLES_PER_FRAME, 
+                                                   DCOE_ENABLED>;
 
 TMicArray mics = TMicArray();
+
 
 extern "C"
 void app_init(

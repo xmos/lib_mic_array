@@ -18,22 +18,6 @@ ma_frame_format_t ma_frame_format(
   return format;
 }
 
-static inline
-int32_t* ma_framing_add_and_signal(
-    ma_framing_context_t* ctx,
-    ma_proc_sample_ctx_t c_context,
-    int32_t sample[])
-{
-  int32_t* frame = ma_framing_add_sample(ctx, sample);
-
-  if(frame){
-    ma_proc_frame(c_context, frame, &ctx->config.format);
-  }
-
-  return frame;
-}
-
-
 
 #if defined(__XC__) || defined(__cplusplus)
 }

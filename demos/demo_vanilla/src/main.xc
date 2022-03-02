@@ -4,7 +4,7 @@
 #include "app_pll_ctrl.h"
 
 #include "app.h"
-#include "mic_array/etc/basic.h"
+#include "mic_array_vanilla.h"
 #include "util/audio_buffer.h"
 
 #include <platform.h>
@@ -71,14 +71,14 @@ int main() {
       unsigned ready;
       c_tile_sync :> ready;
 
-      ma_basic_init(&pdm_res);
+      ma_vanilla_init(&pdm_res);
 
       // XC complains about parallel usage rules if we pass the 
       // object's address directly
       void * unsafe app_ctx = &app_context;
 
       par {
-        ma_basic_task(&pdm_res, (chanend_t) c_audio_frames);
+        ma_vanilla_task(&pdm_res, (chanend_t) c_audio_frames);
 
         receive_and_buffer_audio_task((chanend_t) c_audio_frames, 
                                       &app_context, MIC_ARRAY_CONFIG_MIC_COUNT,

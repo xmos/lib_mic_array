@@ -132,9 +132,9 @@ extern "C" {
  * must be ready to receive frames from `ma_basic_task()` as they become
  * available.
  */
-#ifndef MIC_ARRAY_BASIC_API_ENABLE
-# define MIC_ARRAY_BASIC_API_ENABLE    (0)
-#endif
+// #ifndef MIC_ARRAY_BASIC_API_ENABLE
+// # define MIC_ARRAY_BASIC_API_ENABLE    (0)
+// #endif
 
 /**
  * @brief Initializes the mic array module (basic mode only).
@@ -148,7 +148,7 @@ extern "C" {
  * 
  * @param pdm_res   Hardware resources required by the mic array module.
  */
-void ma_basic_init(
+void ma_vanilla_init(
     pdm_rx_resources_t* pdm_res);
 
 
@@ -166,7 +166,7 @@ void ma_basic_init(
  * @param c_frames_out  (Non-streaming) Channel over which to send processed
  *                      frames of audio.
  */
-void ma_basic_task(
+void ma_vanilla_task(
     pdm_rx_resources_t* pdm_res,
     chanend_t c_frames_out);
 

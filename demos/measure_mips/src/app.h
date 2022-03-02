@@ -16,11 +16,12 @@ extern "C" {
 
 void app_init(
     port_t p_pdm_mics,
-    streaming_channel_t c_pdm_blocks);
+    streaming_channel_t c_pdm_blocks,
+    chanend_t c_frames_out);
 
 void app_pdm_rx_task();
     
-void app_decimator_task(chanend_t c_audio_frame);
+void app_decimator_task();
 
 void app_i2s_task( audio_ring_buffer_t* audio_buff );
 

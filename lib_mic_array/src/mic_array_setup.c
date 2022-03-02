@@ -12,7 +12,10 @@
 #include <string.h>
 
 
-
+void mic_array_configure_port(port_t p_pdm_mics)
+{
+  
+}
 
 
 void mic_array_setup_sdr(
