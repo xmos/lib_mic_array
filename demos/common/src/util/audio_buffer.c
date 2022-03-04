@@ -4,7 +4,6 @@
 
 
 
-
 void abuff_frame_get(
   audio_ring_buffer_t* rb,
   int32_t frame[])

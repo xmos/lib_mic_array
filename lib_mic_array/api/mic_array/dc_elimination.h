@@ -1,10 +1,9 @@
 #pragma once
 
+#include "api.h"
 #include <stdint.h>
 
-#ifdef __XC__
-extern "C" {
-#endif
+C_API_START
 
 /**
  * @brief DC Offset Elimination State
@@ -37,6 +36,7 @@ extern "C" {
  * context.
  * 
  */
+MA_C_API
 typedef struct {
   /** Previous output sample value.  */
   int64_t prev_y;
@@ -55,6 +55,7 @@ typedef struct {
  * @param[in] state       Array of dcoe_chan_state_t to be initialized.
  * @param[in] chan_count  Number of elements in `state`.
  */
+MA_C_API
 void dcoe_state_init(
     dcoe_chan_state_t state[],
     const unsigned chan_count);
@@ -86,12 +87,11 @@ void dcoe_state_init(
  * @param[in]   new_input   New input sample.
  * @param[in]   chan_count  Number of channels to be processed.
  */
+MA_C_API
 void dcoe_filter(
     int32_t new_output[],
     dcoe_chan_state_t state[],
     int32_t new_input[],
     const unsigned chan_count);
   
-#ifdef __XC__
-}
-#endif
+C_API_END

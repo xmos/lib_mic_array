@@ -2,13 +2,13 @@
 
 #include <stdint.h>
 
+#include "mic_array/api.h"
+#include "util/audio_buffer.h"
 
-#ifdef __XC__
-extern "C" {
-#endif
+C_API_START
 
+MA_C_API
 typedef struct {
-
   int32_t* audio;
   int next_add;
   int next_get;
@@ -24,7 +24,8 @@ typedef struct {
 
 
 
-static inline audio_ring_buffer_t abuff_init(
+static inline 
+audio_ring_buffer_t abuff_init(
   const unsigned channel_count,
   const unsigned max_frames,
   int32_t* mem_buffer)
@@ -39,17 +40,14 @@ static inline audio_ring_buffer_t abuff_init(
   return ctx;
 }
 
-
+MA_C_API
 void abuff_frame_get(
   audio_ring_buffer_t* rb,
   int32_t frame[]);
 
-
+MA_C_API
 void abuff_frame_add(
   audio_ring_buffer_t* rb,
   int32_t frame[]);
 
-  
-#ifdef __XC__
-}
-#endif
+C_API_END

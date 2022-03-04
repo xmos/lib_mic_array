@@ -19,9 +19,3 @@
 
 #define MIC_ARRAY_CLK1  XS1_CLKBLK_1
 #define MIC_ARRAY_CLK2  XS1_CLKBLK_2
-
-////////////////////////
-// Below are macros values derived from the above
-////////////////////////
-
-#define APP_USE_DDR                     ((N_MICS)>1)

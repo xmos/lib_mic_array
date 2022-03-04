@@ -12,7 +12,7 @@
 
 #define SAMPLES_PER_FRAME         16
 
-#define AUDIO_BUFFER_SAMPLES       17
+#define AUDIO_BUFFER_SAMPLES       ((unsigned) (SAMPLES_PER_FRAME * 1.2f + 4))
 
 #define APP_AUDIO_CLOCK_FREQUENCY        24576000
 #define APP_PDM_CLOCK_FREQUENCY          3072000
@@ -25,10 +25,3 @@
 
 #define MIC_ARRAY_CLK1  XS1_CLKBLK_1
 #define MIC_ARRAY_CLK2  XS1_CLKBLK_2
-
-
-////////////////////////
-// Below are macros values derived from the above
-////////////////////////
-
-#define APP_USE_DDR                     ((N_MICS)>1)

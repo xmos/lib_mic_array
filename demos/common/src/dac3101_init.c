@@ -19,7 +19,7 @@ i2c_master_t i2c_context;
 
 
 
-void app_dac3101_init()
+void board_dac3101_init()
 {
   int res = 0;
   

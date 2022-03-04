@@ -1,17 +1,12 @@
 
 set(APP_NAME demo)
 
-#********************************
-# Gather lib sources
-#********************************
-include("${CMAKE_SOURCE_DIR}/lib_mic_array/lib_mic_array.cmake")
-
 #**********************
 # includes
 #**********************
 
 set( APP_INCLUDES  "src" )
-list( APPEND  APP_INCLUDES ${MIC_ARRAY_INCLUDES} ${DEMO_COMMON_INCLUDES} )
+list( APPEND  APP_INCLUDES ${DEMO_COMMON_INCLUDES} )
 
 #**********************
 # sources
@@ -19,7 +14,7 @@ list( APPEND  APP_INCLUDES ${MIC_ARRAY_INCLUDES} ${DEMO_COMMON_INCLUDES} )
 
 file( GLOB_RECURSE APP_SOURCES "src/*.c" "src/*.xc" "src/*.cpp" "src/*.S"   )
 
-list( APPEND  APP_SOURCES  ${MIC_ARRAY_SOURCES} ${DEMO_COMMON_SOURCES} )
+list( APPEND  APP_SOURCES  ${DEMO_COMMON_SOURCES} )
 
 #**********************
 # create targets

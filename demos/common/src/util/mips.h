@@ -2,19 +2,21 @@
 
 #include <stdint.h>
 
+#include "mic_array/api.h"
 
-#ifdef __XC__
-extern "C" {
-#endif //__XC__
+C_API_START;
 
 extern uint64_t tick_count;
 extern uint64_t inst_count;
 
+MA_C_API
 void burn_mips();
+
+MA_C_API
 void count_mips();
+
+MA_C_API
 void print_mips(const unsigned use_pdm_rx_isr);
 
 
-#ifdef __XC__
-}
-#endif //__XC__
+C_API_END

@@ -8,12 +8,8 @@ void eat_audio_frames_task(
 {
   int32_t audio_frame[frame_words];
 
-  //make up the details of the format because it doesn't matter.
-  const ma_frame_format_t format = 
-        ma_frame_format(frame_words, 1, MA_LYT_SAMPLE_CHANNEL);
-
   while(1){
-    ma_frame_rx_s32(audio_frame, c_from_decimator, &format);
+    ma_frame_rx(audio_frame, c_from_decimator, frame_words, 1);
   }
 }
 
@@ -25,20 +21,19 @@ void receive_and_buffer_audio_task(
     static const unsigned frame_words)
 {
   int32_t audio_frame[frame_words];
-
-  // Frame MUST be in MA_LYT_SAMPLE_CHANNEL layout,
-  // which is why this doesn't take a ma_frame_format_t argument
-  const ma_frame_format_t format = 
-        ma_frame_format(mic_count, samples_per_frame, MA_LYT_SAMPLE_CHANNEL);
+  int32_t smp_buff[8];
 
   while(1){
 
-    ma_frame_rx_s32(audio_frame, c_from_decimator, &format);
+    ma_frame_rx(audio_frame, c_from_decimator, frame_words, 1);
 
     for(int k = 0; k < frame_words; k++)
       audio_frame[k] <<= 8;
 
-    for(int k = 0; k < samples_per_frame; k++)
-      abuff_frame_add( output_buffer, &audio_frame[k * mic_count] );
+    for(int k = 0; k < samples_per_frame; k++){
+      for(int j = 0; j < mic_count; j++)
+        smp_buff[j] = audio_frame[k + samples_per_frame * j];
+      abuff_frame_add( output_buffer, &smp_buff[0] );
+    }
   }
 }
