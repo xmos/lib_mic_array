@@ -11,31 +11,57 @@
 
 #define DCOE_ENABLED    true
 
+
+#if (N_MICS != 2)
+pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
+                                PORT_MCLK_IN_OUT,
+                                PORT_PDM_CLK,
+                                PORT_PDM_DATA,
+                                MIC_ARRAY_CLK1);
+#else
+pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
+                                PORT_MCLK_IN_OUT,
+                                PORT_PDM_CLK,
+                                PORT_PDM_DATA,
+                                MIC_ARRAY_CLK1,
+                                MIC_ARRAY_CLK2);
+#endif
+
+
 using TMicArray = mic_array::prefab::BasicMicArray<
                     N_MICS, SAMPLES_PER_FRAME, DCOE_ENABLED>;
 
 TMicArray mics = TMicArray();
 
-extern "C"
-void app_init(
-    port_t p_pdm_mics,
-    streaming_channel_t c_pdm_blocks,
-    chanend_t c_frames_out)
+MA_C_API
+void app_init()
 {
-  mics.PdmRx.Init(p_pdm_mics, c_pdm_blocks);
-  mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
+  // Configure our clocks and ports
+  const unsigned mclk_div = mic_array_mclk_divider(
+      APP_AUDIO_CLOCK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY);
+
+  mic_array_resources_configure(&pdm_res, mclk_div);
+
+  mics.PdmRx.Init(pdm_res.p_pdm_mics);
 }
 
-extern "C"
+MA_C_API
 void app_pdm_rx_task()
 {
+  mic_array_pdm_clock_start(&pdm_res);
   mics.PdmRx.ThreadEntry();
 }
 
-extern "C"
-void app_decimator_task()
+MA_C_API
+void app_decimator_task(chanend_t c_frames_out)
 {
+  mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
+
+  
 #if APP_USE_PDM_RX_ISR
+  // Start the PDM clock
+  mic_array_pdm_clock_start(&pdm_res);
+
   mics.PdmRx.InstallISR();
   mics.PdmRx.UnmaskISR();
 #endif

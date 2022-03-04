@@ -3,8 +3,6 @@
 
 #if defined(__XS3A__)
 
-#include "xs1.h"
-
 /*  
 
   File contains the ISR logic for capturing PDM samples coming in.
@@ -80,9 +78,6 @@ pdm_rx_isr:
 .cc_bottom pdm_rx_isr.function
 
 .global pdm_rx_isr
-// .type pdm_rx_isr,@function
-
-// .size pdm_rx_isr, .L_func_end - pdm_rx_isr
 
 #endif //defined(__XS3A__)
 

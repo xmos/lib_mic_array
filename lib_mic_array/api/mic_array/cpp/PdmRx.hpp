@@ -13,17 +13,15 @@
 
 using namespace std;
 
-
+/**
+ * @brief Configuration for `pdm_rx_isr`.
+ * 
+ * `pdm_rx_isr` (`pdm_rx_isr.S`) allocates this struct as configuration and
+ * state parameters required by that interrupt routine.
+ * 
+ * Used by `StandardPdmRxService`.
+ */
 extern "C" {
-
-  /**
-   * @brief Configuration for `pdm_rx_isr`.
-   * 
-   * `pdm_rx_isr` (`pdm_rx_isr.S`) allocates this struct as configuration and
-   * state parameters required by that interrupt routine.
-   * 
-   * Used by `StandardPdmRxService`.
-   */
   extern struct {
     port_t p_pdm_mics;
     uint32_t* pdm_buffer[2];
@@ -57,7 +55,6 @@ extern "C" {
   }
 
 }
-
 
 
 namespace  mic_array {
@@ -200,7 +197,7 @@ namespace  mic_array {
        * prior to any call to `ProcessNext()`, `GetPdmBlock()` or 
        * `ThreadEntry()`.
        */
-      StandardPdmRxService() { }
+      StandardPdmRxService();
 
       /**
        * @brief Construct a `PdmRxService` object.
@@ -209,21 +206,7 @@ namespace  mic_array {
        * `SetPort()` will be required prior to any call to `ProcessNext()` or
        * `ThreadEntry()`.
        */
-      StandardPdmRxService(port_t p_pdm_mics, 
-                           streaming_channel_t c_pdm_blocks)
-          : Super(p_pdm_mics), c_pdm_blocks(c_pdm_blocks) { }
-
-      /**
-       * @brief Set the streaming channel over which PDM blocks are 
-       *        communicated.
-       * 
-       * @note When using this class in interrupt mode, changing the channel
-       *       after `InstallISR()` has been called will cause communication to
-       *       fail until the ISR is installed again.
-       * 
-       * @param c_pdm_blocks  New streaming channel to use.
-       */
-      void SetChannel(streaming_channel_t c_pdm_blocks);
+      StandardPdmRxService(port_t p_pdm_mics);
 
       /**
        * @brief Read a word of PDM data from the port.
@@ -246,8 +229,7 @@ namespace  mic_array {
        * @param p_pdm_mics Port to receive PDM data on.
        * @param c_pdm_blocks Streaming channel to send PDM data over.
        */
-      void Init(port_t p_pdm_mics, 
-                streaming_channel_t c_pdm_blocks);
+      void Init(port_t p_pdm_mics);
 
       /**
        * @brief Install ISR for PDM reception on the current core.
@@ -317,12 +299,15 @@ void mic_array::PdmRxService<BLOCK_SIZE,SubType>::ThreadEntry()
 
 
 
+template <unsigned BLOCK_SIZE>
+mic_array::StandardPdmRxService<BLOCK_SIZE>::StandardPdmRxService() 
+{
+}
 
 template <unsigned BLOCK_SIZE>
-void mic_array::StandardPdmRxService<BLOCK_SIZE>::SetChannel(
-            streaming_channel_t c_pdm_blocks) 
+mic_array::StandardPdmRxService<BLOCK_SIZE>::StandardPdmRxService(
+    port_t p_pdm_mics) : Super(p_pdm_mics)
 {
-  this->c_pdm_blocks = c_pdm_blocks;
 }
 
 
@@ -344,11 +329,12 @@ void mic_array::StandardPdmRxService<BLOCK_SIZE>::SendBlock(
 
 template <unsigned BLOCK_SIZE>
 void mic_array::StandardPdmRxService<BLOCK_SIZE>::Init(
-          port_t p_pdm_mics, 
-          streaming_channel_t c_pdm_blocks) 
+    port_t p_pdm_mics) 
 {
+  this->c_pdm_blocks = s_chan_alloc();
+  assert(this->c_pdm_blocks.end_a != 0 && this->c_pdm_blocks.end_b != 0);
+
   this->SetPort(p_pdm_mics);
-  this->SetChannel(c_pdm_blocks);
 }
 
 

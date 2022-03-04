@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/interrupt.h>
+// #include <platform.h>
+// #include <xs1.h>
+// #include <xclib.h>
+// #include <xscope.h>
 
 #include "mic_array_vanilla.h"
 
@@ -40,17 +44,59 @@
 # define MIC_ARRAY_CONFIG_USE_DC_ELIMINATION    (1)
 #endif
 
+#ifndef MIC_ARRAY_CONFIG_PORT_MCLK
+# define MIC_ARRAY_CONFIG_PORT_MCLK   (PORT_MCLK_IN_OUT)
+#endif
+
+#ifndef MIC_ARRAY_CONFIG_PORT_PDM_CLK
+# define MIC_ARRAY_CONFIG_PORT_PDM_CLK  (PORT_PDM_CLK)
+#endif
+
+#ifndef MIC_ARRAY_CONFIG_PORT_PDM_DATA
+# define MIC_ARRAY_CONFIG_PORT_PDM_DATA   (PORT_PDM_DATA)
+#endif
+
+#ifndef MIC_ARRAY_CONFIG_CLOCK_BLOCK_A          
+# define MIC_ARRAY_CONFIG_CLOCK_BLOCK_A   (XS1_CLKBLK_1)
+#endif
+
+#ifndef MIC_ARRAY_CONFIG_CLOCK_BLOCK_B
+# define MIC_ARRAY_CONFIG_CLOCK_BLOCK_B   (XS1_CLKBLK_2)
+#endif
+
+#ifndef MIC_ARRAY_CONFIG_USE_DDR
+# define MIC_ARRAY_CONFIG_USE_DDR         ((MIC_ARRAY_CONFIG_MIC_COUNT)==2)
+#endif
 
 ////// Additional macros derived from others
 
-#define MIC_ARRAY_CONFIG_MCLK_DIVIDER     ((MIC_ARRAY_CONFIG_MCLK_FREQ)/(MIC_ARRAY_CONFIG_PDM_FREQ))
-#define MIC_ARRAY_CONFIG_OUT_SAMPLE_RATE    ((MIC_ARRAY_CONFIG_PDM_FREQ)/(STAGE2_DEC_FACTOR))
+#define MIC_ARRAY_CONFIG_MCLK_DIVIDER     ((MIC_ARRAY_CONFIG_MCLK_FREQ)       \
+                                              /(MIC_ARRAY_CONFIG_PDM_FREQ))
+#define MIC_ARRAY_CONFIG_OUT_SAMPLE_RATE    ((MIC_ARRAY_CONFIG_PDM_FREQ)      \
+                                              /(STAGE2_DEC_FACTOR))
 
 ////// Any Additional correctness checks
 
 
 
 ////// Allocate needed objects
+
+#if (!(MIC_ARRAY_CONFIG_USE_DDR))
+pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
+                                MIC_ARRAY_CONFIG_PORT_MCLK,
+                                MIC_ARRAY_CONFIG_PORT_PDM_CLK,
+                                MIC_ARRAY_CONFIG_PORT_PDM_DATA,
+                                MIC_ARRAY_CONFIG_CLOCK_BLOCK_A);
+#else
+pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
+                                MIC_ARRAY_CONFIG_PORT_MCLK,
+                                MIC_ARRAY_CONFIG_PORT_PDM_CLK,
+                                MIC_ARRAY_CONFIG_PORT_PDM_DATA,
+                                MIC_ARRAY_CONFIG_CLOCK_BLOCK_A,
+                                MIC_ARRAY_CONFIG_CLOCK_BLOCK_B);
+#endif
+
+
 
 using TMicArray = mic_array::prefab::BasicMicArray<
                         MIC_ARRAY_CONFIG_MIC_COUNT,
@@ -60,24 +106,17 @@ using TMicArray = mic_array::prefab::BasicMicArray<
 TMicArray mics;
 
 
-void ma_vanilla_init(
-    pdm_rx_resources_t* pdm_res)
+void ma_vanilla_init()
 {
-  mics.PdmRx.SetPort(pdm_res->p_pdm_mics);
-  mic_array_setup(pdm_res, MIC_ARRAY_CONFIG_MCLK_DIVIDER);
-  mic_array_start(pdm_res);
-
+  mics.PdmRx.Init(pdm_res.p_pdm_mics);
+  mic_array_resources_configure(&pdm_res, MIC_ARRAY_CONFIG_MCLK_DIVIDER);
+  mic_array_pdm_clock_start(&pdm_res);
 }
 
 
 void ma_vanilla_task(
-    pdm_rx_resources_t* pdm_res,
     chanend_t c_frames_out)
 {
-  streaming_channel_t c_pdm_data = s_chan_alloc();
-  assert(c_pdm_data.end_a != 0 && c_pdm_data.end_b != 0);
-
-  mics.PdmRx.SetChannel(c_pdm_data);
   mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
 
   mics.PdmRx.InstallISR();

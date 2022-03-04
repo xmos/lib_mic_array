@@ -1,27 +1,31 @@
 #pragma once
 
 /**
- * There is a compiler error on Windows if trying to #include some of the xcore libs from a .XC file,
- * but the definitions are still needed. This is a workaround.
+ * The `<xcore/>` headers cannot be safely included from XC files, but 
+ * several of the types defined in those headers need to be available in XC. 
+ * This header is a work-around which defines those types for XC but includes
+ * them for C or CPP files.
  */
 
 #ifdef __XC__
 
 extern "C" {
 
-typedef unsigned xclock_t;
-typedef unsigned port_t;
-typedef unsigned chanend_t;
+  typedef unsigned xclock_t;
+  typedef unsigned port_t;
+  typedef unsigned chanend_t;
 
-typedef struct {
-  unsigned end_a;
-  unsigned end_b;
- } streaming_channel_t;
- 
-typedef struct {
-  unsigned end_a;
-  unsigned end_b;
- } channel_t;
+  typedef struct {
+    unsigned end_a;
+    unsigned end_b;
+  } streaming_channel_t;
+  
+  typedef struct {
+    unsigned end_a;
+    unsigned end_b;
+  } channel_t;
+
+}
 
 #else //__XC__
 
@@ -33,7 +37,3 @@ typedef struct {
 
 #endif //__XC__
 
-
-#ifdef __XC__
-}
-#endif //__XC__

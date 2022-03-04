@@ -13,6 +13,7 @@ list( APPEND  MIC_ARRAY_COMPILE_FLAGS
               -Wno-unused-variable 
               -Wno-missing-braces
               -Wno-xcore-fptrgroup
+              -O2
 )
 
 # Includes
@@ -31,5 +32,28 @@ set_source_files_properties( ${MIC_ARRAY_XC_SOURCES}  PROPERTIES LANGUAGE C   )
 
 ## Apply compile flags
 foreach(COMPILE_FLAG ${MIC_ARRAY_COMPILE_FLAGS})
-  set_source_files_properties( ${MIC_ARRAY_SOURCES} PROPERTIES COMPILE_FLAGS ${COMPILE_FLAG}) 
+  set_source_files_properties( ${MIC_ARRAY_SOURCES} 
+        PROPERTIES COMPILE_FLAGS ${COMPILE_FLAG}) 
 endforeach()
+
+
+add_library(xcore_sdk_lib_mic_array STATIC)
+target_sources(xcore_sdk_lib_mic_array
+    PRIVATE ${MIC_ARRAY_SOURCES}
+)
+
+target_include_directories(xcore_sdk_lib_mic_array
+    PUBLIC ${MIC_ARRAY_INCLUDES}
+)
+
+target_compile_options(xcore_sdk_lib_mic_array
+    PRIVATE ${MIC_ARRAY_COMPILE_FLAGS}
+)
+
+target_link_libraries(xcore_sdk_lib_mic_array
+    PUBLIC
+        xcore_sdk_lib_xs3_math
+)
+
+## Create an alias
+add_library(sdk::lib_mic_array ALIAS xcore_sdk_lib_mic_array)

@@ -1,13 +1,11 @@
 #pragma once
 
+#include "mic_array/api.h"
 #include "xs3_math.h"
 
 #include <stdint.h>
 
-
-#if defined(__XC__) || defined(__cplusplus)
-extern "C" {
-#endif
+C_API_START
 
 /**
  * Stage 1 PDM-to-PCM Decimation Filter
@@ -176,6 +174,4 @@ extern const int32_t stage2_coef[STAGE2_TAP_COUNT];
  */
 extern const right_shift_t stage2_shr;
 
-#if defined(__XC__) || defined(__cplusplus)
-}
-#endif //__XC__
+C_API_END

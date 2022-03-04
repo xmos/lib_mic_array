@@ -1,14 +1,14 @@
 #pragma once
 
-#include "xs3_math.h"
-
+#include "api.h"
 #include "etc/xcore_compat.h"
+
+#include "xs3_math.h"
 
 #include <stdint.h>
 
-#if defined(__XC__) || defined(__cplusplus)
-extern "C" {
-#endif //__XC__
+
+C_API_START
 
 
 /**
@@ -20,6 +20,7 @@ extern "C" {
  * This struct is used whether the PDM mics are to be used in SDR mode or DDR
  * mode.
  */
+MA_C_API
 typedef struct {
   /** 
    * 1-bit (input) port on which the master audio clock signal is received. 
@@ -56,45 +57,18 @@ typedef struct {
  *
  * `pdm_rx_resources_t.clock_b` is initialized to `0`, indicating SDR mode.
  */
-static inline
-pdm_rx_resources_t pdm_rx_resources_sdr(
-    port_t p_mclk,
-    port_t p_pdm_clk,
-    port_t p_pdm_mics,
-    clock_t clock_a);
+#define PDM_RX_RESOURCES_SDR(P_MCLK, P_PDM_CLK, P_PDM_MICS, CLOCK_A)    \
+    { (port_t) (P_MCLK), (port_t) (P_PDM_CLK), (port_t) (P_PDM_MICS),   \
+      (clock_t) (CLOCK_A) }
 
 
 /**
  * @brief Initialize a `pdm_rx_resources_t` for DDR mode.
  */
-static inline
-pdm_rx_resources_t pdm_rx_resources_ddr(
-    port_t p_mclk,
-    port_t p_pdm_clk,
-    port_t p_pdm_mics,
-    clock_t clock_a,
-    clock_t clock_b);
+#define PDM_RX_RESOURCES_DDR(P_MCLK, P_PDM_CLK, P_PDM_MICS, CLOCK_A, CLOCK_B) \
+    { (port_t) (P_MCLK), (port_t) (P_PDM_CLK), (port_t) (P_PDM_MICS),         \
+      (clock_t) (CLOCK_A), (clock_t) (CLOCK_B) }
 
 
 
-/**
- * @brief Determine whether the specified `pdm_rx_resources_t` indicates SDR
- *        or DDR mode.
- * 
- * DDR mode is indicated if `pdm_res->clock_b` is `0`.
- * 
- * @param pdm_res Initialized PDM resources struct.
- * 
- * @returns non-zero iff `pdm_res` indicates DDR mode.
- */
-static inline
-unsigned pdm_rx_uses_ddr(
-    pdm_rx_resources_t* pdm_res);
-
-
-#if defined(__XC__) || defined(__cplusplus)
-}
-#endif //__XC__
-
-
-#include "impl/pdm_rx_impl.h"
+C_API_END

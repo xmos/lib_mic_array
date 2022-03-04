@@ -19,16 +19,11 @@ string(REPLACE "-MD" "-MMD" CMAKE_DEPFILE_FLAGS_C ${CMAKE_DEPFILE_FLAGS_C})
 
 add_subdirectory(xcore_sdk EXCLUDE_FROM_ALL EXCLUDE_FROM_DEFAULT_BUILD)
 
+add_subdirectory(lib_mic_array)
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
-
-#**********************
-# Options
-#**********************
-
-include(demos/etc/demo_app.cmake)
-include(demos/common/demo_common.cmake)
+include( etc/vanilla/vanilla.cmake )
 
 #**********************
 # Apps

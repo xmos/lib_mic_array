@@ -3,9 +3,7 @@
 #include "mic_array.h"
 
 
-#if defined(__XC__) || defined(__cplusplus)
-extern "C" {
-#endif
+C_API_START
 
 /**
  * @brief Indicates whether the mic array basic mode API is enabled.
@@ -148,8 +146,8 @@ extern "C" {
  * 
  * @param pdm_res   Hardware resources required by the mic array module.
  */
-void ma_vanilla_init(
-    pdm_rx_resources_t* pdm_res);
+MA_C_API
+void ma_vanilla_init();
 
 
 /**
@@ -166,11 +164,8 @@ void ma_vanilla_init(
  * @param c_frames_out  (Non-streaming) Channel over which to send processed
  *                      frames of audio.
  */
-void ma_vanilla_task(
-    pdm_rx_resources_t* pdm_res,
-    chanend_t c_frames_out);
+MA_C_API
+void ma_vanilla_task(chanend_t c_frames_out);
 
     
-#if defined(__XC__) || defined(__cplusplus)
-}
-#endif
+C_API_END

@@ -2,17 +2,13 @@
 
 #include "app_config.h"
 
-#include "util/audio_buffer.h"
 #include "mic_array.h"
-#include "mic_array/etc/filters_default.h"
+#include "util/audio_buffer.h"
 
 #include <stdint.h>
 
 
 #define I2S_CLKBLK XS1_CLKBLK_3
-
-#define FRAME_BUFFERS 2
-
 
 #if defined(__XC__)
 #  define static_const  static const
@@ -20,20 +16,12 @@
 #  define static_const const
 #endif
 
-#if defined(__XC__) || defined(__cplusplus)
-extern "C" {
-#endif
+C_API_START
 
-streaming_channel_t app_s_chan_alloc();
-channel_t app_chan_alloc();
+void board_dac3101_init();
 
-void app_dac3101_init();
+C_API_END
 
-
-#if defined(__XC__) || defined(__cplusplus)
-}
-
-#endif // __XC__
 
 void eat_audio_frames_task(
     chanend_t c_from_decimator,

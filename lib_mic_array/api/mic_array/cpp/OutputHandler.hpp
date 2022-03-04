@@ -171,14 +171,6 @@ namespace  mic_array {
        */
       chanend_t c_frame_out;
 
-      /**
-       * @brief Frame format. Needed by `ma_frame_tx_s32()`.
-       */
-      const ma_frame_format_t format 
-              = ma_frame_format(MIC_COUNT, 
-                                SAMPLE_COUNT, 
-                                MA_LYT_CHANNEL_SAMPLE);
-
     public:
 
       /**
@@ -230,8 +222,7 @@ template <unsigned MIC_COUNT>
 void mic_array::ChannelSampleTransmitter<MIC_COUNT>::ProcessSample(
     int32_t sample[MIC_COUNT])
 {
-  for(int k = 0; k < MIC_COUNT; k++)
-    chan_out_word(this->c_sample_out, sample[k]);
+  ma_frame_tx(this->c_sample_out, sample, MIC_COUNT, 1);
 }
 
 
@@ -273,7 +264,7 @@ template <unsigned MIC_COUNT, unsigned SAMPLE_COUNT>
 void mic_array::ChannelFrameTransmitter<MIC_COUNT,SAMPLE_COUNT>::OutputFrame(
     int32_t frame[MIC_COUNT][SAMPLE_COUNT])
 {
-  ma_frame_tx_s32(this->c_frame_out, 
+  ma_frame_tx(this->c_frame_out, 
                   reinterpret_cast<int32_t*>(frame), 
-                  &this->format);
+                  MIC_COUNT, SAMPLE_COUNT);
 }
