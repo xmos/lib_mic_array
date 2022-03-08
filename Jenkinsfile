@@ -3,7 +3,7 @@ getApproval()
 
 pipeline {
   agent {
-    label 'x86_64&&brew'
+    label 'x86_64'
   }
   environment {
     REPO = 'lib_mic_array'
