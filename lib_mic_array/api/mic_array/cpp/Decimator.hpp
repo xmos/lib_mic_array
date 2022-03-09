@@ -36,6 +36,7 @@ void deinterleave_pdm_samples(
     uint32_t* samples,
     unsigned s2_dec_factor);
 
+
 /**
  * @brief First and Second Stage Decimator
  * 
@@ -44,7 +45,8 @@ void deinterleave_pdm_samples(
  * @tparam S2_TAP_COUNT   Stage 2 tap count.git p
  */
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
-class Decimator {
+class TwoStageDecimator 
+{
 
   public:
     /**
@@ -159,7 +161,7 @@ class Decimator {
 
 
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
-void mic_array::Decimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
+void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
     uint32_t* s1_filter_coef,
     const int32_t* s2_filter_coef,
     const right_shift_t s2_shr) 
@@ -177,7 +179,8 @@ void mic_array::Decimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
 
 
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
-void mic_array::Decimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::ProcessBlock(
+void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
+    ::ProcessBlock(
         int32_t sample_out[MIC_COUNT],
         uint32_t pdm_block[BLOCK_SIZE])
 {

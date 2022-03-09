@@ -77,8 +77,6 @@ C_API_START
  * coefficients are not stored together in memory. This is, again, due to the 
  * behavior of the VPU hardware.
  * 
- * @TODO: astew - Because the tap count is fixed, should I just define a type, e.g.
- *        `typedef struct { uint32_t coef[STAGE1_TAP_COUNT]; } ma_stage1_filter_t;`?
  */
 #define STAGE1_WORDS        (STAGE1_TAP_COUNT)/2
 

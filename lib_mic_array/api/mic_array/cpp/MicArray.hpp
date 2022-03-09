@@ -25,21 +25,20 @@ namespace  mic_array {
   /**
    * @brief Represents the microphone array component of an application.
    * 
-   * @tparam MIC_COUNT    Number of microphones.
-   * @tparam TDecimator   Type for the decimator.
-   * @tparam TPdmRx       Type for the PDM rx service used.
-   * @tparam TOutputSampleFilter Type for the output filter used.
-   * @tparam TOutputHandler_Type for the output handler used.
+   * @tparam MIC_COUNT      Number of microphones.
+   * @tparam TDecimator     Type for the decimator.
+   * @tparam TPdmRx         Type for the PDM rx service used.
+   * @tparam TSampleFilter  Type for the output filter used.
+   * @tparam TOutputHandler Type for the output handler used.
    * 
    */
   template <unsigned MIC_COUNT,
             class TDecimator,
             class TPdmRx, 
-            class TOutputSampleFilter, 
+            class TSampleFilter, 
             class TOutputHandler> 
   class MicArray 
   {
-    // @todo: Use static assertion to verify template parameters are of correct type
 
     public:
 
@@ -70,7 +69,7 @@ namespace  mic_array {
        * This is used to perform sample-by-sample filtering of the output from
        * the second stage decimator.
        */
-      TOutputSampleFilter OutputSampleFilter;
+      TSampleFilter SampleFilter;
 
       /**
        * @brief The output handler.
@@ -95,10 +94,10 @@ namespace  mic_array {
        * @param output_handler
        */
       MicArray(TPdmRx pdm_rx, 
-               TOutputSampleFilter sample_filter,
+               TSampleFilter sample_filter,
                TOutputHandler output_handler) 
           : PdmRx(pdm_rx), 
-            OutputSampleFilter(sample_filter), 
+            SampleFilter(sample_filter), 
             OutputHandler(output_handler) { }
 
       /**
@@ -109,7 +108,7 @@ namespace  mic_array {
        */
       MicArray(TPdmRx pdm_rx, 
                TOutputHandler output_handler)
-        : MicArray(pdm_rx, TOutputSampleFilter(), output_handler) { }
+        : MicArray(pdm_rx, TSampleFilter(), output_handler) { }
 
       /**
        * @brief Entry point for the decimation thread.
@@ -128,10 +127,10 @@ namespace  mic_array {
 template <unsigned MIC_COUNT, 
           class TDecimator,
           class TPdmRx, 
-          class TOutputSampleFilter, 
+          class TSampleFilter, 
           class TOutputHandler> 
 void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
-                                   TOutputSampleFilter,
+                                   TSampleFilter,
                                    TOutputHandler>::ThreadEntry()
 {
   int32_t sample_out[MIC_COUNT] = {0};
@@ -139,7 +138,7 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
   while(1){
     uint32_t* pdm_samples = PdmRx.GetPdmBlock();
     Decimator.ProcessBlock(sample_out, pdm_samples);
-    OutputSampleFilter.Filter(sample_out);
+    SampleFilter.Filter(sample_out);
     OutputHandler.OutputSample(sample_out);
   }
 }

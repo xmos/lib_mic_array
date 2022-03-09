@@ -59,6 +59,8 @@ extern "C" {
 
 namespace  mic_array {
 
+
+
   /**
    * @brief Used to collect PDM sample data from a port.
    * 

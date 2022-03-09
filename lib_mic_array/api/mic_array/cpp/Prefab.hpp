@@ -215,7 +215,7 @@ namespace mic_array {
     template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
     class BasicMicArray 
         : public MicArray<MIC_COUNT,
-                          Decimator<MIC_COUNT, STAGE2_DEC_FACTOR, 
+                          TwoStageDecimator<MIC_COUNT, STAGE2_DEC_FACTOR, 
                                     STAGE2_TAP_COUNT>,
                           StandardPdmRxService<MIC_COUNT * STAGE2_DEC_FACTOR>, 
                           // std::conditional uses USE_DCOE to determine which 
@@ -230,7 +230,7 @@ namespace mic_array {
       public:
 
         using TParent = MicArray<MIC_COUNT,
-                                 Decimator<MIC_COUNT, STAGE2_DEC_FACTOR, 
+                                 TwoStageDecimator<MIC_COUNT, STAGE2_DEC_FACTOR, 
                                            STAGE2_TAP_COUNT>,
                                  StandardPdmRxService<MIC_COUNT 
                                                       * STAGE2_DEC_FACTOR>, 
@@ -251,10 +251,7 @@ namespace mic_array {
          * `BasicMicArray::OutputHandler::FrameTx::SetChannel()` will be 
          * required before any processing begins.
          */
-        BasicMicArray()
-        {
-          this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, stage2_shr);
-        }
+        BasicMicArray();
 
         /**
          * @brief Initialzing constructor.
@@ -271,22 +268,129 @@ namespace mic_array {
          * @param c_frames_out  (non-streaming) chanend used to transmit frames.
          */
         BasicMicArray(
-                port_t p_pdm_mics,
-                streaming_channel_t c_pdm_data,
-                chanend_t c_frames_out) : TParent(
-                    StandardPdmRxService<MIC_COUNT * STAGE2_DEC_FACTOR>(
-                                                                  p_pdm_mics, 
-                                                                  c_pdm_data), 
-                    FrameOutputHandler<MIC_COUNT, FRAME_SIZE, 
-                                       ChannelFrameTransmitter>(
-                        ChannelFrameTransmitter<MIC_COUNT, FRAME_SIZE>(
-                                                              c_frames_out)))
-        { 
-          this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, 
-                                stage2_shr);
-        }
+            port_t p_pdm_mics,
+            streaming_channel_t c_pdm_data,
+            chanend_t c_frames_out);
+
+        /**
+         * @brief Set the PDM data port.
+         * 
+         * This function calls `this->PdmRx.Init(p_pdm_mics)`.
+         * 
+         * This should be called during initialization.
+         * 
+         * @param p_pdm_mics  The port to receive PDM data on.
+         */
+        void SetPort(
+            port_t p_pdm_mics);
+
+        /**
+         * @brief Set the audio frame output channel.
+         * 
+         * This function calls 
+         * `this->OutputHandler.FrameTx.SetChannel(c_frames_out)`.
+         * 
+         * This must be set prior to entrying the decimator task.
+         * 
+         * @param c_frames_out The channel to send audio frames on.
+         */
+        void SetOutputChannel(
+            chanend_t c_frames_out);
+
+        /**
+         * @brief Entry point for PDM rx thread.
+         * 
+         * This function calls `this->PdmRx.ThreadEntry()`.
+         * 
+         * @note This call does not return.
+         */
+        void PdmRxThreadEntry();
+
+        /**
+         * @brief Install the PDM rx ISR on the calling thread.
+         * 
+         * This function calls `this->PdmRx.InstallISR()`.
+         */
+        void InstallPdmRxISR();
+
+        /**
+         * @brief Unmask interrupts on the calling thread.
+         * 
+         * This function calls `this->PdmRx.UnmaskISR()`.
+         */
+        void UnmaskPdmRxISR();
+
 
     };
 
   }
+}
+
+//////////////////////////////////////////////
+// Template function implementations below. //
+//////////////////////////////////////////////
+
+
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
+mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+    ::BasicMicArray()
+{
+  this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, stage2_shr);
+}
+
+
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
+mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+    ::BasicMicArray(
+        port_t p_pdm_mics,
+        streaming_channel_t c_pdm_data,
+        chanend_t c_frames_out) : TParent(
+            StandardPdmRxService<MIC_COUNT * STAGE2_DEC_FACTOR>(p_pdm_mics, 
+                                                                c_pdm_data), 
+            FrameOutputHandler<MIC_COUNT, FRAME_SIZE, 
+                ChannelFrameTransmitter>(
+                    ChannelFrameTransmitter<MIC_COUNT, FRAME_SIZE>(
+                        c_frames_out)))
+{
+  this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, stage2_shr);
+}
+
+
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+    ::SetOutputChannel(chanend_t c_frames_out)
+{
+  this->OutputHandler.FrameTx.SetChannel(c_frames_out);
+}
+
+
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+    ::SetPort(port_t p_pdm_mics)
+{
+  this->PdmRx.Init(p_pdm_mics);
+}
+
+
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+    ::PdmRxThreadEntry()
+{
+  this->PdmRx.ThreadEntry();
+}
+
+
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+    ::InstallPdmRxISR()
+{
+  this->PdmRx.InstallISR();
+}
+
+
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+    ::UnmaskPdmRxISR()
+{
+  this->PdmRx.UnmaskISR();
 }

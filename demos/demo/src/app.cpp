@@ -43,21 +43,20 @@ MA_C_API
 void app_pdm_rx_task()
 {
   mic_array_pdm_clock_start(&pdm_res);
-  mics.PdmRx.ThreadEntry();
+  mics.PdmRxThreadEntry();
 }
 
 MA_C_API
 void app_decimator_task(chanend_t c_audio_frames)
 {
-  mics.OutputHandler.FrameTx.SetChannel(c_audio_frames);
-
+  mics.SetOutputChannel(c_audio_frames);
   
 #if APP_USE_PDM_RX_ISR
   // Start the PDM clock
   mic_array_pdm_clock_start(&pdm_res);
 
-  mics.PdmRx.InstallISR();
-  mics.PdmRx.UnmaskISR();
+  mics.InstallPdmRxISR();
+  mics.UnmaskPdmRxISR();
 #endif
 
   mics.ThreadEntry();

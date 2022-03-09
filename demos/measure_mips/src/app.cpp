@@ -42,28 +42,27 @@ void app_init()
 
   mic_array_resources_configure(&pdm_res, mclk_div);
 
-  mics.PdmRx.Init(pdm_res.p_pdm_mics);
+  mics.SetPort(pdm_res.p_pdm_mics);
 }
 
 MA_C_API
 void app_pdm_rx_task()
 {
   mic_array_pdm_clock_start(&pdm_res);
-  mics.PdmRx.ThreadEntry();
+  mics.PdmRxThreadEntry();
 }
 
 MA_C_API
 void app_decimator_task(chanend_t c_frames_out)
 {
-  mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
+  mics.SetOutputChannel(c_frames_out);
 
-  
 #if APP_USE_PDM_RX_ISR
   // Start the PDM clock
   mic_array_pdm_clock_start(&pdm_res);
 
-  mics.PdmRx.InstallISR();
-  mics.PdmRx.UnmaskISR();
+  mics.InstallPdmRxISR();
+  mics.UnmaskPdmRxISR();
 #endif
   mics.ThreadEntry();
 }
