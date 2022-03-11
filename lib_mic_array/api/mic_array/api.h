@@ -9,7 +9,7 @@
 # define FROM_C     0
 # define FROM_CPP   0
 # define FROM_XC    1
-#else
+#else //no explicit definitions for C files
 # define FROM_C     1
 # define FROM_CPP   0
 # define FROM_XC    0

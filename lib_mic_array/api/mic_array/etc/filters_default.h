@@ -13,7 +13,6 @@ C_API_START
  * Decimation Factor:  32  
  * Tap Count: 256
  * 
- * 
  * The first stage decimation FIR filter converts 1-bit PDM samples into 32-bit 
  * PCM samples and simultaneously decimates by a factor of 32.
  * 
@@ -24,18 +23,9 @@ C_API_START
  * this is a highly optimized filter targeting the VPU hardware, the first
  * stage filter is presently restricted to using exactly 256 filter taps.
  * 
- * @TODO: For the frequency response of the default decimation filter, 
- *        see __________.
- * 
- * @TODO: If you would like to replace the default first stage filter with
- *        your own 256-tap PDM-to-PDM filter, this library includes a 
- *        python script(/module) to facilitate conversion from floating-point
- *        coefficients to 16-bit coefficients, and for arranging them in the
- *        form required by the filter operation. Note that this formatting is
- *        meant to accomodate highly specialized VPU instructions and is 
- *        consequently not very intuitive, so use of this python script is
- *        highly recommended.
- *        See _____.
+ * For more information about the example first stage filter supplied with the 
+ * library, including frequency response and steps for using a custom first
+ * stage filter, see @ref decimator_stages.md.
  */
 
 /** 
@@ -84,8 +74,6 @@ C_API_START
  * Stage 1 PDM-to-PCM Decimation Filter Default Coefficients
  * 
  * These are the default coefficients for the first stage filter.
- * 
- * @TODO: See documentation for filter frequency response.
  */
 extern const uint32_t stage1_coef[STAGE1_WORDS];
 
@@ -120,20 +108,9 @@ extern const uint32_t stage1_coef[STAGE1_WORDS];
  * applying a rounding arithmetic right-shift to the accumulator and then 
  * clipping the result to the interval `[INT32_MAX, INT32_MIN)`.
  * 
- * @TODO: Link to relevant lib_xs3_math doc?
- * 
- * @TODO: For the frequency response of the default decimation filter, 
- *        see __________.
- * 
- * @TODO: If you would like to replace the default first stage filter with
- *        your own 256-tap PDM-to-PDM filter, this library includes a 
- *        python script(/module) to facilitate conversion from floating-point
- *        coefficients to 16-bit coefficients, and for arranging them in the
- *        form required by the filter operation. Note that this formatting is
- *        meant to accomodate highly specialized VPU instructions and is 
- *        consequently not very intuitive, so use of this python script is
- *        highly recommended.
- *        See _____.
+ * For more information about the example second stage filter supplied with the 
+ * library, including frequency response and steps for using a custom filter, 
+ * see @ref decimator_stages.md.
  */
 
 /** 
@@ -159,8 +136,6 @@ extern const uint32_t stage1_coef[STAGE1_WORDS];
  * Stage 2 Decimation Filter Default Coefficients
  * 
  * These are the default coefficients for the second stage filter.
- * 
- * @TODO: See documentation for filter frequency response.
  */
 extern const int32_t stage2_coef[STAGE2_TAP_COUNT];
 

@@ -39,7 +39,6 @@ C_API_START
  *
  * @param    signal     the 1-bit signal (32-bit aligned)
  * @param    coeff_1    16-bit coefficients split as above (32-bit aligned)
- * @param    N_256      length of FIT in 256-bit blocks, must be >= 1
  *
  * @returns  The inner product
  */

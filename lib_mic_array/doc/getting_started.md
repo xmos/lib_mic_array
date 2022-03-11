@@ -88,19 +88,21 @@ the device package as well as some other helpful board-related information. The
 identification of your ports may have already been done for you in your XN file.
 Here is a snippet from an XN file:
 
-    ...
-    <Tile Number="1" Reference="tile[1]">
-      <!-- MIC related ports -->
-      <Port Location="XS1_PORT_1G"  Name="PORT_PDM_CLK"/>
-      <Port Location="XS1_PORT_1F"  Name="PORT_PDM_DATA"/>
-      <!-- Audio ports -->
-      <Port Location="XS1_PORT_1D"  Name="PORT_MCLK_IN_OUT"/>
-      <Port Location="XS1_PORT_1C"  Name="PORT_I2S_BCLK"/>
-      <Port Location="XS1_PORT_1B"  Name="PORT_I2S_LRCLK"/>
-      <!-- Used for looping back clocks -->
-      <Port Location="XS1_PORT_1N"  Name="PORT_NOT_IN_PACKAGE_1"/>
-    </Tile>
-    ...
+```xml
+...
+<Tile Number="1" Reference="tile[1]">
+  <!-- MIC related ports -->
+  <Port Location="XS1_PORT_1G"  Name="PORT_PDM_CLK"/>
+  <Port Location="XS1_PORT_1F"  Name="PORT_PDM_DATA"/>
+  <!-- Audio ports -->
+  <Port Location="XS1_PORT_1D"  Name="PORT_MCLK_IN_OUT"/>
+  <Port Location="XS1_PORT_1C"  Name="PORT_I2S_BCLK"/>
+  <Port Location="XS1_PORT_1B"  Name="PORT_I2S_LRCLK"/>
+  <!-- Used for looping back clocks -->
+  <Port Location="XS1_PORT_1N"  Name="PORT_NOT_IN_PACKAGE_1"/>
+</Tile>
+...
+```
 
 The first 3 ports listed, `PORT_PDM_CLK`, `PORT_PDM_DATA` and `PORT_MCLK_IN_OUT`
 are respectively `p_pdm_clk`, `p_pdm_mics` and `p_mclk`. The value in the 
@@ -118,12 +120,14 @@ following is an example of declaring resources in a DDR configuration. See
 @ref `pdm_rx_resources_t`, @ref `PDM_RX_RESOURCES_SDR()` and @ref 
 `PDM_RX_RESOURCES_DDR()` for more details.
 
-    pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
-                                    PORT_MCLK_IN_OUT,
-                                    PORT_PDM_CLK,
-                                    PORT_PDM_DATA,
-                                    XS1_CLKBLK_1,
-                                    XS1_CLKBLK_2);
+```c
+pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
+                                PORT_MCLK_IN_OUT,
+                                PORT_PDM_CLK,
+                                PORT_PDM_DATA,
+                                XS1_CLKBLK_1,
+                                XS1_CLKBLK_2);
+```
 
 Note that this is not necessary when using the vanilla model, as it is done for 
 you.
@@ -227,18 +231,20 @@ used may differ than those required for your application.
 `pdm_res` will be used to identify the ports and clocks which will be configured
 for PDM capture.
 
-    #include "mic_array/cpp/Prefab.hpp"
-    ...
-    #define MIC_COUNT    2    // 2 mics
-    #define DCOE_ENABLE  true // DCOE on
-    #define FRAME_SIZE   128  // 128 samples per frame
-    ...
-    pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
-                                    PORT_MCLK_IN_OUT,
-                                    PORT_PDM_CLK,
-                                    PORT_PDM_DATA,
-                                    MIC_ARRAY_CLK1,
-                                    MIC_ARRAY_CLK2);
+```cpp
+#include "mic_array/cpp/Prefab.hpp"
+...
+#define MIC_COUNT    2    // 2 mics
+#define DCOE_ENABLE  true // DCOE on
+#define FRAME_SIZE   128  // 128 samples per frame
+...
+pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
+                                PORT_MCLK_IN_OUT,
+                                PORT_PDM_CLK,
+                                PORT_PDM_DATA,
+                                MIC_ARRAY_CLK1,
+                                MIC_ARRAY_CLK2);
+```
 
 ### Prefab - Allocate MicArray
 
@@ -248,12 +254,14 @@ component in this library. The class templates defined in the
 
 Define and allocate the specific implementation of `MicArray` to be used.
 
-    // Using the full name of the class could get cumbersome. Let's give it an 
-    // alias.
-    using TMicArray = mic_array::prefab::BasicMicArray<
-                          MIC_COUNT, FRAME_SIZE, DCOE_ENABLED>
-    // Allocate mic array
-    TMicArray mics = TMicArray();
+```cpp
+// Using the full name of the class could get cumbersome. Let's give it an 
+// alias.
+using TMicArray = mic_array::prefab::BasicMicArray<
+                      MIC_COUNT, FRAME_SIZE, DCOE_ENABLED>
+// Allocate mic array
+TMicArray mics = TMicArray();
+```
 
 Now the mic array component has been defined and allocated. Because class 
 templates were used, the `mics` object is self-contained, without the need of
@@ -274,35 +282,40 @@ port and clock block resources.  The documentation for
 `mic_array::prefab::BasicMicArray` will indicate any parts of the `MicArray`
 object that need to be initialized.
 
-    #define MCLK_FREQ   24576000
-    #define PDM_FREQ    3072000
-    ...
-    MA_C_API
-    void app_init() {
-      // Configure clocks and ports
-      const unsigned mclk_div = mic_array_mclk_divider(MCLK_FREQ, PDM_FREQ);
-      mic_array_resources_configure(&pdm_res, mclk_div);
+```cpp
+#define MCLK_FREQ   24576000
+#define PDM_FREQ    3072000
+...
+MA_C_API
+void app_init() {
+  // Configure clocks and ports
+  const unsigned mclk_div = mic_array_mclk_divider(MCLK_FREQ, PDM_FREQ);
+  mic_array_resources_configure(&pdm_res, mclk_div);
 
-      // Initialize the PDM rx service
-      mics.PdmRx.Init(pdm_res.p_pdm_mics);
-    }
+  // Initialize the PDM rx service
+  mics.PdmRx.Init(pdm_res.p_pdm_mics);
+}
+```
 
 `app_init()` can be called from an XC `main()` during initialization.
 
 For this example we'll assume we want to run the PDM rx service as an ISR. We'll
 start the PDM clock, install the ISR and enter the decimator thread.
 
-    MA_C_API
-    void app_mic_array_task(chanend_t c_audio_frames) {
-      mics.SetOutputChannel(c_audio_frames);
+```cpp
+MA_C_API
+void app_mic_array_task(chanend_t c_audio_frames) {
+  mics.SetOutputChannel(c_audio_frames);
 
-      // Start the PDM clock
-      mic_array_pdm_clock_start(&pdm_res);
+  // Start the PDM clock
+  mic_array_pdm_clock_start(&pdm_res);
 
-      mics.InstallPdmRxISR();
-      mics.UnmaskPdmRxISR();
+  mics.InstallPdmRxISR();
+  mics.UnmaskPdmRxISR();
 
-      mics.ThreadEntry();
+  mics.ThreadEntry();
+}
+```
 
 Now a call to `app_mic_array_task()` with the channel to send frames on can be
 placed inside a `par {...}` block to spawn the thread.

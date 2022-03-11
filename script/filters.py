@@ -49,7 +49,7 @@ class Stage1Filter(object):
 
     # The binary {1,0} filter coefficient representation
     #  (note that the binary matrix is from the bipolar transposed)
-    self.coefs_binary = util.bipolar_to_binary(self.coefs_bipolar.T)
+    self.coefs_binary = (1-self.coefs_bipolar.T)//2
 
   @property
   def DecimationFactor(self):

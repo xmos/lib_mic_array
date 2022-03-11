@@ -1,5 +1,0 @@
-
-
-# DC Offset Elimination
-
-@todo

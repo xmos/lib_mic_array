@@ -18,6 +18,10 @@ void mic_array_resources_configure(
 {
   const unsigned is_ddr = pdm_res->clock_b != 0;
 
+  port_reset(pdm_res->p_mclk);
+  port_reset(pdm_res->p_pdm_clk);
+  port_reset(pdm_res->p_pdm_mics);
+
   clock_enable(pdm_res->clock_a);
   port_enable(pdm_res->p_mclk);
   clock_set_source_port(pdm_res->clock_a, pdm_res->p_mclk);
