@@ -1,6 +1,12 @@
 lib_mic_array change log
 ========================
 
+4.5.0
+-----
+
+  * REMOVED: Use of Brew for CI
+  * CHANGED: XMOS Jenkins Shared Library version used in CI
+
 4.4.0
 -----
 
