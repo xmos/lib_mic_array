@@ -1,12 +1,12 @@
 
-  set( VANILLA_DIR ${CMAKE_CURRENT_LIST_DIR} )
+set( VANILLA_DIR ${CMAKE_CURRENT_LIST_DIR} )
   
-  macro( mic_array_vanilla_add
-          TARGET_NAME
-          MCLK_FREQ 
-          PDM_FREQ
-          MIC_COUNT
-          SAMPLES_PER_FRAME )
+macro( mic_array_vanilla_add
+        TARGET_NAME
+        MCLK_FREQ 
+        PDM_FREQ
+        MIC_COUNT
+        SAMPLES_PER_FRAME )
 
   target_sources( ${TARGET_NAME} 
       PRIVATE ${VANILLA_DIR}/mic_array_vanilla.cpp )

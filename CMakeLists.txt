@@ -29,4 +29,7 @@ include( etc/vanilla/vanilla.cmake )
 # Apps
 #**********************
 
-add_subdirectory( demos )
+if(PROJECT_IS_TOP_LEVEL)
+  add_subdirectory( demos )
+  add_subdirectory( tests )
+endif()
