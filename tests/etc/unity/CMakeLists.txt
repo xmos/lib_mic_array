@@ -5,7 +5,7 @@ if( NOT unity_POPULATED )
   FetchContent_Populate( unity )
 endif()
 
-add_library( unity )
+add_library( unity INTERFACE )
 
 target_sources( unity
   PUBLIC
@@ -15,18 +15,19 @@ target_sources( unity
 )
 
 target_include_directories( unity 
-  PUBLIC 
+  INTERFACE 
     ${unity_SOURCE_DIR}/src
     ${unity_SOURCE_DIR}/extras/fixture/src/
     ${unity_SOURCE_DIR}/extras/memory/src/
+    # ${CMAKE_CURRENT_SOURCE_DIR}/
 )
 
 target_compile_definitions( unity
-  PRIVATE
+  INTERFACE
     "UNITY_INCLUDE_CONFIG_H"
 )
 
 target_compile_options( unity
-  PRIVATE
+  INTERFACE
     -Wno-xcore-fptrgroup
 )

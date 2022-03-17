@@ -13,7 +13,7 @@ FetchContent_Declare(
 # call add_subdirectory() on it, using the CMakeLists.txt in the repo.
 # However, that didn't immediately work. Rather than investigate and fix that,
 # I've just used a custom CMakeLists.txt
-# add_subdirectory( etc/unity )
+add_subdirectory( etc/unity )
 
 add_subdirectory( building )
 
