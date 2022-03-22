@@ -52,13 +52,7 @@ namespace mic_array {
      * @par Template Parameters Details
      * 
      * The template parameter `MIC_COUNT` is the number of microphone channels
-     * to be read and processed. If the application uses an SDR microphone
-     * configuration (i.e. 1 microphone per port pin), then this will be the
-     * same as the port width. If the application is running in a DDR micrphone
-     * configuration, this will be twice the port width.
-     * 
-     * This prefab does not presently support using, for example, only the first
-     * two pins of a 4-bit port to produce two channels of output audio.
+     * to be processed and output. 
      * 
      * The template parameter `FRAME_SIZE` is the number of samples in each
      * output frame produced by the mic array. Frame data is communicated using
@@ -73,9 +67,9 @@ namespace mic_array {
      *          responsibility of the application developer to ensure this does
      *          not happen.
      * 
-     * The template boolean parameter `USE_DCOE` indicates whether the DC offset 
+     * The boolean template parameter `USE_DCOE` indicates whether the DC offset
      * elimination filter should be applied to the output of the second stage
-     * decimator. DC offset elimination is an IIR filter intended to ensure 
+     * decimator. DC offset elimination is an IIR filter intended to ensure
      * audio samples on each channel tend towards zero-mean.
      * 
      * See @ref SampleFilters.md for more information about DC offset
@@ -83,6 +77,26 @@ namespace mic_array {
      * 
      * If `USE_DCOE` is `false`, no further filtering of the second stage
      * decimator's output will occur.
+     * 
+     * The template parameter `MICS_IN` indicates the number of microphone
+     * channels to be captured by the `PdmRx` component of the mic array unit.
+     * This will often be the same as `MIC_COUNT`, but in some applications,
+     * `MIC_COUNT` microphones must be physically connected to an xCore port
+     * which is not `MIC_COUNT` (SDR) or `MIC_COUNT/2` (DDR) bits wide.
+     *
+     * In these cases, capturing the additional channels (likely not even
+     * physically connected to PDM microphones) is unavoidable, but further
+     * processing of the additional (junk) channels can be avoided by using
+     * `MIC_COUNT < MICS_IN`. The mapping which tells the mic array unit how to
+     * dervice output channels from input channels can be configured during
+     * initialization by calling `StandardPdmRxService::MapChannels()` on the
+     * `PdmRx` sub-component of the `BasicMicarray`.
+     *
+     * If the application uses an SDR microphone configuration (i.e. 1
+     * microphone per port pin), then `MICS_IN` must be the same as the port
+     * width. If the application is running in a DDR microphone configuration,
+     * `MICS_IN` must be twice the port width. `MICS_IN` defaults to
+     * `MIC_COUNT`.
      * 
      * @par Allocation
      *
@@ -287,12 +301,12 @@ namespace mic_array {
      * @tparam FRAME_SIZE Number of samples in each output audio frame.
      * @tparam USE_DCOE   Whether DC offset elimination should be used.
      */
-    template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
+    template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN=MIC_COUNT>
     class BasicMicArray 
         : public MicArray<MIC_COUNT,
                           TwoStageDecimator<MIC_COUNT, STAGE2_DEC_FACTOR, 
                                     STAGE2_TAP_COUNT>,
-                          StandardPdmRxService<MIC_COUNT * STAGE2_DEC_FACTOR>, 
+                          StandardPdmRxService<MICS_IN,MIC_COUNT,STAGE2_DEC_FACTOR>, 
                           // std::conditional uses USE_DCOE to determine which 
                           // sample filter is used.
                           typename std::conditional<USE_DCOE,
@@ -307,8 +321,7 @@ namespace mic_array {
         using TParent = MicArray<MIC_COUNT,
                                  TwoStageDecimator<MIC_COUNT, STAGE2_DEC_FACTOR, 
                                            STAGE2_TAP_COUNT>,
-                                 StandardPdmRxService<MIC_COUNT 
-                                                      * STAGE2_DEC_FACTOR>, 
+                                 StandardPdmRxService<MICS_IN,MIC_COUNT,STAGE2_DEC_FACTOR>, 
                                  typename std::conditional<USE_DCOE,
                                             DcoeSampleFilter<MIC_COUNT>,
                                             NopSampleFilter<MIC_COUNT>>::type,
@@ -404,20 +417,19 @@ namespace mic_array {
 //////////////////////////////////////////////
 
 
-template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
-mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
-    ::BasicMicArray()
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
+mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>::BasicMicArray()
 {
   this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, stage2_shr);
 }
 
 
-template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
-mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
+mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::BasicMicArray(
         port_t p_pdm_mics,
         chanend_t c_frames_out) : TParent(
-            StandardPdmRxService<MIC_COUNT * STAGE2_DEC_FACTOR>(p_pdm_mics), 
+            StandardPdmRxService<MICS_IN, MIC_COUNT, STAGE2_DEC_FACTOR>(p_pdm_mics), 
             FrameOutputHandler<MIC_COUNT, FRAME_SIZE, 
                 ChannelFrameTransmitter>(
                     ChannelFrameTransmitter<MIC_COUNT, FRAME_SIZE>(
@@ -427,40 +439,40 @@ mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
 }
 
 
-template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
-void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::SetOutputChannel(chanend_t c_frames_out)
 {
   this->OutputHandler.FrameTx.SetChannel(c_frames_out);
 }
 
 
-template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
-void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::SetPort(port_t p_pdm_mics)
 {
   this->PdmRx.Init(p_pdm_mics);
 }
 
 
-template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
-void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::PdmRxThreadEntry()
 {
   this->PdmRx.ThreadEntry();
 }
 
 
-template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
-void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::InstallPdmRxISR()
 {
   this->PdmRx.InstallISR();
 }
 
 
-template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
-void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE>
+template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::UnmaskPdmRxISR()
 {
   this->PdmRx.UnmaskISR();

@@ -10,6 +10,7 @@
 #include <xcore/port.h>
 
 #include "mic_array.h"
+#include "Util.hpp"
 
 using namespace std;
 
@@ -78,7 +79,13 @@ namespace  mic_array {
    * `p_pdm_mics`.
    * 
    * `SubType::SendBlock()` is provided a block of PDM data as a pointer and is
-   * responsible for signaling that to the subsequent processing stage.
+   * responsible for signaling that to the subsequent processing stage. (Called
+   * from PdmRx thread or ISR)
+   * 
+   * `SubType::GetPdmBlock()` (called from MicArray thread) is responsible for
+   * receiving a block of PDM data from `SubType::SendBlock()` as a pointer,
+   * deinterleaving the buffer contents, and returning a pointer to the PDM data
+   * in the format expected by the mic array unit's decimator component.
    * 
    * @tparam BLOCK_SIZE   Number of words of PDM data per block.
    * @tparam SubType      Subclass of `PdmRxService`
@@ -168,27 +175,122 @@ namespace  mic_array {
    * This class can run the PDM rx service either as a stand-alone thread or
    * through an interrupt.
    * 
-   * Completed blocks of data are transmitted by pointer over a streaming 
-   * channel.
+   * @par Inter-context Transfer
    * 
-   * A decimator wishing to receive blocks of PDM data from an instance of this
-   * class should call `GetPdmBlock()`, which blocks until a new PDM block is 
+   * A streaming channel is used to transfer control of the PDM data block
+   * between contexts (i.e. thread->thread or ISR->thread).
+   * 
+   * The `MicArray` unit receives blocks of PDM data from an instance of this
+   * class by calling `GetPdmBlock()`, which blocks until a new PDM block is
    * available.
+   * 
+   * @par Layouts
+   *  
+   * The buffer transferred by `SendBlock()` contains `CHANNELS_IN*`SUBBLOCKS`
+   * words of PDM data for `CHANNELS_IN` microphone channels. The words are
+   * stored in reverse order of arrival. See `deinterleave_pdm_samples<>()` for
+   * additional details on this format.
+   * 
+   * Within `GetPdmBlock()` (i.e. mic array thread) the PDM data block is
+   * deinterleaved and copied to another buffer in the format required by the
+   * decimator component, which is returned by `GetPdmBlock()`. This buffer
+   * contains samples for `CHANNELS_OUT` microphone channels.
+   * 
+   * @par Channel Filtering
+   * 
+   * In some cases an application may be required to capture more microphone
+   * channels than should actually be processed by subsequent processing stages
+   * (including the decimator component). For example, this may be the case if 4
+   * microphone channels are desired but only an 8 bit wide port is physically
+   * available to capture the samples.
+   * 
+   * This class template has a parameter both for the number of channels to be
+   * captured by the port (`CHANNELS_IN`), as well as for the number of channels
+   * that are to be output for consumption by the `MicArray`'s decimator
+   * component (`CHANNELS_OUT`).
+   *
+   * When the PDM microphones are in an SDR configuration, `CHANNELS_IN` must be
+   * the width (in bits) of the xCore port to which the microphones are
+   * physically connected. When in a DDR configuration, `CHANNELS_IN` must be
+   * twice the width (in bits) of the xCore port to which the microphones are
+   * physically connected.
+   *
+   * `CHANNELS_OUT` is the number of microphone channels to be consumed by the
+   * decimator unit (i.e. must be the same as the `MIC_COUNT` template parameter
+   * of the decimator component). If all port pins are connected to microphones,
+   * this parameter will generally be the same as `CHANNELS_IN`.
+   * 
+   * @par Channel Index (Re-)Mapping
+   * 
+   * The input channel index of a microphone depends on the pin to which it is
+   * connected. Each pin connected to a port has a bit index for that port,
+   * given in the 'Signal Description and GPIO' section of your package's
+   * datasheet.
+   *
+   * Suppose an `N`-bit port is used to capture microphone data, and a
+   * microphone is connected to bit `B` of that port.  In an SDR microphone
+   * configuration, the input channel index of that microphone is `B` -- the
+   * same as the port bit index. 
+   *
+   * In a DDR configuration, that microphone will be on either input channel
+   * index `B` or `B+N`, depending on whether that microphone is configured for
+   * in-phase capture or out-of-phase capture.
+   *
+   * Sometimes it may be desirable to re-order the microphone channel indices.
+   * This is likely the case, for example, when `CHANNELS_IN > CHANNELS_OUT`.
+   *
+   * By default output channels are mapped from the input channels with the same
+   * index. If `CHANNELS_IN > CHANNELS_OUT`, this means that the input channels
+   * with the highest `CHANNELS_IN-CHANNELS_OUT` indices are dropped by default.
+   *
+   * The `MapChannel()` and `MapChannels()` methods can be used to specify a
+   * non-default mapping from input channel indices to output channel indices.
+   * It takes a pointer to a `CHANNELS_OUT`-element array specifying the input
+   * channel index for each output channel.
+   * 
+   * @tparam CHANNELS_IN  The number of microphone channels to be captured by
+   * the port.
+   * @tparam CHANNELS_OUT The number of microphone channels to be delivered by
+   * this `StandardPdmRxService` instance.
+   * @tparam SUBBLOCKS    The number of 32-sample sub-blocks to be captured for
+   * each microphone channel.
    */
-  template <unsigned BLOCK_SIZE>
-  class StandardPdmRxService : public PdmRxService<BLOCK_SIZE, 
-                                      StandardPdmRxService<BLOCK_SIZE>>
+  template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+  class StandardPdmRxService : public PdmRxService<CHANNELS_IN * SUBBLOCKS, 
+                                      StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>>
   {
     /**
      * @brief Alias for parent class.
      */
-    using Super = PdmRxService<BLOCK_SIZE, StandardPdmRxService<BLOCK_SIZE>>;
+    using Super = PdmRxService<CHANNELS_IN * SUBBLOCKS, 
+                    StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>>;
 
     private:
       /**
        * @brief Streaming channel over which PDM blocks are sent.
        */
       streaming_channel_t c_pdm_blocks;
+
+      /**
+       * @brief Maps input channel indices to output channel indices.
+       * 
+       * The output channel with index `k` will be derived from the input channel with index `channel_map[k]`.
+       * 
+       * By default, the mapping will be direct (i.e. `channel_map[k] = k`).
+       * 
+       * Set with the `MapChannel()` or `MapChannels()` methods.
+       */
+      unsigned channel_map[CHANNELS_OUT];
+
+      /**
+       * @brief Buffer for output PDM data.
+       * 
+       * A pointer to this array is delivered to the Decimator component for
+       * decimation. `GetPdmBlock()` (called from the mic array thread)
+       * populates this array (based on `channel_map`) after deinterleaving the
+       * PDM input buffer.
+       */
+      uint32_t out_block[CHANNELS_OUT][SUBBLOCKS];
    
     public:
 
@@ -223,7 +325,7 @@ namespace  mic_array {
        * 
        * @param block   PDM data to send.
        */
-      void SendBlock(uint32_t block[BLOCK_SIZE]);
+      void SendBlock(uint32_t block[CHANNELS_IN * SUBBLOCKS]);
 
       /**
        * @brief Initialize this object with a channel and port.
@@ -232,6 +334,39 @@ namespace  mic_array {
        * @param c_pdm_blocks Streaming channel to send PDM data over.
        */
       void Init(port_t p_pdm_mics);
+
+      /**
+       * @brief Set the input-output mapping for all output channels.
+       * 
+       * By default, input channel index `k` maps to output channel index `k`. 
+       * 
+       * This method overrides that behavior for all channels, re-mapping each
+       * output channel such that output channel `k` is derived from input
+       * channel `map[k]`.
+       * 
+       * @note Changing the channel mapping while the mic array unit is running
+       *       is not recommended.
+       * 
+       * @param map Array containing new channel map.
+       */
+      void MapChannels(unsigned map[CHANNELS_OUT]);
+
+      /**
+       * @brief Set the input-output mapping for a single output channel.
+       * 
+       * By default, input channel index `k` maps to output channel index `k`. 
+       *
+       * This method overrides that behavior for a single output channel,
+       * configuring output channel `out_channel` to be derived from input
+       * channel `in_channel`.
+       * 
+       * @note Changing the channel mapping while the mic array unit is running
+       *       is not recommended.
+       * 
+       * @param out_channel   Output channel index to be re-mapped.
+       * @param in_channel    New source channel index for `out_channel`.
+       */
+      void MapChannel(unsigned out_channel, unsigned in_channel);
 
       /**
        * @brief Install ISR for PDM reception on the current core.
@@ -266,6 +401,9 @@ namespace  mic_array {
 //////////////////////////////////////////////
 
 
+//////////////////////////////////////////////
+//              PdmRxService                //
+//////////////////////////////////////////////
 
 template <unsigned BLOCK_SIZE, class SubType>
 void mic_array::PdmRxService<BLOCK_SIZE,SubType>::SetPort(port_t p_pdm_mics)
@@ -300,38 +438,47 @@ void mic_array::PdmRxService<BLOCK_SIZE,SubType>::ThreadEntry()
 
 
 
+//////////////////////////////////////////////
+//          StandardPdmRxService            //
+//////////////////////////////////////////////
 
-template <unsigned BLOCK_SIZE>
-mic_array::StandardPdmRxService<BLOCK_SIZE>::StandardPdmRxService() 
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::StandardPdmRxService() 
 {
+  for(int k = 0; k < CHANNELS_OUT; k++)
+    this->channel_map[k] = k;
 }
 
-template <unsigned BLOCK_SIZE>
-mic_array::StandardPdmRxService<BLOCK_SIZE>::StandardPdmRxService(
-    port_t p_pdm_mics) : Super(p_pdm_mics)
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::StandardPdmRxService(port_t p_pdm_mics) : Super(p_pdm_mics)
 {
+  for(int k = 0; k < CHANNELS_OUT; k++)
+    this->channel_map[k] = k;
 }
 
 
-template <unsigned BLOCK_SIZE>
-uint32_t mic_array::StandardPdmRxService<BLOCK_SIZE>::ReadPort()
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+uint32_t mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::ReadPort()
 {
   return port_in(this->p_pdm_mics);
 }
 
 
-template <unsigned BLOCK_SIZE>
-void mic_array::StandardPdmRxService<BLOCK_SIZE>::SendBlock(
-          uint32_t block[BLOCK_SIZE])
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::SendBlock(uint32_t block[CHANNELS_IN*SUBBLOCKS])
 {
   s_chan_out_word(this->c_pdm_blocks.end_a, 
                   reinterpret_cast<uint32_t>( &block[0] ));
 }
 
 
-template <unsigned BLOCK_SIZE>
-void mic_array::StandardPdmRxService<BLOCK_SIZE>::Init(
-    port_t p_pdm_mics) 
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::Init(port_t p_pdm_mics) 
 {
   this->c_pdm_blocks = s_chan_alloc();
   assert(this->c_pdm_blocks.end_a != 0 && this->c_pdm_blocks.end_b != 0);
@@ -340,29 +487,60 @@ void mic_array::StandardPdmRxService<BLOCK_SIZE>::Init(
 }
 
 
-template <unsigned BLOCK_SIZE>
-void mic_array::StandardPdmRxService<BLOCK_SIZE>::InstallISR() 
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::MapChannels(unsigned map[CHANNELS_OUT]) 
+{
+  for(int k = 0; k < CHANNELS_OUT; k++)
+    this->channel_map[k] = map[k];
+}
+
+
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::MapChannel(unsigned out_channel, unsigned in_channel) 
+{
+  this->channel_map[out_channel] = in_channel;
+}
+
+
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::InstallISR() 
 {
   pdm_rx_isr_context.p_pdm_mics = this->p_pdm_mics;
   pdm_rx_isr_context.c_pdm_data = this->c_pdm_blocks.end_a;
   pdm_rx_isr_context.pdm_buffer[0] = &this->block_data[0][0];
   pdm_rx_isr_context.pdm_buffer[1] = &this->block_data[1][0];
-  pdm_rx_isr_context.phase_reset = BLOCK_SIZE-1;
-  pdm_rx_isr_context.phase = BLOCK_SIZE-1;
+  pdm_rx_isr_context.phase_reset = CHANNELS_IN*SUBBLOCKS-1;
+  pdm_rx_isr_context.phase = CHANNELS_IN*SUBBLOCKS-1;
 
   enable_pdm_rx_isr(this->p_pdm_mics);
 }
 
 
-template <unsigned BLOCK_SIZE>
-void mic_array::StandardPdmRxService<BLOCK_SIZE>::UnmaskISR() 
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::UnmaskISR() 
 {
   interrupt_unmask_all();
 }
 
 
-template <unsigned BLOCK_SIZE>
-uint32_t* mic_array::StandardPdmRxService<BLOCK_SIZE>::GetPdmBlock() 
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::GetPdmBlock() 
 {
-  return (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
+  uint32_t* full_block = (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
+  mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, SUBBLOCKS);
+
+  uint32_t (*block)[CHANNELS_IN] = (uint32_t (*)[CHANNELS_IN]) full_block;
+
+  for(int ch = 0; ch < CHANNELS_OUT; ch++) {
+    for(int sb = 0; sb < SUBBLOCKS; sb++) {
+      unsigned d = this->channel_map[ch];
+      this->out_block[ch][sb] = block[SUBBLOCKS-1-sb][d];
+    } 
+  }
+  return &this->out_block[0][0];
 }
