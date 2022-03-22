@@ -8,6 +8,8 @@
 #include "xs3_math.h"
 #include "mic_array/etc/fir_1x16_bit.h"
 
+
+
 namespace  mic_array {
 
 /**
@@ -19,22 +21,6 @@ namespace  mic_array {
  */
 static inline 
 void shift_buffer(uint32_t* buff);
-
-/**
- * @brief Deinterleave the channels of a block of PDM data
- * 
- * The block should contain `(MIC_COUNT * s2_dec_factor)` words of PDM data.
- * 
- * @tparam MIC_COUNT    Number of channels represented in PDM data.
- * 
- * @param samples       Pointer to block of samples
- * @param s2_dec_factor Stage2 decimator decimation factor
- */
-template <unsigned MIC_COUNT>
-static inline
-void deinterleave_pdm_samples(
-    uint32_t* samples,
-    unsigned s2_dec_factor);
 
 
 /**
@@ -141,10 +127,22 @@ class TwoStageDecimator
      * Processes a block of PDM data to produce an output sample from the 
      * second stage decimator.
      * 
-     * The provided PDM samples are de-interleaved, and `S2_DEC_FACTOR` samples
-     * are produced from the first stage decimator for each microphone channel,
-     * then those samples are used to produce one output sample for each 
-     * microphone channel (`sample_out`).
+     * `pdm_block` contains exactly enough PDM samples to produce a single
+     * output sample from the second stage decimator. The layout of `pdm_block`
+     * should (effectively) be:
+     * 
+     * @code{.cpp}
+     *  struct {
+     *    struct {
+     *      // lower word indices are older samples.
+     *      // less significant bits in a word are older samples.
+     *      uint32_t samples[S2_DEC_FACTOR];
+     *    } microphone[MIC_COUNT]; // mic channels are in ascending order
+     *  } pdm_block;
+     * @endcode
+     * 
+     * A single output sample from the second stage decimator is computed and
+     * written to `sample_out[]`.
      * 
      * @param sample_out  Output sample vector.
      * @param pdm_block   PDM data to be processed.
@@ -184,14 +182,13 @@ void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
         int32_t sample_out[MIC_COUNT],
         uint32_t pdm_block[BLOCK_SIZE])
 {
-  deinterleave_pdm_samples<MIC_COUNT>(&pdm_block[0], S2_DEC_FACTOR);
+  uint32_t (*pdm_data)[S2_DEC_FACTOR] = (uint32_t (*)[S2_DEC_FACTOR]) pdm_block;
 
   for(unsigned mic = 0; mic < MIC_COUNT; mic++){
     uint32_t* hist = &this->stage1.pdm_history[mic][0];
 
     for(unsigned k = 0; k < S2_DEC_FACTOR; k++){
-      int idx = (S2_DEC_FACTOR - 1 - k) * MIC_COUNT + mic;
-      hist[0] = pdm_block[idx];
+      hist[0] = pdm_data[mic][k];
       int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
 
       shift_buffer(hist);
@@ -214,29 +211,3 @@ void mic_array::shift_buffer(uint32_t* buff)
 }
 
 
-
-template <>
-inline
-void mic_array::deinterleave_pdm_samples<1>(
-    uint32_t* samples,
-    unsigned s2_dec_factor)
-{
-  //Nothing to do for 1 mic
-}
-
-template <>
-inline
-void mic_array::deinterleave_pdm_samples<2>(
-    uint32_t* samples,
-    unsigned s2_dec_factor)
-{
-  for(int k = 0; k < s2_dec_factor; k++){
-    asm volatile(
-      "ldw r0, %0[1]      \n"
-      "ldw r1, %0[0]      \n"
-      "unzip r1, r0, 0    \n"
-      "stw r0, %0[0]      \n"
-      "stw r1, %0[1]        " :: "r"(samples) : "r0", "r1", "memory" );
-    samples += 2;
-  }
-}
