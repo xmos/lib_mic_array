@@ -1,6 +1,27 @@
 lib_mic_array change log
 ========================
 
+5.0.0
+-----
+
+  * Mic Array library redesigned from scratch to make efficient use of XMOS XS3 architecture
+  * Many unused features from previous versions have been dropped
+  * Initial v5.0 features:
+
+    * Supports 1-, 4-, and 8-bit ports
+    * Supports both SDR and DDR microphone configurations
+    * Use 1-16 PDM microphones
+    * Configurable PDM clock frequency
+    * Configurable two-stage decimating FIR
+
+      * Reference filter with total decimation factor of 192 provided
+
+    * Optional DC offset elimination filter
+    * Configurable frame size (down to single sample)
+    * Extensible C++ design
+
+
+
 4.3.0
 -----
 
