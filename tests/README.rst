@@ -26,5 +26,5 @@ With your CMake project properly configured, to build all test binaries,
 navigate to your CMake build directory and use the following command:
 
 ::
+
   make tests
-  ::
