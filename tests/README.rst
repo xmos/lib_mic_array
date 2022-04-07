@@ -4,10 +4,10 @@ tests
 
 This directory contains the tests for ``lib_mic_array``.
 
-  - ``building/`` - Tests which ensure the various C++ class templates build correctly.
+  - `building`_ - Tests which ensure the various C++ class templates build correctly.
   - ``etc/`` - (No tests) Contains assorted bits neededed by some test applications.
-  - ``signal/`` - ``pytest``-based functional tests which verify mic array signal processing
-  - ``unit/`` - Unit tests for individual components.
+  - `signal`_ - ``pytest``-based functional tests which verify mic array signal processing
+  - `unit`_ - Unit tests for individual components.
 
 Test CMake Targets
 ------------------
@@ -48,4 +48,6 @@ that can be run using ``xrun``.
 The test cases associated with the ``tests.signal`` CMake target use the
 ``pytest`` framework. See `signal`_ for more information.
 
+.. _building: building/
 .. _signal: signal/
+.. _unit: unit/
