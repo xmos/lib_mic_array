@@ -1,7 +1,7 @@
 
 import numpy as np
 import pickle as pkl
-import util
+from . import util
 
 
 def VLMACCR1(vC: np.ndarray, mem: np.ndarray, acc = 0, **kwargs) -> np.int32:
@@ -22,8 +22,7 @@ class Stage1Filter(object):
   INT16_MAX_COEFFICIENT = 32766
   BLOCK_SIZE = 256
 
-  def __init__(self, coefs: np.ndarray, decimation_factor: int):
-
+  def __init__(self, coefs: np.ndarray, decimation_factor: int = 32):
     assert (coefs.ndim == 1), "Stage1Filter coefs must be a single dimensional ndarray"
     assert (len(coefs) % Stage1Filter.BLOCK_SIZE == 0), f"Stage1Filter must have a multiple of 256 coefficients ({len(coefs)})"
 
@@ -83,91 +82,47 @@ class Stage1Filter(object):
   def CoefBinary(self):
     return self.coefs_binary
 
-  def FilterFloat(self, pdm_signal: np.ndarray, /, binary=False) -> np.ndarray:
-    assert (pdm_signal.ndim == 1), "pdm_signal must be a 1D array"
-    if binary: pdm_signal = 1 - 2*pdm_signal
-
+  def _pad_input(self, sig_in):
+    if sig_in.ndim == 1:
+      sig_in = sig_in[np.newaxis,:]
+    CHANS,SAMP_IN = sig_in.shape
     Q = self.DecimationFactor
-    w = (self.TapCount - Q) // Q
-    N_pcm = (len(pdm_signal) // Q) - w
+    P = self.TapCount - Q
+    S = np.zeros((CHANS, P+SAMP_IN), dtype=sig_in.dtype)
+    S[:,:P] = (2*(np.arange(P) % 2) - 1).astype(sig_in.dtype)
+    S[:,P:] = sig_in
+    return S
 
-    coefs = self.Coef.astype(np.float)
-    res = np.zeros(N_pcm, dtype=np.float)
-
-    for k in range(N_pcm):
-      x = pdm_signal[Q*k:Q*k+self.TapCount]
-      res[k] = np.dot( x, coefs )
+  def FilterFloat(self, pdm_signal: np.ndarray) -> np.ndarray:
+    if pdm_signal.ndim == 1:
+      pdm_signal = pdm_signal[np.newaxis,:]
+    CHANS, SAMPS_IN = pdm_signal.shape
+    Q = self.DecimationFactor
+    N_pcm = SAMPS_IN // self.DecimationFactor
     
+    S = self._pad_input(pdm_signal)
+    coefs = self.Coef.astype(np.float)[:,np.newaxis]
+    res = np.zeros((CHANS,N_pcm), dtype=np.float)
+    for k in range(N_pcm):
+      x = S[:,Q*k:Q*k+self.TapCount]
+      res[:,k] = np.matmul(x, coefs).squeeze()
     return res
   
-  def FilterInt16(self, pdm_signal: np.ndarray, /, binary=False) -> np.ndarray:
-    assert (pdm_signal.ndim == 1), "pdm_signal must be a 1D array"
-    if binary: pdm_signal = 1 - 2*pdm_signal
-
+  def FilterInt16(self, pdm_signal: np.ndarray) -> np.ndarray:
+    if pdm_signal.ndim == 1:
+      pdm_signal = pdm_signal[np.newaxis,:]
+    CHANS, SAMPS_IN = pdm_signal.shape
     Q = self.DecimationFactor
-    w = (self.TapCount - Q) // Q
-    N_pcm = (len(pdm_signal) // Q) - w
-
-    coefs = self.CoefInt16.astype(np.int32)
-    res = np.zeros(N_pcm, dtype=np.int32)
-
-    for k in range(N_pcm):
-      x = pdm_signal[Q*k:Q*k+self.TapCount]
-      res[k] = np.dot( x, coefs )
+    N_pcm = SAMPS_IN // self.DecimationFactor
     
-    return res
+    S = self._pad_input(pdm_signal)
+    coefs = self.CoefInt16.astype(np.int32)[:,np.newaxis]
+    res = np.zeros((CHANS, N_pcm), dtype=np.int32)
+    for k in range(N_pcm):
+      x = S[:,Q*k:Q*k+self.TapCount]
+      res[:,k] = np.matmul(x, coefs).squeeze()
+    return (res << 8) # stage1 does this on device
   
-  def FilterBipolar(self, pdm_signal: np.ndarray, /, binary=False) -> np.ndarray:
-    assert (pdm_signal.ndim == 1), "pdm_signal must be a 1D array"
-    if binary: pdm_signal = 1 - 2*pdm_signal
-
-    Q = self.DecimationFactor
-    w = (self.TapCount - Q) // Q
-    N_pcm = (len(pdm_signal) // Q) - w
-
-    # (16 x self.TapCount) matrix
-    coefs = self.CoefBipolar.astype(np.int32).T
-    res = np.zeros(N_pcm, dtype=np.int32)
-
-    for k in range(N_pcm):
-      x = pdm_signal[Q*k:Q*k+self.TapCount]
-
-      D = np.matmul( coefs, x ) // 2
-      res[k] = np.dot( util.int16_dual, D )
-    
-    return res
-    
-  
-  def FilterXCore(self, pdm_signal: np.ndarray, /, binary=True) -> np.ndarray:
-    assert (pdm_signal.ndim == 1), "pdm_signal must be a 1D array"
-
-    # change PDM signal to binary if needed
-    if not binary: pdm_signal = (1 - pdm_signal)/2
-
-    Q = self.DecimationFactor
-    R = Stage1Filter.BLOCK_SIZE
-    w = (self.TapCount - Q) // Q
-    N_pcm = (len(pdm_signal) // Q) - w
-
-    # (16 x self.TapCount) matrix
-    coefs = self.CoefBinary.astype(np.int32)
-    res = np.zeros(N_pcm, dtype=np.int32)
-
-    for k in range(N_pcm):
-
-      x = pdm_signal[Q*k:Q*k+self.TapCount]
-      
-      D = np.zeros(16, dtype=np.int32)
-      for i in range(16):
-        for j in range(self.BlockCount):
-          D[i] = VLMACCR1(x, coefs[i,R*j:R*j+R], D[i])
-      
-      print(f"int16_dual: {util.int16_dual}")
-      print(f"D: {D}")
-      res[k] = np.dot(util.int16_dual, D)
-
-    return res
-
   def ToXCoreCoefArray(self):
 
     B = self.CoefBinary
@@ -245,42 +200,68 @@ class Stage2Filter(object):
   def ShrInt32(self):
     return self.shr_int32
   
+  def _pad_input(self, sig_in):
+    if sig_in.ndim == 1:
+      sig_in = sig_in[np.newaxis,:]
+    CHANS,SAMP_IN = sig_in.shape
+    Q = self.DecimationFactor
+    P = self.TapCount - Q
+    S = np.zeros((CHANS, P+SAMP_IN), dtype=sig_in.dtype)
+    S[:,P:] = sig_in
+    return S
 
   def FilterFloat(self, signal_in: np.ndarray) -> np.ndarray:
-    assert (signal_in.ndim == 1), "signal_in must be a 1D array"
-    
+    if signal_in.ndim == 1:
+      signal_in = signal_in[np.newaxis,:]
+    CHANS, SAMPS_IN = signal_in.shape
     Q = self.DecimationFactor
-    w = (self.TapCount - Q) // Q
-    N = (len(signal_in) // Q) - w
+    SAMPS_OUT = SAMPS_IN // self.DecimationFactor
 
-    coefs = self.Coef.astype(np.float)
-    res = np.zeros(N, dtype=np.float)
-
-    for k in range(N):
-      x = signal_in[Q*k:Q*k+self.TapCount]
-      res[k] = np.dot( x, coefs )
-    
+    S = self._pad_input(signal_in)
+    res = np.zeros((CHANS,SAMPS_OUT), dtype=np.float)
+    coefs = np.flip(self.Coef.astype(np.float))[:,np.newaxis]
+    for k in range(SAMPS_OUT):
+      x = S[:,Q*k:Q*k+self.TapCount]
+      res[:,k] = np.matmul( x, coefs ).squeeze()
     return res
-  
+
   def FilterInt32(self, signal_in: np.ndarray) -> np.ndarray:
-    assert (signal_in.ndim == 1), "signal_in must be a 1D array"
-    assert (signal_in.dtype == np.int32), "signal_in must have dtype==np.int32"
-    
+    if signal_in.ndim == 1:
+      signal_in = signal_in[np.newaxis,:]
+    CHANS, SAMPS_IN = signal_in.shape
     Q = self.DecimationFactor
-    w = (self.TapCount - Q) // Q
-    N = (len(signal_in) // Q) - w
+    SAMPS_OUT = SAMPS_IN // self.DecimationFactor
 
-    coefs = self.CoefInt32.astype(np.int64)
-    res = np.zeros(N, dtype=np.int32)
-
-    for k in range(N):
-      x = signal_in[Q*k:Q*k+self.TapCount]
-      p = np.dot(x, coefs)
-      res[k] = np.int32(np.round( p * 2**(-30-self.shr_int32) ))
-    
+    S = self._pad_input(signal_in)
+    res = np.zeros((CHANS,SAMPS_OUT), dtype=np.int32)
+    coefs = np.flip(self.CoefInt32.astype(np.int64))[:,np.newaxis]
+    for k in range(SAMPS_OUT):
+      x = S[:,Q*k:Q*k+self.TapCount]
+      p = np.matmul(x, coefs)
+      # astew: Note that this is not precisely the logic used in lib_xs3_math to
+      #        apply the second stage filter (via xs3_filter_s32()). But I'd 
+      #        rather compare device behavior to the correct result (which this
+      #        gives) than get bit-identical results in a way that masks the fact
+      #        that the filter isn't perfect.
+      res[:,k] = np.round( p * 2**(-30-self.shr_int32) ).astype(np.int32).squeeze()
     return res
   
 
+class TwoStageFilter(object):
+
+  def __init__(self, s1_filter: Stage1Filter, s2_filter: Stage2Filter):
+    self.s1 = s1_filter
+    self.s2 = s2_filter
+
+  @property
+  def DecimationFactor(self):
+    return self.s1.DecimationFactor * self.s2.DecimationFactor
+
+  def Filter(self, pdm_signal: np.ndarray) -> np.ndarray:
+    s1_output = self.s1.FilterInt16(pdm_signal)
+    return self.s2.FilterInt32(s1_output)
+
+    
 
 
 def load(coef_file: str, /, truncate_s1=False):

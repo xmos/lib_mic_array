@@ -18,6 +18,10 @@
 
 using namespace std;
 
+// This has caused problems previously, so just catch the problems here.
+#if defined(MIC_COUNT)
+# error Application must not define the following as precompiler macros: MIC_COUNT.
+#endif
 
 
 namespace  mic_array {

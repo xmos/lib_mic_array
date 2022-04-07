@@ -7,9 +7,12 @@
 #include <type_traits>
 #include <functional>
 
-#include "mic_array.h"
-
 #include <xcore/channel.h>
+
+// This has caused problems previously, so just catch the problems here.
+#if defined(MIC_COUNT)
+# error Application must not define the following as precompiler macros: MIC_COUNT.
+#endif
 
 using namespace std;
 
@@ -42,7 +45,7 @@ namespace  mic_array {
   class DcoeSampleFilter
   {
 
-    private:
+    protected:
       /**
        * @brief State of DCOE filters.
        */

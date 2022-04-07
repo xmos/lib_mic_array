@@ -1,29 +1,8 @@
 
 #include "mic_array/cpp/Util.hpp"
+#include "mic_array/util.h"
 
 #include "mic_array.h"
-
-/**
- * Assembly function. 
- * 
- * Deinterleave the samples for 1 subblock of 2 microphones. Argument points to
- * a 2 word buffer.
- */
-MA_C_API void deinterleave2(uint32_t*);
-/**
- * Assembly function. 
- * 
- * Deinterleave the samples for 1 subblock of 4 microphones. Argument points to
- * a 4 word buffer.
- */
-MA_C_API void deinterleave4(uint32_t*);
-/**
- * Assembly function. 
- * 
- * Deinterleave the samples for 1 subblock of 8 microphones. Argument points to
- * a 8 word buffer.
- */
-MA_C_API void deinterleave8(uint32_t*);
 
 
 

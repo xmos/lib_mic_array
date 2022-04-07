@@ -12,6 +12,11 @@
 #include "mic_array.h"
 #include "Util.hpp"
 
+// This has caused problems previously, so just catch the problems here.
+#if defined(BLOCK_SIZE) || defined(CHANNELS_IN) || defined(CHANNELS_OUT) || defined(SUBBLOCKS)
+# error Application must not define the following as precompiler macros: MIC_COUNT, CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS.
+#endif
+
 using namespace std;
 
 /**
@@ -415,12 +420,12 @@ void mic_array::PdmRxService<BLOCK_SIZE,SubType>::SetPort(port_t p_pdm_mics)
 template <unsigned BLOCK_SIZE, class SubType>
 void mic_array::PdmRxService<BLOCK_SIZE,SubType>::ProcessNext()
 {
-  blocks[0][--phase] =  static_cast<SubType*>(this)->ReadPort();
+  this->blocks[0][--phase] =  static_cast<SubType*>(this)->ReadPort();
 
   if(!phase){
     this->phase = BLOCK_SIZE;
-    uint32_t* ready_block = blocks[0];
-    this->blocks[0] = blocks[1];
+    uint32_t* ready_block = this->blocks[0];
+    this->blocks[0] = this->blocks[1];
     this->blocks[1] = ready_block;
 
     static_cast<SubType*>(this)->SendBlock(ready_block);

@@ -7,9 +7,15 @@
 #include <type_traits>
 #include <functional>
 
-#include "mic_array.h"
+#include "mic_array/frame_transfer.h"
 
 #include <xcore/channel.h>
+
+
+// This has caused problems previously, so just catch the problems here.
+#if defined(MIC_COUNT) || defined(SAMPLE_COUNT) || defined(FRAME_COUNT)
+# error Application must not define the following as precompiler macros: MIC_COUNT, SAMPLE_COUNT, FRAME_COUNT.
+#endif
 
 using namespace std;
 
@@ -197,6 +203,13 @@ namespace  mic_array {
       void SetChannel(chanend_t c_frame_out);
 
       /**
+       * @brief Get channel used for frame transfers.
+       * 
+       * @returns Channel to be used for frame transfers.
+       */
+      chanend_t GetChannel();
+
+      /**
        * @brief Transmit the specified frame.
        * 
        * @param frame Frame to be transmitted.
@@ -257,6 +270,12 @@ void mic_array::ChannelFrameTransmitter<MIC_COUNT,SAMPLE_COUNT>::SetChannel(
     chanend_t c_frame_out)
 {
   this->c_frame_out = c_frame_out;
+}
+
+template <unsigned MIC_COUNT, unsigned SAMPLE_COUNT>
+chanend_t mic_array::ChannelFrameTransmitter<MIC_COUNT,SAMPLE_COUNT>::GetChannel()
+{
+  return this->c_frame_out;
 }
 
 

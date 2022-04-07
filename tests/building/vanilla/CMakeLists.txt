@@ -75,3 +75,5 @@ foreach( MIC_COUNT  1 2 )
   endforeach()
 endforeach()
 
+
+add_dependencies( tests-build tests-build-vanilla )

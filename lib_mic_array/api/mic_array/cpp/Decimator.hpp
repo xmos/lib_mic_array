@@ -4,10 +4,13 @@
 #include <string>
 #include <cassert>
 
-#include "mic_array.h"
 #include "xs3_math.h"
 #include "mic_array/etc/fir_1x16_bit.h"
 
+// This has caused problems previously, so just catch the problems here.
+#if defined(MIC_COUNT) || defined(S2_DEC_FACTOR) || defined(S2_TAP_COUNT)
+# error Application must not define the following as precompiler macros: MIC_COUNT, S2_DEC_FACTOR, S2_TAP_COUNT.
+#endif
 
 
 namespace  mic_array {
@@ -167,6 +170,7 @@ void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
   this->stage1.filter_coef = s1_filter_coef;
   
   std::memset(this->stage1.pdm_history, 0x55, sizeof(this->stage1.pdm_history));
+  std::memset(this->stage2.filter_state, 0x00, sizeof(this->stage2.filter_state));
 
   for(int k = 0; k < MIC_COUNT; k++){
     xs3_filter_fir_s32_init(&this->stage2.filters[k], &this->stage2.filter_state[k][0],
@@ -190,7 +194,6 @@ void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
     for(unsigned k = 0; k < S2_DEC_FACTOR; k++){
       hist[0] = pdm_data[mic][k];
       int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
-
       shift_buffer(hist);
 
       if(k < (S2_DEC_FACTOR-1)){

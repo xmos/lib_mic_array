@@ -5,6 +5,10 @@
 #include "MicArray.hpp"
 #include "mic_array/etc/filters_default.h"
 
+// This has caused problems previously, so just catch the problems here.
+#if defined(MIC_COUNT) || defined(MICS_IN) || defined(FRAME_SIZE) || defined(USE_DCOE)
+# error Application must not define the following as precompiler macros: MIC_COUNT, MICS_IN, FRAME_SIZE, USE_DCOE.
+#endif
 
 namespace mic_array {
 

@@ -1,4 +1,6 @@
 
+add_custom_target( tests )
+
 ## Some of the test applications require the Unity test framework
 include(FetchContent)
 FetchContent_Declare(
@@ -16,9 +18,6 @@ FetchContent_Declare(
 add_subdirectory( etc/unity )
 
 add_subdirectory( building )
+add_subdirectory( unit )
+add_subdirectory( signal )
 
-
-add_custom_target( tests )
-add_dependencies( tests
-    tests-build
-)

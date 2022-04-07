@@ -92,8 +92,8 @@ void dcoe_state_init(
  *   y[t] = R * y[t-1] + x[t] - x[t-1]
  * @endcode
  * 
- * where `t` is the current sample time index, `y[]` is the output signal and
- * `x[]` is the input signal.
+ * where `t` is the current sample time index, `y[]` is the output signal, `x[]`
+ * is the input signal, and `R` is `(255.0/256)`.
  * 
  * To filter a sample in-place use the same array for both the `new_input` and
  * `new_output` arguments.
