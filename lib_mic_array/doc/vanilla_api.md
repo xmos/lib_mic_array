@@ -1,5 +1,0 @@
-
-
-# Vanilla API
-
-@todo
