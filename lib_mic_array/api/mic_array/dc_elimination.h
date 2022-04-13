@@ -3,6 +3,10 @@
 #include "api.h"
 #include <stdint.h>
 
+/**
+ * @defgroup dc_elimination_h_ dc_elmination.h
+ */
+
 C_API_START
 
 /**
@@ -37,7 +41,7 @@ C_API_START
  * `mic_array::DcoeSampleFilter` should be used. If `true`, DCOE will be
  * enabled.
  * 
- * For more information about MicArray prefabs, see @TODO.
+ * For more information about MicArray prefabs, see [../../getting_started.html].
  * 
  * @par With Vanilla API
  * 
@@ -45,7 +49,9 @@ C_API_START
  * when using this API, add a preprocessor definition to the compiler flags,
  * setting `MIC_ARRAY_CONFIG_USE_DC_ELIMINATION` to `0`.
  * 
- * For more information about the vanilla API, see @TODO.
+ * For more information about the vanilla API, see [../../vanilla_api.html].
+ * 
+ * @ingroup dc_elimination_h_
  */
 MA_C_API
 typedef struct {
@@ -65,6 +71,8 @@ typedef struct {
  * 
  * @param[in] state       Array of `dcoe_chan_state_t` to be initialized.
  * @param[in] chan_count  Number of elements in `state`.
+ * 
+ * @ingroup dc_elimination_h_
  */
 MA_C_API
 void dcoe_state_init(
@@ -102,6 +110,8 @@ void dcoe_state_init(
  * @param[in]   state       DC offset elimination state vector.
  * @param[in]   new_input   New input sample.
  * @param[in]   chan_count  Number of channels to be processed.
+ * 
+ * @ingroup dc_elimination_h_
  */
 MA_C_API
 void dcoe_filter(

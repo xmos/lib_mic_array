@@ -1,3 +1,5 @@
+.. _getting_started:
+
 Getting Started
 ===============
 
@@ -7,15 +9,13 @@ will depend on the chosen model.
 
 These are:
 
-* Vanilla Model - This is meant to be the simplest way to include the mic array. 
-It is usually sufficient but offers relatively little flexibility with respect
-to configuration and run-time control. Using this model (mostly) means modifying
-an application's build scripts.
-
+* Vanilla Model - This is meant to be the simplest way to include the mic array.
+  It is usually sufficient but offers relatively little flexibility with respect
+  to configuration and run-time control. Using this model (mostly) means
+  modifying an application's build scripts.
 * Prefab Model - This model involves a little more work from the application
-developer, including writing a couple C++ wrapper functions, but gives the
-application access to any of the defined prefab mic array components.
-
+  developer, including writing a couple C++ wrapper functions, but gives the
+  application access to any of the defined prefab mic array components.
 * General Model - Whenever the above are not used. This is necessary if an
   application wishes to use a customized mic array component.
 
@@ -93,7 +93,7 @@ the device package as well as some other helpful board-related information. The
 identification of your ports may have already been done for you in your XN file.
 Here is a snippet from an XN file:
 
-::
+.. code-block:: xml
 
   ...
   <Tile Number="1" Reference="tile[1]">
@@ -123,11 +123,11 @@ Declaring Resources
 
 Once the ports and clock blocks to be used have been indentified, these
 resources can be represented in code using a ``pdm_rx_resources_t`` struct. The
-following is an example of declaring resources in a DDR configuration. See @ref
-``pdm_rx_resources_t``, @ref ``PDM_RX_RESOURCES_SDR()`` and @ref
-``PDM_RX_RESOURCES_DDR()`` for more details.
+following is an example of declaring resources in a DDR configuration. See
+:ref:`pdm_rx_resources_t`, :ref:`PDM_RX_RESOURCES_SDR()` and
+:ref:`PDM_RX_RESOURCES_DDR()` for more details.
 
-::
+.. code-block:: c
 
   pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
                                   PORT_MCLK_IN_OUT,
@@ -148,19 +148,16 @@ resource types used by ``lib_mic_array`` which are worth considering. Running
 out of any of these will preclude the mic array from running correctly (if at
 all)
 
-* Threads - At least one hardware thread is required to run the mic array 
-component. A second thread may also be used for modestly reduced MIPS
-consumption.
-
-* Computation - The mic array unit will require a fixed number of MIPS 
-(millions of instructions per second) to perform the required processing. The
-exact amount will depend on the configuration used.
-
-* Memory - The mic array requires a modest amount of memory for code and data. 
-(see @todo).
-
-* Chanends - At least 4 chanends must be available for signaling between 
-threads/sub-components.
+* Threads - At least one hardware thread is required to run the mic array
+  component. A second thread may also be used for modestly reduced MIPS
+  consumption.
+* Computation - The mic array unit will require a fixed number of MIPS (millions
+  of instructions per second) to perform the required processing. The exact
+  amount will depend on the configuration used.
+* Memory - The mic array requires a modest amount of memory for code and data.
+  (see @todo).
+* Chanends - At least 4 chanends must be available for signaling between
+  threads/sub-components.
 
 
 Vanilla Model
@@ -189,8 +186,8 @@ been included with the build system.
 * ``PDM_FREQ`` - The desired frequency of the PDM clock, in Hz. 
 * ``MIC_COUNT`` - The number of microphone channels to be captured. 
 * ``SAMPLES_PER_FRAME`` - The size of the audio frames produced by the mic array
-unit (frames will be 2 dimensional arrays with shape ``(MIC_COUNT,
-SAMPLES_PER_FRAME)``).
+  unit (frames will be 2 dimensional arrays with shape
+  ``(MIC_COUNT,SAMPLES_PER_FRAME)``).
 
 Vanilla - Optional Configuration
 ********************************
@@ -247,7 +244,7 @@ IDs used may differ than those required for your application.
 ``pdm_res`` will be used to identify the ports and clocks which will be
 configured for PDM capture.
 
-::
+.. code-block:: c
 
   #include "mic_array/cpp/Prefab.hpp"
   ...
@@ -272,7 +269,7 @@ namespace each derive from ``mic_array::MicArray``.
 
 Define and allocate the specific implementation of ``MicArray`` to be used.
 
-::
+.. code-block:: c++
 
   // Using the full name of the class could get cumbersome. Let's give it an 
   // alias.
@@ -302,7 +299,7 @@ port and clock block resources.  The documentation for
 ``mic_array::prefab::BasicMicArray`` will indicate any parts of the ``MicArray``
 object that need to be initialized.
 
-::
+.. code-block:: c++
 
   #define MCLK_FREQ   24576000
   #define PDM_FREQ    3072000
@@ -323,7 +320,7 @@ object that need to be initialized.
 For this example we'll assume we want to run the PDM rx service as an ISR. We'll
 start the PDM clock, install the ISR and enter the decimator thread.
 
-:: 
+.. code-block:: c++
 
   MA_C_API
   void app_mic_array_task(chanend_t c_audio_frames) {

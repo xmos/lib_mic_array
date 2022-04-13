@@ -76,7 +76,7 @@ namespace mic_array {
      * decimator. DC offset elimination is an IIR filter intended to ensure
      * audio samples on each channel tend towards zero-mean.
      * 
-     * See @ref SampleFilters.md for more information about DC offset
+     * See [Sample Filters](../../sample_filters.html) for more information about DC offset
      * elimination.
      * 
      * If `USE_DCOE` is `false`, no further filtering of the second stage
@@ -143,9 +143,9 @@ namespace mic_array {
      * @endcode
      * 
      * Otherwise (typically), these can be set using
-     * `BasicMicArray<>::SetPort(port_t)` and
-     * `BasicMicArray<>::SetOutputChannel(chanend_t)` to set the port and
-     * channel respectively.
+     * `BasicMicArray::SetPort(port_t)` and
+     * `BasicMicArray::SetOutputChannel(chanend_t)` to set the port and channel
+     * respectively.
      * 
      * @code{.cpp}
      * AppMicArray mics;
@@ -167,10 +167,10 @@ namespace mic_array {
      * 
      * Finally, if running `BasicMicArray`'s PDM rx service within an ISR,
      * before the mic array unit can be started, the ISR must be installed. This
-     * is accomplished with a call to `BasicMicArray<>::InstallPdmRxISR()`.
+     * is accomplished with a call to `BasicMicArray::InstallPdmRxISR()`.
      * Installing the ISR will _not_ unmask it.
      * 
-     * @note `BasicMicArray<>::InstallPdmRxISR()` installs the ISR on the
+     * @note `BasicMicArray::InstallPdmRxISR()` installs the ISR on the
      * hardware thread that calls the method. In most cases, installing it in
      * the same thread as the decimator is the right choice.
      * 
@@ -185,10 +185,10 @@ namespace mic_array {
      * 
      * Second, the PDM rx ISR that was installed during initialization must be
      * unmasked. This is accomplished by calling
-     * `BasicMicArray<>::UnmaskPdmRxISR()` on the mic array unit.
+     * `BasicMicArray::UnmaskPdmRxISR()` on the mic array unit.
      *
      * Finally, the mic array processing thread must be started. The entry point
-     * for the mic array thread is `BasicMicArray<>::ThreadEntry()`.
+     * for the mic array thread is `BasicMicArray::ThreadEntry()`.
      * 
      * A typical pattern will include all three of these steps in a single
      * function which wraps the mic array thread entry point.
@@ -233,9 +233,9 @@ namespace mic_array {
      * The procedure for running the mic array unit with the PDM rx component running as a stand-alone thread is much the same with just a couple key differences.
      * 
      * When running PDM rx as a thread, no call to
-     * `BasicMicArray<>::UnmaskPdmRxISR()` is necessary. Instead, the
+     * `BasicMicArray::UnmaskPdmRxISR()` is necessary. Instead, the
      * application spawns a second thread (the first being the mic array
-     * processing thread) using `BasicMicArray<>::PdmRxThreadEntry()` as the
+     * processing thread) using `BasicMicArray::PdmRxThreadEntry()` as the
      * entry point.
      * 
      * `mic_array_pdm_clock_start()` must still be called, but here the requirement is that it be called from the hardware thread on which the PDM rx component is running (which, of course, cannot be the mic array thread).
@@ -339,8 +339,8 @@ namespace mic_array {
          * This constructor will intialize the decimator, but will not set the
          * port and channel resources needed to actually run the mic array.
          * 
-         * Subsequent calls to `BasicMicArray<>::SetPort()` and
-         * `BasicMicArray<>::SetOutputChannel()` will be required before any
+         * Subsequent calls to `BasicMicArray::SetPort()` and
+         * `BasicMicArray::SetOutputChannel()` will be required before any
          * processing begins.
          */
         BasicMicArray();

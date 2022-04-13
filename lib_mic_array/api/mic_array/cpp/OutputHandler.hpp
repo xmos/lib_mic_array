@@ -92,7 +92,7 @@ namespace  mic_array {
    * @tparam SAMPLE_COUNT Number of samples per frame.
    * @tparam FrameTransmitter
    * @tparam FRAME_COUNT  Number of frame buffers to rotate between.
-   */
+   */ 
   template <unsigned MIC_COUNT, 
             unsigned SAMPLE_COUNT, 
             template <unsigned, unsigned> class FrameTransmitter,

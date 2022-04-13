@@ -44,6 +44,33 @@ This section will give a brief overview of the steps to process a PDM audio
 stream into a PCM audio stream. This section is concerned with the steady state
 behavior and does not describe any necessary initialization steps.
 
+::
+
+              xCore Port
+      ____________v_________________________________________
+     |            |         MicArray                        |
+     |    PDM     |     _________________                   |
+     |    Samples |    |                 |                  |
+     |            `--->|  PdmRx          |---.              |
+     |                 |_________________|   |              |
+     |                  _________________    | PDM Sample   |
+     |                 |                 |   | Blocks       |
+     |             .---|  Decimator      |<--`              |
+     |             |   |_________________|                  |
+     |   Decimated |    _________________                   |
+     |   Sample    |   |                 |                  |
+     |             `-->|  SampleFilter   |---.              |
+     |                 |_________________|   |              |
+     |                  _________________    | Filtered     |
+     |                 |                 |   | Sample       |
+     |             .---|  OutputHandler  |<--`              |
+     |    Sample   |   |_________________|                  |
+     |    or Frame |                                        |
+     |_____________|________________________________________|
+                   v
+              xCore Channel
+
+
 Execution Contexts
 ******************
 

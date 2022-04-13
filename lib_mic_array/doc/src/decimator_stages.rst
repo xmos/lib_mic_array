@@ -1,3 +1,4 @@
+.. _decimator_stages:
 
 Decimator Stages
 ================
@@ -61,7 +62,7 @@ coefficients for its filter taps.
 
 The signature of the filter function is 
 
-::
+.. code-block:: c
 
   int32_t fir_1x16_bit(uint32_t signal[8], uint32_t coeff_1[]);
 

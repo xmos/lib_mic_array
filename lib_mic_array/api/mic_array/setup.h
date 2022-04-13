@@ -2,6 +2,10 @@
 
 #include "mic_array.h"
 
+/**
+ * @defgroup setup_h_ setup.h
+ */
+
 C_API_START
 
 /**
@@ -59,6 +63,8 @@ C_API_START
  * 
  * @param pdm_res   The hardware resources used by the mic array.
  * @param divide    The divider to generate the PDM clock from the master clock.
+ * 
+ * @ingroup setup_h_
  */
 MA_C_API
 void mic_array_resources_configure(
@@ -94,6 +100,8 @@ void mic_array_resources_configure(
  * dropped.
  * 
  * @param pdm_res   The hardware resources used by the mic array.
+ * 
+ * @ingroup setup_h_
  */
 MA_C_API
 void mic_array_pdm_clock_start(
@@ -110,6 +118,8 @@ void mic_array_pdm_clock_start(
  * @param pdm_clock_freq    The desired PDM clock frequency in Hz.
  * 
  * @returns Required clock divider.
+ * 
+ * @ingroup setup_h_
  */
 static inline
 unsigned mic_array_mclk_divider(

@@ -18,6 +18,8 @@ Introduction
    src/resource_usage
    src/vanilla_api
 
+   src/reference/index
+
 
 ``lib_mic_array`` is a library for interfacing with one or more PDM microphones
 on an XMOS device. 

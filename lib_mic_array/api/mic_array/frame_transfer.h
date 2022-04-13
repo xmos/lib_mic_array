@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+/**
+ * @defgroup frame_transfer_h_ frame_transfer.h
+ */
+
 C_API_START
 
 /**

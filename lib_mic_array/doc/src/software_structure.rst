@@ -1,7 +1,8 @@
+.. _software_structure:
 
 Software Structure
 ==================
-
+ 
 The core of ``lib_mic_array`` are a set of C++ class templates representing the
 mic array unit and its sub-components. 
 
@@ -23,7 +24,7 @@ as *classes* when doing so is unlikely to lead to confusion.
 
 The ``MicArray`` class template looks like the following:
 
-::
+.. code-block:: c++
 
   template <unsigned MIC_COUNT,
             class TDecimator,
@@ -39,12 +40,21 @@ the class templates have this as a parameter.
 
 A ``MicArray`` object comprises 4 sub-components:
 
-| Member Field      | Component Class         | Responsibility |
-|-------------------|-------------------------|----------------|
-| ``PdmRx``         | ``TPdmRx``              | Capture of PDM data from a port
-| ``Decimator``     | ``TDecimator``          | 2-stage decimation on blocks of PDM data
-| ``SampleFilter``  | ``TSampleFilter``       | Post-processing of decimated samples
-| ``OutputHandler`` | ``TOutputHandler``      | Transferring audio data to subsequent pipeline stages.
++-------------------+-------------------------+--------------------------------+
+| Member Field      | Component Class         | Responsibility                 |
++===================+=========================+================================+
+| ``PdmRx``         | ``TPdmRx``              | Capture of PDM data from a port|
++-------------------+-------------------------+--------------------------------+
+| ``Decimator``     | ``TDecimator``          | 2-stage decimation on blocks of| 
+|                   |                         | PDM data                       |
++-------------------+-------------------------+--------------------------------+
+| ``SampleFilter``  | ``TSampleFilter``       | Post-processing of decimated   |
+|                   |                         | samples                        |
++-------------------+-------------------------+--------------------------------+
+| ``OutputHandler`` | ``TOutputHandler``      | Transferring audio data to     |
+|                   |                         | subsequent pipeline stages.    |
++-------------------+-------------------------+--------------------------------+
+
 
 Each of the ``MicArray`` sub-components has a type that is specified as a
 template parameter when the class template is instantiated. ``MicArray``
@@ -114,7 +124,7 @@ The following code snippet is the implementation for the main mic array thread
 (or "decimation thread", but not to be confused with (optional) PDM capture
 thread).
 
-::
+.. code-block:: c++
 
   void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                     TSampleFilter,
@@ -133,17 +143,10 @@ thread).
 
 The thread loops forever, and on each iteration
 
-* *Requests a block of PDM sample data the PDM rx service.* This is a blocking 
-call which only returns once a complete block becomes available.
-
-* *Passes the block of PDM sample data to the decimator to produce a single 
-output sample.*
-
+* *Requests a block of PDM sample data the PDM rx service.* This is a blocking call which only returns once a complete block becomes available.
+* *Passes the block of PDM sample data to the decimator to produce a single output sample.*
 * *Applies a post-processing filter to the sample data.*
-
-* *Passes the processed sample to the output handler to be transferred to the 
-next stage of the processing pipeline*. This may also be a blocking call, only
-returning once the data has been transferred.
+* *Passes the processed sample to the output handler to be transferred to the next stage of the processing pipeline*. This may also be a blocking call, only returning once the data has been transferred.
 
 Note that the ``MicArray`` object doesn't care how these steps are actually
 implemented. For example, one output handler implementation may send samples
@@ -252,7 +255,7 @@ names can unfortunately become excessively verbose and confusing. For example,
 the following is the fully qualified name of a (particular) concrete
 ``MicArray`` implementation:
 
-::
+.. code-block:: c++
 
   mic_array::MicArray<2,  
       mic_array::TwoStageDecimator<2,6,65>, 
@@ -274,7 +277,7 @@ processing stages using a channel.
 To demonstrate how ``BasicMicArray`` simplifies this process, observe that the
 following ``MicArray`` type is behaviorally identical to the above:
 
-::
+.. code-block:: c++
 
   mic_array::prefab::BasicMicArray<2,256,true>
 

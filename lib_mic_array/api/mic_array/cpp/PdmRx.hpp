@@ -336,7 +336,6 @@ namespace  mic_array {
        * @brief Initialize this object with a channel and port.
        * 
        * @param p_pdm_mics Port to receive PDM data on.
-       * @param c_pdm_blocks Streaming channel to send PDM data over.
        */
       void Init(port_t p_pdm_mics);
 

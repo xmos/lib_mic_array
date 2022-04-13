@@ -1,3 +1,4 @@
+.. _sample_filters:
 
 Sample Filters
 ==============
@@ -42,14 +43,14 @@ to the value ``0``.
 For example, in a typical application's ``CMakeLists.txt``, that may look like
 the following.
 
-::
+.. code-block:: cmake
 
   # Gather sources and create application target
-  ...
+  # ...
   # Add vanilla source to application build
   mic_array_vanilla_add(my_app  ${MCLK_FREQ} ${PDM_FREQ} 
                               ${MIC_COUNT} ${FRAME_SIZE} )
-  ...
+  # ...
   # Disable DCOE
   target_compile_definitions(my_app
       PRIVATE MIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0 )
@@ -62,7 +63,7 @@ If your project instantiates the ``mic_array::prefab::BasicMicArray`` class
 template to include the mic array unit, DC offset elimination is enabled or
 disabled with the ``USE_DCOE`` boolean template parameter (there is no default).
 
-::
+.. code-block:: c++
 
   template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE>
       class BasicMicArray : public ...
@@ -78,7 +79,7 @@ to it and should ultimately be completely optimized out at compile time.
 
 For example, in your application source:
 
-::
+.. code-block:: c++
 
   #include "mic_array/cpp/Prefab.hpp"
   ...
@@ -101,7 +102,7 @@ template.
 For example, sub-classing ``mic_array::MicArray`` as follows will enable DCOE for
 any ``MicArray`` implementation deriving from that sub-class.
 
-::
+.. code-block:: c++
 
   #include "mic_array/cpp/MicArray.hpp"
   using namespace mic_array;

@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+/**
+ * @defgroup filters_default_h_ filters_default.h
+ */
+
 C_API_START
 
 /**
@@ -25,7 +29,7 @@ C_API_START
  * 
  * For more information about the example first stage filter supplied with the 
  * library, including frequency response and steps for using a custom first
- * stage filter, see @ref decimator_stages.md.
+ * stage filter, see [Decimator Stages](../../decimator_stages.html).
  */
 
 /** 
@@ -36,6 +40,8 @@ C_API_START
  * 
  * @note In version 5.0 of lib_mic_array, this value is fixed (even if you 
  * choose not to use the default filter coefficients).
+ * 
+ * @ingroup filters_default_h_
  */
 #define STAGE1_DEC_FACTOR   32
 
@@ -46,6 +52,8 @@ C_API_START
  * 
  * @note In version 5.0 of lib_mic_array, this value is fixed (even if you 
  * choose not to use the default filter coefficients).
+ * 
+ * @ingroup filters_default_h_
  */
 #define STAGE1_TAP_COUNT    256
 
@@ -67,6 +75,8 @@ C_API_START
  * coefficients are not stored together in memory. This is, again, due to the 
  * behavior of the VPU hardware.
  * 
+ * 
+ * @ingroup filters_default_h_
  */
 #define STAGE1_WORDS        (STAGE1_TAP_COUNT)/2
 
@@ -74,6 +84,8 @@ C_API_START
  * Stage 1 PDM-to-PCM Decimation Filter Default Coefficients
  * 
  * These are the default coefficients for the first stage filter.
+ * 
+ * @ingroup filters_default_h_
  */
 extern const uint32_t stage1_coef[STAGE1_WORDS];
 
@@ -110,7 +122,7 @@ extern const uint32_t stage1_coef[STAGE1_WORDS];
  * 
  * For more information about the example second stage filter supplied with the 
  * library, including frequency response and steps for using a custom filter, 
- * see @ref decimator_stages.md.
+ * see [Decimator Stages](../../decimator_stages.html).
  */
 
 /** 
@@ -121,6 +133,8 @@ extern const uint32_t stage1_coef[STAGE1_WORDS];
  * 
  * While the second stage filter can be configured with a different decimation
  * factor, this is the one used for the filter supplied with this library.
+ * 
+ * @ingroup filters_default_h_
  */
 #define STAGE2_DEC_FACTOR   6
 
@@ -129,6 +143,8 @@ extern const uint32_t stage1_coef[STAGE1_WORDS];
  * 
  * This is the number of filter taps associated with the second stage filter
  * supplied with this library.
+ * 
+ * @ingroup filters_default_h_
  */
 #define STAGE2_TAP_COUNT    65
 
@@ -136,6 +152,8 @@ extern const uint32_t stage1_coef[STAGE1_WORDS];
  * Stage 2 Decimation Filter Default Coefficients
  * 
  * These are the default coefficients for the second stage filter.
+ * 
+ * @ingroup filters_default_h_
  */
 extern const int32_t stage2_coef[STAGE2_TAP_COUNT];
 
@@ -144,6 +162,8 @@ extern const int32_t stage2_coef[STAGE2_TAP_COUNT];
  * 
  * This is the non-negative, rounding, arithmetic right-shift applied
  * to the 40-bit accumulator to produce an output sample.
+ * 
+ * @ingroup filters_default_h_
  */
 extern const right_shift_t stage2_shr;
 

@@ -29,6 +29,9 @@ void shift_buffer(uint32_t* buff);
 /**
  * @brief First and Second Stage Decimator
  * 
+ * This class template represents a two stage decimator which converts a stream
+ * of PDM samples to a lower sample rate stream of PCM samples. 
+ * 
  * @tparam MIC_COUNT      Number of microphone channels.
  * @tparam S2_DEC_FACTOR  Stage 2 decimation factor.
  * @tparam S2_TAP_COUNT   Stage 2 tap count.git p

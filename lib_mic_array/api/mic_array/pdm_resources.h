@@ -7,6 +7,10 @@
 
 #include <stdint.h>
 
+/**
+ * @defgroup pdm_resources_h_ pdm_resources.h whyy
+ */
+
 
 C_API_START
 
@@ -19,6 +23,8 @@ C_API_START
  * 
  * An object of this type will be used for initializing and starting the mic 
  * array unit.
+ * 
+ * @ingroup pdm_resources_h_
  */
 MA_C_API
 typedef struct {
@@ -84,6 +90,8 @@ typedef struct {
  * @param P_PDM_CLK   PDM sample clock port resource ID.
  * @param P_PDM_MICS  PDM microphone data port resource ID.
  * @param CLOCK_A     PDM clock and capture clock block resource ID.
+ * 
+ * @ingroup pdm_resources_h_
  */
 #define PDM_RX_RESOURCES_SDR(P_MCLK, P_PDM_CLK, P_PDM_MICS, CLOCK_A)    \
     { (port_t) (P_MCLK), (port_t) (P_PDM_CLK), (port_t) (P_PDM_MICS),   \
@@ -98,6 +106,8 @@ typedef struct {
  * @param P_PDM_MICS  PDM microphone data port resource ID.
  * @param CLOCK_A     PDM clock clock block resource ID.
  * @param CLOCK_B     PDM capture clock block resource ID.
+ * 
+ * @ingroup pdm_resources_h_
  */
 #define PDM_RX_RESOURCES_DDR(P_MCLK, P_PDM_CLK, P_PDM_MICS, CLOCK_A, CLOCK_B) \
     { (port_t) (P_MCLK), (port_t) (P_PDM_CLK), (port_t) (P_PDM_MICS),         \

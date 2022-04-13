@@ -2,6 +2,10 @@
 
 #include "mic_array.h"
 
+/**
+ * @defgroup mic_array_vanilla_h_ mic_array_vanilla.h
+ */
+
 
 C_API_START
 
@@ -145,6 +149,8 @@ C_API_START
  * ignored. The real-time condition is not yet active.
  * 
  * @param pdm_res   Hardware resources required by the mic array module.
+ * 
+ * @ingroup mic_array_vanilla_h_
  */
 MA_C_API
 void ma_vanilla_init();
@@ -163,6 +169,8 @@ void ma_vanilla_init();
  * @param pdm_res   Hardware resources required by the mic array module.
  * @param c_frames_out  (Non-streaming) Channel over which to send processed
  *                      frames of audio.
+ * 
+ * @ingroup mic_array_vanilla_h_
  */
 MA_C_API
 void ma_vanilla_task(chanend_t c_frames_out);
