@@ -15,11 +15,10 @@ set( DEMO_COMMON_FLAGS
         "-DAPP_NAME=\"${APP_NAME}\""
 )
 
-
-set( DEMO_COMMON_INCLUDES  "${CMAKE_SOURCE_DIR}/demos/common/src" )
+set( DEMO_COMMON_INCLUDES  "${CMAKE_CURRENT_LIST_DIR}/src" )
 
 file( GLOB_RECURSE    DEMO_COMMON_SOURCES    
-            "${CMAKE_SOURCE_DIR}/demos/common/src/*.c"
-            "${CMAKE_SOURCE_DIR}/demos/common/src/*.xc"
-            "${CMAKE_SOURCE_DIR}/demos/common/src/*.cpp"
-            "${CMAKE_SOURCE_DIR}/demos/common/src/*.S"   )
+            "${CMAKE_CURRENT_LIST_DIR}/src/*.c"
+            "${CMAKE_CURRENT_LIST_DIR}/src/*.xc"
+            "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp"
+            "${CMAKE_CURRENT_LIST_DIR}/src/*.S"   )

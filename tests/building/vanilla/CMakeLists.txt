@@ -61,7 +61,7 @@ foreach( MIC_COUNT  1 2 )
 
         target_link_libraries( ${TARG_NAME}
             xcore_sdk_lib_xs3_math
-            xcore_sdk_lib_mic_array )
+            sdk::hil::lib_mic_array )
         
         target_compile_definitions( ${TARG_NAME}
           PRIVATE MIC_ARRAY_CONFIG_USE_DC_ELIMINATION=${DCOE_ENABLED} )

@@ -34,23 +34,23 @@ foreach(COMPILE_FLAG ${MIC_ARRAY_COMPILE_FLAGS})
 endforeach()
 
 
-add_library(xcore_sdk_lib_mic_array STATIC)
-target_sources(xcore_sdk_lib_mic_array
+add_library(xcore_sdk_hil_lib_mic_array STATIC)
+target_sources(xcore_sdk_hil_lib_mic_array
     PRIVATE ${MIC_ARRAY_SOURCES}
 )
 
-target_include_directories(xcore_sdk_lib_mic_array
+target_include_directories(xcore_sdk_hil_lib_mic_array
     PUBLIC ${MIC_ARRAY_INCLUDES}
 )
 
-target_compile_options(xcore_sdk_lib_mic_array
+target_compile_options(xcore_sdk_hil_lib_mic_array
     PRIVATE ${MIC_ARRAY_COMPILE_FLAGS}
 )
 
-target_link_libraries(xcore_sdk_lib_mic_array
+target_link_libraries(xcore_sdk_hil_lib_mic_array
     PUBLIC
         xcore_sdk_lib_xs3_math
 )
 
 ## Create an alias
-add_library(sdk::lib_mic_array ALIAS xcore_sdk_lib_mic_array)
+add_library(sdk::hil::lib_mic_array ALIAS xcore_sdk_hil_lib_mic_array)

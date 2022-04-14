@@ -43,7 +43,7 @@ PRIVATE ${APP_INCLUDES} )
 
 target_link_libraries( ${APP_NAME}
   xcore_sdk_lib_xs3_math
-  xcore_sdk_lib_mic_array
+  sdk::hil::lib_mic_array
   unity )
 
 add_dependencies( tests  ${APP_NAME} )

@@ -1,4 +1,6 @@
 
+add_custom_target( demos )
+
 include(demo_app.cmake)
 include(common/demo_common.cmake)
 

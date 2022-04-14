@@ -36,6 +36,8 @@ foreach( N_MICS  1 2 )
             "-DAPP_USE_PDM_RX_ISR=${USE_ISR}" )
 
     make_demo_app_target( ${TARG_NAME} "${APP_SOURCES}" "${APP_INCLUDES}" "${TARG_FLAGS}" )
+    
+    add_dependencies( demos  ${TARG_NAME} )
 
   endforeach()
 endforeach()

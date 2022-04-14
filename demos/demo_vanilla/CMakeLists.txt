@@ -39,6 +39,8 @@ foreach( N_MICS  1 2 )
 
   mic_array_vanilla_add( ${TARG_NAME} ${MCLK_FREQ} ${PDM_FREQ} 
                          ${N_MICS} ${SAMPLES_PER_FRAME} )
+    
+  add_dependencies( demos  ${TARG_NAME} )
 
 endforeach()
 

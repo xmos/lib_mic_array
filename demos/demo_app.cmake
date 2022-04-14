@@ -8,7 +8,7 @@ macro( make_demo_app_target
     add_executable( ${TARGET_NAME} )
 
     set(BUILD_FLAGS
-        "${CMAKE_SOURCE_DIR}/XVF3610_Q60A.xn"
+        "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
         "-fxscope"
         "-mcmodel=large"
         "-Wno-xcore-fptrgroup"
@@ -33,7 +33,7 @@ macro( make_demo_app_target
     target_include_directories( ${TARGET_NAME} PRIVATE ${TARGET_INCLUDE_PATHS} )
 
     target_link_libraries( ${TARGET_NAME} xcore_sdk_lib_xs3_math 
-                                          xcore_sdk_lib_mic_array
+                                          sdk::hil::lib_mic_array
                                           sdk::hil::lib_i2c 
                                           sdk::hil::lib_i2s)
 
