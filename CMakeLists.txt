@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL XCORE_XS3A)
-
 # Disable in-source build.
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source build is not allowed! Please specify a build folder.\n\tex:cmake -B build")
