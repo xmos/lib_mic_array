@@ -1,6 +1,8 @@
 
 set(APP_NAME demo_vanilla)
 
+set( TARGET_XN   XVF3610_Q60A.xn )
+
 #**********************
 # Vanilla Configuration
 #**********************

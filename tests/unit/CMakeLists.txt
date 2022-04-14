@@ -1,9 +1,11 @@
 
 set( APP_NAME tests-unit )
 
+set( TARGET_XN   XVF3610_Q60A.xn )
+
 
 set(APP_COMPILE_FLAGS
-  "${CMAKE_SOURCE_DIR}/XVF3610_Q60A.xn"
+  "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
   "-fxscope"
   "-mcmodel=large"
   "-Wno-xcore-fptrgroup"

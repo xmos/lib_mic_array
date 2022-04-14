@@ -1,13 +1,15 @@
 
 set( APP_NAME tests-signal-basicmicarray )
 
+set( TARGET_XN   XVF3610_Q60A.xn )
+
 add_custom_target( ${APP_NAME} )
 add_dependencies( tests-signal  ${APP_NAME} )
 
 get_filename_component(XSCOPE_CONFIG config.xscope ABSOLUTE)
 
 set(APP_COMPILE_FLAGS
-  "${CMAKE_SOURCE_DIR}/XVF3610_Q60A.xn"
+  "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
   "${XSCOPE_CONFIG}" 
   "-fxscope"
   "-mcmodel=large"

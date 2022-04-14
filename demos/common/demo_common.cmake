@@ -3,7 +3,7 @@
 
 
 set( DEMO_COMMON_FLAGS
-        "${CMAKE_SOURCE_DIR}/XVF3610_Q60A.xn"
+        "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
         "-fxscope"
         "-mcmodel=large"
         "-Wno-xcore-fptrgroup"

@@ -1,6 +1,8 @@
 
 set(APP_NAME measure_mips)
 
+set( TARGET_XN   XVF3610_Q60A.xn )
+
 
 #**********************
 # includes

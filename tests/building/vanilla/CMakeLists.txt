@@ -1,11 +1,13 @@
 
 set( APP_NAME tests-build-vanilla )
 
+set( TARGET_XN   XVF3610_Q60A.xn )
+
 set( MCLK_FREQ            24576000  )
 
 
 set(APP_COMPILE_FLAGS
-  "${CMAKE_SOURCE_DIR}/XVF3610_Q60A.xn"
+  "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
   "-fxscope"
   "-mcmodel=large"
   "-Wno-xcore-fptrgroup"

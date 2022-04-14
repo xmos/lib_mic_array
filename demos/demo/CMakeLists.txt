@@ -1,5 +1,7 @@
 
-set(APP_NAME demo)
+set( APP_NAME demo )
+
+set( TARGET_XN   XVF3610_Q60A.xn )
 
 #**********************
 # includes
