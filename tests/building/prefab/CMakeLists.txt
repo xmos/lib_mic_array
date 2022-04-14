@@ -39,7 +39,7 @@ PRIVATE ${APP_INCLUDES} )
 
 target_link_libraries( ${APP_NAME}
   xcore_sdk_lib_xs3_math
-  sdk::hil::lib_mic_array )
+  lib_mic_array )
 
   
 add_dependencies( tests-build tests-build-prefab )

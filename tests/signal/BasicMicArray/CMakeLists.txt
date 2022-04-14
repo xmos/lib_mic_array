@@ -50,7 +50,7 @@ macro( create_target    MICS    FRAME_SIZE    USE_ISR )
 
   target_link_libraries( ${TARG_NAME}
     xcore_sdk_lib_xs3_math
-    sdk::hil::lib_mic_array )
+    lib_mic_array )
 
   target_compile_definitions( ${TARG_NAME}
     PRIVATE "CHAN_COUNT=${MICS}"

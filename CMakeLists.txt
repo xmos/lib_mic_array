@@ -24,15 +24,20 @@ project(lib_mic_array
     VERSION 5.0.0
     LANGUAGES CXX C ASM)
 
-# Fixes issue where .xc files always recompile on Windows
-string(REPLACE "-MD" "-MMD" CMAKE_DEPFILE_FLAGS_C ${CMAKE_DEPFILE_FLAGS_C})
+if( PROJECT_IS_TOP_LEVEL )
+  # Fixes issue where .xc files always recompile on Windows
+  string(REPLACE "-MD" "-MMD" CMAKE_DEPFILE_FLAGS_C ${CMAKE_DEPFILE_FLAGS_C})
+endif()
 
 # # Add SDK
 # add_subdirectory(xcore_sdk EXCLUDE_FROM_ALL EXCLUDE_FROM_DEFAULT_BUILD)
 
 # Add lib_mic_array
 add_subdirectory(lib_mic_array)
-set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+
+if( PROJECT_IS_TOP_LEVEL )
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+endif()
 
 # Make vanilla API macro available
 include( etc/vanilla/vanilla.cmake )
