@@ -35,19 +35,25 @@ endforeach()
 
 
 add_library(lib_mic_array STATIC)
-target_sources(lib_mic_array
-    PRIVATE ${MIC_ARRAY_SOURCES}
-)
 
-target_include_directories(lib_mic_array
-    PUBLIC ${MIC_ARRAY_INCLUDES}
-)
+# Don't try to compile anything unless we're on the right platform
+if(${CMAKE_SYSTEM_NAME} STREQUAL XCORE_XS3A)
 
-target_compile_options(lib_mic_array
-    PRIVATE ${MIC_ARRAY_COMPILE_FLAGS}
-)
+  target_sources(lib_mic_array
+      PRIVATE ${MIC_ARRAY_SOURCES}
+  )
 
-target_link_libraries(lib_mic_array
-    PUBLIC
-        xcore_sdk_lib_xs3_math
-)
+  target_include_directories(lib_mic_array
+      PUBLIC ${MIC_ARRAY_INCLUDES}
+  )
+
+  target_compile_options(lib_mic_array
+      PRIVATE ${MIC_ARRAY_COMPILE_FLAGS}
+  )
+  
+  target_link_libraries(lib_mic_array
+      PUBLIC
+          xcore_sdk_lib_xs3_math
+  )
+
+endif()
