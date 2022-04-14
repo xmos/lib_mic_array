@@ -36,6 +36,10 @@ examples/AN00218_app_hires_DAS_fixed/doc/pdf/AN00218.pdf
 **/__pycache__/
 **/.ipynb_checkpoints/
 
+# Any files user wants to keep in their local clone
+**/*.local.*
+**/*.local.*/
+
 
 # Unit test runners
 **/runners/*
