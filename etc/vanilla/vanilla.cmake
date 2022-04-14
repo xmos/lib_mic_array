@@ -1,12 +1,12 @@
 
-set( VANILLA_DIR ${CMAKE_CURRENT_LIST_DIR} )
-  
-macro( mic_array_vanilla_add
+function( mic_array_vanilla_add
         TARGET_NAME
         MCLK_FREQ 
         PDM_FREQ
         MIC_COUNT
         SAMPLES_PER_FRAME )
+
+  set( VANILLA_DIR "${CMAKE_CURRENT_FUNCTION_LIST_DIR}" )
 
   target_sources( ${TARGET_NAME} 
       PRIVATE ${VANILLA_DIR}/mic_array_vanilla.cpp )
@@ -26,4 +26,4 @@ macro( mic_array_vanilla_add
   target_compile_definitions( ${TARGET_NAME}
       PRIVATE MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=${SAMPLES_PER_FRAME} )
 
-endmacro()
+endfunction()
