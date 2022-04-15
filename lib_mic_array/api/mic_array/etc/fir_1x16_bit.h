@@ -43,6 +43,6 @@ C_API_START
  * @returns  The inner product
  */
 MA_C_API
-int fir_1x16_bit(uint32_t signal[], uint32_t coeff_1[]);
+int fir_1x16_bit(uint32_t signal[], const uint32_t coeff_1[]);
 
 C_API_END

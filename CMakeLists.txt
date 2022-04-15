@@ -21,7 +21,7 @@ project(lib_mic_array
     VERSION 5.0.0
     LANGUAGES CXX C ASM)
 
-if( PROJECT_IS_TOP_LEVEL )
+if( PROJECT_IS_TOP_LEVEL OR ${DEV_LIB_MIC_ARRAY} )
   # Fixes issue where .xc files always recompile on Windows
   string(REPLACE "-MD" "-MMD" CMAKE_DEPFILE_FLAGS_C ${CMAKE_DEPFILE_FLAGS_C})
 endif()

@@ -108,6 +108,7 @@ TMicArray mics;
 
 void ma_vanilla_init()
 {
+  mics.Init();
   mics.SetPort(pdm_res.p_pdm_mics);
   mic_array_resources_configure(&pdm_res, MIC_ARRAY_CONFIG_MCLK_DIVIDER);
   mic_array_pdm_clock_start(&pdm_res);

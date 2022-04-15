@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <string>
 #include <cassert>
-#include <iostream>
 
 #include <xcore/interrupt.h>
 #include <xcore/channel_streaming.h>
@@ -134,23 +133,6 @@ namespace  mic_array {
       uint32_t* blocks[2] = {&block_data[0][0], &block_data[1][0]};
 
     public:
-
-      /**
-       * @brief Construct a `PdmRxService` object.
-       * 
-       * This constructor does not intialize `p_pdm_mics`. A subsequent call to
-       * `SetPort()` will be required prior to any call to `ProcessNext()` or
-       * `ThreadEntry()`.
-       */
-      PdmRxService() { }
-
-      /**
-       * @brief Construct a `PdmRxService` object.
-       * 
-       * This constructor initializes `p_pdm_mics`. No subsequent call to
-       * `SetPort()` is necessary.
-       */
-      PdmRxService(port_t p_pdm_mics) : p_pdm_mics(p_pdm_mics) { }
 
       /**
        * @brief Set the port from which to collect PDM samples.
@@ -300,24 +282,6 @@ namespace  mic_array {
     public:
 
       /**
-       * @brief Construct a `StandardPdmRxService` object.
-       * 
-       * A subsequent call to `SetPort()` and `SetChannel()` will be required 
-       * prior to any call to `ProcessNext()`, `GetPdmBlock()` or 
-       * `ThreadEntry()`.
-       */
-      StandardPdmRxService();
-
-      /**
-       * @brief Construct a `PdmRxService` object.
-       * 
-       * This constructor does not intialize `p_pdm_mics`. A subsequent call to
-       * `SetPort()` will be required prior to any call to `ProcessNext()` or
-       * `ThreadEntry()`.
-       */
-      StandardPdmRxService(port_t p_pdm_mics);
-
-      /**
        * @brief Read a word of PDM data from the port.
        * 
        * @return A `uint32_t` containing 32 PDM samples. If `MIC_COUNT >= 2` the
@@ -446,22 +410,6 @@ void mic_array::PdmRxService<BLOCK_SIZE,SubType>::ThreadEntry()
 //          StandardPdmRxService            //
 //////////////////////////////////////////////
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
-    ::StandardPdmRxService() 
-{
-  for(int k = 0; k < CHANNELS_OUT; k++)
-    this->channel_map[k] = k;
-}
-
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
-    ::StandardPdmRxService(port_t p_pdm_mics) : Super(p_pdm_mics)
-{
-  for(int k = 0; k < CHANNELS_OUT; k++)
-    this->channel_map[k] = k;
-}
-
 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
 uint32_t mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
@@ -484,8 +432,10 @@ template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
     ::Init(port_t p_pdm_mics) 
 {
+  for(int k = 0; k < CHANNELS_OUT; k++)
+    this->channel_map[k] = k;
+
   this->c_pdm_blocks = s_chan_alloc();
-  assert(this->c_pdm_blocks.end_a != 0 && this->c_pdm_blocks.end_b != 0);
 
   this->SetPort(p_pdm_mics);
 }

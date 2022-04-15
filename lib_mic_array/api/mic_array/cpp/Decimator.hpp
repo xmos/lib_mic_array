@@ -74,11 +74,11 @@ class TwoStageDecimator
       /**
        * Pointer to filter coefficients for Stage 1
        */
-      uint32_t* filter_coef;
+      const uint32_t* filter_coef;
       /**
        * Filter state (PDM history) for stage 1 filters.
        */
-      uint32_t pdm_history[MIC_COUNT][8];
+      uint32_t pdm_history[MIC_COUNT][8] = {[0 ... (MIC_COUNT-1)] = { [0 ... 7] = 0x55555555 } };
     } stage1;
     
     /**
@@ -92,10 +92,12 @@ class TwoStageDecimator
       /**
        * Stage 2 filter stage.
        */
-      int32_t filter_state[MIC_COUNT][S2_TAP_COUNT];
+      int32_t filter_state[MIC_COUNT][S2_TAP_COUNT] = {{0}};
     } stage2;
 
   public:
+
+    constexpr TwoStageDecimator() noexcept { }
 
     /**
      * @brief Initialize the decimator.
@@ -123,7 +125,7 @@ class TwoStageDecimator
      * @param s2_filter_shr   Stage 2 filter right-shift.
      */
     void Init(
-        uint32_t* s1_filter_coef,
+        const uint32_t* s1_filter_coef,
         const int32_t* s2_filter_coef,
         const right_shift_t s2_filter_shr);
 
@@ -166,14 +168,11 @@ class TwoStageDecimator
 
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
 void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
-    uint32_t* s1_filter_coef,
+    const uint32_t* s1_filter_coef,
     const int32_t* s2_filter_coef,
     const right_shift_t s2_shr) 
 {      
   this->stage1.filter_coef = s1_filter_coef;
-  
-  std::memset(this->stage1.pdm_history, 0x55, sizeof(this->stage1.pdm_history));
-  std::memset(this->stage2.filter_state, 0x00, sizeof(this->stage2.filter_state));
 
   for(int k = 0; k < MIC_COUNT; k++){
     xs3_filter_fir_s32_init(&this->stage2.filters[k], &this->stage2.filter_state[k][0],

@@ -336,14 +336,21 @@ namespace mic_array {
         /**
          * @brief No-argument constructor.
          * 
-         * This constructor will intialize the decimator, but will not set the
-         * port and channel resources needed to actually run the mic array.
+         * 
+         * This constructor allocates the mic array and nothing more.
+         * 
+         * Call BasicMicArray::Init() to initialize the decimator.
          * 
          * Subsequent calls to `BasicMicArray::SetPort()` and
-         * `BasicMicArray::SetOutputChannel()` will be required before any
+         * `BasicMicArray::SetOutputChannel()` will also be required before any
          * processing begins.
          */
-        BasicMicArray();
+        constexpr BasicMicArray() noexcept {}
+
+        /**
+         * @brief Initialize the decimator.
+         */
+        void Init();
 
         /**
          * @brief Initialzing constructor.
@@ -422,7 +429,7 @@ namespace mic_array {
 
 
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
-mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>::BasicMicArray()
+void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>::Init()
 {
   this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, stage2_shr);
 }

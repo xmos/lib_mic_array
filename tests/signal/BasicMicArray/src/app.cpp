@@ -44,6 +44,7 @@ TMicArray mics;
 void app_dec_task(
     chanend_t c_frames_out) //non-streaming
 {
+  mics.Init();
   mics.SetOutputChannel(c_frames_out);
   mics.ThreadEntry();
 }

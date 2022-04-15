@@ -97,6 +97,21 @@ void app_init(
   const unsigned mclk_div = mic_array_mclk_divider(
       APP_AUDIO_CLOCK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY);
 
+  
+  mics_1_1_true.Init();
+  mics_1_16_true.Init();
+  mics_1_256_true.Init();
+  mics_1_1_false.Init();
+  mics_1_16_false.Init();
+  mics_1_256_false.Init();
+
+  mics_2_1_true.Init();
+  mics_2_16_true.Init();
+  mics_2_256_true.Init();
+  mics_2_1_false.Init();
+  mics_2_16_false.Init();
+  mics_2_256_false.Init();
+
   // No harm in setting the port on all of them.
   mics_1_1_true.SetPort(pdm_res_sdr.p_pdm_mics);
   mics_1_16_true.SetPort(pdm_res_sdr.p_pdm_mics);

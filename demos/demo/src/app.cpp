@@ -30,6 +30,8 @@ TMicArray mics = TMicArray();
 MA_C_API
 void app_init()
 {
+  mics.Init();
+  
   // Configure our clocks and ports
   const unsigned mclk_div = mic_array_mclk_divider(
       APP_AUDIO_CLOCK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY);
