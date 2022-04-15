@@ -36,12 +36,9 @@ endforeach()
 
 add_library(lib_mic_array STATIC)
 
-# Don't try to compile anything unless we're on the right platform
-if(${CMAKE_SYSTEM_NAME} STREQUAL XCORE_XS3A)
-  target_sources(lib_mic_array
-      PRIVATE ${MIC_ARRAY_SOURCES}
-  )
-endif()
+target_sources(lib_mic_array
+    PRIVATE ${MIC_ARRAY_SOURCES}
+)
 
 target_include_directories(lib_mic_array
     PUBLIC ${MIC_ARRAY_INCLUDES}
