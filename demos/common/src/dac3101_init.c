@@ -1,16 +1,15 @@
+// Copyright 2022 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <stdint.h>
-
 #include <platform.h>
-
+#include <stdlib.h>
+#include <assert.h>
 
 #include "i2c.h"
 #include "i2s.h"
 
 #include "dac3101/dac3101.h"
-
-#include <stdlib.h>
-#include <assert.h>
 
 #define PDM_CLKBLK_1  XS1_CLKBLK_1
 #define PDM_CLKBLK_2  XS1_CLKBLK_2

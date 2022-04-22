@@ -1,10 +1,12 @@
-
-#include "mic_array/frame_transfer.h"
+// Copyright 2022 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <xcore/channel.h>
 #include <xcore/channel_transaction.h>
-
 #include <stdio.h>
+
+#include "mic_array/frame_transfer.h"
+
 
 void ma_frame_tx(
     const chanend_t c_frame_out,

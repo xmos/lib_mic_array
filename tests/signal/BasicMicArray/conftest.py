@@ -1,3 +1,6 @@
+# Copyright 2022 XMOS LIMITED.
+# This Software is subject to the terms of the XMOS Public Licence: Version 1.
+ 
 import sys, os, pytest, enum
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..','..',"script"))
 from mic_array.case_replay import ReplayMode

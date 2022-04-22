@@ -1,3 +1,6 @@
+# Copyright 2022 XMOS LIMITED.
+# This Software is subject to the terms of the XMOS Public Licence: Version 1.
+ 
 
 import numpy as np
 from mic_array.device_context import DeviceContext

@@ -1,16 +1,12 @@
+// Copyright 2022 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <stdint.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/interrupt.h>
-// #include <platform.h>
-// #include <xs1.h>
-// #include <xclib.h>
-// #include <xscope.h>
 
 #include "mic_array_vanilla.h"
-
 #include "mic_array/cpp/Prefab.hpp"
-
 #include "mic_array.h"
 #include "mic_array/etc/filters_default.h"
 

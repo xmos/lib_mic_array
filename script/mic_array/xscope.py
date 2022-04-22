@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright XMOS Limited - 2018
+Copyright XMOS Limited - 2022
 """
 
 import os, ctypes, platform, sys, time, queue

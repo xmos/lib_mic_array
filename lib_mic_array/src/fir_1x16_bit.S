@@ -1,3 +1,6 @@
+// Copyright 2022 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
+
     // This function is the optimal FIR on a 1-bit signal with 16-bit coefficients.
     //
     // NOTE: This version is optimized for the mic array and takes only a single block of coefficients

@@ -1,6 +1,7 @@
+// Copyright 2022 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
+
 #pragma once
-
-
 
 #define AUDIO_BUFFER_SAMPLES  ((unsigned)(MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME * 1.2))
 #define APP_AUDIO_PIPELINE_SAMPLE_RATE   16000
