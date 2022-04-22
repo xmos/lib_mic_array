@@ -1,15 +1,17 @@
-// Copyright 2022 XMOS LIMITED.
+// Copyright 2021-2022 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-    // This function is the optimal FIR on a 1-bit signal with 16-bit coefficients.
-    //
-    // NOTE: This version is optimized for the mic array and takes only a single block of coefficients
-    //
-    // r0: argument 1, signal (word aligned)
-    // r1: argument 2, coefficients (arranged as 16 1-bit arrays, word aligned)
-    // r2: spare
-    // r3: spare
-    // r11: spare
+/**
+ * This function is the optimal FIR on a 1-bit signal with 16-bit coefficients.
+ *
+ * NOTE: This version is optimized for the mic array and takes only a single block of coefficients
+ *
+ * r0: argument 1, signal (word aligned)
+ * r1: argument 2, coefficients (arranged as 16 1-bit arrays, word aligned)
+ * r2: spare
+ * r3: spare
+ * r11: spare
+*/
 
 #define NSTACKWORDS   10
     .globl fir_1x16_bit

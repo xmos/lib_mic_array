@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""
-Copyright XMOS Limited - 2022
-"""
+# Copyright 2022 XMOS LIMITED.
+# This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 import os, ctypes, platform, sys, time, queue
 from collections import defaultdict
