@@ -169,7 +169,6 @@ void ma_vanilla_init();
  * another thread waiting to pull frames from the other end of `c_frames_out`
  * as they become available.
  * 
- * @param pdm_res   Hardware resources required by the mic array module.
  * @param c_frames_out  (Non-streaming) Channel over which to send processed
  *                      frames of audio.
  * 
