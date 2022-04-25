@@ -1,0 +1,49 @@
+# YAML schema for GitHub Actions:
+# https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions
+#
+# Helpful YAML parser to clarify YAML syntax:
+# https://yaml-online-parser.appspot.com/
+#
+# This workflow uses actions that are not certified by GitHub. They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support documentation.
+#
+# This file contains the workflows that are run prior to merging a pull request.
+
+name: Docs
+
+on:
+  push:
+    branches:
+      - 'develop'
+      - 'master'
+  pull_request:
+    branches:
+      - 'develop'
+      - 'master'
+
+  # Allow manually triggering of the workflow.
+  workflow_dispatch: {}
+
+jobs:
+  build_documentation:
+    name: Build and package documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Pull doc_builder container
+        run: |
+          docker pull ghcr.io/xmos/doc_builder:main 
+      
+      - name: Build documentation
+        run: |
+          docker run --rm -t -u "$(id -u):$(id -g)" -v ${{ github.workspace }}/lib_mic_array:/build -e REPO:/build -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc ghcr.io/xmos/doc_builder:main
+          
+      - name: Save documentation artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: lib_mic_array_docs
+          path: ./lib_mic_array/doc/_build/latest/html
+          if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn` 
+          retention-days: 5
