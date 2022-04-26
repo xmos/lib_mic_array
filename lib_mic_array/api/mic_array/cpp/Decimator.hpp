@@ -81,7 +81,11 @@ class TwoStageDecimator
       /**
        * Filter state (PDM history) for stage 1 filters.
        */
-      uint32_t pdm_history[MIC_COUNT][8] = {[0 ... (MIC_COUNT-1)] = { [0 ... 7] = 0x55555555 } };
+      uint32_t pdm_history[MIC_COUNT][8]
+#ifndef __DOXYGEN__ // doxygen breaks if it encounters this.
+        = {[0 ... (MIC_COUNT-1)] = { [0 ... 7] = 0x55555555 } }
+#endif
+      ;
     } stage1;
     
     /**

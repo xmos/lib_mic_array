@@ -10,7 +10,7 @@ software component beyond delivery of frames of audio data from a configurable
 set of microphones at a configurable rate. This API targets that majority of 
 applications. 
 
-The :ref:`prefab` API requires the application developer to have at least some
+The prefab API requires the application developer to have at least some
 minimal understanding of the objects and classes associated with the mic array
 unit, and requires the developer to write some application-specific code to
 configure and start the mic array. The Vanilla API (which builds on top of the
@@ -36,11 +36,11 @@ The API is included in an application by using a CMake macro
 application's sources, includes and compile definitions to include the API.
 
 In the application code, two function calls are needed. First,
-:ref:`ma_vanilla_init()` is called to initialize the various mic array
+:cpp:func:`ma_vanilla_init()` is called to initialize the various mic array
 sub-components, preparing for capture of PDM data. Then, to start capture the
-decimation thread is started with :ref:`ma_vanilla_task()` as entrypoint.
-:ref:`ma_vanilla_task()` takes an XCore ``chanend`` as a parameter, which tells
-it where completed audio frames should be routed.
+decimation thread is started with :cpp:func:`ma_vanilla_task()` as entrypoint.
+:cpp:func:`ma_vanilla_task()` takes an XCore ``chanend`` as a parameter, which
+tells it where completed audio frames should be routed.
 
 .. note::
   The Vanilla API runs the PDM rx service as an interrupt in the decimation
@@ -48,14 +48,13 @@ it where completed audio frames should be routed.
   one of the lower-level APIs must be used.
 
 As with the prefab API, audio frames are extracted from the mic array unit over
-a (non-streaming) channel using the :ref:`ma_frame_rx()` or
-:ref:`ma_frame_rx_transpose()` functions.
+a (non-streaming) channel using the :cpp:func:`ma_frame_rx()` or
+:cpp:func:`ma_frame_rx_transpose()` functions.
 
 .. note::
-  The Vanilla API uses the :ref:`reference decimation filters <filters_default>`
-  provided with this library, and does not currently provide a way to override
-  this. To use custom filters, you must either use a lower-level API or modify
-  the vanilla API.
+  The Vanilla API uses the default filters provided with this library, 
+  and does not currently provide a way to override this. To use custom filters, 
+  you must either use a lower-level API or modify the vanilla API.
 
 Configuration
 =============
@@ -114,10 +113,10 @@ application.
 
 ``SAMPLES_PER_FRAME`` is the number of samples (for each microphone channel)
 that will be delivered in each (non-overlapping) frame retrieved by
-:ref:`ma_frame_rx()`. A minimum value of ``1`` is supported, to deliver samples
-one at a time. The larger this value, the looser the real-time constraint on the
-thread receiving the mic array unit's output (while also increasing the amount
-of audio data to be processed).
+:cpp:func:`ma_frame_rx()`. A minimum value of ``1`` is supported, to deliver
+samples one at a time. The larger this value, the looser the real-time
+constraint on the thread receiving the mic array unit's output (while also
+increasing the amount of audio data to be processed).
 
 Optional Configuration
 ----------------------
@@ -138,7 +137,7 @@ application's ``CMakeLists.txt`` using CMake's built-in
 
 
 ``MIC_ARRAY_CONFIG_USE_DC_ELIMINATION``
-  Indicates whether the :ref:`DC offset elmination <dc_elimination>` filter 
+  Indicates whether the :ref:`DC offset elmination <sample_filters>` filter 
   should be applied to the output of the decimator. Set to ``0`` to disable or
   ``1`` to enable. Defaults to ``1`` (filter on).
 

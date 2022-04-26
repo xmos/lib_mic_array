@@ -124,8 +124,8 @@ Declaring Resources
 Once the ports and clock blocks to be used have been indentified, these
 resources can be represented in code using a ``pdm_rx_resources_t`` struct. The
 following is an example of declaring resources in a DDR configuration. See
-:ref:`pdm_rx_resources_t`, :ref:`PDM_RX_RESOURCES_SDR()` and
-:ref:`PDM_RX_RESOURCES_DDR()` for more details.
+:cpp:struct:`pdm_rx_resources_t`, :cpp:func:`PDM_RX_RESOURCES_SDR()` and
+:cpp:func:`PDM_RX_RESOURCES_DDR()` for more details.
 
 .. code-block:: c
 
