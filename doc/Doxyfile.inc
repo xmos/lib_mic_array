@@ -13,3 +13,5 @@ MATHJAX_RELPATH        = https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/
 
 # Make short MATHJAX sequences prettier
 ALIASES += math{1}="@f$\1@f$"
+ALIASES = "beginrst=^^\verbatim embed:rst^^"
+ALIASES += "endrst=\endverbatim"

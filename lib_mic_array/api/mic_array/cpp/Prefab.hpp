@@ -79,7 +79,7 @@ namespace mic_array {
      * decimator. DC offset elimination is an IIR filter intended to ensure
      * audio samples on each channel tend towards zero-mean.
      * 
-     * See [Sample Filters](../../sample_filters.html) for more information about DC offset
+     * See \beginrst :ref:`sample_filters` \endrst for more information about DC offset
      * elimination.
      * 
      * If `USE_DCOE` is `false`, no further filtering of the second stage

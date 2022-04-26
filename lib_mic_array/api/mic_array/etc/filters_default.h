@@ -32,7 +32,7 @@ C_API_START
  * 
  * For more information about the example first stage filter supplied with the 
  * library, including frequency response and steps for using a custom first
- * stage filter, see [Decimator Stages](../../decimator_stages.html).
+ * stage filter, see \beginrst :ref:`decimator_stages` \endrst.
  */
 
 /** 
@@ -125,7 +125,7 @@ extern const uint32_t stage1_coef[STAGE1_WORDS];
  * 
  * For more information about the example second stage filter supplied with the 
  * library, including frequency response and steps for using a custom filter, 
- * see [Decimator Stages](../../decimator_stages.html).
+ * see \beginrst :ref:`decimator_stages` \endrst.
  */
 
 /** 
