@@ -1,7 +1,7 @@
 .. lib_mic_array documentation master file
 
-XMOS Mic Array Library
-======================
+Mic Array Library
+=================
 
 Introduction
 ************
