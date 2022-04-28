@@ -38,8 +38,7 @@ jobs:
       
       - name: Build documentation
         run: |
-          docker run --rm -t -u "$(id -u):$(id -g)" -v ${{ github.workspace }}/lib_mic_array:/build -e REPO:/build -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc ghcr.io/xmos/doc_builder:main
-          
+          docker run --rm -t -u "$(id -u):$(id -g)" -v ${{ github.workspace }}:/build -e REPO:/build -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc ghcr.io/xmos/doc_builder:main
       - name: Save documentation artifacts
         uses: actions/upload-artifact@v2
         with:

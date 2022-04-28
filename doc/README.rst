@@ -37,7 +37,7 @@ To build the documentation, run the following command in the root of the reposit
 
 .. code-block:: console
 
-    $ docker run --rm -t -u "$(id -u):$(id -g)" -v $(pwd):/build -e REPO:/build -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc -e DOXYGEN_INPUT=ignore ghcr.io/xmos/doc_builder:main
+    $ docker run --rm -t -u "$(id -u):$(id -g)" -v $(pwd):/build -e REPO:/build -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc ghcr.io/xmos/doc_builder:main
 
 ********************
 Without Using Docker
