@@ -15,12 +15,14 @@
 
 .align 8
 pdm_rx_isr_context:
-.L_port:          .word 0
-.L_buffA:         .word 0
-.L_buffB:         .word 0
-.L_phase1:        .word 0
-.L_phase1_reset:  .word 0
-.L_c_out:         .word 0
+.L_port:            .word 0
+.L_buffA:           .word 0
+.L_buffB:           .word 0
+.L_phase1:          .word 0
+.L_phase1_reset:    .word 0
+.L_c_out:           .word 0
+.L_credit:          .word 0
+.L_missed_blocks:   .word -1
 
 .global pdm_rx_isr_context
 
@@ -67,8 +69,28 @@ pdm_rx_isr:
     stw A, dp[.L_buffA]
     stw D, dp[.L_buffB]
   // Next set of samples is ready.
+
+  // Check if there is currently send credit, and if not, quietly drop the
+  // pdm block. This prevents a possible deadlock if the main thread gets
+  // backed up.
+    ldw A, dp[.L_credit]
+    bt A, .L_has_credit
+  .L_no_credit:
+    // No credit. increment the missed block counter.
+    ldw A, dp[.L_missed_blocks]
+    not D, A  // if the missed blocks counter is set to -1 (default)
+    ecallf D  // then dropping a block is a crashable offense
+    add A, A, 1
+    stw A, dp[.L_missed_blocks]
+    bu .L_finish
+  .L_has_credit:
+    sub A, A, 1
+    stw A, dp[.L_credit]
+
     ldw A, dp[.L_c_out]
     out res[A], D
+  
+  .L_finish:
   // And we're done
     ldw r4, sp[0];    ldw r5, sp[1]
     ldw r6, sp[2];    ldw r7, sp[3]
