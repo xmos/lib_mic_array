@@ -32,10 +32,10 @@ macro( make_demo_app_target
 
     target_include_directories( ${TARGET_NAME} PRIVATE ${TARGET_INCLUDE_PATHS} )
 
-    target_link_libraries( ${TARGET_NAME} xcore_sdk_lib_xs3_math 
+    target_link_libraries( ${TARGET_NAME} lib_xs3_math 
                                           lib_mic_array
-                                          sdk::hil::lib_i2c 
-                                          sdk::hil::lib_i2s)
+                                          framework_io_i2c 
+                                          framework_io_i2s)
 
     install( TARGETS ${TARGET_NAME} )
 
