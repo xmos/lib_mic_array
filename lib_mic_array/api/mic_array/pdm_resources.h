@@ -5,7 +5,7 @@
 #include "api.h"
 #include "etc/xcore_compat.h"
 
-#include "xs3_math.h"
+#include "xmath/xmath.h"
 
 #include <stdint.h>
 

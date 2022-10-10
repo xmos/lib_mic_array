@@ -1,9 +1,9 @@
 
 
 CPMAddPackage(
-  NAME lib_xs3_math
-  GIT_REPOSITORY https://github.com/xmos/lib_xs3_math
-  GIT_TAG        881cf848a5899f4ecb9182e7f50fd3705e5b68ef
+  NAME lib_xcore_math
+  GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
+  GIT_TAG        v2.0.1-dev
 )
 
 
@@ -58,5 +58,5 @@ target_compile_options(lib_mic_array
 
 target_link_libraries(lib_mic_array
     PUBLIC
-        lib_xs3_math
+        lib_xcore_math
 )
