@@ -18,4 +18,4 @@ add_subdirectory( ../cmake/unity ${unity_BINARY_DIR} )
 add_subdirectory( building )
 add_subdirectory( unit )
 add_subdirectory( signal )
-
+add_subdirectory( legacy )

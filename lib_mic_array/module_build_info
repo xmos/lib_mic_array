@@ -1,0 +1,18 @@
+VERSION = 5.0.1
+
+DEPENDENT_MODULES = lib_xcore_math 
+
+MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -Os
+
+# there is no MODULE_XCC_CPP_FLAGS, even though there is a MODULE_XCC_FLAGS, a
+# MODULE_XCC_C_FLAGS, MODULE_XCC_XC_FLAGS, MODULE_XCC_ASM_FLAGS and a 
+# XCC_CPP_FLAGS. Just no MODULE_XCC_CPP_FLAGS.
+# MODULE_XCC_CPP_FLAGS = -std=c++11
+XCC_FLAGS_Util.cpp = -std=c++11 $(XCC_FLAGS)
+
+EXPORT_INCLUDE_DIRS = api
+
+
+SOURCE_DIRS = src                             \
+              src/etc
+							

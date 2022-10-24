@@ -3,7 +3,7 @@
 CPMAddPackage(
   NAME lib_xcore_math
   GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
-  GIT_TAG        v2.0.1-dev
+  GIT_TAG        v2.1.0
 )
 
 
