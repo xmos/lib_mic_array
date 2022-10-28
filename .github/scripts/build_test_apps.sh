@@ -8,6 +8,7 @@ wget https://raw.githubusercontent.com/xmos/xmos_cmake_toolchain/main/xc_overrid
 cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=./xs3a.cmake
 pushd build.xcore
 make all
-# I can't get the following two (custom) targets to build with 'all'
-make tests-legacy_build
-make tests-legacy_build_vanilla
+# I can't get the following two (custom) targets to build with 'all'.
+# Currently an issue with java prevents these from working in CI.
+# make tests-legacy_build
+# make tests-legacy_build_vanilla
