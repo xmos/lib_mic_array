@@ -8,11 +8,11 @@ set(LEGACY_BUILD_TOOL   xmake)
 # library is correct. Not an app that needs to be run, just built.
 # Here it's added as a custom target so that it can be tested just 
 # via CMake
-add_custom_target( legacy_build_vanilla
+add_custom_target( tests-legacy_build_vanilla
   BYPRODUCTS ${BINARY_PATH}/${BINARY_NAME}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMAND ${LEGACY_BUILD_TOOL}
   COMMENT "Building legacy_build_vanilla.xe..." )
 
   
-add_dependencies( tests legacy_build_vanilla )
+add_dependencies( tests tests-legacy_build_vanilla )
