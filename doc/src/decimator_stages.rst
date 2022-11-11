@@ -135,7 +135,7 @@ sample rate (the sample rate at which the application runs) is
     3.072 MHz / (32*6) = 16 kHz
 
 The second stage filter uses the 32-bit FIR filter implementation from
-``lib_xs3_math`` (@TODO: link to github). See ``xs3_filter_fir_s32()`` in that
+``lib_xcore_math`` (@TODO: link to github). See ``xs3_filter_fir_s32()`` in that
 library for more implementation details. Decimation is achieved using by
 effectively discarding ``S2_DEC_FACTOR-1`` of every ``S2_DEC_FACTOR`` output
 samples.

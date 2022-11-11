@@ -60,7 +60,7 @@ foreach( MIC_COUNT  1 2 )
           PRIVATE ${APP_INCLUDES} )
 
         target_link_libraries( ${TARG_NAME}
-            xcore_sdk_lib_xs3_math
+            lib_xcore_math
             lib_mic_array )
         
         target_compile_definitions( ${TARG_NAME}

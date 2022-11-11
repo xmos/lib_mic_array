@@ -4,7 +4,7 @@
 #pragma once
 
 #include "mic_array/api.h"
-#include "xs3_math.h"
+#include "xmath/xmath.h"
 
 #include <stdint.h>
 
@@ -115,7 +115,7 @@ extern const uint32_t stage1_coef[STAGE1_WORDS];
  * The second stage filter uses 32-bit coefficients for its taps. A
  * complete description of the FIR implementation is outside the scope
  * of this documentation, but it can be found in the `xs3_filter_fir_s32_t`
- * documentation of `lib_xs3_math`.
+ * documentation of `lib_xcore_math`.
  * 
  * In brief, the second stage filter coefficients are quantized to a Q1.30 
  * fixed-point format with input samples treated as integers. The tap outputs 

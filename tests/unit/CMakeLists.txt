@@ -42,7 +42,7 @@ target_include_directories( ${APP_NAME}
 PRIVATE ${APP_INCLUDES} )
 
 target_link_libraries( ${APP_NAME}
-  xcore_sdk_lib_xs3_math
+  lib_xcore_math
   lib_mic_array
   unity )
 

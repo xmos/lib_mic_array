@@ -1,23 +1,22 @@
 
-add_custom_target( tests )
 
 ## Some of the test applications require the Unity test framework
-include(FetchContent)
-FetchContent_Declare(
-  unity
+CPMAddPackage(
+  NAME unity
   GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
   GIT_TAG        v2.5.2
   GIT_SHALLOW    TRUE
-  SOURCE_DIR     unity
+  DOWNLOAD_ONLY  TRUE
 )
 
-# Using FetchContent_MakeAvailable( unity ) will clone the Unity repo and 
-# call add_subdirectory() on it, using the CMakeLists.txt in the repo.
-# However, that didn't immediately work. Rather than investigate and fix that,
-# I've just used a custom CMakeLists.txt
-add_subdirectory( etc/unity )
+add_custom_target( tests )
+
+
+# The CMakeLists that comes with the Unity repo isn't suitable for our needs.
+add_subdirectory( ../cmake/unity ${unity_BINARY_DIR} )
 
 add_subdirectory( building )
 add_subdirectory( unit )
 add_subdirectory( signal )
-
+add_subdirectory( legacy )
+add_subdirectory( legacy_vanilla )

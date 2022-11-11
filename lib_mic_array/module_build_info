@@ -1,0 +1,30 @@
+VERSION = 5.0.1
+
+DEPENDENT_MODULES = lib_xcore_math 
+
+MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -Os
+
+# there is no MODULE_XCC_CPP_FLAGS
+# MODULE_XCC_CPP_FLAGS = -std=c++11
+XCC_FLAGS_Util.cpp = -std=c++11 $(XCC_FLAGS)
+
+INCLUDE_DIRS = api
+
+
+SOURCE_DIRS = src				\
+              src/etc
+							
+# If using xmake/module_build_info instead of cmake, the vanilla API can still
+# be used by setting VANILLA_API_ENABLED to 1 in your application Makefile.
+# This also requires the following compile definitions to be added for your
+# application (see /etc/vanilla/vanilla.cmake):
+# 	MIC_ARRAY_CONFIG_MCLK_FREQ		# Master audio clock frequency
+#		MIC_ARRAY_CONFIG_PDM_FREQ			# PDM clock frequency
+#		MIC_ARRAY_CONFIG_MIC_COUNT		# Number of microphones
+#		MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME	# Number of samples in each frame of
+#																				# audio delivered by the mic array.
+ifeq (1, $(VANILLA_API_ENABLED))
+SOURCE_DIRS += ../etc/vanilla
+INCLUDE_DIRS += ../etc/vanilla
+XCC_FLAGS_mic_array_vanilla.cpp = -std=c++11 $(XCC_FLAGS)
+endif

@@ -36,6 +36,8 @@ extern "C" {
     unsigned phase;
     unsigned phase_reset;
     chanend_t c_pdm_data;
+    unsigned credit;
+    unsigned missed_blocks;
   } pdm_rx_isr_context;
 
   /**
@@ -363,6 +365,17 @@ namespace  mic_array {
        * @returns Pointer to block of PDM data.
        */
       uint32_t* GetPdmBlock();
+
+      /**
+       * @brief Set whether dropped PDM samples should cause an assertion.
+       * 
+       * If `doAssert` is set to `true` (default), the PDM rx ISR will cause
+       * an assertion if it is ready to deliver a PDM block to the mic array
+       * thread when the mic array thread is not ready to receive it. If 
+       * `false`, dropped blocks can be tracked through 
+       * `pdm_rx_isr_context.missed_blocks`.
+       */
+      void AssertOnDroppedBlock(bool doAssert);
   };
 
 }
@@ -475,6 +488,12 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
   enable_pdm_rx_isr(this->p_pdm_mics);
 }
 
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::AssertOnDroppedBlock(bool doAssert)
+{
+  pdm_rx_isr_context.missed_blocks = doAssert? -1 : 0;
+}
 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
@@ -483,11 +502,16 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
   interrupt_unmask_all();
 }
 
-
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
 uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
     ::GetPdmBlock() 
 {
+  // Has to be in a critical section to avoid race conditions with ISR.
+  interrupt_mask_all();
+  pdm_rx_isr_context.credit = 2;
+  interrupt_unmask_all();
+
+
   uint32_t* full_block = (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
   mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, SUBBLOCKS);
 

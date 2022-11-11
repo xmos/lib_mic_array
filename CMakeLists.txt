@@ -6,6 +6,14 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source build is not allowed! Please specify a build folder.\n\tex:cmake -B build")
 endif()
 
+
+include(cmake/CPM.cmake)
+
+# if( PROJECT_IS_TOP_LEVEL )
+#   message(STATUS "Configuring as top-level project")
+#   set( DEV_LIB_MIC_ARRAY 1 )
+# endif()
+
 # If DEV_LIB_MIC_ARRAY is not defined, set it to true iff the root 
 # build dir (CMAKE_BINARY_DIR) is a child of the current source dir.
 # This will tell us whether to include the demos and tests.
@@ -18,16 +26,13 @@ if(NOT DEFINED DEV_LIB_MIC_ARRAY)
 endif()
 
 project(lib_mic_array 
-    VERSION 5.0.0
+    VERSION 5.0.1
     LANGUAGES CXX C ASM)
 
 if( PROJECT_IS_TOP_LEVEL OR ${DEV_LIB_MIC_ARRAY} )
   # Fixes issue where .xc files always recompile on Windows
   string(REPLACE "-MD" "-MMD" CMAKE_DEPFILE_FLAGS_C ${CMAKE_DEPFILE_FLAGS_C})
 endif()
-
-# # Add SDK
-# add_subdirectory(xcore_sdk EXCLUDE_FROM_ALL EXCLUDE_FROM_DEFAULT_BUILD)
 
 # Add lib_mic_array
 add_subdirectory(lib_mic_array)

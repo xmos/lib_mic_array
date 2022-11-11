@@ -1,4 +1,12 @@
 
+
+CPMAddPackage(
+  NAME lib_xcore_math
+  GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
+  GIT_TAG        v2.1.0
+)
+
+
 set(MIC_ARRAY_PATH ${CMAKE_CURRENT_LIST_DIR})
 
 ## Source files
@@ -50,5 +58,5 @@ target_compile_options(lib_mic_array
 
 target_link_libraries(lib_mic_array
     PUBLIC
-        xcore_sdk_lib_xs3_math
+        lib_xcore_math
 )

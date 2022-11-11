@@ -7,7 +7,7 @@
 #include <string>
 #include <cassert>
 
-#include "xs3_math.h"
+#include "xmath/xmath.h"
 #include "mic_array/etc/fir_1x16_bit.h"
 
 // This has caused problems previously, so just catch the problems here.
@@ -95,7 +95,7 @@ class TwoStageDecimator
       /**
        * Stage 2 FIR filters
        */
-      xs3_filter_fir_s32_t filters[MIC_COUNT];
+      filter_fir_s32_t filters[MIC_COUNT];
       /**
        * Stage 2 filter stage.
        */
@@ -124,8 +124,8 @@ class TwoStageDecimator
      * filter coefficients, see @todo.
      * 
      * `s2_filter_shr` is the final right-shift applied to the stage 2 filter's 
-     * accumulator prior to output. See `lib_xs3_math`'s documentation for 
-     * `xs3_filter_fir_s32_t` for more details.
+     * accumulator prior to output. See `lib_xcore_math`'s documentation for 
+     * `filter_fir_s32_t` for more details.
      * 
      * @param s1_filter_coef  Stage 1 filter coefficients.
      * @param s2_filter_coef  Stage 2 filter coefficients.
@@ -182,8 +182,8 @@ void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
   this->stage1.filter_coef = s1_filter_coef;
 
   for(int k = 0; k < MIC_COUNT; k++){
-    xs3_filter_fir_s32_init(&this->stage2.filters[k], &this->stage2.filter_state[k][0],
-                            S2_TAP_COUNT, s2_filter_coef, s2_shr);
+    filter_fir_s32_init(&this->stage2.filters[k], &this->stage2.filter_state[k][0],
+                        S2_TAP_COUNT, s2_filter_coef, s2_shr);
   }
 }
 
@@ -206,9 +206,9 @@ void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
       shift_buffer(hist);
 
       if(k < (S2_DEC_FACTOR-1)){
-        xs3_filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
+        filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
       } else {
-        sample_out[mic] = xs3_filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
+        sample_out[mic] = filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
       }
     }
   }

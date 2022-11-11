@@ -240,7 +240,7 @@ class Stage2Filter(object):
     for k in range(SAMPS_OUT):
       x = S[:,Q*k:Q*k+self.TapCount]
       p = np.matmul(x, coefs)
-      # astew: Note that this is not precisely the logic used in lib_xs3_math to
+      # astew: Note that this is not precisely the logic used in lib_xcore_math to
       #        apply the second stage filter (via xs3_filter_s32()). But I'd 
       #        rather compare device behavior to the correct result (which this
       #        gives) than get bit-identical results in a way that masks the fact

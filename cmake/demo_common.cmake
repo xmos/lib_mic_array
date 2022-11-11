@@ -1,7 +1,6 @@
 
 # Just collects sources and includes for the common stuff
 
-
 set( DEMO_COMMON_FLAGS
         "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
         "-fxscope"
@@ -15,10 +14,12 @@ set( DEMO_COMMON_FLAGS
         "-DAPP_NAME=\"${APP_NAME}\""
 )
 
-set( DEMO_COMMON_INCLUDES  "${CMAKE_CURRENT_LIST_DIR}/src" )
+set( DEMO_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/common" )
+
+set( DEMO_COMMON_INCLUDES  "${DEMO_COMMON_DIR}/src" )
 
 file( GLOB_RECURSE    DEMO_COMMON_SOURCES    
-            "${CMAKE_CURRENT_LIST_DIR}/src/*.c"
-            "${CMAKE_CURRENT_LIST_DIR}/src/*.xc"
-            "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp"
-            "${CMAKE_CURRENT_LIST_DIR}/src/*.S"   )
+            "${DEMO_COMMON_DIR}/src/*.c"
+            "${DEMO_COMMON_DIR}/src/*.xc"
+            "${DEMO_COMMON_DIR}/src/*.cpp"
+            "${DEMO_COMMON_DIR}/src/*.S"   )
