@@ -13,14 +13,6 @@ include(cmake/CPM.cmake)
 #   set( DEV_LIB_MIC_ARRAY 1 )
 # endif()
 
-if( PROJECT_IS_TOP_LEVEL )
-  CPMAddPackage(
-    NAME lib_xcore_math
-    GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
-    GIT_TAG        v2.1.0
-  )
-endif()
-
 # If DEV_LIB_MIC_ARRAY is not defined, set it to true iff the root 
 # build dir (CMAKE_BINARY_DIR) is a child of the current source dir.
 # This will tell us whether to include the demos and tests.
@@ -56,6 +48,11 @@ include( etc/vanilla/vanilla.cmake )
 #**********************
 
 if(${DEV_LIB_MIC_ARRAY})
+  CPMAddPackage(
+    NAME lib_xcore_math
+    GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
+    GIT_TAG        v2.1.0
+  )
   add_subdirectory( demos )
   add_subdirectory( tests )
 endif()
