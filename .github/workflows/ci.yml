@@ -25,7 +25,7 @@ on:
   workflow_dispatch: {}
   
 env:
-  XCORE_APP_BUILDER: 'ghcr.io/xmos/xcore_builder:pr-1'
+  XCORE_APP_BUILDER: 'ghcr.io/xmos/xcore_builder:v2'
 
 jobs:
   build_tests_xcore:
