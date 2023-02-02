@@ -36,7 +36,7 @@ jobs:
 
       - name: Pull builder container
         run: |
-          docker pull ghcr.io/xmos/sdk_app_builder:develop 
+          docker pull ghcr.io/xmos/xcore_builder:latest 
 
       - name: Install Python
         uses: actions/setup-python@v2
@@ -50,5 +50,5 @@ jobs:
 
       - name: Build
         run: |
-          docker run --rm -w /lib_mic_array -v ${{ github.workspace }}:/lib_mic_array ghcr.io/xmos/sdk_app_builder:develop bash -l .github/scripts/build_test_apps.sh
+          docker run --rm -w /lib_mic_array -v ${{ github.workspace }}:/lib_mic_array ghcr.io/xmos/xcore_builder:latest bash -l .github/scripts/build_test_apps.sh
 
