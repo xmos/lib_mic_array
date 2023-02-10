@@ -6,7 +6,6 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source build is not allowed! Please specify a build folder.\n\tex:cmake -B build")
 endif()
 
-
 include(cmake/CPM.cmake)
 
 # if( PROJECT_IS_TOP_LEVEL )
@@ -49,6 +48,11 @@ include( etc/vanilla/vanilla.cmake )
 #**********************
 
 if(${DEV_LIB_MIC_ARRAY})
+  CPMAddPackage(
+    NAME lib_xcore_math
+    GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
+    GIT_TAG        v2.1.0
+  )
   add_subdirectory( demos )
   add_subdirectory( tests )
 endif()
