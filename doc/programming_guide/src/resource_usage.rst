@@ -9,7 +9,7 @@ Compared to previous versions of this library, the biggest advantage to the
 current version with respect to hardware resources is a greatly reduced compute
 requirement. This was made possible by the introduction of the VPU in the XMOS 
 XS3 architecture. The VPU can do certain operations in a single instruction 
-which would take many instructions on previous architectures.
+which would take many, many instructions on previous architectures.
 
 This page attempts to capture the requirements for each hardware type with 
 relevant configurations.
@@ -75,12 +75,21 @@ Threads
 
 The prefab API can run the PDM rx service either as a stand-alone thread or as
 an interrupt in another thread. The Vanilla API only supports running it as an
-interrupt. The Vanilla API then requires only on hardware thread. The prefab API
-may use 1 or 2 hardware threads. 
+interrupt. The Vanilla API requires only on hardware thread. The prefab API
+requires 1 thread if PDM rx is used in interrupt mode, and 2 if PDM rx is a
+stand-alone thread.. 
 
-Running PDM rx as a stand-alone thread reduces the mic array unit's MIPS
-consumption by eliminating the context switch overhead of an interrupt. The cost
-of that is one hardware thread.
+Running PDM rx as a stand-alone thread modestly reduces the mic array unit's
+MIPS consumption by eliminating the context switch overhead of an interrupt. The
+cost of that is one hardware thread.
+
+.. note::
+
+  When configured as an interrupt, PDM rx ISR is typically configured on the 
+  decimation thread, but this is not a strict requirement. The PDM rx interrupt
+  can be configured for any thread on the same tile as the decimation thread.
+  They must be on the same tile because shared memory is used between the two
+  contexts.
 
 
 Compute
@@ -106,27 +115,26 @@ The MIPS values in the table below are estimates obtained using the demo
 applications in ``demo/measure_mips``.
 
 
-+---------------------------------+-------------------------------+
-| Configuration                   | MIPS                          |
-+-----------+------+------+-------+-------+-------+-------+-------+
-| PDM Freq  | S2DF | S2TC | PdmRx | 1 mic | 2 mic | 4 mic | 8 mic |
-+===========+======+======+=======+=======+=======+=======+=======+
-| 3.072 MHz |  6   |  65  | ISR   | 10.65 | 22.00 |       |       |
-+-----------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz |  6   |  65  |Thread |  9.33 | 19.37 |       |       |
-+-----------+------+------+-------+-------+-------+-------+-------+
-| 6.144 MHz |  6   |  65  | ISR   | 21.26 | 43.89 |       |       |
-+-----------+------+------+-------+-------+-------+-------+-------+
-| 6.144 MHz |  6   |  65  |Thread | 18.66 | 38.73 |       |       |
-+-----------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz |  3   |  65  | ISR   | 12.90 | 26.44 |       |       |
-+-----------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz |  3   |  65  |Thread | 11.62 | 23.85 |       |       |
-+-----------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz |  6   | 130  | ISR   | 11.17 | 23.04 |       |       |
-+-----------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz |  6   | 130  |Thread |  9.86 | 20.42 |       |       |
-+-----------+------+------+-------+-------+-------+-------+-------+
++------------+------+------+-------+-------+-------+-------+-------+
+| PDM Freq   | S2DF | S2TC | PdmRx | 1 mic | 2 mic | 4 mic | 8 mic |
+|            |      |      |       | MIPS  | MIPS  | MIPS  | MIPS  |
++============+======+======+=======+=======+=======+=======+=======+
+| 3.072 MHz  |  6   |  65  | ISR   | 10.65 | 22.00 |  TBD  |  TBD  |
++------------+------+------+-------+-------+-------+-------+-------+
+| 3.072 MHz  |  6   |  65  |Thread |  9.33 | 19.37 |  TBD  |  TBD  |
++------------+------+------+-------+-------+-------+-------+-------+
+| 6.144 MHz  |  6   |  65  | ISR   | 21.26 | 43.89 |  TBD  |  TBD  |
++------------+------+------+-------+-------+-------+-------+-------+
+| 6.144 MHz  |  6   |  65  |Thread | 18.66 | 38.73 |  TBD  |  TBD  |
++------------+------+------+-------+-------+-------+-------+-------+
+| 3.072 MHz  |  3   |  65  | ISR   | 12.90 | 26.44 |  TBD  |  TBD  |
++------------+------+------+-------+-------+-------+-------+-------+
+| 3.072 MHz  |  3   |  65  |Thread | 11.62 | 23.85 |  TBD  |  TBD  |
++------------+------+------+-------+-------+-------+-------+-------+
+| 3.072 MHz  |  6   | 130  | ISR   | 11.17 | 23.04 |  TBD  |  TBD  |
++------------+------+------+-------+-------+-------+-------+-------+
+| 3.072 MHz  |  6   | 130  |Thread |  9.86 | 20.42 |  TBD  |  TBD  |
++------------+------+------+-------+-------+-------+-------+-------+
 
 PDM Freq
   Frequency of the PDM clock.
@@ -141,8 +149,8 @@ PdmRx
   Whether PDM capture is done in a stand-alone thread or in an ISR.
 
 Measurements indicate that enabling or disabling the DC offset removal filter
-has little effect on the MIPS usage. The selected frame size has only
-a slight negative correlation with MIPS usage. 
+has little effect on the MIPS usage. The selected frame size has only a slight
+negative correlation with MIPS usage. 
 
 
 
@@ -162,14 +170,13 @@ Not included in the table is the space allocated for the first and second stage
 filter coefficients. The first stage filter coefficients take a constant ``523``
 bytes. The second stage filter coefficients use ``4*S2TC`` bytes, where ``S2TC``
 is the stage 2 decimator tap count. The value shown in the 'data' column of the
-table is the ``sizeof()`` the ``mic_array::prefab::BasicMicArray`` that is
+table is the ``sizeof()`` the 
+:cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>` that is
 instantiated. The table below indicates the data size for various
 configurations.
 
-+-----------------------------------+--------------+
-| Configuration                     | Data         |
-+------+------+------+------+-------+              |
-| Mics | S2DF | S2TC | SPF  | DCOE  |              |
++------+------+------+------+-------+--------------+
+| Mics | S2DF | S2TC | SPF  | DCOE  | Data Memory  |
 +======+======+======+======+=======+==============+
 | 1    |  6   | 65   | 16   | On    | 504 B        |
 +------+------+------+------+-------+--------------+

@@ -1,4 +1,4 @@
-// Copyright 2022 XMOS LIMITED.
+// Copyright 2022-2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #pragma once
@@ -32,7 +32,7 @@ C_API_START
  * another thread using an xCore channel.
  * 
  * The receiving thread (typically) receives frames using `ma_frame_rx_s32()`
- * (see @ref `mic_array/frame_transfer.h`) and performs further 
+ * (see @ref mic_array/frame_transfer.h) and performs further 
  * application-specific processing of the data. In basic mode, the application
  * developer writes the receiving thread. The receiving thread (in basic or
  * standard mode) must be ready to receive new frames of audio as they become

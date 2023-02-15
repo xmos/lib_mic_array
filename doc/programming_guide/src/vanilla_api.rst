@@ -18,8 +18,10 @@ prefab model) by contrast, requires as little as two standard function calls,
 and instead moves the majority of the application logic into the application's
 build project.
 
-    Why "Vanilla"? "Vanilla" was originally meant as a generic placeholder name,
-    but as no better name was ever suggested, it stuck.
+.. note::
+  
+  **Why "Vanilla"?** "Vanilla" was originally meant as a generic placeholder 
+  name, but no better name was ever suggested.
 
 How It Works
 ============
@@ -36,22 +38,24 @@ The API is included in an application by using a CMake macro
 application's sources, includes and compile definitions to include the API.
 
 In the application code, two function calls are needed. First,
-:cpp:func:`ma_vanilla_init()` is called to initialize the various mic array
+:c:func:`ma_vanilla_init()` is called to initialize the various mic array
 sub-components, preparing for capture of PDM data. Then, to start capture the
-decimation thread is started with :cpp:func:`ma_vanilla_task()` as entrypoint.
-:cpp:func:`ma_vanilla_task()` takes an XCore ``chanend`` as a parameter, which
+decimation thread is started with :c:func:`ma_vanilla_task()` as entrypoint.
+:c:func:`ma_vanilla_task()` takes an XCore ``chanend`` as a parameter, which
 tells it where completed audio frames should be routed.
 
 .. note::
+
   The Vanilla API runs the PDM rx service as an interrupt in the decimation
   thread. To run it as a separate thread (for reduced total MIPS consumption)
   one of the lower-level APIs must be used.
 
 As with the prefab API, audio frames are extracted from the mic array unit over
-a (non-streaming) channel using the :cpp:func:`ma_frame_rx()` or
-:cpp:func:`ma_frame_rx_transpose()` functions.
+a (non-streaming) channel using the :c:func:`ma_frame_rx()` or
+:c:func:`ma_frame_rx_transpose()` functions.
 
 .. note::
+
   The Vanilla API uses the default filters provided with this library, 
   and does not currently provide a way to override this. To use custom filters, 
   you must either use a lower-level API or modify the vanilla API.
@@ -67,7 +71,7 @@ mic_array_vanilla_add()
 -----------------------
 
 ``mic_array_vanilla_add()`` is the CMake macro used to add the Vanilla API to an
-application. 
+application.
 
 .. code-block:: cmake
 
@@ -90,8 +94,8 @@ application.
 
 ``PDM_FREQ`` 
   The desired frequency, in Hz, of the PDM clock. This should be an integer
-  factor of ``MCLK_FREQ`` between ``1`` and ``510`` (TODO: confirm this upper
-  bound). (Equivalent compile definition: ``MIC_ARRAY_CONFIG_PDM_FREQ``)
+  factor of ``MCLK_FREQ`` between ``1`` and ``510``. (Equivalent compile 
+  definition: ``MIC_ARRAY_CONFIG_PDM_FREQ``)
 
 ``MIC_COUNT``
   The number of PDM microphone channels to be captured. This API supports values
@@ -176,7 +180,7 @@ to generate the PDM clock and the capture clock. An xcore.ai device provides 5
 hardware clock blocks for application use, identified as ``XS1_CLKBLK_1``
 through ``XS1_CLKBLK_5``. The device's clock blocks are interchangeable, but if
 another component of your application uses one of these defaults, you may need
-to change these parametesr.
+to change these parameters.
 
 ``MIC_ARRAY_CONFIG_CLOCK_BLOCK_A``
   Clock block used as 'clock A' (see :ref:`getting_started`). This clock block
@@ -187,3 +191,16 @@ to change these parametesr.
   is only needed in DDR configurations and is ignored (not configured) in SDR
   configurations.
 
+
+Vanilla API with other Build Systems
+------------------------------------
+
+Using the Vanilla API with build systems other than CMake is simple.
+
+* Add the file ``etc/vanilla/mic_array_vanilla.cpp`` to the application's
+  source files.
+* Add  ``etc/vanilla/`` (relative to repository root) to the application include 
+  paths.
+* Add the compile definitions for the parameters listed in the previous sections 
+  (each parameter beginning with ``MIC_ARRAY_CONFIG_``) to the compile options
+  for ``mic_array_vanilla.cpp``.

@@ -5,5 +5,5 @@ API Reference
 .. toctree::
     :maxdepth: 2
 
-    cpp/index
-    c/index
+    cpp/cpp_api
+    c/c_api
