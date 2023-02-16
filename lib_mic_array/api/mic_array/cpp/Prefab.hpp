@@ -62,13 +62,15 @@ namespace mic_array {
      * 
      * The template parameter `FRAME_SIZE` is the number of samples in each
      * output frame produced by the mic array. Frame data is communicated using
-     * the API found in `mic_array/frame_transfer.h`. Typically @ref
-     * ma_frame_rx() will be the right function to use in a receiving thread to
-     * retrieve audio frames. `ma_frame_rx()` receives audio frames with shape
-     * `(MIC_COUNT,FRAME_SIZE)`, meaning that all samples corresponding to a
-     * given channel will end up in a contiguous block of memory. @ref
-     * ma_frame_rx_transpose() can be used to swap the dimensions, resulting in
-     * the shape `(FRAME_SIZE, MIC_COUNT)`.
+     * the API found in `mic_array/frame_transfer.h`. 
+     * \verbatim embed:rst
+       Typically :c:func:`ma_frame_rx()` will be the right function to use in a 
+       receiving thread to retrieve audio frames. ``ma_frame_rx()`` receives 
+       audio frames with shape ``(MIC_COUNT,FRAME_SIZE)``, meaning that all 
+       samples corresponding to a given channel will end up in a contiguous 
+       block of memory. Instead of ``ma_frame_rx()``, 
+       :c:func:`ma_frame_rx_transpose()` can be used to swap the dimensions, 
+       resulting in the shape ``(FRAME_SIZE, MIC_COUNT)``.\endverbatim
      * 
      * Note that calls to `ma_frame_rx()` or `ma_frame_rx_transpose()` will
      * block until a frame becomes available on the specified chanend.

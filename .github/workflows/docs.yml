@@ -38,7 +38,7 @@ jobs:
       
       - name: Build documentation
         run: |
-          docker run --rm -t -u "$(id -u):$(id -g)" -v ${{ github.workspace }}:/build -e  TITLE="lib\_mic\_array" -e REPO:/build -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc  -e EXCLUDE_PATTERNS=/build/doc/doc_excludes.txt -e DOXYGEN=1 -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc -e PDF=1 -e SKIP_LINK=1 ghcr.io/xmos/doc_builder:v2.0.0
+          docker run --rm -t -u "$(id -u):$(id -g)" -v ${{ github.workspace }}:/build -e REPO:/build -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc  -e EXCLUDE_PATTERNS=/build/doc/doc_excludes.txt -e DOXYGEN=1 -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc -e PDF=1 -e SKIP_LINK=1 ghcr.io/xmos/doc_builder:v2.0.0
 
       - name: Save HTML documentation artifact
         uses: actions/upload-artifact@v2

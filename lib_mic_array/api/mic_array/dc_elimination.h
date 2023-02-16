@@ -6,10 +6,6 @@
 #include "api.h"
 #include <stdint.h>
 
-/**
- * @defgroup dc_elimination_h_ dc_elmination.h
- */
-
 C_API_START
 
 /**
@@ -29,32 +25,29 @@ C_API_START
  * steps.
  * 
  * @par Use in lib_mic_array
- * 
+ * @parblock
  * Typical users of lib_mic_array will not need to directly use this type or any
  * functions which take it as a parameter.
  * 
  * The C++ class template `mic_array::DcoeSampleFilter`, if used in an
  * application's mic array unit, will allocate, initialize and apply the DCOE
  * filter automatically.
+ * @endparblock
  * 
  * @par With MicArray Prefabs
- * 
+ * @parblock
  * The MicArray prefab `mic_array::prefab::BasicMicArray` has a `bool` template
  * parameter `USE_DCOE` which indicates whether the
  * `mic_array::DcoeSampleFilter` should be used. If `true`, DCOE will be
  * enabled.
- * 
- * For more information about MicArray prefabs, see [../../getting_started.html].
+ * @endparblock
  * 
  * @par With Vanilla API
- * 
+ * @parblock
  * When using the 'vanilla' API, DCOE is enabled by default. To disable DCOE
  * when using this API, add a preprocessor definition to the compiler flags,
  * setting `MIC_ARRAY_CONFIG_USE_DC_ELIMINATION` to `0`.
- * 
- * For more information about the vanilla API, see [../../vanilla_api.html].
- * 
- * @ingroup dc_elimination_h_
+ * @endparblock
  */
 MA_C_API
 typedef struct {
@@ -74,8 +67,6 @@ typedef struct {
  * 
  * @param[in] state       Array of `dcoe_chan_state_t` to be initialized.
  * @param[in] chan_count  Number of elements in `state`.
- * 
- * @ingroup dc_elimination_h_
  */
 MA_C_API
 void dcoe_state_init(
@@ -113,8 +104,6 @@ void dcoe_state_init(
  * @param[in]   state       DC offset elimination state vector.
  * @param[in]   new_input   New input sample.
  * @param[in]   chan_count  Number of channels to be processed.
- * 
- * @ingroup dc_elimination_h_
  */
 MA_C_API
 void dcoe_filter(

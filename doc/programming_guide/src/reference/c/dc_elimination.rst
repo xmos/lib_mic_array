@@ -1,6 +1,9 @@
 dc_elimination.h
 ================
 
-.. doxygengroup:: dc_elimination_h_
-    :members:
-    :content-only:
+.. doxygenstruct:: dcoe_chan_state_t
+  :members:
+
+.. doxygenfunction:: dcoe_state_init
+
+.. doxygenfunction:: dcoe_filter

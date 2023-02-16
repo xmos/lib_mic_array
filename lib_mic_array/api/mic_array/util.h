@@ -6,11 +6,6 @@
 #include <stdint.h>
 
 #include "api.h"
-
-/**
- * @defgroup util_h_ util.h
- */
-
 C_API_START
 
 /**
@@ -20,8 +15,6 @@ C_API_START
  * 
  * Deinterleave the samples for 1 subblock of 2 microphones. Argument points to
  * a 2 word buffer.
- * 
- * @ingroup util_h_
  */
 MA_C_API 
 void deinterleave2(uint32_t*);
@@ -34,8 +27,6 @@ void deinterleave2(uint32_t*);
  * 
  * Deinterleave the samples for 1 subblock of 4 microphones. Argument points to
  * a 4 word buffer.
- * 
- * @ingroup util_h_
  */
 MA_C_API 
 void deinterleave4(uint32_t*);
@@ -48,8 +39,6 @@ void deinterleave4(uint32_t*);
  * 
  * Deinterleave the samples for 1 subblock of 8 microphones. Argument points to
  * a 8 word buffer.
- * 
- * @ingroup util_h_
  */
 MA_C_API 
 void deinterleave8(uint32_t*);

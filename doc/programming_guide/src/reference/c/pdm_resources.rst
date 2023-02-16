@@ -1,6 +1,9 @@
 pdm_resources.h
 ===============
 
-.. doxygengroup:: pdm_resources_h_
-    :members:
-    :content-only:
+.. doxygenstruct:: pdm_rx_resources_t
+  :members:
+
+.. doxygendefine:: PDM_RX_RESOURCES_SDR
+  
+.. doxygendefine:: PDM_RX_RESOURCES_DDR

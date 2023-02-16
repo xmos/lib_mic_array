@@ -169,9 +169,10 @@ namespace  mic_array {
    * 
    * When using this frame transmitter, frames are transmitted over a channel
    * using the frame transfer API in `mic_array/frame_transfer.h`.
-   * 
-   * Usually, a call to @ref ma_frame_rx() (with the other end of `c_frame_out`
-   * as argument) should be used to receive the frame on another thread.
+   * \verbatim embed:rst
+     Usually, a call to :c:func:`ma_frame_rx()` (with the other end of 
+     `c_frame_out` as argument) should be used to receive the frame on 
+     another thread. \endverbatim
    * 
    * If the receiving thread is not waiting to receive the frame when @ref
    * OutputFrame() is called, that method will block until the frame has been

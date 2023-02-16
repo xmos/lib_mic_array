@@ -305,9 +305,9 @@ namespace  mic_array {
    * @parblock
    * The buffer transferred by `SendBlock()` contains `CHANNELS_IN*SUBBLOCKS`
    * words of PDM data for `CHANNELS_IN` microphone channels. The words are
-   * stored in reverse order of arrival. See 
-   * @ref mic_array::deinterleave_pdm_samples for additional details on this
-   * format.
+   * stored in reverse order of arrival. \verbatim embed:rst
+     See :cpp:func:`mic_array::deinterleave_pdm_samples` for additional details 
+     on this format.\endverbatim
    * 
    * Within `GetPdmBlock()` (i.e. mic array thread) the PDM data block is
    * deinterleaved and copied to another buffer in the format required by the

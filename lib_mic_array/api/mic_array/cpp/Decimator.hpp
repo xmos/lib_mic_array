@@ -146,20 +146,23 @@ class TwoStageDecimator
      *        
      *        This points to a block of coefficients for the first stage 
      *        decimator. This library provides coefficients for the first stage 
-     *        decimator. See @ref stage1_coef.
+     *        decimator. \verbatim embed:rst 
+              See :c:var:`stage1_coef`.\endverbatim
      *        @endparblock
      * @param s2_filter_coef  @parblock
      *        Stage 2 filter coefficients.
      * 
      *        This points to a block of coefficients for the second stage 
      *        decimator. This library provides coefficients for the second stage
-     *        decimator. See @ref stage2_coef.
+     *        decimator. \verbatim embed:rst 
+              See :c:var:`stage2_coef`.\endverbatim
      *        @endparblock
      * @param s2_filter_shr   @parblock
      *        Stage 2 filter right-shift.
      *        
      *        This is the output shift used by the second stage decimator. 
-     *        See @ref stage2_shr.
+     *        \verbatim embed:rst 
+              See :c:var:`stage2_shr`.\endverbatim
      *        @endparblock
      */
     void Init(

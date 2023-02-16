@@ -9,8 +9,10 @@ default.
 Stage 1 - PDM-to-PCM Decimating FIR Filter
 ------------------------------------------
 
-Decimation Factor:  32  
-Tap Count: 256
+.. code-block::
+  
+  Decimation Factor:  32  
+  Tap Count: 256
 
 The first stage decimation FIR filter converts 1-bit PDM samples into 32-bit 
 PCM samples and simultaneously decimates by a factor of 32.
@@ -40,9 +42,10 @@ filter, see :ref:`decimator_stages`.
 Stage 2 - PCM Decimating FIR Filter
 -----------------------------------
 
-
-Decimation Factor: (configurable)
-Tap Count: (configurable)
+.. code-block::
+  
+    Decimation Factor: (configurable)
+    Tap Count: (configurable)
 
 The second stage decimation FIR filter filters and downsamples the
 32-bit PCM output stream from the first stage filter into another

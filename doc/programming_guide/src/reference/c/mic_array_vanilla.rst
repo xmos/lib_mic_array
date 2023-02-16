@@ -1,6 +1,6 @@
 mic_array_vanilla.h
 ===================
 
-.. doxygengroup:: mic_array_vanilla_h_
-    :members:
-    :content-only:
+.. doxygenfunction:: ma_vanilla_init
+
+.. doxygenfunction:: ma_vanilla_task

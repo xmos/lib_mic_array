@@ -17,10 +17,3 @@ Mic Array Library
    src/vanilla_api
 
    src/reference/api_index
-
-
-Indices and tables
-******************
-
-* :ref:`genindex`
-* :ref:`search`
