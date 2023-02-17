@@ -138,7 +138,7 @@ class TwoStageDecimator
      * 
      * `s2_filter_shr` is the final right-shift applied to the stage 2 filter's 
      * accumulator prior to output. See 
-     * <a href="https://www.github.com/xmos/lib_xcore_math">lib_xcore_math's</a>
+     * <a href="https://github.com/xmos/lib_xcore_math">lib_xcore_math's</a>
      * documentation of `filter_fir_s32_t` for more details.
      * 
      * @param s1_filter_coef  @parblock 
