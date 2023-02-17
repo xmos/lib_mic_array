@@ -127,14 +127,12 @@ class TwoStageDecimator
      * 
      * `s1_filter_coef` points to a block of coefficients for the first stage
      * decimator. This library provides coefficients for the first stage
-     * decimator; see `mic_array/etc/filters_default.h`. If you wish to provide
-     * your own filter coefficients, see @todo.
+     * decimator; see `mic_array/etc/filters_default.h`.
      * 
      * `s2_filter_coef` points to an array of coefficients for the second stage
      * decimator. This library provides coefficients for the second stage 
      * decimator where the second stage decimation factor is 6; see
-     * `mic_array/etc/filters_default.h`. If you wish to provide your own
-     * filter coefficients, see @todo.
+     * `mic_array/etc/filters_default.h`.
      * 
      * `s2_filter_shr` is the final right-shift applied to the stage 2 filter's 
      * accumulator prior to output. See 

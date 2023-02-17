@@ -101,10 +101,6 @@ The PDM data signal is captured by the xcore.ai device's port hardware. The port
 receiving the PDM signals buffers the received samples. Each time the port
 buffer is filled, PDM rx reads the received samples.
 
-.. note::
-
-  For more background on the XCore port hardware, see TODO
-
 Samples are collected word-by-word and assembled into blocks. Each time a block
 has been filled, the block is transferred to the decimation thread where all
 remaining mic array processing takes place.

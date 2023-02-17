@@ -155,7 +155,7 @@ all)
   instructions per second) to perform the required processing. The exact
   requirement will depend on the configuration used.
 * Memory - The mic array requires a modest amount of memory for code and data.
-  (see @todo).
+  (see :ref:`resource_usage`).
 * Chanends - At least 4 chanends must be available for signaling between
   threads/sub-components.
 
