@@ -31,71 +31,78 @@ namespace mic_array {
     /**
      * @brief Class template for a typical bare-metal mic array unit.
      * 
-     * This prefab is likely the right starting point for most bare-metal (i.e.
-     * not using an RTOS) applications.
+     * This prefab is likely the right starting point for most applications.
      * 
      * With this prefab, the decimator will consume one device core, and the
      * PDM rx service can be run either as an interrupt, or as an additional
-     * thread. The benefit of running PDM rx as a thread is decreased MIPS 
-     * usage, but the drawback is that it consumes a core.
+     * thread. Normally running as an interrupt is recommended.
      * 
-     * For the first and second stage decimation filters, this prefab uses the 
-     * coefficients provided with this library. The first stage uses a 
-     * (non-configurable) decimation factor of 32, and the second stage is 
-     * configured to use a decimation factor of 6.
+     * For the first and second stage decimation filters, this prefab uses the
+     * coefficients provided with this library. The first stage uses a
+     * decimation factor of 32, and the second stage is configured to use a
+     * decimation factor of 6.
      * 
      * To get 16 kHz audio output from the `BasicMicArray` prefab, then, the
      * PDM clock must be configured to `3.072 MHz`  
      * (`3.072 MHz / (32 * 6) = 16 kHz`).
      * 
-     * 
      * @par Sub-Components
+     * @parblock
+     * Being derived from @ref mic_array::MicArray, an instance of
+     * `BasicMicArray` has 4 sub-components responsible for different portions
+     * of the work being done. These sub-components are `PdmRx`, `Decimator`,
+     * `SampleFilter` and `OutputHandler`. See the documentation for `MicArray`
+     * for more details about these.
+     * @endparblock
      * 
-     * An instance of `BasicMicArray` has 4 sub-components responsible for
-     * different portions of the work being done. These sub-components are
-     * `PdmRx`, `Decimator`, `SampleFilter` and `OutputHandler`.  See the
-     * documentation for `MicArray` for more details about these.
-     * 
-     * @par Template Parameters Details
-     * 
+     * @par Template Parameters Details 
+     * @parblock
      * The template parameter `MIC_COUNT` is the number of microphone channels
      * to be processed and output. 
      * 
      * The template parameter `FRAME_SIZE` is the number of samples in each
      * output frame produced by the mic array. Frame data is communicated using
-     * the API found in `mic_array/frame_transfer.h`. Typically `ma_frame_rx()`
-     * will be the right function to use in a receiving thread to retrieve audio
-     * frames. Note that calls to `ma_frame_rx()` will block until a frame 
-     * becomes available on the specified chanend.
+     * the API found in `mic_array/frame_transfer.h`. 
+     * \verbatim embed:rst
+       Typically :c:func:`ma_frame_rx()` will be the right function to use in a 
+       receiving thread to retrieve audio frames. ``ma_frame_rx()`` receives 
+       audio frames with shape ``(MIC_COUNT,FRAME_SIZE)``, meaning that all 
+       samples corresponding to a given channel will end up in a contiguous 
+       block of memory. Instead of ``ma_frame_rx()``, 
+       :c:func:`ma_frame_rx_transpose()` can be used to swap the dimensions, 
+       resulting in the shape ``(FRAME_SIZE, MIC_COUNT)``.\endverbatim
      * 
-     * @warning If the receiving thread is not waiting to retrieve the audio
-     *          frame from the mic array when it becomes available, the pipeline
-     *          may back up and cause samples to be dropped. It is the
-     *          responsibility of the application developer to ensure this does
-     *          not happen.
+     * Note that calls to `ma_frame_rx()` or `ma_frame_rx_transpose()` will
+     * block until a frame becomes available on the specified chanend.
+     * 
+     * If the receiving thread is not waiting to retrieve the audio frame from
+     * the mic array when it becomes available, the pipeline may back up and
+     * cause samples to be dropped. It is the responsibility of the application
+     * developer to ensure this does not happen.
      * 
      * The boolean template parameter `USE_DCOE` indicates whether the DC offset
      * elimination filter should be applied to the output of the second stage
      * decimator. DC offset elimination is an IIR filter intended to ensure
      * audio samples on each channel tend towards zero-mean.
      * 
-     * See @beginrst :ref:`sample_filters` @endrst for more information about DC offset
-     * elimination.
-     * 
+     * \verbatim embed:rst 
+       For more information about DC offset elimination, see 
+       :ref:`sample_filters` \endverbatim.
+     *
      * If `USE_DCOE` is `false`, no further filtering of the second stage
      * decimator's output will occur.
      * 
      * The template parameter `MICS_IN` indicates the number of microphone
      * channels to be captured by the `PdmRx` component of the mic array unit.
      * This will often be the same as `MIC_COUNT`, but in some applications,
-     * `MIC_COUNT` microphones must be physically connected to an xCore port
+     * `MIC_COUNT` microphones must be physically connected to an XCore port
      * which is not `MIC_COUNT` (SDR) or `MIC_COUNT/2` (DDR) bits wide.
      *
      * In these cases, capturing the additional channels (likely not even
      * physically connected to PDM microphones) is unavoidable, but further
      * processing of the additional (junk) channels can be avoided by using
      * `MIC_COUNT < MICS_IN`. The mapping which tells the mic array unit how to
-     * dervice output channels from input channels can be configured during
+     * derive output channels from input channels can be configured during
      * initialization by calling `StandardPdmRxService::MapChannels()` on the
      * `PdmRx` sub-component of the `BasicMicarray`.
      *
@@ -104,9 +111,10 @@ namespace mic_array {
      * width. If the application is running in a DDR microphone configuration,
      * `MICS_IN` must be twice the port width. `MICS_IN` defaults to
      * `MIC_COUNT`.
+     * @endparblock
      * 
      * @par Allocation
-     *
+     * @parblock
      * Before a mic array unit can be started or initialized, it must be
      * allocated.
      * 
@@ -118,22 +126,24 @@ namespace mic_array {
      * @code{.cpp}
      * #include "mic_array/cpp/Prefab.hpp"
      * ...
-     * using AppMicArray = mic_array:prefab::BasicMicArray<MICS,SAMPS,DCOE>;
+     * using AppMicArray = mic_array::prefab::BasicMicArray<MICS,SAMPS,DCOE>;
      * AppMicArray mics;
      * @endcode
      * 
      * Here, `mics` is an allocated mic array unit. The example (and all that
      * follow) assumes the macros used for template parameters are defined
      * elsewhere.
+     * @endparblock
      * 
      * @par Initialization
-     * 
+     * @parblock
      * Before a mic array unit can be started, it must be initialized.
      * 
-     * `BasicMicArray` reads PDM samples from an xCore port, and delivers frames
-     * of audio data over an xCore channel. To this end, an instance of
+     * `BasicMicArray` reads PDM samples from an XCore port, and delivers frames
+     * of audio data over an XCore channel. To this end, an instance of
      * `BasicMicArray` needs to be given the resource IDs of the port to be read
-     * and the chanend to transmit frames over. This can be accomplished in either of two ways.
+     * and the chanend to transmit frames over. This can be accomplished in
+     * either of two ways.
      * 
      * If the resource IDs for the port and chanend are available as the mic
      * array unit is being allocated, one option is to explicitly construct the
@@ -176,9 +186,10 @@ namespace mic_array {
      * @note `BasicMicArray::InstallPdmRxISR()` installs the ISR on the
      * hardware thread that calls the method. In most cases, installing it in
      * the same thread as the decimator is the right choice.
+     * @endparblock
      * 
      * @par Begin Processing (PDM rx ISR)
-     * 
+     * @parblock
      * After it has been initialized, starting the mic array unit with the PDM
      * rx service running as an ISR, three steps are required.
      *
@@ -230,10 +241,13 @@ namespace mic_array {
      *  }
      * }
      * @endcode
+     * @endparblock
      * 
      * @par Begin Processing (PDM Rx Thread)
-     * 
-     * The procedure for running the mic array unit with the PDM rx component running as a stand-alone thread is much the same with just a couple key differences.
+     * @parblock
+     * The procedure for running the mic array unit with the PDM rx component
+     * running as a stand-alone thread is much the same with just a couple key
+     * differences.
      * 
      * When running PDM rx as a thread, no call to
      * `BasicMicArray::UnmaskPdmRxISR()` is necessary. Instead, the
@@ -241,9 +255,13 @@ namespace mic_array {
      * processing thread) using `BasicMicArray::PdmRxThreadEntry()` as the
      * entry point.
      * 
-     * `mic_array_pdm_clock_start()` must still be called, but here the requirement is that it be called from the hardware thread on which the PDM rx component is running (which, of course, cannot be the mic array thread).
+     * `mic_array_pdm_clock_start()` must still be called, but here the
+     * requirement is that it be called from the hardware thread on which the
+     * PDM rx component is running (which, of course, cannot be the mic array
+     * thread).
      * 
-     * A typical application with a multi-tile XC `main()` will provide two C-compatible functions -- one for each thread:
+     * A typical application with a multi-tile XC `main()` will provide two
+     * C-compatible functions - one for each thread:
      * 
      * @code{.cpp}
      * MA_C_API
@@ -260,7 +278,14 @@ namespace mic_array {
      * }
      * @endcode
      * 
-     * @note Notice that `app_mic_array_task()` above is a thin wrapper for `mics.ThreadEntry()`. Unfortunately, because the type of `mics` is a C++ class, `mics.ThreadEntry()` cannot be called directly from an XC file (including the one containing `main()`). Further, because a C++ class template was used, this library cannot provide a generic C-compatible call wrapper for the methods on a `MicArray` object. This unfortunately means it is necessary in some cases to create a thin wrapper such as `app_mic_array_task()`.
+     * Notice that `app_mic_array_task()` above is a thin wrapper for
+     * `mics.ThreadEntry()`. Unfortunately, because the type of `mics` is a C++
+     * class, `mics.ThreadEntry()` cannot be called directly from an XC file
+     * (including the one containing `main()`). Further, because a C++ class
+     * template was used, this library cannot provide a generic C-compatible
+     * call wrapper for the methods on a `MicArray` object. This unfortunately
+     * means it is necessary in some cases to create a thin wrapper such as
+     * `app_mic_array_task()`.
      * 
      * The threads are spawned from XC main using a `par {...}` block:
      * 
@@ -281,9 +306,10 @@ namespace mic_array {
      *  }
      * }
      * @endcode
+     * @endparblock
      * 
      * @par Real-Time Constraint
-     * 
+     * @parblock
      * Once the PDM rx thread is launched or the PDM rx interrupt has been
      * unmasked, PDM data will start being collected and reported to the
      * decimator thread. The application then must start the decimator thread
@@ -293,16 +319,14 @@ namespace mic_array {
      * Once the mic array processing thread is running, the real-time constraint
      * is active for the thread consuming the mic array unit's output, and it
      * must waiting to receive an audio frame within one frame time.
+     * @endparblock
      * 
      * @par Examples
-     * 
-     * This library comes with examples which demonstrate how a mic array unit is used in an actual application. If you are encountering difficulties getting `BasicMicArray` to work, studying the provided examples may help.
-     * 
-     * @todo link to example apps?
-     * 
-     * @par Hardware resource usage
-     * 
-     * @todo
+     * @parblock
+     * This library comes with examples which demonstrate how a mic array unit
+     * is used in an actual application. If you are encountering difficulties
+     * getting `BasicMicArray` to work, studying the provided examples may help.
+     * @endparblock
      * 
      * @tparam MIC_COUNT  Number of microphone channels.
      * @tparam FRAME_SIZE Number of samples in each output audio frame.
@@ -324,7 +348,10 @@ namespace mic_array {
     {
 
       public:
-
+        /**
+         * `TParent` is an alias for this class template from which this class
+         * template inherits.
+         */
         using TParent = MicArray<MIC_COUNT,
                                  TwoStageDecimator<MIC_COUNT, STAGE2_DEC_FACTOR, 
                                            STAGE2_TAP_COUNT>,

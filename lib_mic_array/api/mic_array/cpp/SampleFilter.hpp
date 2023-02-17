@@ -22,7 +22,10 @@ using namespace std;
 namespace  mic_array {
 
   /**
-   * @brief Filter which does nothing.
+   * @brief SampleFilter which does nothing.
+   * 
+   * To be used as the `TSampleFilter` template parameter of @ref MicArray when
+   * no post-decimation filtering is desired.
    * 
    * Calls to `NopSampleFilter::Filter()` are intended to be optimized out at
    * compile time.
@@ -41,6 +44,17 @@ namespace  mic_array {
 
   /**
    * @brief Filter which applies DC Offset Elimination (DCOE).
+   * 
+   * To be used as the `TSampleFilter` template parameter of @ref MicArray when
+   * DCOE is desired as post-processing after the decimation filter.
+   * 
+   * The filter is a simple first-order IIR filter which applies the following
+   * filter equation:
+   * 
+   * @code
+   * R = 255.0 / 256.0
+   * y[t] = R * y[t-1] + x[t] - x[t-1]
+   * @endcode
    * 
    * @tparam MIC_COUNT  Number of microphone channels.
    */

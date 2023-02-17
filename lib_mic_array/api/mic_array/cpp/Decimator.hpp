@@ -33,11 +33,14 @@ void shift_buffer(uint32_t* buff);
  * @brief First and Second Stage Decimator
  * 
  * This class template represents a two stage decimator which converts a stream
- * of PDM samples to a lower sample rate stream of PCM samples. 
+ * of PDM samples to a lower sample rate stream of PCM samples.
+ * 
+ * Concrete implementations of this class template are meant to be used as the
+ * `TDecimator` template parameter in the @ref MicArray class template.
  * 
  * @tparam MIC_COUNT      Number of microphone channels.
  * @tparam S2_DEC_FACTOR  Stage 2 decimation factor.
- * @tparam S2_TAP_COUNT   Stage 2 tap count.git p
+ * @tparam S2_TAP_COUNT   Stage 2 tap count.
  */
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
 class TwoStageDecimator 
@@ -83,6 +86,16 @@ class TwoStageDecimator
        */
       uint32_t pdm_history[MIC_COUNT][8]
 #ifndef __DOXYGEN__ // doxygen breaks if it encounters this.
+      // Must be initialized in this way. Initializing the history values in the
+      // constructor causes an XCore-specific problem. Specifically, if the
+      // MicArray instance where this decimator is used is declared outside of a
+      // function scope (that is, as a global- or module-scope object; which it
+      // ordinarily will be), initializing the PDM history within the
+      // constructor forces the compiler to allocate the object on _all tiles_.
+      // Being allocated on a tile where it is not used does not by itself break
+      // anything, but it does result in less memory being available for other
+      // things on that tile. Initializing the history in this way prevents
+      // that.
         = {[0 ... (MIC_COUNT-1)] = { [0 ... 7] = 0x55555555 } }
 #endif
       ;
@@ -114,22 +127,41 @@ class TwoStageDecimator
      * 
      * `s1_filter_coef` points to a block of coefficients for the first stage
      * decimator. This library provides coefficients for the first stage
-     * decimator; see `mic_array/etc/filters_default.h`. If you wish to provide
-     * your own filter coefficients, see @todo.
+     * decimator; see `mic_array/etc/filters_default.h`.
      * 
      * `s2_filter_coef` points to an array of coefficients for the second stage
      * decimator. This library provides coefficients for the second stage 
      * decimator where the second stage decimation factor is 6; see
-     * `mic_array/etc/filters_default.h`. If you wish to provide your own
-     * filter coefficients, see @todo.
+     * `mic_array/etc/filters_default.h`.
      * 
      * `s2_filter_shr` is the final right-shift applied to the stage 2 filter's 
-     * accumulator prior to output. See `lib_xcore_math`'s documentation for 
-     * `filter_fir_s32_t` for more details.
+     * accumulator prior to output. See 
+     * <a href="https://github.com/xmos/lib_xcore_math">lib_xcore_math's</a>
+     * documentation of `filter_fir_s32_t` for more details.
      * 
-     * @param s1_filter_coef  Stage 1 filter coefficients.
-     * @param s2_filter_coef  Stage 2 filter coefficients.
-     * @param s2_filter_shr   Stage 2 filter right-shift.
+     * @param s1_filter_coef  @parblock 
+     *        Stage 1 filter coefficients.
+     *        
+     *        This points to a block of coefficients for the first stage 
+     *        decimator. This library provides coefficients for the first stage 
+     *        decimator. \verbatim embed:rst 
+              See :c:var:`stage1_coef`.\endverbatim
+     *        @endparblock
+     * @param s2_filter_coef  @parblock
+     *        Stage 2 filter coefficients.
+     * 
+     *        This points to a block of coefficients for the second stage 
+     *        decimator. This library provides coefficients for the second stage
+     *        decimator. \verbatim embed:rst 
+              See :c:var:`stage2_coef`.\endverbatim
+     *        @endparblock
+     * @param s2_filter_shr   @parblock
+     *        Stage 2 filter right-shift.
+     *        
+     *        This is the output shift used by the second stage decimator. 
+     *        \verbatim embed:rst 
+              See :c:var:`stage2_shr`.\endverbatim
+     *        @endparblock
      */
     void Init(
         const uint32_t* s1_filter_coef,

@@ -4,10 +4,6 @@
 
 #include "mic_array.h"
 
-/**
- * @defgroup setup_h_ setup.h
- */
-
 C_API_START
 
 /**
@@ -25,18 +21,19 @@ C_API_START
  * The parameter `divide` is the ratio of the audio master clock to the desired
  * PDM clock rate. For example, to generate a desired 3.072 MHz PDM clock from 
  * an audio master clock with frequency 24.576 MHz, a `divide` value of 8 is 
- * needed. Divide can also be calculated from the master and PDM clock 
- * frequencies using `mic_array_mclk_divider()`.
+ * needed. \verbatim embed:rst
+   Divide can also be calculated from the master and PDM clock frequencies using 
+   :c:func:`mic_array_mclk_divider()`.\endverbatim
  * 
  * `pdm_res->p_mclk` is the resource ID for the 1-bit port on which the audio
  * master clock is received. This function will enable this port and configure 
  * it as the source port for `pdm_res->clock_a` and for `pdm_res->clock_b` if 
  * operating in a DDR configuration.
  * 
- * `pdm_res->clock_a` is the resource ID for the first (in SDR configuration, 
- * only) clock block required by the mic array. Clock A divides the audio master 
- * clock (by a factor of `divide`) to generate the PDM clock. This function 
- * enables it with the audio master clock as its source.
+ * `pdm_res->clock_a` is the resource ID for the first (in SDR configuration,
+ * the only) clock block required by the mic array. Clock A divides the audio
+ * master clock (by a factor of `divide`) to generate the PDM clock. This
+ * function enables it with the audio master clock as its source.
  * 
  * `pdm_res->p_pdm_clk` is the resource ID for the 1-bit port from which the PDM
  * clock will be signaled to the microphones. This function enables it and
@@ -65,8 +62,6 @@ C_API_START
  * 
  * @param pdm_res   The hardware resources used by the mic array.
  * @param divide    The divider to generate the PDM clock from the master clock.
- * 
- * @ingroup setup_h_
  */
 MA_C_API
 void mic_array_resources_configure(
@@ -98,12 +93,10 @@ void mic_array_resources_configure(
  * 
  * @warning Once this function has been called, the port receiving PDM data will 
  * begin capturing samples. If the mic array unit is not started by the time the
- * port buffer fills ((32/mic_count) sample times) samples will begin to be
+ * port buffer fills (`(32/mic_count)` sample times) samples will begin to be
  * dropped.
  * 
  * @param pdm_res   The hardware resources used by the mic array.
- * 
- * @ingroup setup_h_
  */
 MA_C_API
 void mic_array_pdm_clock_start(
@@ -120,8 +113,6 @@ void mic_array_pdm_clock_start(
  * @param pdm_clock_freq    The desired PDM clock frequency in Hz.
  * 
  * @returns Required clock divider.
- * 
- * @ingroup setup_h_
  */
 static inline
 unsigned mic_array_mclk_divider(
