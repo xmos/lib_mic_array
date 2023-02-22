@@ -76,32 +76,10 @@ interface.
 The following diagram conceptually captures the flow of information through the
 ``MicArray`` sub-components.
 
-::
-
-              xCore Port
-      ____________v_________________________________________
-     |            |         MicArray                        |
-     |    PDM     |     _________________                   |
-     |    Samples |    |                 |                  |
-     |            `--->|  PdmRx          |---.              |
-     |                 |_________________|   |              |
-     |                  _________________    | PDM Sample   |
-     |                 |                 |   | Blocks       |
-     |             .---|  Decimator      |<--`              |
-     |             |   |_________________|                  |
-     |   Decimated |    _________________                   |
-     |   Sample    |   |                 |                  |
-     |             `-->|  SampleFilter   |---.              |
-     |                 |_________________|   |              |
-     |                  _________________    | Filtered     |
-     |                 |                 |   | Sample       |
-     |             .---|  OutputHandler  |<--`              |
-     |    Sample   |   |_________________|                  |
-     |    or Frame |                                        |
-     |_____________|________________________________________|
-                   v
-              xCore Channel
-
+.. figure:: diagrams/high_level_process.drawio.png
+   :align: center
+   :scale: 100 %
+   :alt: Mic Array High Level Process
 
 .. note::
 
