@@ -9,21 +9,10 @@ rate stream of (32-bit) PCM samples.
 
 Below is a simplified model of the mic array unit.
 
-::
-
-           _____________________________________________________________
-          |        ______________              ______________           |
-          |       |              |            |              |          |
-    Port  |   A   |  Stage 1     |     B      |  Stage 2     |    C     |
-      --->|------>|  Decimating  |----------->|  Decimating  |--------->|--> App
-          |       |  FIR Filter  |            |  FIR Filter  |          |
-          |       |______________|            |______________|          |
-          |_____________________________________________________________|
-    
-    Stream A - ( 1-bit) PDM samples @   PDM_FREQ                      samp/sec
-    Stream B - (32-bit) PCM samples @  (PDM_FREQ/32)                  samp/sec
-    Stream C - (32-bit) PCM samples @  (PDM_FREQ/(32*S2_DEC_FACTOR))  samp/sec
-
+.. figure:: diagrams/decimator_stages.drawio.png
+   :align: center
+   :scale: 100 %
+   :alt: Simplified Decimator Model
 
 The first stage filter is a decimating FIR filter with a fixed tap count
 (``S1_TAP_COUNT``) of ``256`` and a fixed decimation factor (``S1_DEC_FACTOR``)
