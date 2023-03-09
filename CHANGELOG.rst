@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+5.0.2
+-----
+
+  * Documentation improvements.
+
 5.0.1
 -----
   * Updates lib_mic_array to use lib_xcore_math (formerly lib_xs3_math) version 2.0.2
