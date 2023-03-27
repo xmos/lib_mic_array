@@ -1,16 +1,38 @@
 lib_mic_array change log
 ========================
 
-4.5.0
+5.0.2
 -----
 
-  * REMOVED: Use of Brew for CI
-  * CHANGED: XMOS Jenkins Shared Library version used in CI
+  * Documentation improvements.
 
-4.4.0
+5.0.1
+-----
+  * Updates lib_mic_array to use lib_xcore_math (formerly lib_xs3_math) version 2.0.2
+  * Updates CMake project to use CPM to obtain dependencies (when top level project)
+  * [issue #171] Changes behavior when mic array consumer gets backed up from a quiet deadlock to an ECALL exception
+    * Also adds a way to allow blocks of PDM to be quietly dropped instead  (see AssertOnDroppedBlock())
+
+5.0.0
 -----
 
-  * CHANGED: XN files to support 15.x.x tools
+  * Mic Array library redesigned from scratch to make efficient use of XMOS XS3 architecture
+  * Many unused features from previous versions have been dropped
+  * Initial v5.0 features:
+
+    * Supports 1-, 4-, and 8-bit ports
+    * Supports both SDR and DDR microphone configurations
+    * Use 1-16 PDM microphones
+    * Configurable PDM clock frequency
+    * Configurable two-stage decimating FIR
+
+      * Reference filter with total decimation factor of 192 provided
+
+    * Optional DC offset elimination filter
+    * Configurable frame size (down to single sample)
+    * Extensible C++ design
+
+
 
 4.3.0
 -----

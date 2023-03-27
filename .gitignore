@@ -1,6 +1,8 @@
 **/.build*/*
 bin/
 _build/
+xcore_sdk/
+.vscode/
 *.o
 *.xe
 *.vcd
@@ -31,6 +33,12 @@ tests/test_results.csv
 examples/AN00221_freq_domain_example/doc/pdf/AN00218.pdf
 examples/AN00218_app_hires_DAS_fixed/doc/pdf/AN00218.pdf
 **/.venv/**
+**/__pycache__/
+**/.ipynb_checkpoints/
+
+# Any files user wants to keep in their local clone
+**/*.local.*
+**/*.local.*/
 
 
 # Unit test runners
