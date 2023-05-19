@@ -1,7 +1,14 @@
+# Copyright 2023 XMOS LIMITED.
+# This Software is subject to the terms of the XMOS Public Licence: Version 1.
+
 import numpy as np
 import scipy.signal as spsig
 
-import filter_tools as ft
+try:
+    # for pytest
+    from . import filter_tools as ft
+except ImportError:
+    import filter_tools as ft
 
 
 class stage_params(object):
@@ -216,8 +223,7 @@ def good_32k_filter(int_coeffs):
     return coeffs
 
 
-if __name__ == "__main__":
-
+def main():
     coeffs = small_2_stage_filter(int_coeffs=True)
     out_path = "small_2_stage_filter_int.pkl"
     ft.save_packed_filter(out_path, coeffs)
@@ -233,3 +239,7 @@ if __name__ == "__main__":
     coeffs = good_32k_filter(int_coeffs=True)
     out_path = "good_32k_filter_int.pkl"
     ft.save_packed_filter(out_path, coeffs)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,10 +1,17 @@
+# Copyright 2023 XMOS LIMITED.
+# This Software is subject to the terms of the XMOS Public Licence: Version 1.
+
 from pathlib import Path
 
 import scipy.signal as spsig
 import numpy as np
 import matplotlib.pyplot as plt
 
-import filter_tools as ft
+try:
+    # for pytest
+    from . import filter_tools as ft
+except ImportError:
+    import filter_tools as ft
 
 
 def plot_stage(coeff_decim, fs_0, fs_final, axs=None):
@@ -150,7 +157,7 @@ def plot_filters(coeffs, fs_0, axs=None):
     return axs
 
 
-if __name__ == "__main__":
+def main():
     # load default coefficients & decimation factors
     coeffs = np.load(Path(Path(__file__).parent, "..", "..", "tests", "signal", "BasicMicArray", "default_filters.pkl"),
                      allow_pickle=True)
@@ -164,3 +171,7 @@ if __name__ == "__main__":
     axs_2 = plot_stage(coeffs[1], fs_1, fs_2)
     axs = plot_filters(coeffs, fs_0)
     plt.show()
+
+
+if __name__ == "__main__":
+    main()
