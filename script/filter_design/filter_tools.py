@@ -40,50 +40,6 @@ def normalise_coeffs(coeffs):
     return coeffs.astype(np.float64)/np.sum(coeffs.astype(np.float64))
 
 
-def optimise_int16_scaling(coeffs, decimation_ratio):
-
-    print("running brute force int16 scaler")
-
-    nfft = 1024
-    float_coeffs = coeffs.astype(np.longfloat)
-
-    min_err = np.inf
-    best_scale = 0
-    best_quant = np.round
-    errors = []
-    for scale in np.arange(2**14, 2**15):
-        for quant in [np.round, np.ceil, np.floor]:
-            # scale and quantize coeffients
-            scaled = float_coeffs * (scale/(np.max(float_coeffs)))
-            scaled = quant(scaled)
-
-            # calculate frequency response
-            _, response = spsig.freqz(normalise_coeffs(scaled), worN=nfft*decimation_ratio)
-            ars = np.abs(response)
-
-            # calculate magnitude of aliases
-            response_decim = np.zeros_like(ars[:nfft])
-            for n in range(1, decimation_ratio):
-                if n % 2 == 0:
-                    response_decim += ars[n*nfft:(n+1)*nfft]
-                else:
-                    response_decim += np.flip(ars[n*nfft:(n+1)*nfft])
-
-            # average level in final passband (ish)
-            error = np.sum(response_decim[:256])
-
-            errors.append(error)
-            if error < min_err:
-                min_err = error
-                best_scale = scale
-                best_quant = quant
-
-    coeffs = best_quant(float_coeffs * (best_scale/(np.max(float_coeffs))))
-    print("best scaling: %d, best quant: %s" % (best_scale, best_quant.__name__))
-
-    return coeffs.astype(np.int64)
-
-
 def moving_average_filter(decimation_ratio, n_stages):
     # a simple N stage moving average filter, floating point
 
@@ -116,7 +72,28 @@ def moving_average_filter_int16(decimation_ratio, n_stages, optimise_scaling=Tru
 
         # if they are too big, scale coefficients
         if optimise_scaling:
-            b = optimise_int16_scaling(b, decimation_ratio)
+            # start with a 2 stage MA filter, scale and round before convolving 
+            # with the next stage. Use a 2 stage MA again for the final convolution
+            rounding_stages = n_stages - 3
+            if n_stages > 5:
+                # rounding could add up to len(b) to the value, compensate scaling
+                max_value = (32767.0 - len(b)*rounding_stages)
+            else:
+                max_value = 32767.0
+            scaling = np.max(b)/max_value
+            stage_scaling = scaling**(1.0/rounding_stages)
+
+            # start off with a 2 stage MA
+            kernel_kernel = np.convolve(kernel, kernel)
+            b = np.copy(kernel_kernel)
+
+            # scale and round before convolving with the next stage
+            for n in range(rounding_stages - 1):
+                b = np.convolve(np.round(b/stage_scaling), kernel)
+
+            # final stage is using the 2 stage MA again
+            b = np.convolve(np.round(b/stage_scaling), kernel_kernel)
+            b = b.astype(np.int64)
         else:
             b = np.multiply(b, (2**15 - 1)/np.max(b), dtype=np.longdouble)
             b = np.fix(b).astype(np.int64)
