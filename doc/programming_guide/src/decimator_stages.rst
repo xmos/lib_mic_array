@@ -145,4 +145,28 @@ decimation filter.
 .. image:: stage2_freq_response.png
 
 
+Custom Filters
+--------------
 
+Without writing a custom decimator implementation, the tap count and decimation
+factor for the first stage decimator are fixed to ``256`` and ``32``
+respectively. These can be modified for the second stage, and the filter
+coefficients for both stages can be modified.
+
+When using the C++ API to construct your application's mic array component, the
+decimator's metaparameters (tap count, decimation factor) are given as C++
+template parameters for the decimator class template. Pointers to the
+coefficients are provided to the decimator when it is initialized.
+
+To keep things simple, when using the vanilla API or when constructing the mic
+array component using :cpp:class:`BasicMicArray
+<mic_array::prefab::BasicMicArray>`, it is assumed that the filter parameters
+will be those from ``stage1_fir_coef.c``, ``stage2_fir_coef.c`` and
+``filters_default.h``. In this case it is recommended to simple change those
+files directly with the updated coefficients. Otherwise you may need to use the
+C++ API directly.
+
+Note that both the first and second stage filters are implemented using
+fixed-point arithmetic which requires the coefficients to be presented in a
+particular format. The Python scripts `stage1.py` and `stage2.py`, provided with
+this library, can be used to help with this formatting. See the associated README for usage details.
