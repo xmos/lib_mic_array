@@ -10,17 +10,17 @@ stage1.py and stage2.py
 These scripts can be used to generate C code representing the required first and
 second stage filters used by the mic array.
 
-* `stage1.py` outputs an array for the first stage filter
-* `stage2.py` outputs an array for the second stage filter
+* ``stage1.py`` outputs an array for the first stage filter
+* ``stage2.py`` outputs an array for the second stage filter
 
-Each script takes a Python `.pkl` file as an input (via the command line), and
+Each script takes a Python ``.pkl`` file as an input (via the command line), and
 outputs a simple C-style array initializer in the terminal. That output can be
 used to overwrite the filter coefficients in an application.
 
 Example
 '''''''
 
-The following is an example of runnint `stage1.py`.
+The following is an example of running ``stage1.py``.
 
 .. code::
 
@@ -51,16 +51,16 @@ The following is an example of runnint `stage1.py`.
     0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
   }
 
-Here, the input `.pkl` file `good_2_stage_filter_int.pkl` was generated using
-`filter_design/design_filter.py`. The script outputs some basic information
-about the filter followed by a C array initializer of 128 words.
+Here, the input ``.pkl`` file ``good_2_stage_filter_int.pkl`` was generated
+using ``filter_design/design_filter.py``. The script outputs some basic
+information about the filter followed by a C array initializer of 128 words.
 
-The output array can be used to initialize an array of type `uint32_t`. The
+The output array can be used to initialize an array of type ``uint32_t``. The
 values in the array may appear to have little relation to those directly in the
-`.pkl` file because the implementation of the first stage filter requires the
+``.pkl`` file because the implementation of the first stage filter requires the
 coefficients to be reordered in a bit-wise manner for run-time optimization.
 
-The following is an example of `stage2.py` being run with the same input file.
+The following is an example of ``stage2.py`` being run with the same input file.
 
 .. code::
 
@@ -77,23 +77,23 @@ The following is an example of `stage2.py` being run with the same input file.
   }
 
 Similar output is produced. In addition to the filter coefficient array,
-`stage2.py` outputs a right-shift (here `4`) which is needed by the second stage
-filter.
+``stage2.py`` outputs a right-shift (here ``4``) which is needed by the second
+stage filter.
 
 The simplest way to use these coefficients in an application is to replace the
-values in `../lib_mic_array/src/etc/stage1_fir_coef.c` and
-`../lib_mic_array/src/etc/stage2_fir_coef.c`.
+values in ``../lib_mic_array/src/etc/stage1_fir_coef.c`` and
+``../lib_mic_array/src/etc/stage2_fir_coef.c``.
 
 Input pkl File
 ''''''''''''''
 
-`stage1.py` and `stage2.py` load the contents of the supplied `.pkl` file using
-`pickle.load()` from the `pickle` Python module. They expect the result of
-`load()` to have type compatible with
-`Tuple[Tuple[numpy.ndarray,int],Tuple[numpy.ndarray,int]]`. The following
+``stage1.py`` and ``stage2.py`` load the contents of the supplied ``.pkl`` file
+using ``pickle.load()``` from the ``pickle`` Python module. They expect the
+result of ``load()`` to have type compatible with
+``Tuple[Tuple[numpy.ndarray,int],Tuple[numpy.ndarray,int]]``. The following
 pseudo-code should help clarify this:
 
-.. code::{.py}
+.. code:: python
 
   stage1, stage2 = pkl.load(filter_coef_pkl_file)
   stage1_coef_array, stage1_decimation_factor = stage1
@@ -104,33 +104,33 @@ pseudo-code should help clarify this:
   assert stage1_decimation_factor == 32
 
 Further constraints, as illustrated above, are that the stage1 filter
-coefficients should be `np.int16` (signed 16-bit integers) and stage2 filter
-coeffiients should be `np.int32` (signed 32-bit integers). Further, the first
-stage filter currently only supports a decimation factor of `32`.
+coefficients should be ``np.int16`` (signed 16-bit integers) and stage2 filter
+coeffiients should be ``np.int32`` (signed 32-bit integers). Further, the first
+stage filter currently only supports a decimation factor of ``32``.
 
 Using Custom Coefficients in an Application
 '''''''''''''''''''''''''''''''''''''''''''
 
 The C files ../lib_mic_array/src/etc/stage1_fir_coef.c and
 ../lib_mic_array/src/etc/stage2_fir_coef.c provide an example of how the outputs
-of `stage1.py` and `stage2.py` may be used. 
+of ``stage1.py`` and ``stage2.py`` may be used. 
 
 .. note:: If the stage 2 decimation factor or tap count changes `../lib_mic_array/api/etc/filters_default.h` must also be updated to reflect that change.
 
-The filter coefficients used by the decimator as specified when initializing
-the decimator (e.g. `mic_array::TwoStageDecimator`). To use custom coefficients
+The filter coefficients used by the decimator as specified when initializing the
+decimator (e.g. ``mic_array::TwoStageDecimator``). To use custom coefficients
 when directly working with the mic array's C++ objects, simply provide a pointer
-to your custom coefficients to the decimator's `Init()` method.
+to your custom coefficients to the decimator's ``Init()`` method.
 
-Alternatively, `lib_mic_array`'s Vanilla API and the
-`mic_array::prefab::BasicMicArray` class template both automatically use the
-filter coefficients given by the symbols `stage1_coef`, `stage2_coef` and
-`stage2_shr` when initializing the decimator.
+Alternatively, ``lib_mic_array``'s Vanilla API and the
+``mic_array::prefab::BasicMicArray`` class template both automatically use the
+filter coefficients given by the symbols ``stage1_coef``, ``stage2_coef`` and
+``stage2_shr`` when initializing the decimator.
 
 In that case, there are two options to use custom filter. The first and easiest
 is to simply overwrite the coefficients given in
-`../lib_mic_array/src/etc/stage1_fir_coef.c` and
-`../lib_mic_array/src/etc/stage2_fir_coef.c`. If that is not an option, you may
-also add your own source files containing your coefficients to your project
-(using the same symbol names) and exclude `stage1_fir_coef.c` and
-`stage2_fircoef.c` from the project's source files.
+``../lib_mic_array/src/etc/stage1_fir_coef.c`` and
+``../lib_mic_array/src/etc/stage2_fir_coef.c``. If that is not an option, you
+may also add your own source files containing your coefficients to your project
+(using the same symbol names) and exclude ``stage1_fir_coef.c`` and
+``stage2_fircoef.c`` from the project's source files.
