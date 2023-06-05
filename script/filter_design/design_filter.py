@@ -12,15 +12,58 @@ except ImportError:
 
 
 class stage_params(object):
+    """a holder for the design parameters of a filter stage"""
     def __init__(self, cutoff, transition_bandwidth, taps, fir_window):
+        """
+        Initialise a stage_params object.
+
+        Parameters
+        ----------
+        cutoff : float
+            filter cutoff frequency
+        transition_bandwidth : float
+            filter transition bandwidth. Transition is expected to occur from
+            cutoff - transition_bw/2 : cutoff + transition_bw/2
+        taps : int
+            number of filter taps
+        fir_window: string or (string, float) or float, or None
+            Window function to use in spsig.firwin2. See
+            `scipy.signal.get_window` for the complete list of possible values.
+
+        """
         self.cutoff = cutoff
         self.transition_bw = transition_bandwidth
         self.taps = taps
         self.fir_window = fir_window
 
 
-def design_2_stage(fs_0, decimations, ma_stages, stage_2: stage_params, int_coeffs=False, 
+def design_2_stage(fs_0, decimations, ma_stages, stage_2: stage_params, int_coeffs=False,
                    compensate_s1=True):
+    """
+    Design a 2 stage decimation filter.
+
+    Parameters
+    ----------
+    fs_0 : int
+        input sample frequency
+    decimations : list
+        list of the decimations ratios for each stage, e.g. [32, 6]
+    ma_stages : int
+        number of moving average stages in stage 1
+    stage_2 : stage_params
+        A stage_params class, specifying the design parameters for stage_2
+    int_coeffs : bool
+        Whether to return integer filter coeffcients. If false, return floats
+    compensate_s1 : bool
+        If True, stage 2 will compensate for any frequency response change in
+        previous stages.
+
+    Returns
+    -------
+    coeffs : list
+        The filter coefficients in a packed format [stage][coefficients, decimation_ratio]
+
+    """
 
     # calculate intermediate sample rates
     fses = fs_0 * np.ones(len(decimations) + 1)
@@ -58,6 +101,30 @@ def design_2_stage(fs_0, decimations, ma_stages, stage_2: stage_params, int_coef
 
 
 def design_3_stage(fs_0, decimations, ma_stages, stage_2: stage_params, stage_3: stage_params, int_coeffs=False):
+    """
+    Design a 3 stage decimation filter.
+
+    Parameters
+    ----------
+    fs_0 : int
+        input sample frequency
+    decimations : list
+        list of the decimations ratios for each stage, e.g. [32, 2, 3]
+    ma_stages : int
+        number of moving average stages in stage 1
+    stage_2 : stage_params
+        A stage_params class, specifying the design parameters for stage_2
+    stage_3 : stage_params
+        A stage_params class, specifying the design parameters for stage_3
+    int_coeffs : bool
+        Whether to return integer filter coeffcients. If false, return floats
+
+    Returns
+    -------
+    coeffs : list
+        The filter coefficients in a packed format [stage][coefficients, decimation_ratio]
+
+    """
 
     # calculate intermediate sample rates
     fses = fs_0 * np.ones(len(decimations) + 1)
@@ -117,10 +184,18 @@ def design_3_stage(fs_0, decimations, ma_stages, stage_2: stage_params, stage_3:
     return coeffs
 
 
-def small_2_stage_filter(int_coeffs):
-    # These coefficients have been chosen to minimise the number of taps, for
-    # use in resource constrained systems. Alias suppression is reduced, and
-    # the passband rolls off above 6kHz
+def small_2_stage_filter(int_coeffs: bool):
+    """
+    Design a 2 stage decimation filter for 3.072 Mhz to 16 kHz with a small number of taps
+
+    These coefficients have been chosen to minimise the number of taps, for
+    use in resource constrained systems. Alias suppression is reduced, and
+    the passband rolls off above 6kHz
+
+    If int_coeffs is True, integer filter coefficients are returned.
+    Otherwise, float coefficients are returned
+
+    """
 
     # sample rates and decimations
     fs_0 = 3072000
@@ -141,10 +216,17 @@ def small_2_stage_filter(int_coeffs):
     return coeffs
 
 
-def good_2_stage_filter(int_coeffs):
-    # These coefficients have been chosen for good performance. The filter
-    # attenuation and rolloff is good, at the cost of a higher number of taps
-    # than the adequate filter.
+def good_2_stage_filter(int_coeffs: bool):
+    """
+    Design a 2 stage decimation filter for 3.072 Mhz to 16 kHz with good general performance
+
+    These coefficients have been chosen for good performance. The filter
+    attenuation and rolloff is good, at the cost of a higher number of taps
+    than the adequate filter.
+
+    If int_coeffs is True, integer filter coefficients are returned.
+    Otherwise, float coefficients are returned
+    """
 
     # sample rates and decimations
     fs_0 = 3072000
@@ -165,10 +247,17 @@ def good_2_stage_filter(int_coeffs):
     return coeffs
 
 
-def good_3_stage_filter(int_coeffs):
-    # These coefficients have been chosen for good performance. The extra
-    # decimation stage means fewer taps are needed than the 2 stage filter, at
-    # the cost of more complexity.
+def good_3_stage_filter(int_coeffs: bool):
+    """
+    Design a 3 stage decimation filter for 3.072 Mhz to 16 kHz with good general performance
+
+    These coefficients have been chosen for good performance. The extra
+    decimation stage means fewer taps are needed than the 2 stage filter, at
+    the cost of more complexity.
+
+    If int_coeffs is True, integer filter coefficients are returned.
+    Otherwise, float coefficients are returned
+    """
 
     # sample rates and decimations
     fs_0 = 3072000
@@ -196,15 +285,22 @@ def good_3_stage_filter(int_coeffs):
     return coeffs
 
 
-def good_32k_filter(int_coeffs):
-    # These coefficients are designed for decimation to 32kHz.
-    # PDM mics often have a resonance towards to top of the audible band (e.g.
-    # Infineon IM69D130 has a resonance at 16.5kHz), so the filter beings to
-    # roll off above 12.5kHz to compensate for this.
-    # Due to the wider final passband, a higher order MA filter is needed for
-    # stage 1 than for a 16kHz mic array
+def good_32k_filter(int_coeffs: bool):
+    """
+    Design a 2 stage decimation filter for 3.072 Mhz to 32 kHz with good general performance
 
-    # sample rates and decimations
+    These coefficients are designed for decimation to 32kHz.
+    PDM mics often have a resonance towards to top of the audible band (e.g.
+    Infineon IM69D130 has a resonance at 16.5kHz), so the filter beings to
+    roll off above 12.5kHz to compensate for this.
+    Due to the wider final passband, a higher order MA filter is needed for
+    stage 1 than for a 16kHz mic array
+
+    If int_coeffs is True, integer filter coefficients are returned.
+    Otherwise, float coefficients are returned
+    sample rates and decimations
+    """
+
     fs_0 = 3072000
     decimations = [32, 3]
 

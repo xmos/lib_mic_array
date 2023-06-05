@@ -8,25 +8,35 @@ import numpy as np
 import scipy.signal as spsig
 
 
+# Use smallest float to avoid /0 errors
 FLT_MIN = np.finfo(float).tiny
 
 
 def db(x):
+    """Convert a signal to decibels
+    """
     return 20*np.log10(np.abs(x) + FLT_MIN)
 
 
 def save_filter(out_path,  coeff_1, decimation_1, coeff_2, decimation_2):
+    """save filter coefficients to a .pkl file in expected format
+    """
     out_list = [[coeff_1, decimation_1], [coeff_2, decimation_2]]
     pickle.dump(out_list, open(out_path, 'wb'))
     return
 
 
 def save_packed_filter(out_path,  out_list):
+    """save filter coefficients to a .pkl file, assuming they are already in
+    the packed format [stage][coefficients, decimation_ratio]
+    """
     pickle.dump(out_list, open(out_path, 'wb'))
     return
 
 
 def process_pdm(pdm_signal, coeffs):
+    """Decimate a PDM signal using the packed coefficients in coeffs
+    """
     signal = pdm_signal.astype(np.float64)
     for coeff in coeffs:
         signal = spsig.resample_poly(signal, 1, coeff[1], window=normalise_coeffs(coeff[0]))
@@ -35,13 +45,14 @@ def process_pdm(pdm_signal, coeffs):
 
 
 def normalise_coeffs(coeffs):
-    # for unity gain at DC, just normalise by the sum of the coefficients
-
+    """for unity gain at DC, just normalise by the sum of the coefficients
+    """
     return coeffs.astype(np.float64)/np.sum(coeffs.astype(np.float64))
 
 
 def moving_average_filter(decimation_ratio, n_stages):
-    # a simple N stage moving average filter, floating point
+    """a simple N stage moving average filter, floating point coefficients
+    """
 
     kernel = np.ones(decimation_ratio, dtype=np.longdouble)
     kernel /= decimation_ratio
@@ -54,8 +65,8 @@ def moving_average_filter(decimation_ratio, n_stages):
 
 
 def moving_average_filter_int16(decimation_ratio, n_stages, optimise_scaling=True):
-    # a N stage moving average filter, implemented with int16 coefficients
-
+    """a N stage moving average filter, implemented with int16 coefficients
+    """
     # start in int64 so we don't overflow straight away
     kernel = np.ones(decimation_ratio, dtype=np.int64)
     b = np.copy(kernel)
@@ -72,7 +83,7 @@ def moving_average_filter_int16(decimation_ratio, n_stages, optimise_scaling=Tru
 
         # if they are too big, scale coefficients
         if optimise_scaling:
-            # start with a 2 stage MA filter, scale and round before convolving 
+            # start with a 2 stage MA filter, scale and round before convolving
             # with the next stage. Use a 2 stage MA again for the final convolution
             rounding_stages = n_stages - 3
             if n_stages > 5:
@@ -122,6 +133,8 @@ def moving_average_filter_int16(decimation_ratio, n_stages, optimise_scaling=Tru
 
 
 def float_coeffs_to_int32(b):
+    """convert floating point coefficients to int32, simple scale and round
+    """
 
     # scale to int32 level, subtract 1 to avoid overflow at max
     max_coeff = np.max(b)
@@ -144,9 +157,11 @@ def float_coeffs_to_int32(b):
 
 
 def combined_filter(coeff_1, coeff_2, decimation_1):
-    # Upsample the 2nd stage coefficients by the 1st stage filter
-    # The output coefficients are at the original sampling frequency.
-    # Could be done using spsig.resample_poly, but doesn't give the right length
+    """Upsample the 2nd stage coefficients by the 1st stage filter
+
+    The output coefficients are at the original sampling frequency.
+    Could be done using spsig.resample_poly, but doesn't give the right length
+    """
     f_new = np.zeros(len(coeff_2)*(decimation_1), dtype=np.longdouble)
     f_new[::decimation_1] = coeff_2
     coeff_combo = np.convolve(f_new, coeff_1)[:-(decimation_1-1)]
