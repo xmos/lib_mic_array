@@ -19,7 +19,7 @@ void dcoe_filter(
     const unsigned chan_count)
 {
   #define N   32
-  #define Q   8
+  #define Q   6
 
   for(int k = 0; k < chan_count; k++){
     const int64_t x_new = ((int64_t)new_input[k]) << N;
