@@ -3,18 +3,31 @@
 
 import pickle as pkl
 import numpy as np
-import filters
+from mic_array.util import *
+import matplotlib.pyplot as plt
+import argparse
+
+import mic_array.filters as filters
 
 
-coef_file = "coef/32_6_257_65.pkl"
+def main(args):
 
-_, stage2 = filters.load(coef_file, truncate_s1=True)
+  _, stage2 = filters.load(args.coef_pkl_file)
+
+  # print(f"Scale: {stage2.ScaleInt32}")
+
+  print(f"Right-shift: {stage2.ShrInt32}")
 
 
-print(f"Scale: {stage2.ScaleInt32}")
+  print("\n")
+  print("{")
+  print(", ".join( [hex(x) for x in stage2.Coef] ))
+  print("}")
 
-print(f"Right-shift: {stage2.ShrInt32}")
 
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument("coef_pkl_file", type=str, help='Path to pkl file containing first and second stage coefficients.')
 
-print("\n")
-print("{" + ", ".join( [f"{x}" for x in stage2.CoefInt32] ) + "}")
+  args = parser.parse_args()
+  main(args)

@@ -1,6 +1,13 @@
 lib_mic_array change log
 ========================
 
+5.0.3
+-----
+
+  * Improved default audio filter. Reduces noise floor and improves alias attentuation.
+  * Changed DCOE filter to increase attenuation below 20 Hz
+
+
 5.0.2
 -----
 

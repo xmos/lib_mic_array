@@ -13,7 +13,7 @@ def bits_array(x):
 int16_dual = np.array([0x0001, 0x0002, 0x0004, 0x0008, 
                        0x0010, 0x0020, 0x0040, 0x0080,
                        0x0100, 0x0200, 0x0400, 0x0800, 
-                       0x1000, 0x2000, 0x4000, 0x7FFF], dtype=np.int)
+                       0x1000, 0x2000, 0x4000, 0x7FFF], dtype=np.int32)
 
 # Find the bipolar matrix representation B[,] of an int16 vector x[] which satisfies
 #   (np.matmul(B[:,:], dual_vector[:]) / 2) == x[:]
@@ -23,7 +23,7 @@ int16_dual = np.array([0x0001, 0x0002, 0x0004, 0x0008,
 def int16_vect_to_bipolar_matrix(x, dual_vector):
   x = x.astype(np.int64)
   y = 2*x[:,0] if (len(x.shape)==2) else 2*x
-  res = np.zeros((len(y), 16), dtype=np.int)
+  res = np.zeros((len(y), 16), dtype=np.int32)
   for k in range(15,-1,-1):
     p = (y >= 0) * 2 - 1
     res[:,k] = p

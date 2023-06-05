@@ -25,12 +25,10 @@ class Stage1Filter(object):
   BLOCK_SIZE = 256
 
   def __init__(self, coefs: np.ndarray, decimation_factor: int = 32):
+
     assert (coefs.ndim == 1), "Stage1Filter coefs must be a single dimensional ndarray"
     assert (len(coefs) % Stage1Filter.BLOCK_SIZE == 0), f"Stage1Filter must have a multiple of 256 coefficients ({len(coefs)})"
-
-    t = np.argmax(np.abs(coefs))
-
-    assert (np.abs(coefs[t]) <= 1.0), "Stage1Filter coefficients must be scaled to the range [-1.0, 1.0]"
+    assert (coefs.dtype == np.int16), "Stage1Filter coefs must have dtype np.int16"
 
     # The decimation factor
     self.dec_factor = decimation_factor
@@ -38,15 +36,15 @@ class Stage1Filter(object):
     # The coefficients themselves
     self.coefs = coefs
 
-    # The scale factor for scaling to int16
-    self.scale_int16 = Stage1Filter.INT16_MAX_COEFFICIENT / self.coefs[t]
+    # # The scale factor for scaling to int16
+    # self.scale_int16 = Stage1Filter.INT16_MAX_COEFFICIENT / self.coefs[t]
 
-    # The int16 filter coefficients
-    # self.scale_int16 = (Stage1Filter.INT16_MAX_COEFFICIENT * (1 if coefs[t] >= 0 else -1)) / coefs[t]
-    self.coefs_int16 = np.round(self.scale_int16 * self.coefs).astype(np.int16)
+    # # The int16 filter coefficients
+    # # self.scale_int16 = (Stage1Filter.INT16_MAX_COEFFICIENT * (1 if coefs[t] >= 0 else -1)) / coefs[t]
+    # self.coefs_int16 = np.round(self.scale_int16 * self.coefs).astype(np.int16)
 
     # The bipolar {-1,1} filter coefficient representation
-    self.coefs_bipolar = util.int16_vect_to_bipolar_matrix(self.coefs_int16, util.int16_dual)
+    self.coefs_bipolar = util.int16_vect_to_bipolar_matrix(self.coefs, util.int16_dual)
 
     # The binary {1,0} filter coefficient representation
     #  (note that the binary matrix is from the bipolar transposed)
@@ -68,13 +66,13 @@ class Stage1Filter(object):
   def Coef(self):
     return self.coefs
 
-  @property
-  def CoefInt16(self):
-    return self.coefs_int16
+  # @property
+  # def CoefInt16(self):
+  #   return self.coefs_int16
 
-  @property
-  def ScaleInt16(self):
-    return self.scale_int16
+  # @property
+  # def ScaleInt16(self):
+  #   return self.scale_int16
   
   @property
   def CoefBipolar(self):
@@ -95,20 +93,20 @@ class Stage1Filter(object):
     S[:,P:] = sig_in
     return S
 
-  def FilterFloat(self, pdm_signal: np.ndarray) -> np.ndarray:
-    if pdm_signal.ndim == 1:
-      pdm_signal = pdm_signal[np.newaxis,:]
-    CHANS, SAMPS_IN = pdm_signal.shape
-    Q = self.DecimationFactor
-    N_pcm = SAMPS_IN // self.DecimationFactor
+  # def FilterFloat(self, pdm_signal: np.ndarray) -> np.ndarray:
+  #   if pdm_signal.ndim == 1:
+  #     pdm_signal = pdm_signal[np.newaxis,:]
+  #   CHANS, SAMPS_IN = pdm_signal.shape
+  #   Q = self.DecimationFactor
+  #   N_pcm = SAMPS_IN // self.DecimationFactor
     
-    S = self._pad_input(pdm_signal)
-    coefs = self.Coef.astype(np.float)[:,np.newaxis]
-    res = np.zeros((CHANS,N_pcm), dtype=np.float)
-    for k in range(N_pcm):
-      x = S[:,Q*k:Q*k+self.TapCount]
-      res[:,k] = np.matmul(x, coefs).squeeze()
-    return res
+  #   S = self._pad_input(pdm_signal)
+  #   coefs = self.Coef.astype(np.float)[:,np.newaxis]
+  #   res = np.zeros((CHANS,N_pcm), dtype=np.float)
+  #   for k in range(N_pcm):
+  #     x = S[:,Q*k:Q*k+self.TapCount]
+  #     res[:,k] = np.matmul(x, coefs).squeeze()
+  #   return res
   
   def FilterInt16(self, pdm_signal: np.ndarray) -> np.ndarray:
     if pdm_signal.ndim == 1:
@@ -118,7 +116,7 @@ class Stage1Filter(object):
     N_pcm = SAMPS_IN // self.DecimationFactor
     
     S = self._pad_input(pdm_signal)
-    coefs = self.CoefInt16.astype(np.int32)[:,np.newaxis]
+    coefs = self.Coef.astype(np.int32)[:,np.newaxis]
     res = np.zeros((CHANS, N_pcm), dtype=np.int32)
     for k in range(N_pcm):
       x = S[:,Q*k:Q*k+self.TapCount]
@@ -153,10 +151,7 @@ class Stage2Filter(object):
   def __init__(self, coefs: np.ndarray, decimation_factor: int):
 
     assert (coefs.ndim == 1), "Stage2Filter coefs must be a single dimensional ndarray"
-
-    t = np.argmax(np.abs(coefs))
-
-    assert (np.abs(coefs[t]) <= 1.0), "Stage2Filter coefficients must be scaled to the range [-1.0, 1.0]"
+    assert (coefs.dtype == np.int32), "Stage2Filter coefs must have dtype np.int32"
 
     # The decimation factor
     self.dec_factor = decimation_factor
@@ -164,18 +159,18 @@ class Stage2Filter(object):
     # The coefficients themselves
     self.coefs = coefs
 
-    # The scale factor for scaling to int32
-    self.scale_int32 = Stage2Filter.INT32_MAX_COEFFICIENT / self.coefs[t]
+    # # The scale factor for scaling to int32
+    # self.scale_int32 = Stage2Filter.INT32_MAX_COEFFICIENT / self.coefs[t]
 
-    # The int32 filter coefficients
-    self.coefs_int32 = np.round(self.scale_int32 * self.coefs).astype(np.int32)
+    # # The int32 filter coefficients
+    # self.coefs_int32 = np.round(self.scale_int32 * self.coefs).astype(np.int32)
 
     # The right-shift required for fixed-point output scaling
     #  (the 0x7FFFFF00 is the largest value a 1-block Stage1 filter can output)
-    max_samp_out = np.dot( np.int64( 0x7FFFFF00) * np.sign(self.coefs_int32).astype(np.int64), 
-                           np.round(self.coefs_int32 / 2**30).astype(np.int64) )
+    max_samp_out = np.dot( np.int64( 0x7FFFFF00) * np.sign(self.coefs).astype(np.int64), 
+                           np.round(self.coefs / 2**30).astype(np.int64) )
     frac_shr = np.log2(max_samp_out) - 30
-    self.shr_int32 = np.int(np.floor(frac_shr))
+    self.shr_int32 = np.int32(np.floor(frac_shr))
 
 
   @property
@@ -190,13 +185,13 @@ class Stage2Filter(object):
   def Coef(self):
     return self.coefs
 
-  @property
-  def CoefInt32(self):
-    return self.coefs_int32
+  # @property
+  # def CoefInt32(self):
+  #   return self.coefs_int32
 
-  @property
-  def ScaleInt32(self):
-    return self.scale_int32
+  # @property
+  # def ScaleInt32(self):
+  #   return self.scale_int32
   
   @property
   def ShrInt32(self):
@@ -212,20 +207,20 @@ class Stage2Filter(object):
     S[:,P:] = sig_in
     return S
 
-  def FilterFloat(self, signal_in: np.ndarray) -> np.ndarray:
-    if signal_in.ndim == 1:
-      signal_in = signal_in[np.newaxis,:]
-    CHANS, SAMPS_IN = signal_in.shape
-    Q = self.DecimationFactor
-    SAMPS_OUT = SAMPS_IN // self.DecimationFactor
+  # def FilterFloat(self, signal_in: np.ndarray) -> np.ndarray:
+  #   if signal_in.ndim == 1:
+  #     signal_in = signal_in[np.newaxis,:]
+  #   CHANS, SAMPS_IN = signal_in.shape
+  #   Q = self.DecimationFactor
+  #   SAMPS_OUT = SAMPS_IN // self.DecimationFactor
 
-    S = self._pad_input(signal_in)
-    res = np.zeros((CHANS,SAMPS_OUT), dtype=np.float)
-    coefs = np.flip(self.Coef.astype(np.float))[:,np.newaxis]
-    for k in range(SAMPS_OUT):
-      x = S[:,Q*k:Q*k+self.TapCount]
-      res[:,k] = np.matmul( x, coefs ).squeeze()
-    return res
+  #   S = self._pad_input(signal_in)
+  #   res = np.zeros((CHANS,SAMPS_OUT), dtype=np.float)
+  #   coefs = np.flip(self.Coef.astype(np.float))[:,np.newaxis]
+  #   for k in range(SAMPS_OUT):
+  #     x = S[:,Q*k:Q*k+self.TapCount]
+  #     res[:,k] = np.matmul( x, coefs ).squeeze()
+  #   return res
 
   def FilterInt32(self, signal_in: np.ndarray) -> np.ndarray:
     if signal_in.ndim == 1:
@@ -236,7 +231,7 @@ class Stage2Filter(object):
 
     S = self._pad_input(signal_in)
     res = np.zeros((CHANS,SAMPS_OUT), dtype=np.int32)
-    coefs = np.flip(self.CoefInt32.astype(np.int64))[:,np.newaxis]
+    coefs = np.flip(self.Coef.astype(np.int64))[:,np.newaxis]
     for k in range(SAMPS_OUT):
       x = S[:,Q*k:Q*k+self.TapCount]
       p = np.matmul(x, coefs)
@@ -266,18 +261,33 @@ class TwoStageFilter(object):
     
 
 
-def load(coef_file: str, /, truncate_s1=False):
+def load(coef_file: str):
 
   with open(coef_file, "rb") as pkl_file:
     # Split the pickled data into the stage1 and stage2 values
     stage1, stage2 = pkl.load(pkl_file)
 
-  if truncate_s1:
-    p = len(stage1[0]) % Stage1Filter.BLOCK_SIZE
-    stage1[0] = stage1[0][:-p]
+    stage1_coef, stage1_dec_factor = stage1
+    stage2_coef, stage2_dec_factor = stage2
 
-  s1_filter = Stage1Filter(stage1[0], stage1[1])
-  s2_filter = Stage2Filter(stage2[0], stage2[1])
+    print(f"Stage 1 Decimation Factor: {stage1_dec_factor}")
+    print(f"Stage 1 Tap Count: {stage1_coef.shape[0]}")
+
+    print(f"Stage 2 Decimation Factor: {stage2_dec_factor}")
+    print(f"Stage 2 Tap Count: {stage2_coef.shape[0]}")
+    print("")
+
+    # If necessary, pad out stage 1 coefficients with zeros to be 256
+    if stage1_coef.shape[0] < 256:
+      stage1_coef = np.pad(stage1_coef, (0,256-stage1_coef.shape[0]))
+      # print(stage1_coef)
+
+    assert(len(stage1_coef) == 256)
+
+    # print(stage1_coef)
+
+  s1_filter = Stage1Filter(stage1_coef, stage1_dec_factor)
+  s2_filter = Stage2Filter(stage2_coef, stage2_dec_factor)
   return s1_filter, s2_filter
 
 
