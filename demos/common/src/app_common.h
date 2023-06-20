@@ -23,6 +23,9 @@ C_API_START
 
 void board_dac3101_init();
 
+void aic3204_board_init();
+void aic3204_codec_reset();
+
 C_API_END
 
 
