@@ -123,7 +123,7 @@ identify this port.
 Declaring Resources
 *******************
 
-Once the ports and clock blocks to be used have been indentified, these
+Once the ports and clock blocks to be used have been identified, these
 resources can be represented in code using a ``pdm_rx_resources_t`` struct. The
 following is an example of declaring resources in a DDR configuration. See
 :c:struct:`pdm_rx_resources_t`, :c:func:`PDM_RX_RESOURCES_SDR()` and
