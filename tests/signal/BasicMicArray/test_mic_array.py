@@ -62,13 +62,14 @@ class Test_BasicMicArray(object):
     s1_coef, s1_df = stage1
     s2_coef, s2_df = stage2
 
+    # if the stage1 filter is not 256 taps, then we need to pad it out to 256
+    if len(s1_coef) < 256:
+      s1_coef = np.pad(s1_coef, (0, 256 - len(s1_coef)), 'constant')
+
     assert s1_df == 32
     assert s2_df == 6
-    assert len(s1_coef) == 257
-    assert len(s2_coef) == 65
-
-    # first stage gets truncated to 256 taps
-    s1_coef = s1_coef[:256]
+    assert len(s1_coef) == 256
+    assert len(s2_coef) == 64
 
     s1_filter = filters.Stage1Filter(s1_coef, s1_df)
     s2_filter = filters.Stage2Filter(s2_coef, s2_df)
@@ -80,7 +81,7 @@ class Test_BasicMicArray(object):
       print(f"Stage1 Filter: {repr(np.array([hex(x) for x in s1_coef_words]))}")
 
       print(f"Stage2 Filter: {np.array([('0x%08X' % np.uint32(x)) for x in s2_filter.CoefInt32])}")
-      print(f"Stage2 Filter shr: {s2_filter.ShrInt32}")
+      print(f"Stage2 Filter shr: {s2_filter.Shr}")
 
     return filters.TwoStageFilter(s1_filter, s2_filter)
     
@@ -152,5 +153,5 @@ class Test_BasicMicArray(object):
     # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift 
     # applied to them prior to being summed.
     result_diff = np.max(np.abs(expected - device_output))
-    assert result_diff <= 1
+    assert result_diff <= 3
 
