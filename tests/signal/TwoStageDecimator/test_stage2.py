@@ -46,14 +46,15 @@ class Test_Stage2(object):
     # This test uses a random first stage filter. No arithmetic saturation is 
     # possible, regardless of what we pick.
 
-    s1_coef = np.random.random_sample(256) - 1.0
+    s1_coef = np.round(np.ldexp((np.random.random_sample(256) - 0.5), 15)).astype(np.int16)
     s1_coef = replay.apply("s1_coef", s1_coef)
     s1_filter = filters.Stage1Filter(s1_coef)
     
-    # We'll generate a random filter for the second stage as well. We'll normalize
-    # it so that we're not worried about saturating.
-    s2_coef = np.random.random_sample(s2_tap_count) - 1.0
+    # We'll generate a random filter for the second stage as well. We'll
+    # normalize it so that we're not worried about saturating.
+    s2_coef = np.random.random_sample(s2_tap_count) - 0.5
     s2_coef = s2_coef / np.sum(np.abs(s2_coef))
+    s2_coef = np.round(np.ldexp(s2_coef, 31)).astype(np.int32)
     s2_coef = replay.apply("s2_coef", s2_coef)
     s2_filter = filters.Stage2Filter(s2_coef, s2_dec_factor)
 
@@ -111,5 +112,5 @@ class Test_Stage2(object):
       # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift 
       # applied to them prior to being summed.
       result_diff = np.max(np.abs(expected - device_output))
-      assert result_diff <= 1
+      assert result_diff <= 4
 

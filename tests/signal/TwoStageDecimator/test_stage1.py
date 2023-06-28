@@ -39,20 +39,19 @@ class Test_Stage2(object):
   def gen_filter(self, s2_tap_count, s2_dec_factor, replay):
     # This test uses a random first stage filter. No arithmetic saturation is 
     # possible, regardless of what we pick.
-    s1_coef = np.random.random_sample(256) - 1.0
+    s1_coef = np.round(np.ldexp((np.random.random_sample(256) - 0.5), 15)).astype(np.int16)
     s1_coef = replay.apply("s1_coef", s1_coef)
     s1_filter = filters.Stage1Filter(s1_coef)
     
-    # This test uses a simple pass-through filter for the second stage decimator.
-    #   (i.e.  b = [1.0, 0, 0, 0, 0, ...])
-    # The output from the full decimator should then be exactly what was output by
-    # the first stage, with (s2_dec_factor-1) of every (s2_dec_factor) samples
-    # dropped.
-    s2_coef = np.zeros((s2_tap_count), dtype=np.float)
-    s2_coef[0] = 1.0
-    s2_coef = s2_coef / np.sum(np.abs(s2_coef))
+    # This test uses a simple pass-through filter for the second stage
+    #   decimator. (i.e.  b = [1.0, 0, 0, 0, 0, ...]) The output from the full
+    # decimator should then be exactly what was output by the first stage, with
+    # (s2_dec_factor-1) of every (s2_dec_factor) samples dropped.
+    s2_coef = np.zeros((s2_tap_count), dtype=np.int32)
+    s2_coef[0] = 0x40000000
     s2_coef = replay.apply("s2_coef", s2_coef)
     s2_filter = filters.Stage2Filter(s2_coef, s2_dec_factor)
+    assert s2_filter.Shr == 0
 
     return filters.TwoStageFilter(s1_filter, s2_filter)
     
