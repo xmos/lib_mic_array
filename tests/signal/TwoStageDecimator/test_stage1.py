@@ -15,7 +15,7 @@
 #  - An appropriate xCore device must be connected to the host using xTag
 #  - This test should be executed with pytest. To run it, navigate to the root
 #    of your CMake build directory, and run:
-#       > pytest path/to/this/dir/test_stage2.py
+#       > pytest path/to/this/dir/test_stage1.py
 ######
 
 import sys, os, time
@@ -23,12 +23,11 @@ import numpy as np
 from mic_array import filters
 from mic_array.pdm_signal import PdmSignal
 from decimator_device import DecimatorDevice
-from mic_array.case_replay import InitReplay
 import pytest
 from conftest import test_params, xe_file_path
 
 
-class Test_Stage2(object):
+class Test_Stage1(object):
 
   @pytest.fixture(autouse=True)
   def __init_case(self, request):
@@ -36,11 +35,10 @@ class Test_Stage2(object):
                         linewidth=80)
     self.print_out = request.config.getoption("print_output")
 
-  def gen_filter(self, s2_tap_count, s2_dec_factor, replay):
+  def gen_filter(self, s2_tap_count, s2_dec_factor):
     # This test uses a random first stage filter. No arithmetic saturation is 
     # possible, regardless of what we pick.
     s1_coef = np.round(np.ldexp((np.random.random_sample(256) - 0.5), 15)).astype(np.int16)
-    s1_coef = replay.apply("s1_coef", s1_coef)
     s1_filter = filters.Stage1Filter(s1_coef)
     
     # This test uses a simple pass-through filter for the second stage
@@ -49,7 +47,6 @@ class Test_Stage2(object):
     # (s2_dec_factor-1) of every (s2_dec_factor) samples dropped.
     s2_coef = np.zeros((s2_tap_count), dtype=np.int32)
     s2_coef[0] = 0x40000000
-    s2_coef = replay.apply("s2_coef", s2_coef)
     s2_filter = filters.Stage2Filter(s2_coef, s2_dec_factor)
     assert s2_filter.Shr == 0
 
@@ -57,7 +54,7 @@ class Test_Stage2(object):
     
 
   @pytest.mark.parametrize('xe_param', test_params)
-  def test_stage2(self, request, xe_param, replay_mode):
+  def test_stage1(self, request, xe_param):
 
     chans, s2_df, s2_taps = xe_param
     
@@ -66,27 +63,19 @@ class Test_Stage2(object):
     xe_path = xe_file_path(xe_param, request.config.getoption("build_dir"))
 
     assert os.path.isfile(xe_path)
-    
-    ## Most of the work can be done before talking to the device. (this also
-    ## minimizes the likelihood of test exceptions putting the device into a 
-    ## state where it needs to be power-cycled.)
-    with InitReplay(request.node.name, replay_mode) as replay:
 
-      # Note: --blocks option is ignored if the --load-case option is used
-      blocks = request.config.getoption("blocks")
-      blocks = replay.apply("blocks", blocks)
+    blocks = request.config.getoption("blocks")
 
-      # Generate random filter
-      filter = self.gen_filter(s2_taps, s2_df, replay)
+    # Generate random filter
+    filter = self.gen_filter(s2_taps, s2_df)
 
-      # Generate random PDM signal
-      sig = PdmSignal.random(chans, 32 * blocks * filter.s2.DecimationFactor)
-      sig.signal = replay.apply("pdm_signal", sig.signal)
+    # Generate random PDM signal
+    sig = PdmSignal.random(chans, 32 * blocks * filter.s2.DecimationFactor)
 
-      # Compute the expected output
-      expected = filter.Filter(sig.signal)
+    # Compute the expected output
+    expected = filter.Filter(sig.signal)
 
-      if self.print_out: print(f"Expected output: {expected}")
+    if self.print_out: print(f"Expected output: {expected}")
 
     ## Now see what the device says.
     with DecimatorDevice(xe_path) as dev:

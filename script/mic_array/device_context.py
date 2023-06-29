@@ -3,23 +3,19 @@
 
 import os, signal, subprocess
 from . import xscope
-
+from time import sleep
 
 class DeviceContext(object):
-
-  GDB_SCRIPT = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
-                  'gdb_script.gdb')
-  XGDB_CMD_BASE = ('xgdb', '-q', '--return-child-result', 
-                   '--ex=set $xcore_id=0', 
-                   '--ex=set $xcore_boot=0', 
-                   '-x', GDB_SCRIPT, '--ex', 'quit')
+  
+  XRUN_CMD_BASE = ('xrun', '--xscope-realtime', '--xscope-port','localhost:10234')
 
   def __init__(self, xe_path, /, probes=[], **kwargs):
     
     self.xe_path = xe_path
-    self.xgdb_cmd = list(DeviceContext.XGDB_CMD_BASE) + [self.xe_path]
 
-    self.xgdb = None
+    self.xrun_cmd = list(DeviceContext.XRUN_CMD_BASE) + [self.xe_path]
+    self.xrun = None
+
     self.ep = xscope.Endpoint()
 
     self.probe_timeout = ( 10.0 if "probe_timeout" not in kwargs
@@ -31,23 +27,21 @@ class DeviceContext(object):
     self.connect_retries = ( 5 if "connect_retries" not in kwargs 
                              else kwargs["connect_retries"] )
 
-    self.quiet_xgdb = ( True if "quiet_xgdb" not in kwargs
-                        else kwargs["quiet_xgdb"] )
-
   def _on_connect(self):
     pass # for subclasses to override
 
   def __enter__(self):
+    
+    print(" ".join(self.xrun_cmd))
 
-    if self.quiet_xgdb:
-      self.xgdb = subprocess.Popen(self.xgdb_cmd, stdout=subprocess.DEVNULL)
-    else:
-      self.xgdb = subprocess.Popen(self.xgdb_cmd)
+    self.xrun = subprocess.Popen(self.xrun_cmd, stdout=subprocess.DEVNULL)
+    sleep(3)
 
     try:
       for _ in range(self.connect_retries):
         c = self.ep.connect()
         if not c: break
+        sleep(1)
         print("Retrying..")
       if c:
         print("Failed to connect to xgdb.")
@@ -55,9 +49,9 @@ class DeviceContext(object):
         raise Exception("Failed to connect to xgdb.")
       self._on_connect()
     except:
-      # self.xgdb.send_signal(signal.CTRL_C_EVENT)
-      self.xgdb.terminate()
-      self.xgdb = None
+      self.xrun.send_signal(signal.CTRL_C_EVENT)
+      self.xrun.terminate()
+      self.xrun = None
       raise
     return self
 
@@ -65,11 +59,11 @@ class DeviceContext(object):
     if self.ep is not None:
       try:    self.ep.disconnect()
       except: pass
-    if self.xgdb is not None:
+    if self.xrun is not None:
       try :
-        # self.xgdb.send_signal(signal.CTRL_C_EVENT)
-        self.xgdb.terminate()
-        self.xgdb = None
+        self.xrun.send_signal(signal.CTRL_C_EVENT)
+        self.xrun.terminate()
+        self.xrun = None
       except: 
         pass
 

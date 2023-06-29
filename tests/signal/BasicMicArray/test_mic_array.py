@@ -33,7 +33,6 @@ import numpy as np
 from mic_array import filters
 from mic_array.pdm_signal import PdmSignal
 from micarray_device import MicArrayDevice
-from mic_array.case_replay import InitReplay
 import pytest
 from conftest import test_params, xe_file_path, FLAGS, DevCommand
 
@@ -87,7 +86,7 @@ class Test_BasicMicArray(object):
     
 
   @pytest.mark.parametrize('xe_param', test_params)
-  def test_BasicMicArray(self, request, xe_param, replay_mode):
+  def test_BasicMicArray(self, request, xe_param):
 
     chans, frame_size, use_isr = xe_param
     
@@ -96,35 +95,27 @@ class Test_BasicMicArray(object):
     xe_path = xe_file_path(xe_param, request.config.getoption("build_dir"))
 
     assert os.path.isfile(xe_path), f"Required executable does not exist ({xe_path})"
-    
-    ## Some of the work can be done before talking to the device. (this also 
-    ## minimizes the likelihood of test exceptions putting the device into a 
-    ## state where it needs to be power-cycled.)
-    with InitReplay(request.node.name, replay_mode) as replay:
 
-      # Note: --frames option is ignored if the --load-case option is used
-      frames = request.config.getoption("frames")
-      frames = replay.apply("frames", frames)
+    frames = request.config.getoption("frames")
 
-      # Generate random filter
-      filter = self.default_filter()
+    # Generate random filter
+    filter = self.default_filter()
 
-      # Number of PDM samples (per channel) required to make the mic array
-      # output a single frame
-      samp_per_frame = 32 * filter.s2.DecimationFactor * frame_size
+    # Number of PDM samples (per channel) required to make the mic array
+    # output a single frame
+    samp_per_frame = 32 * filter.s2.DecimationFactor * frame_size
 
-      # Total PDM samples (per channel)
-      samp_total = samp_per_frame * frames
+    # Total PDM samples (per channel)
+    samp_total = samp_per_frame * frames
 
-      # Generate random PDM signal
-      sig = PdmSignal.random(chans, samp_total)
-      sig.signal = replay.apply("pdm_signal", sig.signal)
+    # Generate random PDM signal
+    sig = PdmSignal.random(chans, samp_total)
 
-      # Compute the expected output
-      # Note: This assumes DCOE is disabled (which it should be in this app)
-      expected = filter.Filter(sig.signal)
+    # Compute the expected output
+    # Note: This assumes DCOE is disabled (which it should be in this app)
+    expected = filter.Filter(sig.signal)
 
-      if self.print_output: print(f"Expected output: {expected}")
+    if self.print_output: print(f"Expected output: {expected}")
 
     ## Now see what the device says.
     with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb) as dev:
