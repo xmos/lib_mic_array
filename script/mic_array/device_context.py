@@ -32,7 +32,6 @@ class DeviceContext(object):
 
   def __enter__(self):
     
-    print(" ".join(self.xrun_cmd))
 
     self.xrun = subprocess.Popen(self.xrun_cmd, stdout=subprocess.DEVNULL)
     sleep(3)
@@ -49,7 +48,6 @@ class DeviceContext(object):
         raise Exception("Failed to connect to xgdb.")
       self._on_connect()
     except:
-      self.xrun.send_signal(signal.CTRL_C_EVENT)
       self.xrun.terminate()
       self.xrun = None
       raise
@@ -61,7 +59,6 @@ class DeviceContext(object):
       except: pass
     if self.xrun is not None:
       try :
-        self.xrun.send_signal(signal.CTRL_C_EVENT)
         self.xrun.terminate()
         self.xrun = None
       except: 

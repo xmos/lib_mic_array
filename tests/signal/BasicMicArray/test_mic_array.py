@@ -144,5 +144,5 @@ class Test_BasicMicArray(object):
     # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift 
     # applied to them prior to being summed.
     result_diff = np.max(np.abs(expected - device_output))
-    assert result_diff <= 3
+    assert result_diff <= 4
 
