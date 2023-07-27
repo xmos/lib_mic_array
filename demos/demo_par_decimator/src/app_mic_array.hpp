@@ -5,7 +5,7 @@
 
 #include <type_traits>
 
-#include "mic_array/cpp/MicArray.hpp"
+#include "mic_array.h"
 #include "app_decimator.hpp"
 #include "mic_array/etc/filters_default.h"
 

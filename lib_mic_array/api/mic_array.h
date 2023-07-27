@@ -13,6 +13,6 @@
 # include "mic_array/cpp/MicArray.hpp"
 # include "mic_array/cpp/OutputHandler.hpp"
 # include "mic_array/cpp/PdmRx.hpp"
-//# include "mic_array/cpp/Prefab.hpp"
+# include "mic_array/cpp/Prefab.hpp"
 # include "mic_array/cpp/SampleFilter.hpp"
 #endif
