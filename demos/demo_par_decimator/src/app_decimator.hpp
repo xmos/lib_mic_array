@@ -18,7 +18,7 @@
 #endif
 
 
-namespace  my_mic_array {
+namespace  par_mic_array {
 
 /**
  * @brief First and Second Stage Decimator
@@ -197,7 +197,7 @@ class MyTwoStageDecimator
 
 
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
-void my_mic_array::MyTwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
+void par_mic_array::MyTwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
     const uint32_t* s1_filter_coef,
     const int32_t* s2_filter_coef,
     const right_shift_t s2_shr)
@@ -213,7 +213,7 @@ void my_mic_array::MyTwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::In
 
 
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
-void my_mic_array::MyTwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
+void par_mic_array::MyTwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
     ::ProcessBlock(
         int32_t sample_out[MIC_COUNT],
         uint32_t pdm_block[BLOCK_SIZE])

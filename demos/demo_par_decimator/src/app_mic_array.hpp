@@ -19,7 +19,7 @@
  * This implementation provides support for > 8 mics by using multiple cores to
  * perform the decimation process.
  */
-namespace my_mic_array {
+namespace par_mic_array {
   template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN=MIC_COUNT>
   class MyMicArray
       : public mic_array::MicArray<MIC_COUNT,
@@ -146,14 +146,14 @@ namespace my_mic_array {
 
 
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
-void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>::Init()
+void par_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>::Init()
 {
   this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, stage2_shr);
 }
 
 
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
-my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
+par_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::MyMicArray(
         port_t p_pdm_mics,
         chanend_t c_frames_out) : TParent(
@@ -168,7 +168,7 @@ my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
 
 
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
-void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
+void par_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::SetOutputChannel(chanend_t c_frames_out)
 {
   this->OutputHandler.FrameTx.SetChannel(c_frames_out);
@@ -176,7 +176,7 @@ void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
 
 
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
-void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
+void par_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::SetPort(port_t p_pdm_mics)
 {
   this->PdmRx.Init(p_pdm_mics);
@@ -184,7 +184,7 @@ void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
 
 
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
-void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
+void par_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::PdmRxThreadEntry()
 {
   this->PdmRx.ThreadEntry();
@@ -192,7 +192,7 @@ void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
 
 
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
-void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
+void par_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::InstallPdmRxISR()
 {
   this->PdmRx.InstallISR();
@@ -200,7 +200,7 @@ void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
 
 
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
-void my_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
+void par_mic_array::MyMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::UnmaskPdmRxISR()
 {
   this->PdmRx.UnmaskISR();

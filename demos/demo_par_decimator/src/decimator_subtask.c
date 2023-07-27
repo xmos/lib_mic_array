@@ -11,7 +11,7 @@
 #include "mic_array/etc/fir_1x16_bit.h"
 
 #ifndef NUM_DECIMATOR_SUBTASKS
-#define NUM_DECIMATOR_SUBTASKS 2
+#error Please set NUM_DECIMATOR_SUBTASKS
 #endif
 
 DECLARE_JOB(decimator_subtask, (
