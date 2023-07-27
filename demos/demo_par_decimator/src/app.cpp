@@ -50,7 +50,7 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
                                 MIC_ARRAY_CONFIG_CLOCK_BLOCK_A,
                                 MIC_ARRAY_CONFIG_CLOCK_BLOCK_B);
 
-using TMicArray = par_mic_array::MyMicArray<
+using TMicArray = par_mic_array::ParMicArray<
                         MIC_ARRAY_CONFIG_MIC_COUNT,
                         MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
                         MIC_ARRAY_CONFIG_USE_DC_ELIMINATION>;
