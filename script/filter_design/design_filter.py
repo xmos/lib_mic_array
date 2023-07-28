@@ -173,7 +173,8 @@ def design_3_stage(fs_0, decimations, ma_stages, stage_2: stage_params, stage_3:
     # add stopband filter points, design filter using windowed FIR method
     freqs = np.concatenate((freqs, np.array((stage_3.cutoff + stage_3.transition_bw/2, 0.5*fses[2]))))
     gains = np.concatenate((gains, np.zeros(2)))
-    coeff_3 = spsig.firwin2(stage_3.taps, freqs, gains, window=stage_3.fir_window, fs=fses[2])
+    gains_float64 = gains.astype(np.float64, copy=True)
+    coeff_3 = spsig.firwin2(stage_3.taps, freqs, gains_float64, window=stage_3.fir_window, fs=fses[2])
 
     if int_coeffs:
         coeff_2 = ft.float_coeffs_to_int32(coeff_2)
