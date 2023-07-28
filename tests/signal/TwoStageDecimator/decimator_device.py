@@ -36,9 +36,9 @@ class DecimatorDevice(DeviceContext):
     self.send_bytes(xcore_coef)
 
   def send_stage2_filter(self, s2_filter: filters.Stage2Filter):
-    xcore_coef = s2_filter.CoefInt32.tobytes()
+    xcore_coef = s2_filter.Coef.tobytes()
     self.send_bytes(xcore_coef)
-    self.send_word(s2_filter.ShrInt32)
+    self.send_word(s2_filter.Shr)
 
   def send_decimator(self, filter: filters.TwoStageFilter):
     self.send_stage1_filter(filter.s1)

@@ -12,7 +12,7 @@ list( APPEND  MIC_ARRAY_COMPILE_FLAGS
               -Wno-unused-variable 
               -Wno-missing-braces
               -Wno-xcore-fptrgroup
-              -O2
+              -O2 -g
 )
 
 # Includes

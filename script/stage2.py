@@ -16,7 +16,7 @@ def main(args):
 
   # print(f"Scale: {stage2.ScaleInt32}")
 
-  print(f"Right-shift: {stage2.ShrInt32}")
+  print(f"Right-shift: {stage2.Shr}")
 
 
   print("\n")
