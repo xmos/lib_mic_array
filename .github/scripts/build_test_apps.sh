@@ -1,5 +1,4 @@
 #!/bin/bash
-# set -e # uncomment when done with dev
 
 pwd
 

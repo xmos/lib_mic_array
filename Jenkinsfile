@@ -63,7 +63,7 @@ pipeline {
         }
         stage('HW tests') {
             agent {
-                label 'xvf3800'
+                label 'xcore.ai'
             }
             stages {
                 stage("Setup") {
