@@ -97,5 +97,5 @@ class PdmSignal(object):
     sig = sig.reshape(SAMP_COUNT//SPW, SPW)
     
     return np.apply_along_axis(lambda x: np.dot(x, 
-                2**(CHAN_COUNT * np.arange(SPW))), 1, sig).tobytes()
+                2**(CHAN_COUNT * np.arange(SPW))), 1, sig).astype(np.int32).tobytes()
     

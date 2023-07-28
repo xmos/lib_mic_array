@@ -3,12 +3,9 @@
  
 import sys, os, pytest, enum
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..','..',"script"))
-from mic_array.case_replay import ReplayMode
 
 
 FLAGS = [
-  "save-case",
-  "load-case",
   "print-output",
   "print-xgdb",
   "debug-print-filters"
@@ -64,19 +61,6 @@ def xe_file_path(params, build_dir):
     os.path.join(build_dir, APP_BUILD_DIR, xe_name)
   )
   return xe_path
-
-@pytest.fixture()
-def replay_mode(request):
-  save = request.config.getoption("save_case")
-  load = request.config.getoption("load_case")
-  if save and load:
-    raise Exception("Cannot use both --save-case and --load-case options.")
-  mode = (ReplayMode.SAVE_VECTORS if save else 
-          (ReplayMode.LOAD_VECTORS if load else 
-          ReplayMode.DO_NOTHING) )
-  if mode != ReplayMode.DO_NOTHING:
-    print(f"Using replay mode: {mode.name}")
-  return mode
 
 
 class DevCommand(enum.Enum):
