@@ -63,7 +63,7 @@ pipeline {
         }
         stage('HW tests') {
             agent {
-                label 'xcore.ai'
+                label 'xvf3800' // We have plenty of these (6) and they have a single XTAG connected
             }
             stages {
                 stage("Setup") {
