@@ -1,0 +1,7 @@
+# python_version 3.10
+
+pytest
+numpy
+scipy
+matplotlib
+

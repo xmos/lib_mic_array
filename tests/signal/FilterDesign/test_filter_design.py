@@ -4,7 +4,7 @@
 import os
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', "script"))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 
 import script.filter_design.plot_coeffs as pc
 import script.filter_design.design_filter as df
