@@ -8,8 +8,7 @@ pushd ${BINARY_PATH}
 xrun --xscope tests/unit/tests-unit.xe
 
 # Signal/Decimator tests
-# Needs https://github.com/xmos/lib_mic_array/pull/196 merged
-# pytest ../tests/signal/TwoStageDecimator/ -vv
+pytest ../tests/signal/TwoStageDecimator/ -vv
 
 # Filter design tests
 # TODO fix
