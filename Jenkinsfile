@@ -85,7 +85,7 @@ pipeline {
                     steps {
                         withTools(params.TOOLS_VERSION) {
                             dir("$REPO"){
-                                sh ".github/scripts/build_test_apps.sh"
+                                sh ". .github/scripts/build_test_apps.sh"
                             }
                         }
                     }
@@ -97,7 +97,7 @@ pipeline {
                                 withVenv {
                                     // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
                                     sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
-                                    sh ".github/scripts/run_test_apps.sh"
+                                    sh ". .github/scripts/run_test_apps.sh"
                                 }
                             }
                         }
