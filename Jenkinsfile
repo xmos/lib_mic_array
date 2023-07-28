@@ -92,7 +92,7 @@ pipeline {
                 }
                 stage('Run tests') {
                     steps {
-                        dir("${REPO}/tests") {
+                        dir("${REPO}") {
                             withTools(params.TOOLS_VERSION) {
                                 withVenv {
                                     // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
