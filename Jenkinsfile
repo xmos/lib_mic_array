@@ -85,23 +85,19 @@ pipeline {
                     steps {
                         withTools(params.TOOLS_VERSION) {
                             dir("$REPO"){
-                                sh "mkdir build"
-                                sh "cd build/"
-                                sh "cmake --toolchain ../xmos_cmake_toolchain/xs3a.cmake  .."
-                                sh "make all -j"
+                                sh ".github/scripts/build_test_apps.sh"
                             }
                         }
                     }
                 }
-                stage('Unit tests') {
+                stage('Run tests') {
                     steps {
                         dir("${REPO}/tests") {
                             withTools(params.TOOLS_VERSION) {
                                 withVenv {
                                     // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
                                     sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
-                                    sh "xrun --xscope ../build/tests/unit/tests-unit.xe"
-                                    // runPython("python gen_init_mem.py")
+                                    sh ".github/scripts/run_test_apps.sh"
                                 }
                             }
                         }
