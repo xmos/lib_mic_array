@@ -1,0 +1,3 @@
+[submodule "xmos_cmake_toolchain"]
+	path = xmos_cmake_toolchain
+	url = https://github.com/xmos/xmos_cmake_toolchain
