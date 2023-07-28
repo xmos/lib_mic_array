@@ -33,7 +33,7 @@ void receive_and_buffer_audio_task(
     ma_frame_rx(audio_frame, c_from_decimator, frame_words, 1);
 
     for(int k = 0; k < frame_words; k++)
-      audio_frame[k] <<= 8;
+      audio_frame[k] <<= 6;
 
     for(int k = 0; k < samples_per_frame; k++){
       for(int j = 0; j < mic_count; j++)
