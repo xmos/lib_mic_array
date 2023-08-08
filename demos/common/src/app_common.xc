@@ -3,6 +3,10 @@
 
 #include "app_common.h"
 
+#ifndef MIC_ARRAY_CONFIG_MIC_COUNT
+#define MIC_ARRAY_CONFIG_MIC_COUNT N_MICS
+#endif
+
 void eat_audio_frames_task(
     chanend_t c_from_decimator,
     static const unsigned frame_words)
@@ -22,14 +26,14 @@ void receive_and_buffer_audio_task(
     static const unsigned frame_words)
 {
   int32_t audio_frame[frame_words];
-  int32_t smp_buff[8];
+  int32_t smp_buff[MIC_ARRAY_CONFIG_MIC_COUNT];
 
   while(1){
 
     ma_frame_rx(audio_frame, c_from_decimator, frame_words, 1);
 
     for(int k = 0; k < frame_words; k++)
-      audio_frame[k] <<= 8;
+      audio_frame[k] <<= 6;
 
     for(int k = 0; k < samples_per_frame; k++){
       for(int j = 0; j < mic_count; j++)

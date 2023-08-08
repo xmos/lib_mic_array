@@ -56,3 +56,16 @@ void mic_array::deinterleave_pdm_samples<8>(
     deinterleave8(sb);
   }
 }
+
+template <>
+void mic_array::deinterleave_pdm_samples<16>(
+    uint32_t* samples,
+    unsigned s2_dec_factor)
+{
+  constexpr unsigned MICS = 16;
+
+  for(int k = 0; k < s2_dec_factor; k++) {
+    uint32_t* sb = &samples[k*MICS];
+    deinterleave16(sb);
+  }
+}
