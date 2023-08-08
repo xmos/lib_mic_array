@@ -18,7 +18,7 @@
 #include <string.h>
 #include <assert.h>
 
-unsafe{
+unsafe{ // We are sharing memory so use unsafe globally to remove XC compiler checks
 
 int main() {
 
@@ -96,7 +96,7 @@ int main() {
 #if NUM_DECIMATOR_SUBTASKS <= 1
       burn_mips();
 #endif
-#else
+#else // (MIC_ARRAY_TILE == 0)
       burn_mips();
       burn_mips();
       burn_mips();
@@ -104,8 +104,8 @@ int main() {
       burn_mips();
       burn_mips();
       burn_mips();
-#endif
-#endif
+#endif // (MIC_ARRAY_TILE == 0)
+#endif // ENABLE_BURN_MIPS
       }
     }
 
@@ -172,7 +172,7 @@ int main() {
 #if NUM_DECIMATOR_SUBTASKS <= 1
       burn_mips();
 #endif
-#else
+#else // (MIC_ARRAY_TILE == 1)
       burn_mips();
       burn_mips();
       burn_mips();
@@ -180,8 +180,8 @@ int main() {
       burn_mips();
       burn_mips();
       burn_mips();
-#endif
-#endif
+#endif // (MIC_ARRAY_TILE == 1)
+#endif // ENABLE_BURN_MIPS
       }
     }
   }

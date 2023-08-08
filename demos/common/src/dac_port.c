@@ -15,14 +15,12 @@ i2c_master_t i2c_master_ctx;
 
 void aic3204_board_init(void)
 {
-  int res = 0;
-
   i2c_master_init(&i2c_master_ctx,
                   PORT_I2C_SCL, 0, 0,
                   PORT_I2C_SDA, 0, 0,
                   100);
-  assert( res == 0 );
 
+  int res = 0;
   res = aic3204_init();
   assert( res == 0 );
 }

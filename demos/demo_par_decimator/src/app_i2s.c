@@ -140,10 +140,7 @@ I2S_CALLBACK_ATTR
 static
 i2s_restart_t app_i2s_restart(void* app_context)
 {
-  static unsigned do_restart = 0;
-  i2s_restart_t res = do_restart? I2S_RESTART : I2S_NO_RESTART;
-  do_restart = 0;
-  return res;
+  return I2S_NO_RESTART;
 }
 
 I2S_CALLBACK_ATTR
@@ -152,7 +149,7 @@ void app_i2s_receive(void *app_context,
                      size_t num_in,
                      const int32_t *samples)
 {
-
+    // Do nothing because this is not ever called (output only)
 }
 
 i2s_callback_group_t i2s_context = {

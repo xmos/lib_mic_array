@@ -1,4 +1,4 @@
-// Copyright 2020-2022 XMOS LIMITED.
+// Copyright 2020-2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <stdint.h>
@@ -39,7 +39,8 @@ TEST(deinterleave16, case0)
     // vals[k] == 0xFFFFFFFF
     for(int n = 0; n < CHAN_COUNT; n++)
       vals[n] = 0x00010001 << k;
-    
+
+    // Test prints to interpret the deinterlaving order
     // printf("\n\n");
     // printf("Before:\n");
     // for(int n = 0; n < CHAN_COUNT/2; n++)
@@ -51,6 +52,7 @@ TEST(deinterleave16, case0)
 
     deinterleave16(&vals[0]);
 
+    // Test prints to interpret the deinterlaving order
     // printf("After:\n");
     // for(int n = 0; n < CHAN_COUNT/2; n++)
     //   printf("0x%08X, ", (unsigned) vals[n]);

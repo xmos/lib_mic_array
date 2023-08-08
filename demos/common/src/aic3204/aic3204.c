@@ -97,10 +97,13 @@ int aic3204_init(void)
 		aic3204_reg_write(AIC3204_RPGA_VOL, 0x00) == 0 &&
 		// Power up HPL and HPR drivers
 		aic3204_reg_write(AIC3204_OP_PWR_CTRL, 0x30) == 0
-	) {
+	   ) 
+    {
 		// Wait for 2.5 sec for soft stepping to take effect
         aic3204_wait(2500);
-	} else {
+	} 
+    else 
+    {
 		return -1;
 	}
 
@@ -120,9 +123,12 @@ int aic3204_init(void)
 		aic3204_reg_write(AIC3204_DAC_CH_SET2, 0x00) == 0 &&
 		// Unmute Left and Right ADC Digital Volume Control.
 		aic3204_reg_write(AIC3204_ADC_FGA_MUTE, 0x00) == 0
-	) {
+	   ) 
+    {
 		return 0;
-	} else {
+	}
+    else
+    {
 		return -1;
 	}
 }
