@@ -63,7 +63,7 @@ void test_DcoeSampleFilter()
     for(int k = 0; k < CHANS; k++)
       input[k] = rand();
 
-    // y[t] = (255.0/256) * y[t-1] - x[t-1] + x[t]
+    // y[t] = (252.0/256) * y[t-1] - x[t-1] + x[t]
     for(int k = 0; k < CHANS; k++){
       f_output[k] = f_states[k] + input[k];
       expected[k] = (int32_t) round(f_output[k]);

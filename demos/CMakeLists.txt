@@ -20,4 +20,5 @@ include(../cmake/demo_common.cmake)
 
 add_subdirectory( demo )
 add_subdirectory( demo_vanilla )
+add_subdirectory( demo_par_decimator )
 add_subdirectory( measure_mips )

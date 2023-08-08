@@ -1,4 +1,4 @@
-VERSION = 5.0.2
+VERSION = 5.0.3
 
 DEPENDENT_MODULES = lib_xcore_math 
 

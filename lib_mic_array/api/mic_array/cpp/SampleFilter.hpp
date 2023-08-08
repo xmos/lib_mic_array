@@ -52,7 +52,7 @@ namespace  mic_array {
    * filter equation:
    * 
    * @code
-   * R = 255.0 / 256.0
+   * R = 252.0 / 256.0
    * y[t] = R * y[t-1] + x[t] - x[t-1]
    * @endcode
    * 

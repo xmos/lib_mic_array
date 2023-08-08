@@ -60,7 +60,7 @@ void mic_array_pdm_clock_start(
     /* wait for a rising edge on the capture clock */
     // (this ensures the rising edges of the two 
     //  clocks are not in phase)
-    asm volatile("inpw %0, res[%1], 4" : "=r"(tmp) 
+    asm volatile("inpw %0, res[%1], 8" : "=r"(tmp) 
                     : "r" (pdm_res->p_pdm_mics));
 
     /* start the slower output clock */
