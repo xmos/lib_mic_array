@@ -130,7 +130,7 @@ namespace  mic_array {
        * 
        * For example a sample filter based on the @ref DcoeSampleFilter class
        * template applies a simple first-order IIR filter to the output of the
-       * decimator, in order to elminate the DC component of the audio signals.
+       * decimator, in order to eliminate the DC component of the audio signals.
        * 
        * If no additional filtering is required, the @ref NopSampleFilter class
        * template can be used for `TSampleFilter`, which leaves the sample

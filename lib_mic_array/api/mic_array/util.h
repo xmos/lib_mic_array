@@ -44,4 +44,17 @@ MA_C_API
 void deinterleave8(uint32_t*);
 
 
+/**
+ * @brief Perform deinterleaving for a 16-microphone subblock.
+ * 
+ * Assembly function. 
+ * 
+ * Deinterleave the samples for 1 subblock of 16 microphones. Argument points to
+ * a 16 word buffer.
+ * 
+ * @ingroup util_h_
+ */
+MA_C_API 
+void deinterleave16(uint32_t*);
+
 C_API_END

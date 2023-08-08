@@ -135,19 +135,19 @@ application's ``CMakeLists.txt`` using CMake's built-in
   Indicates whether the microphones are arranged in an SDR (``0``) or DDR 
   (``1``) configuration. An SDR configuration is one in which each port pin is
   connected to a single PDM microphone. A DDR configuration is one which each 
-  port pin is connected to two PDM microphoes. Defaults to ``0`` (SDR), unless
+  port pin is connected to two PDM microphones. Defaults to ``0`` (SDR), unless
   ``MIC_ARRAY_CONFIG_MIC_COUNT`` is ``2`` in which case it defaults to ``1`` 
   (DDR).
 
 
 ``MIC_ARRAY_CONFIG_USE_DC_ELIMINATION``
-  Indicates whether the :ref:`DC offset elmination <sample_filters>` filter 
+  Indicates whether the :ref:`DC offset elimination <sample_filters>` filter 
   should be applied to the output of the decimator. Set to ``0`` to disable or
   ``1`` to enable. Defaults to ``1`` (filter on).
 
 The next three parameters are the identifiers for hardware port resources used
 by the mic array unit. They can be specified as either the identifier listed in
-your device's datasheet (e.g. ``XS1_PORT_1D``) or as an alias fort he port 
+your device's datasheet (e.g. ``XS1_PORT_1D``) or as an alias for the port 
 listed in your application's XN file (e.g. ``PORT_MCLK_IN_OUT``). For example:
 
 .. code-block:: xml
@@ -162,7 +162,7 @@ listed in your application's XN file (e.g. ``PORT_MCLK_IN_OUT``). For example:
 
 ``MIC_ARRAY_CONFIG_PORT_MCLK``
   Identifier of the 1-bit port on which the device is receiving the master audio
-  clock. Defaults to ``PORT_MCK_IN_OUT``.
+  clock. Defaults to ``PORT_MLCK_IN_OUT``.
 
 
 ``MIC_ARRAY_CONFIG_PORT_PDM_CLK``

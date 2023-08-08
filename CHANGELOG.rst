@@ -1,12 +1,18 @@
 lib_mic_array change log
 ========================
 
+5.1.0
+-----
+
+  * Added 16ch de-interleave to support 16 DDR mics on a single 8b port
+  * Added parallel decimation use example 
+  * Fixed documentation generation issues
+
 5.0.3
 -----
 
-  * Improved default audio filter. Reduces noise floor and improves alias attentuation.
+  * Improved default audio filter. Reduces noise floor and improves alias attentuation
   * Changed DCOE filter to increase attenuation below 20 Hz
-
 
 5.0.2
 -----
