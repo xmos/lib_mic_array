@@ -320,6 +320,25 @@ def good_32k_filter(int_coeffs: bool):
     return coeffs
 
 
+def good_48k_filter(int_coeffs: bool):
+    fs_0 = 3072000
+    decimations = [32, 2]
+
+    # stage 1 parameters
+    ma_stages = 8
+
+    # stage 2 parameters
+    cutoff = 20000
+    transition_bandwidth = 1000
+    taps_2 = 96
+    fir_window = ("kaiser", 6.5)
+    stage_2 = stage_params(cutoff, transition_bandwidth, taps_2, fir_window)
+
+    coeffs = design_2_stage(fs_0, decimations, ma_stages, stage_2, int_coeffs=int_coeffs)
+
+    return coeffs
+
+
 def main():
     coeffs = small_2_stage_filter(int_coeffs=True)
     out_path = "small_2_stage_filter_int.pkl"
@@ -335,6 +354,10 @@ def main():
 
     coeffs = good_32k_filter(int_coeffs=True)
     out_path = "good_32k_filter_int.pkl"
+    ft.save_packed_filter(out_path, coeffs)
+
+    coeffs = good_48k_filter(int_coeffs=True)
+    out_path = "good_48k_filter_int.pkl"
     ft.save_packed_filter(out_path, coeffs)
 
 
