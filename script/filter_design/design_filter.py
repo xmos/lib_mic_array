@@ -325,7 +325,7 @@ def good_48k_filter(int_coeffs: bool):
     decimations = [32, 2]
 
     # stage 1 parameters
-    ma_stages = 8
+    ma_stages = 5
 
     # stage 2 parameters
     cutoff = 20000
