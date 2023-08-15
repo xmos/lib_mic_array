@@ -87,8 +87,16 @@ def moving_average_filter_int16(decimation_ratio, n_stages, optimise_scaling=Tru
             # with the next stage. Use a 2 stage MA again for the final convolution
             rounding_stages = n_stages - 3
             if n_stages > 5:
-                # rounding could add up to len(b) to the value, compensate scaling
-                max_value = (32767.0 - len(b)*rounding_stages)
+                # rounding could add up to len(b) to the value, compensate scaling,
+                # not all values have been tested, so some may fail
+                if n_stages in [5]:
+                    max_value = (32767.0 - len(b))
+                elif n_stages in [7, 8]:
+                    # hand tuned to get lucky on the rounding, there's probably a nicer way
+                    max_value = (32767.0 - 7*len(b))
+                else:
+                    # sometimes adds up to more than len(b), add extra to be safe
+                    max_value = (32767.0 - len(b)*n_stages)
             else:
                 max_value = 32767.0
             scaling = np.max(b)/max_value

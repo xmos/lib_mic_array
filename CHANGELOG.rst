@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+5.2.0
+-----
+
+  * Added 48 kHz decimator design script
+
 5.1.0
 -----
 
