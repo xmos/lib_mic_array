@@ -5,6 +5,7 @@ lib_mic_array change log
 -----
 
   * Added 48 kHz decimator design script
+  * Added documentation to cover 32 kHz and 48 kHz deciamtors
 
 5.1.0
 -----

@@ -30,4 +30,5 @@ The CHANGELOG contains information about the current and previous versions.
 Related application notes
 .........................
 
-None
+See the `demos/` subdirectory for simple examples. Also, `sln_voice` uses this library extensively and contains
+multiple examples both bare-metal and under the RTOS. See https://github.com/xmos/sln_voice/tree/develop/examples.

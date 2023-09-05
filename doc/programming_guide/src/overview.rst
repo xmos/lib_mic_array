@@ -24,7 +24,8 @@ Capabilities
   * Second stage has fully configurable tap count and decimation factor
   * Custom filter coefficients can be used for either stage
   * Reference filter with total decimation factor of 192 is provided (16 kHz
-    output sample rate w/ 3.072 MHz PDM clock)
+    output sample rate w/ 3.072 MHz PDM clock).
+  * Filter generation scripts and examples are included to support 32 kHz and 48 kHz.
 
 * Supports 1-, 4- and 8-bit ports.
 * Supports 1 to 16 microphones
@@ -73,6 +74,10 @@ how samples are processed in the decimation thread.
 PDM rx is typically run within an interrupt on the same hardware core as the
 decimation thread, but it can also be run as a separate thread in cases where
 many channels result in a high processing load.
+
+Likewise, the decimators may be split into multiple parallel hardware threads
+in the case where the processing load exceeds the MIPS available in a single
+thread.
 
 Step 1: PDM Capture
 *******************
