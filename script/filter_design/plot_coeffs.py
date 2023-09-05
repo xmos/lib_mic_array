@@ -207,8 +207,10 @@ def plot_filters(coeffs: list, fs_0, axs=None):
 
 def main():
     # load default coefficients & decimation factors
-    coeffs = np.load(Path(Path(__file__).parent, "..", "..", "tests", "signal", "BasicMicArray", "default_filters.pkl"),
-                     allow_pickle=True)
+    path = Path(Path(__file__).parent, "..", "..", "tests", "signal", "BasicMicArray", "default_filters.pkl")
+    # path = Path(Path(__file__).parent, "..", "good_32k_filter_int.pkl")
+    # path = Path(Path(__file__).parent, "..", "good_48k_filter_int.pkl")
+    coeffs = np.load(path, allow_pickle=True)
 
     # sample rates and decimations
     fs_0 = 3072000

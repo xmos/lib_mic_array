@@ -265,4 +265,23 @@ Increasing the output sample rate to 32 kHz using the same length filters will i
 processor usage per channel to approximately 13 MIPS rising to 15.6 MIPS for 48 kHz.
 
 Increasing the filer lengths to 148 and 96 for stages 1 and 2 respectively at 48 kHz
-will increase processor usage per channel to 20 MIPS.
+will increase processor usage per channel to around 20 MIPS.
+
+Filter Characteristics for `good_32k_filter_int.pkl`
+''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+The plot below indicates the frequency response of the first and second stages of the 
+provided 32 kHz filters as well as the cascaded overall response. Note that the 
+overall combined response provides a nice flat passband.
+
+.. image:: 32k_freq_response.png
+
+Filter Characteristics for `good_48k_filter_int.pkl`
+''''''''''''''''''''''''''''''''''''''''''''''''''
+
+The plot below indicates the frequency response of the first and second stages of the 
+provided 48 kHz filters as well as the cascaded overall response. Note that the 
+overall combined response provides a nice flat passband.
+
+.. image:: 48k_freq_response.png
+
