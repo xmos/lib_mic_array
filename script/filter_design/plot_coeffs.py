@@ -208,6 +208,8 @@ def plot_filters(coeffs: list, fs_0, axs=None):
 def main():
     # load default coefficients & decimation factors
     path = Path(Path(__file__).parent, "..", "..", "tests", "signal", "BasicMicArray", "default_filters.pkl")
+
+    # optionally load custom filters
     # path = Path(Path(__file__).parent, "..", "good_32k_filter_int.pkl")
     # path = Path(Path(__file__).parent, "..", "good_48k_filter_int.pkl")
     coeffs = np.load(path, allow_pickle=True)
