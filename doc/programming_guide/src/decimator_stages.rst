@@ -177,7 +177,7 @@ Configuring for 32 kHz or 48 kHz output
 
 Filter design scripts are provided to support higher output sampling rates than the default 16 kHz.
 
-Note that both stage 1 and stage 2 need to be updated because the first stage needs a higher
+Both stage 1 and stage 2 need to be updated because the first stage needs a higher
 cut off frequency before samples are passed to the downsample by three (32 kHz) or two (48 kHz) second stage
 decimator.
 
@@ -208,7 +208,8 @@ file which launches the mic array tasks. It may look something like this::
         .... the coeffs
     };
 
-The new decimation object must now be declared that references your new filter coefficients::
+The new decimation object must now be declared that references your new filter coefficients. 
+Again, this example is for 32 kHz output since the decimation factor is 3.::
 
     using TMicArray = mic_array::MicArray<mic_count,
         mic_array::TwoStageDecimator<mic_count, 
@@ -233,7 +234,7 @@ mic array custom object. Normally the following code would be used in `ma_init()
     mic_array_resources_configure(&pdm_res, MIC_ARRAY_CONFIG_MCLK_DIVIDER);
     mic_array_pdm_clock_start(&pdm_res);
 
-however if you wish to use custom filters then init would look like this::
+however if you wish to use custom filters then the initialisation would look like this::
 
     mics.Decimator.Init(stage1_32k_coefs, stage2_32k_coefs, stage2_32k_shift);
     mics.PdmRx.Init(pdm_res.p_pdm_mics);
@@ -241,7 +242,7 @@ however if you wish to use custom filters then init would look like this::
     mic_array_pdm_clock_start(&pdm_res);
 
 
-Finally, the `ma_task()` function would need to be changed from the default way of calling::
+Finally, the `ma_task()` function needs to be changed from the default way of calling::
 
     mics.SetOutputChannel(c_frames_out);
     mics.InstallPdmRxISR();
@@ -255,15 +256,13 @@ to using the custom version of the object::
     mics.PdmRx.UnmaskISR();
     mics.ThreadEntry();
 
-.. note::
-    Use `good_48k_filter_int.pkl` instead of `good_32k_filter_int.pkl` to support 48 kHz.
 
 The increased sample rate will place a higher MIPS burden on the processor. The typical 
 MIPS usage (see section :ref:`resource_usage`) is in the order of 11 MIPS per channel
 using a 16 kHz output decimator.
 
 Increasing the output sample rate to 32 kHz using the same length filters will increase
-processor usage per channel to 13 MIPS rising to 15.6 MIPS for 48 kHz.
+processor usage per channel to approximately 13 MIPS rising to 15.6 MIPS for 48 kHz.
 
 Increasing the filer lengths to 148 and 96 for stages 1 and 2 respectively at 48 kHz
 will increase processor usage per channel to 20 MIPS.
