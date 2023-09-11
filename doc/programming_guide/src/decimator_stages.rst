@@ -170,3 +170,118 @@ Note that both the first and second stage filters are implemented using
 fixed-point arithmetic which requires the coefficients to be presented in a
 particular format. The Python scripts `stage1.py` and `stage2.py`, provided with
 this library, can be used to help with this formatting. See the associated README for usage details.
+
+
+Configuring for 32 kHz or 48 kHz output
+***************************************
+
+Filter design scripts are provided to support higher output sampling rates than the default 16 kHz.
+
+Both stage 1 and stage 2 need to be updated because the first stage needs a higher
+cut off frequency before samples are passed to the downsample by three (32 kHz) or two (48 kHz) second stage
+decimator.
+
+From the command line, follow these instructions::
+
+    python filter_design/design_filter.py # generate the filter .pkl files
+    python stage1.py good_32k_filter_int.pkl # convert the .pkl file to a C style array for stage 1
+    python stage2.py good_32k_filter_int.pkl # convert the .pkl file to a C style array for stage 2
+
+.. note::
+    Use `good_48k_filter_int.pkl` instead of `good_32k_filter_int.pkl` to support 48 kHz.
+
+
+Next copy the output from last two scripts into a source file. This could be your `mic_array.cpp`
+file which launches the mic array tasks. It may look something like this::
+
+    #define MIC_ARRAY_32K_STAGE_1_TAP_COUNT 148
+    #define MIC_ARRAY_32K_STAGE_1_FILTER_WORD_COUNT 128
+    static const uint32_t WORD_ALIGNED stage1_32k_coefs[MIC_ARRAY_32K_STAGE_1_FILTER_WORD_COUNT]
+    {
+        .... the coeffs
+    };
+
+    #define MIC_ARRAY_32K_STAGE_2_TAP_COUNT 96
+    static constexpr right_shift_t stage2_32k_shift = 3;
+
+    static const int32_t WORD_ALIGNED stage2_32k_coefs[MIC_ARRAY_32K_STAGE_2_TAP_COUNT] = {
+        .... the coeffs
+    };
+
+The new decimation object must now be declared that references your new filter coefficients. 
+Again, this example is for 32 kHz output since the decimation factor is 3.::
+
+    using TMicArray = mic_array::MicArray<mic_count,
+        mic_array::TwoStageDecimator<mic_count, 
+                                   3, 
+                                   MIC_ARRAY_32K_STAGE_2_TAP_COUNT>,
+        mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
+                                    mic_count,
+                                    3>, 
+        typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
+                                    mic_array::DcoeSampleFilter<mic_count>,
+                                    mic_array::NopSampleFilter<mic_count>>::type,
+        mic_array::FrameOutputHandler<mic_count, 
+                                    MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME, 
+                                    mic_array::ChannelFrameTransmitter>>;
+
+
+Next you need to change how you initialise and run the mic array task to reference your new
+mic array custom object. Normally the following code would be used in `ma_init()`::
+
+    mics.Init();
+    mics.SetPort(pdm_res.p_pdm_mics);
+    mic_array_resources_configure(&pdm_res, MIC_ARRAY_CONFIG_MCLK_DIVIDER);
+    mic_array_pdm_clock_start(&pdm_res);
+
+however if you wish to use custom filters then the initialisation would look like this::
+
+    mics.Decimator.Init(stage1_32k_coefs, stage2_32k_coefs, stage2_32k_shift);
+    mics.PdmRx.Init(pdm_res.p_pdm_mics);
+    mic_array_resources_configure(&pdm_res, MIC_ARRAY_CONFIG_MCLK_DIVIDER);
+    mic_array_pdm_clock_start(&pdm_res);
+
+
+Finally, the `ma_task()` function needs to be changed from the default way of calling::
+
+    mics.SetOutputChannel(c_frames_out);
+    mics.InstallPdmRxISR();
+    mics.UnmaskPdmRxISR();
+    mics.ThreadEntry();
+
+to using the custom version of the object::
+
+    mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
+    mics.PdmRx.InstallISR();
+    mics.PdmRx.UnmaskISR();
+    mics.ThreadEntry();
+
+
+The increased sample rate will place a higher MIPS burden on the processor. The typical 
+MIPS usage (see section :ref:`resource_usage`) is in the order of 11 MIPS per channel
+using a 16 kHz output decimator.
+
+Increasing the output sample rate to 32 kHz using the same length filters will increase
+processor usage per channel to approximately 13 MIPS rising to 15.6 MIPS for 48 kHz.
+
+Increasing the filer lengths to 148 and 96 for stages 1 and 2 respectively at 48 kHz
+will increase processor usage per channel to around 20 MIPS.
+
+Filter Characteristics for `good_32k_filter_int.pkl`
+''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+The plot below indicates the frequency response of the first and second stages of the 
+provided 32 kHz filters as well as the cascaded overall response. Note that the 
+overall combined response provides a nice flat passband.
+
+.. image:: 32k_freq_response.png
+
+Filter Characteristics for `good_48k_filter_int.pkl`
+''''''''''''''''''''''''''''''''''''''''''''''''''
+
+The plot below indicates the frequency response of the first and second stages of the 
+provided 48 kHz filters as well as the cascaded overall response. Note that the 
+overall combined response provides a nice flat passband.
+
+.. image:: 48k_freq_response.png
+
