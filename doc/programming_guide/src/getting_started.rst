@@ -1,4 +1,4 @@
-.. _getting_started:
+.. _mic_array_getting_started:
 
 Getting Started
 ===============

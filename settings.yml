@@ -1,0 +1,14 @@
+---
+project: lib_mic_array
+title: Mic Array Library
+version: 5.1.0
+
+documentation:
+  exclude_patterns_path: doc/exclude_patterns.inc
+  doxygen_projects:
+    lib_mic_array:
+      doxyfile_path: doc/Doxyfile.inc
+  pdfs:
+    doc/programming_guide/index:
+      pdf_title: "{{title}} - Programming Guide"
+      pdf_filename: "{{project}}_programming_guide_v{{version}}"
