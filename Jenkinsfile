@@ -27,7 +27,7 @@ pipeline {
             parallel {
                 stage('Build Docs') {
                     agent { label "docker" }
-                    environment { XMOSDOC_VERSION = "pr-67" }
+                    environment { XMOSDOC_VERSION = "v4.0" }
                     steps {
                         checkout scm
                         sh 'git submodule update --init --recursive --depth 1'
