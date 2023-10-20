@@ -1,33 +1,19 @@
-######################
+####################
+Documentation Source
+####################
+
+This folder contains source files for the documentation. The sources do not render well in GitHub or an RST viewer.
+In addition, some information is not visible at all and some links will not be functional.
+
+**********************
 Building Documentation
-######################
-
-Instructions are given below to build the documentation.  The recommended method is using Docker, 
-however, alternative instructions are provided in case using Docker in not an option.
-
-To develop the content of this repository, it is recommended to launch a `sphinx-autobuild`
-server as per the instructions below. Once started, point a web-browser at
-http://127.0.0.1:8000. If running the server within a VM, remember to configure
-port forwarding.
-
-You can now edit the .rst documentation, and your web-browser content will automatically
-update.
-
-************
-Using Docker
-************
+**********************
 
 =============
 Prerequisites
 =============
 
-Install `Docker <https://www.docker.com/>`_.
-
-Pull the docker container:
-
-.. code-block:: console
-
-    $ docker pull ghcr.io/xmos/doc_builder:main
+Use the `xmosdoc tool <https://github.com/xmos/xmosdoc>`_ either via docker or install it into a pip environment.
 
 ========
 Building
@@ -37,48 +23,41 @@ To build the documentation, run the following command in the root of the reposit
 
 .. code-block:: console
 
-    $ docker run --rm -t -u "$(id -u):$(id -g)" -v $(pwd):/build -e REPO:/build -e DOXYGEN_INCLUDE=/build/doc/Doxyfile.inc ghcr.io/xmos/doc_builder:main
+    # via pip package
+    xmosdoc clean html latex
+    # via docker
+    $ docker run --rm -t -u "$(id -u):$(id -g)" -v $(pwd):/build ghcr.io/xmos/xmosdoc clean html latex
 
-********************
-Without Using Docker
-********************
+HTML document output is saved in the ``doc/_build/html`` folder.  Open ``index.html`` to preview the saved documentation.
 
-=============
-Prerequisites
-=============
+Please refer to the ``xmosdoc`` documentation for a complete guide on how to use the tool.
 
-Install `Doxygen <https://www.doxygen.nl/index.html>`_.
+**********************
+Adding a New Component
+**********************
 
-Install the required Python packages:
+Follow the following steps to add a new component.
 
-.. code-block:: console
+- Add an entry for the new component's top-level document to the appropriate TOC in the documents tree.
+- If the new component uses `Doxygen`, append the appropriate path(s) to the INPUT variable in `Doxyfile.inc`.
+- If the new component includes `.rst` files that should **not** be part of the documentation build, append the appropriate pattern(s) to `exclude_patterns.inc`.
 
-    $ pip install -r requirements.txt
+***
+FAQ
+***
 
-========
-Building
-========
+Q: Is it possible to build just a subset of the documentation?
 
-Build documentation:
+A: Yes, however it is not recommended at this time.
 
-.. code-block:: console
+Q: Is it possible to used the ``livehtml`` feature of Sphinx?
 
-    $ make html
+A: Yes, run xmosdoc with the ``--auto`` option.
 
-Launch sphinx-autobuild server:
+Q: Where can I learn more about the XMOS ``xmosdoc`` tools?
 
-.. code-block:: console
+A: See the https://github.com/xmos/xmosdoc repository.  See the ``xmosdoc`` repository README for details on additional build options.
 
-    $ make livehtml
+Q: How do I suggest enhancements to the XMOS ``xmosdoc`` tool?
 
-Clean documentation:
-
-.. code-block:: console
-
-    $ make clean
-
-Clean and build documentation with link check:
-
-.. code-block:: console
-    
-    $ make clean html linkcheck SPHINXOPTS="-W --keep-going"
+A: Create a new issue here: https://github.com/xmos/xmosdoc/issues

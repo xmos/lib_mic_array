@@ -1,3 +1,5 @@
 /build/*build*/**/*.rst
 /build/*build*/**/*.md
-**/disclaimer.rst
+CHANGELOG.rst
+LICENSE.rst
+**README* 
