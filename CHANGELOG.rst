@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+UNRELEASED
+----------
+
+  * ADDED:   Support for XCommon CMake build system
+
 4.5.0
 -----
 
