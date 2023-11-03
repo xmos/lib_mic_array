@@ -17,6 +17,9 @@
 # pip-install this one as editable using this repository's setup.py file.  The
 # same modules should appear in the setup.py list as given below.
 flake8==3.8.3
+# Pin importlib-metadata to <5 due to https://github.com/python/importlib_metadata/issues/409.
+importlib-metadata==4.13.0
+
 matplotlib==3.3.1
 
 # Pin numpy to 1.18.5 due to tensorflow v2.1.1 hard pinning it to that version.
