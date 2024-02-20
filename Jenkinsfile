@@ -1,9 +1,9 @@
 @Library('xmos_jenkins_shared_library@v0.18.0') _
-getApproval()
+getApproval( )
 
 pipeline {
   agent {
-    label 'x86_64 && linux'
+    label 'x86_64 && linux && axe'
   }
   environment {
     REPO = 'lib_mic_array'
