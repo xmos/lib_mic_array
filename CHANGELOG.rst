@@ -1,10 +1,18 @@
 lib_mic_array change log
 ========================
 
-UNRELEASED
-----------
+4.6.0
+-----
 
-  * ADDED:   Support for XCommon CMake build system
+  * ADDED: Support for XCommon CMake build system
+
+  * Changes to dependencies:
+
+    - lib_dsp: 3.0.0 -> 6.3.0
+
+    - lib_logging: 2.0.0 -> 3.2.0
+
+    - lib_xassert: 2.0.0 -> 4.2.0
 
 4.5.0
 -----
