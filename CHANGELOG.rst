@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+UNRELEASED
+----------
+
+  * ADDED:   Support for XCommon CMake build system
+
 5.2.0
 -----
 
@@ -215,4 +220,3 @@ lib_mic_array change log
     - lib_logging: Added dependency 2.0.0
 
     - lib_xassert: Added dependency 2.0.0
-
