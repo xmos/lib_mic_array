@@ -5,6 +5,8 @@
 #include <xcore/channel_streaming.h>
 #include <xcore/interrupt.h>
 
+#include <platform.h>
+
 #include "mic_array_vanilla.h"
 #include "mic_array/cpp/Prefab.hpp"
 #include "mic_array.h"
