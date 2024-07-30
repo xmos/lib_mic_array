@@ -59,8 +59,8 @@ pipeline {
                                 println "RUNNING ON"
                                 println env.NODE_NAME
                                 // Clone infrastructure repos
-                                sh "git clone --branch v1.4.6 git@github.com:xmos/infr_apps"
-                                sh "git clone --branch v1.2.1 git@github.com:xmos/infr_scripts_py"
+                                sh "git clone --branch v1.6.0 git@github.com:xmos/infr_apps"
+                                sh "git clone --branch v1.3.0 git@github.com:xmos/infr_scripts_py"
                                 // clone
                                 dir("$REPO") {
                                     checkout scm
