@@ -1,8 +1,8 @@
 lib_mic_array change log
 ========================
 
-UNRELEASED
-----------
+5.3.0
+-----
 
   * FIXED:   Vanilla configuration now compiles correctly under XTC 15.3.0
   * ADDED:   Support for XCommon CMake build system
