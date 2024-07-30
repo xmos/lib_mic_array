@@ -7,7 +7,7 @@ from time import sleep
 
 class DeviceContext(object):
   
-  XRUN_CMD_BASE = ('xrun', '--xscope-realtime', '--xscope-port','localhost:10234')
+  XRUN_CMD_BASE = ('xrun', '--xscope', '--xscope-port','localhost:10234')
 
   def __init__(self, xe_path, /, probes=[], **kwargs):
     
