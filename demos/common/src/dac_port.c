@@ -6,6 +6,7 @@
 #include "app_config.h"
 #include "i2c.h"
 #include "aic3204/aic3204.h"
+#include "platform.h"
 
 i2c_master_t i2c_master_ctx;
 
