@@ -1,4 +1,4 @@
-# Copyright 2022 XMOS LIMITED.
+# Copyright 2022-2024 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 import os, signal, subprocess
@@ -7,7 +7,7 @@ from time import sleep
 
 class DeviceContext(object):
   
-  XRUN_CMD_BASE = ('xrun', '--xscope-realtime', '--xscope-port','localhost:10234')
+  XRUN_CMD_BASE = ('xrun', '--xscope', '--xscope-port','localhost:10234')
 
   def __init__(self, xe_path, /, probes=[], **kwargs):
     

@@ -1,9 +1,11 @@
-// Copyright 2022 XMOS LIMITED.
+// Copyright 2022-2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <stdint.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/interrupt.h>
+
+#include <platform.h>
 
 #include "mic_array_vanilla.h"
 #include "mic_array/cpp/Prefab.hpp"
