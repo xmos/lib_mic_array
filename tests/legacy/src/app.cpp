@@ -3,6 +3,7 @@
 #include "mic_array.h"
 #include "mic_array/cpp/Prefab.hpp"
 #include "app.h"
+#include <platform.h>
 
 
 #if (N_MICS != 2)

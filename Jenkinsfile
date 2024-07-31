@@ -1,4 +1,4 @@
-@Library('xmos_jenkins_shared_library@v0.25.0') _
+@Library('xmos_jenkins_shared_library@v0.33.0') _
 getApproval()
 pipeline {
     agent none
@@ -15,7 +15,7 @@ pipeline {
     parameters {
         string(
             name: 'TOOLS_VERSION',
-            defaultValue: '15.2.1',
+            defaultValue: '15.3.0',
             description: 'The XTC tools version'
         )
     }
@@ -59,8 +59,8 @@ pipeline {
                                 println "RUNNING ON"
                                 println env.NODE_NAME
                                 // Clone infrastructure repos
-                                sh "git clone --branch v1.4.6 git@github.com:xmos/infr_apps"
-                                sh "git clone --branch v1.2.1 git@github.com:xmos/infr_scripts_py"
+                                sh "git clone --branch v1.6.0 git@github.com:xmos/infr_apps"
+                                sh "git clone --branch v1.3.0 git@github.com:xmos/infr_scripts_py"
                                 // clone
                                 dir("$REPO") {
                                     checkout scm

@@ -6,6 +6,7 @@
 #include <xcore/channel_streaming.h>
 
 #include "app.h"
+#include <platform.h>
 
 #include "mic_array/cpp/MicArray.hpp"
 #include "mic_array/cpp/Prefab.hpp"
