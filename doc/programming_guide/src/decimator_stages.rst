@@ -277,7 +277,7 @@ overall combined response provides a nice flat passband.
 .. image:: 32k_freq_response.png
 
 Filter Characteristics for `good_48k_filter_int.pkl`
-''''''''''''''''''''''''''''''''''''''''''''''''''
+''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 The plot below indicates the frequency response of the first and second stages of the 
 provided 48 kHz filters as well as the cascaded overall response. Note that the 

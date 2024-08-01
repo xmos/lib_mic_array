@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2023 XMOS LIMITED.
+// Copyright (c) 2022-2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public License: Version 1
 
 #include <assert.h>
@@ -6,6 +6,7 @@
 #include "app_config.h"
 #include "i2c.h"
 #include "aic3204/aic3204.h"
+#include "platform.h"
 
 i2c_master_t i2c_master_ctx;
 
