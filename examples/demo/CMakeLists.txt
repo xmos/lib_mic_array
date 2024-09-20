@@ -1,43 +1,37 @@
+cmake_minimum_required(VERSION 3.21)
+include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
+project(demo)
 
-set( APP_NAME demo )
+set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
-set( TARGET_XN   XVF3610_Q60A.xn )
+include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
+set(APP_HW_TARGET           XVF3610_Q60A.xn)
 
-#**********************
-# includes
-#**********************
+set(NAME_MAP thread;isr)
+foreach(N_MICS  1 2)
+    foreach(USE_ISR   1 0)
+        list(GET NAME_MAP ${USE_ISR} tmp)
+        set(CONFIG "${N_MICS}mic_${tmp}")
 
-set( APP_INCLUDES  "src" )
-list( APPEND  APP_INCLUDES ${DEMO_COMMON_INCLUDES} )
-
-#**********************
-# sources
-#**********************
-
-file( GLOB_RECURSE APP_SOURCES "src/*.c" "src/*.xc" "src/*.cpp" "src/*.S"   )
-
-list( APPEND  APP_SOURCES  ${DEMO_COMMON_SOURCES} )
-
-#**********************
-# create targets
-#**********************
-
-set( NAME_MAP thread;isr )
-
-foreach( N_MICS  1 2 )
-  foreach( USE_ISR   1 0 )
-
-    list( GET NAME_MAP ${USE_ISR} tmp )
-    set( TARG_NAME "${APP_NAME}_${N_MICS}mic_${tmp}" )
-
-    unset(TARG_FLAGS)
-    list( APPEND TARG_FLAGS 
-            "-DN_MICS=${N_MICS}"
-            "-DAPP_USE_PDM_RX_ISR=${USE_ISR}" )
-
-    make_demo_app_target( ${TARG_NAME} "${APP_SOURCES}" "${APP_INCLUDES}" "${TARG_FLAGS}" )
-    
-    add_dependencies( demos  ${TARG_NAME} )
-
-  endforeach()
+        set(APP_COMPILER_FLAGS_${CONFIG}    -Os
+                                            -g
+                                            -report
+                                            -mcmodel=large
+                                            -DAPP_NAME="DEMO_${CONFIG}"
+                                            -DAPP_USE_PDM_RX_ISR=${USE_ISR}
+                                            -DMIC_ARRAY_CONFIG_MCLK_FREQ=24576000
+                                            -DMIC_ARRAY_CONFIG_PDM_FREQ=3072000
+                                            -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
+                                            -DN_MICS=${N_MICS})
+    endforeach()
 endforeach()
+
+# Manually set sources as we take from the common directory too
+file(GLOB_RECURSE APP_C_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.c" "../common/src/*.c")
+file(GLOB_RECURSE APP_XC_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.xc" "../common/src/*.xc")
+file(GLOB_RECURSE APP_CXX_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.cpp")
+file(GLOB_RECURSE APP_ASM_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "../common/src/*.S")
+
+set(APP_INCLUDES    src ../common/src ../common/util)
+
+XMOS_REGISTER_APP()

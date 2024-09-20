@@ -30,7 +30,6 @@ int main() {
   par {
 
     on tile[0]: {
-      xscope_config_io(XSCOPE_IO_BASIC);
       board_dac3101_init();
       c_tile_sync <: 1;
       printf("Running " APP_NAME "..\n");
@@ -38,9 +37,6 @@ int main() {
 
 
     on tile[1]: {
-      // Force it to use xscope, never mind any config.xscope files
-      xscope_config_io(XSCOPE_IO_BASIC);
-
       // This will buffer output audio for when I2S needs it.
       int32_t audio_buffer[AUDIO_BUFFER_SAMPLES][N_MICS];
       audio_ring_buffer_t output_audio_buffer = 
