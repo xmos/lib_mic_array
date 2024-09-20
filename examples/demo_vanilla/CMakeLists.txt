@@ -1,46 +1,31 @@
+cmake_minimum_required(VERSION 3.21)
+include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
+project(demo_vanilla)
 
-set(APP_NAME demo_vanilla)
+set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
-set( TARGET_XN   XVF3610_Q60A.xn )
-
-#**********************
-# Vanilla Configuration
-#**********************
-
-set( MCLK_FREQ            24576000  )
-set( PDM_FREQ             3072000   )
-set( SAMPLES_PER_FRAME    16        )
-
-
-#**********************
-# includes
-#**********************
-
-set( APP_INCLUDES  "src" )
-list( APPEND  APP_INCLUDES ${DEMO_COMMON_INCLUDES} )
-
-#**********************
-# sources
-#**********************
-
-file( GLOB_RECURSE APP_SOURCES "src/*.c" "src/*.xc" "src/*.cpp" "src/*.S"   )
-
-list( APPEND  APP_SOURCES  ${DEMO_COMMON_SOURCES} )
-
-#**********************
-# create targets
-#**********************
+include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
+set(APP_HW_TARGET           XVF3610_Q60A.xn)
 
 foreach( N_MICS  1 2 )
-
-  set( TARG_NAME "${APP_NAME}_${N_MICS}mic" )
-
-  make_demo_app_target( ${TARG_NAME} "${APP_SOURCES}" "${APP_INCLUDES}" "" )
-
-  mic_array_vanilla_add( ${TARG_NAME} ${MCLK_FREQ} ${PDM_FREQ} 
-                         ${N_MICS} ${SAMPLES_PER_FRAME} )
-    
-  add_dependencies( demos  ${TARG_NAME} )
-
+    set(CONFIG ${N_MICS}_MIC)
+    set(APP_COMPILER_FLAGS_${CONFIG}    -Os
+                                        -g
+                                        -report
+                                        -mcmodel=large
+                                        -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
+                                        -DMIC_ARRAY_CONFIG_MCLK_FREQ=24576000
+                                        -DMIC_ARRAY_CONFIG_PDM_FREQ=3072000
+                                        -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16
+                                        -DAPP_NAME="VANILLA_${CONFIG}")
 endforeach()
 
+# Manually set sources as we take from the common directory too
+file(GLOB_RECURSE APP_C_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.c" "../common/src/*.c")
+file(GLOB_RECURSE APP_XC_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.xc" "../common/src/*.xc")
+file(GLOB_RECURSE APP_CXX_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.cpp" "../../etc/vanilla/*.cpp")
+file(GLOB_RECURSE APP_ASM_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR} "../common/src/*.S")
+
+set(APP_INCLUDES    src ../common/src ../common/util)
+
+XMOS_REGISTER_APP()

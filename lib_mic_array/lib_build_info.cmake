@@ -9,6 +9,7 @@ set(LIB_INCLUDES
     api/mic_array/impl
     src 
     src/etc
+    ../etc/vanilla
 )
 set(LIB_COMPILER_FLAGS -g -Os)
 

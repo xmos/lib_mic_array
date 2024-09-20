@@ -53,6 +53,6 @@ if(${DEV_LIB_MIC_ARRAY})
     GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
     GIT_TAG        v2.1.0
   )
-  add_subdirectory( demos )
+  add_subdirectory( examples )
   add_subdirectory( tests )
 endif()
