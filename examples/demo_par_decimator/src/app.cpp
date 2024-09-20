@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/interrupt.h>
-#include <platform.h>
 
 #include "app_config.h"
 #include "app_mic_array.hpp"

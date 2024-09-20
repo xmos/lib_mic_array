@@ -1,7 +1,6 @@
 // Copyright 2021-2022 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-#include <platform.h>
 #include <xclib.h>
 #include <xs1.h>
 
