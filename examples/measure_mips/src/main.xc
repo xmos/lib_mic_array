@@ -30,7 +30,6 @@ int main() {
   par {
 
     on tile[0]: {
-      xscope_config_io(XSCOPE_IO_BASIC);
       printf("Running " APP_NAME "..\n");
 
       eat_audio_frames_task((chanend_t) c_audio_frames, 
@@ -39,10 +38,6 @@ int main() {
 
 
     on tile[1]: {
-
-      // Force it to use xscope, never mind any config.xscope files
-      xscope_config_io(XSCOPE_IO_BASIC);
-
       // Set up the media clocks
       device_pll_init();
       
