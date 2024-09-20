@@ -165,7 +165,7 @@ void app_i2s_task(void *app_context)
 {
   i2s_context.app_data = app_context;
 
-  port_t p_i2s_dout[] = { I2S_DATA_IN };
+  port_t p_i2s_dout[] = { PORT_I2S_DAC_DATA };
   // port_t p_i2s_din[]  = { I2S_DATA_IN };
   port_t p_i2s_din[0];
 
@@ -174,6 +174,6 @@ void app_i2s_task(void *app_context)
              p_i2s_din,  0,
              PORT_I2S_BCLK,
              PORT_I2S_LRCLK,
-             PORT_MCLK_IN_OUT,
+             PORT_MCLK_IN,
              I2S_CLKBLK);
 }

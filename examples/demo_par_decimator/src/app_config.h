@@ -1,6 +1,5 @@
 // Copyright 2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-
 #pragma once
 
 #define AUDIO_BUFFER_SAMPLES  ((unsigned)(MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME * 1.2))
@@ -30,7 +29,7 @@
 // LEDs, and USB.
 
 // X0D00, J14 - Pin 2
-#define PORT_PDM_CLK                    XS1_PORT_1A
+#define APP_PORT_PDM_CLK                    XS1_PORT_1A
 
 #if MIC_ARRAY_CONFIG_MIC_COUNT == 8
 // Either of the following ports may be used with VocalSorcery adapter card.
@@ -39,23 +38,23 @@
 //#define PORT_PDM_DATA                 XS1_PORT_4C
 
 // X0D16..X0D19, J14 - Pin 6,7,10,11
-#define PORT_PDM_DATA                   XS1_PORT_4D
+#define APP_PORT_PDM_DATA                   XS1_PORT_4D
 
 #elif MIC_ARRAY_CONFIG_MIC_COUNT == 16
 // X0D14..X0D21 | J14 - Pin 3,5,12,14 and Pin 6,7,10,11
-#define PORT_PDM_DATA                   XS1_PORT_8B
+#define APP_PORT_PDM_DATA                   XS1_PORT_8B
 
 #endif // MIC_ARRAY_CONFIG_MIC_COUNT
 
 #if PORT_PDM_DATA == XS1_PORT_4C
 // X1D09
-#define PORT_CODEC_RST_N                XS1_PORT_4A
+#define APP_PORT_CODEC_RST_N                XS1_PORT_4A
 #endif
 
 // NOTE: This conditional only works if the other 4 data lines are not connected.
 //#if USE_BUTTONS && (PORT_PDM_DATA == XS1_PORT_4D || PORT_PDM_DATA == XS1_PORT_8B)
 // X0D12, J12 - Pin2
-#define ALTERNATE_BUTTON                XS1_PORT_1E
+#define APP_ALTERNATE_BUTTON                XS1_PORT_1E
 //#endif
 
 #else // MIC_ARRAY_TILE == 0
@@ -68,7 +67,7 @@
 // there are only 14 usable MICs of the 16 for this configuration.
 
 // X1D36, J10 - Pin 2
-#define PORT_PDM_CLK                    XS1_PORT_1M
+#define APP_PORT_PDM_CLK                    XS1_PORT_1M
 
 #if MIC_ARRAY_CONFIG_MIC_COUNT == 8
 // Either of the following ports may be used with VocalSorcery adapter card.
@@ -77,23 +76,23 @@
 //#define PORT_PDM_DATA                 XS1_PORT_4A
 
 // X1D04..X1D07 | J10 - Pin 6,7,10,11
-#define PORT_PDM_DATA                   XS1_PORT_4B
+#define APP_PORT_PDM_DATA                   XS1_PORT_4B
 
 #if PORT_PDM_DATA == XS1_PORT_4B
-#define PORT_CODEC_RST_N                XS1_PORT_4A
+#define APP_PORT_CODEC_RST_N                XS1_PORT_4A
 #else
 // X1D38 | J10 - Pin 15
 // Used with 3k3 resistor to drive CODEC_RST_N high
-#define PORT_CODEC_RST_N                XS1_PORT_1O
+#define APP_PORT_CODEC_RST_N                XS1_PORT_1O
 #endif
 
 #elif MIC_ARRAY_CONFIG_MIC_COUNT == 16
 // X1D02..X1D09 | J10 - Pin 3,5,12 and Pin 6,7,10,11
-#define PORT_PDM_DATA                   XS1_PORT_8B
+#define APP_PORT_PDM_DATA                   XS1_PORT_8B
 
 // X1D38 | J10 - Pin 15
 // Used with 3k3 resistor to drive CODEC_RST_N high
-#define PORT_CODEC_RST_N                XS1_PORT_1O
+#define APP_PORT_CODEC_RST_N                XS1_PORT_1O
 
 #endif // MIC_ARRAY_CONFIG_MIC_COUNT
 

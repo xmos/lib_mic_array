@@ -17,6 +17,10 @@ foreach( N_MICS  1 2 )
                                         -DMIC_ARRAY_CONFIG_MCLK_FREQ=24576000
                                         -DMIC_ARRAY_CONFIG_PDM_FREQ=3072000
                                         -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16
+                                        -DMIC_ARRAY_CONFIG_USE_DDR=1
+                                        -DMIC_ARRAY_CONFIG_PORT_MCLK=PORT_MCLK_IN_OUT
+                                        -DMIC_ARRAY_CONFIG_PORT_PDM_CLK=PORT_PDM_CLK
+                                        -DMIC_ARRAY_CONFIG_PORT_PDM_DATA=PORT_PDM_DAT
                                         -DAPP_NAME="VANILLA_${CONFIG}")
 endforeach()
 

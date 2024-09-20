@@ -28,8 +28,6 @@ int main() {
   par {
 
     on tile[0]: {
-      xscope_config_io(XSCOPE_IO_BASIC);
-
 #if (MIC_ARRAY_TILE == 0 || USE_BUTTONS)
       app_context_t app_context;
       app_context.c_intertile = (chanend_t)c_tile_sync;
@@ -110,9 +108,6 @@ int main() {
     }
 
     on tile[1]: {
-      // Force it to use xscope, never mind any config.xscope files
-      xscope_config_io(XSCOPE_IO_BASIC);
-
       // Pull DAC CODEC out of reset
       aic3204_codec_reset();
 

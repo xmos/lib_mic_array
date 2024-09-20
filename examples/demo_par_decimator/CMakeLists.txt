@@ -1,59 +1,36 @@
+cmake_minimum_required(VERSION 3.21)
+include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
+project(demo_par_decimator)
+set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
-set(APP_NAME demo_par_decimator)
-
-set( TARGET_XN   XCORE-AI-EXPLORER.xn )
-
-#**********************
-# configuration
-#**********************
-
-set( MCLK_FREQ            24576000  )
-set( PDM_FREQ             3072000   )
-set( SAMPLES_PER_FRAME    16        )
-
-#**********************
-# includes
-#**********************
-
-set( APP_INCLUDES  "src" )
-list( APPEND  APP_INCLUDES ${DEMO_COMMON_INCLUDES} )
-
-#**********************
-# sources
-#**********************
-
-file( GLOB_RECURSE APP_SOURCES "src/*.c" "src/*.xc" "src/*.cpp" "src/*.S"   )
-
-list( APPEND  APP_SOURCES  ${DEMO_COMMON_SOURCES} )
-
-#**********************
-# create targets
-#**********************
+include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
+set(APP_HW_TARGET           XCORE-AI-EXPLORER)
 
 foreach( N_MICS  8 16 )
-
-  set( TARGET_NAME "${APP_NAME}_${N_MICS}mic" )
-
-  make_demo_app_target( ${TARGET_NAME} "${APP_SOURCES}" "${APP_INCLUDES}" "" )
-
-  target_compile_definitions( ${TARGET_NAME}
-    PRIVATE MIC_ARRAY_CONFIG_MCLK_FREQ=${MCLK_FREQ} )
-  target_compile_definitions( ${TARGET_NAME}
-    PRIVATE MIC_ARRAY_CONFIG_PDM_FREQ=${PDM_FREQ} )
-  target_compile_definitions( ${TARGET_NAME}
-    PRIVATE MIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS} )
-  target_compile_definitions( ${TARGET_NAME}
-    PRIVATE MIC_ARRAY_CONFIG_USE_DDR=1 )
-  target_compile_definitions( ${TARGET_NAME}
-    PRIVATE MIC_ARRAY_CONFIG_PORT_MCLK=PORT_MCLK_IN_OUT )
-  target_compile_definitions( ${TARGET_NAME}
-    PRIVATE MIC_ARRAY_CONFIG_PORT_PDM_CLK=PORT_PDM_CLK )
-  target_compile_definitions( ${TARGET_NAME}
-    PRIVATE MIC_ARRAY_CONFIG_PORT_PDM_DATA=PORT_PDM_DATA )
-  target_compile_definitions( ${TARGET_NAME}
-    PRIVATE MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=${SAMPLES_PER_FRAME} )
-
-  add_dependencies( demos  ${TARGET_NAME} )
-
+    set(CONFIG ${N_MICS}_MIC)
+    set(APP_COMPILER_FLAGS_${CONFIG}    -Os
+                                        -g
+                                        -report
+                                        -mcmodel=large
+                                        -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
+                                        -DMIC_ARRAY_CONFIG_MCLK_FREQ=24576000
+                                        -DMIC_ARRAY_CONFIG_PDM_FREQ=3072000
+                                        -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16
+                                        -DMIC_ARRAY_CONFIG_USE_DDR=1
+                                        -DMIC_ARRAY_CONFIG_PORT_MCLK=XS1_PORT_1D
+                                        -DMIC_ARRAY_CONFIG_PORT_PDM_CLK=XS1_PORT_1A
+                                        -DMIC_ARRAY_CONFIG_PORT_PDM_DATA=XS1_PORT_4D
+                                        -DPORT_I2C_SCL=XS1_PORT_1N
+                                        -DPORT_I2C_SDA=XS1_PORT_1O
+                                        -DAPP_NAME="PAR_DECIMATOR_${CONFIG}")
 endforeach()
 
+# Manually set sources as we take from the common directory too
+file(GLOB_RECURSE APP_C_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.c" "../common/src/*.c")
+file(GLOB_RECURSE APP_XC_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.xc" "../common/src/*.xc")
+file(GLOB_RECURSE APP_CXX_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.cpp")
+file(GLOB_RECURSE APP_ASM_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR} "../common/src/*.S")
+
+set(APP_INCLUDES    src ../common/src ../common/util)
+
+XMOS_REGISTER_APP()
