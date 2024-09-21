@@ -1,7 +1,16 @@
-@Library('xmos_jenkins_shared_library@v0.33.0') _
+@Library('xmos_jenkins_shared_library@develop') _
+// need to move this on when JSL is released
+// @Library('xmos_jenkins_shared_library@v0.33.0') _
 getApproval()
 pipeline {
     agent none
+
+    environment {
+        REPO = 'lib_mic_array'
+        PIP_VERSION = "24.0"
+        PYTHON_VERSION = "3.11"
+        XMOSDOC_VERSION = "v6.0.0"          
+    }
     options {
         disableConcurrentBuilds()
         skipDefaultCheckout()
@@ -19,24 +28,24 @@ pipeline {
             description: 'The XTC tools version'
         )
     }
-    environment {
-        REPO = 'lib_mic_array'
-    }
     stages {
         stage('Build and Docs') {
             parallel {
-                stage('Build Docs') {
-                    agent { label "docker" }
-                    environment { XMOSDOC_VERSION = "v4.0" }
+                stage('Documentation') {
+                    agent {
+                        label "docker"
+                    }
                     steps {
-                        checkout scm
-                        sh 'git submodule update --init --recursive --depth 1'
-                        sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
-                        sh """docker run -u "\$(id -u):\$(id -g)" \
-                            --rm \
-                            -v ${WORKSPACE}:/build \
-                            ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v"""
-                        archiveArtifacts artifacts: "doc/_build/**", allowEmptyArchive: true
+                        dir("${REPO}") {
+                            checkout scm
+                            sh 'git submodule update --init --recursive --depth 1'
+                            sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
+                            sh """docker run -u "\$(id -u):\$(id -g)" \
+                                --rm \
+                                -v ${WORKSPACE}:/build \
+                                ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v"""
+                            archiveArtifacts artifacts: "doc/_build/**", allowEmptyArchive: true
+                        }
                     }
                     post {
                         cleanup {
@@ -44,38 +53,80 @@ pipeline {
                         }
                     }
                 }
-                stage('Basic tests') {
-                    when {
-                        expression { !env.GH_LABEL_DOC_ONLY.toBoolean() }
+                stage('XCommon build') {
+                    agent {
+                        label "x86_64 && linux"
                     }
+                    steps {
+                        dir("${REPO}") {
+                            checkout scm
+                            dir("tests") {
+                                withTools(params.TOOLS_VERSION) {
+                                    sh 'cmake -B build -G "Unix Makefiles"'
+                                    dir("xcommon_build") {
+                                        sh "xmake all -j 16"
+                                    }
+                                }
+                            }
+                            // archiveArtifacts artifacts: "doc/_build/**", allowEmptyArchive: true
+                        }
+                    }
+                    post {
+                        cleanup {
+                            xcoreCleanSandbox()
+                        }
+                    }
+                }
+                stage('Custom CMake build') {
+                    agent {
+                        label "x86_64 && linux" 
+                    }
+                    steps {
+                        dir("${REPO}") {
+                            checkout scm
+                            sh 'git submodule update --init --recursive --depth 1'
+                            sh "wget https://raw.githubusercontent.com/xmos/xmos_cmake_toolchain/main/xs3a.cmake"
+                            sh "wget https://raw.githubusercontent.com/xmos/xmos_cmake_toolchain/main/xc_override.cmake"
+                            withTools(params.TOOLS_VERSION) {
+                                sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=./xs3a.cmake"
+                                sh "pushd build.xcore"
+                                sh "make all -j 16"
+                            }
+                        }
+                    }
+                    post {
+                        cleanup {
+                            xcoreCleanSandbox()
+                        }
+                    }
+                }
+                stage('XCCM build and basic tests') {
                     agent {
                         label 'x86_64 && linux'
                     }
                     stages {
-                        stage("Setup") {
+                        stage("XCCM Build") {
                             // Clone and install build dependencies
                             steps {
-                                // Print the build agent name
-                                println "RUNNING ON"
-                                println env.NODE_NAME
                                 // Clone infrastructure repos
                                 sh "git clone --branch v1.6.0 git@github.com:xmos/infr_apps"
                                 sh "git clone --branch v1.3.0 git@github.com:xmos/infr_scripts_py"
                                 // clone
-                                dir("$REPO") {
+                                dir("$REPO/examples") {
                                     checkout scm
-                                    sh "git submodule update --init --recursive"
-                                    withTools(params.TOOLS_VERSION) {
-                                        installDependencies()
+                                    installPipfile(false)
+                                    withVenv {
+                                        withTools(params.TOOLS_VERSION) {
+                                            sh 'cmake -B build -G "Unix Makefiles"'
+                                            sh 'xmake -j 16 -C build'
+                                        }
                                     }
                                 }
                             }
                         }
                         stage("Lib checks") {
                             steps {
-                                println "Unlikely these will pass.."
-                                // warnError("Source Check"){ sourceCheck("${REPO}") }
-                                // warnError("Changelog Check"){ xcoreChangelogCheck("${REPO}") }
+                                runLibraryChecks("${WORKSPACE}/${REPO}", "v2.0.0")
                             }
                         }
                     }
@@ -96,9 +147,7 @@ pipeline {
             }
             stages {
                 stage("Setup") {
-                    // Clone and install build dependencies
                     steps {
-                        // clone
                         dir("$REPO") {
                             println "RUNNING ON"
                             println env.NODE_NAME
@@ -126,7 +175,15 @@ pipeline {
                                 withVenv {
                                     // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
                                     // sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
-                                    sh ". .github/scripts/run_test_apps.sh"
+                                    // sh ". .github/scripts/run_test_apps.sh"
+                                    // # Unit tests
+                                    // xrun --xscope tests/unit/tests-unit.xe
+
+                                    // # Signal/Decimator tests
+                                    // pytest ../tests/signal/TwoStageDecimator/ -vv
+
+                                    // # Filter design tests
+                                    // pytest ../tests/signal/FilterDesign/ -vv
                                 }
                             }
                         }

@@ -15,8 +15,8 @@ add_custom_target( tests )
 # The CMakeLists that comes with the Unity repo isn't suitable for our needs.
 add_subdirectory( ../cmake/unity ${unity_BINARY_DIR} )
 
-add_subdirectory( building )
+add_subdirectory( custom_cmake_build )
 add_subdirectory( unit )
 add_subdirectory( signal )
-add_subdirectory( legacy )
-add_subdirectory( legacy_vanilla )
+add_subdirectory( xcommon_build )
+add_subdirectory( xcommon_build_vanilla )

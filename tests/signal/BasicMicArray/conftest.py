@@ -19,12 +19,6 @@ def pytest_addoption(parser):
 
     [addflag(x) for x in FLAGS]
 
-# Relative to build directory
-APP_BUILD_DIR = os.path.join('tests','signal','BasicMicArray')
-
-# Each app is prefixed with this
-XE_NAME_ROOT = 'tests-signal-basicmicarray'
-
 # Parameters come from CMakeLists.txt.  If that changes, this may also need
 # to change.
 
@@ -56,9 +50,10 @@ test_params = [
 
 # Get the file path given params and build_dir
 def xe_file_path(params, build_dir):
-  xe_name = f"{XE_NAME_ROOT}_{params[0]}ch_{params[1]}smp_{params[2]}.xe"
+  config = f"{params[0]}ch_{params[1]}smp_{params[2]}isr"
+  xe_name = f"tests-signal-basicmicarray_{params[0]}ch_{params[1]}smp_{params[2]}isr.xe"
   xe_path = os.path.abspath(
-    os.path.join(build_dir, APP_BUILD_DIR, xe_name)
+    os.path.join(build_dir, "bin", config, xe_name)
   )
   return xe_path
 
