@@ -114,13 +114,15 @@ pipeline {
                                 sh "git clone --branch v1.6.0 git@github.com:xmos/infr_apps"
                                 sh "git clone --branch v1.3.0 git@github.com:xmos/infr_scripts_py"
                                 // clone
-                                dir("${REPO}/examples") {
+                                dir("${REPO}") {
                                     checkout scm
                                     installPipfile(false)
                                     withVenv {
                                         withTools(params.TOOLS_VERSION) {
-                                            sh 'cmake -B build -G "Unix Makefiles"'
-                                            sh 'xmake -j 16 -C build'
+                                            dir("${REPO}/examples") {
+                                                sh 'cmake -B build -G "Unix Makefiles"'
+                                                sh 'xmake -j 16 -C build'
+                                            }
                                         }
                                     }
                                     archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
@@ -142,38 +144,30 @@ pipeline {
             }
         }
         stage('HW tests') {
-            when {
-                expression { !env.GH_LABEL_DOC_ONLY.toBoolean() }
-            }
             agent {
                 label 'xvf3800' // We have plenty of these (6) and they have a single XTAG connected
             }
             stages {
-                stage("Setup") {
+                stage("Checkout and Build") {
                     steps {
-                        dir("$REPO") {
+                        dir("${REPO}") {
                             println "RUNNING ON"
                             println env.NODE_NAME
                             checkout scm
-                            sh "git submodule update --init --recursive"
-                            withTools(params.TOOLS_VERSION) {
-                                installDependencies()
-                            }
-                        }
-                    }
-                }
-                stage("Build firmware") {
-                    steps {
-                        withTools(params.TOOLS_VERSION) {
-                            dir("$REPO"){
-                                sh ". .github/scripts/build_test_apps.sh"
+                            withVenv {
+                                withTools(params.TOOLS_VERSION) {
+                                    dir("tests/signal") {
+                                        sh 'cmake -B build -G "Unix Makefiles"'
+                                        sh 'xmake -j 16 -C build'
+                                    }
+                                }
                             }
                         }
                     }
                 }
                 stage('Run tests') {
                     steps {
-                        dir("${REPO}") {
+                        dir("${REPO}/tests/signal") {
                             withTools(params.TOOLS_VERSION) {
                                 withVenv {
                                     // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
@@ -182,16 +176,10 @@ pipeline {
                                     // # Unit tests
                                     // xrun --xscope tests/unit/tests-unit.xe
 
-                                    // # Signal/Decimator tests
-                                    // pytest ../tests/signal/TwoStageDecimator/ -vv
-
-                                    // # Filter design tests
-                                    // pytest ../tests/signal/FilterDesign/ -vv
+                                    runPytest('-s -vv')
                                 }
                             }
-                        }
-                        dir("${REPO}/..") {
-                            // archiveArtifacts artifacts: "src/BeClearMemory.S", fingerprint: true
+                            archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true
                         }
                     }
                 }
@@ -199,7 +187,6 @@ pipeline {
             post {
                 cleanup {
                     xcoreCleanSandbox()
-                    cleanWs()
                 }
             }
         }
