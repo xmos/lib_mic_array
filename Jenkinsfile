@@ -37,14 +37,18 @@ pipeline {
                     }
                     steps {
                         dir("${REPO}") {
-                            checkout scm
-                            sh 'git submodule update --init --recursive --depth 1'
-                            sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
-                            sh """docker run -u "\$(id -u):\$(id -g)" \
-                                --rm \
-                                -v ${WORKSPACE}:/build \
-                                ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v"""
-                            archiveArtifacts artifacts: "doc/_build/**", allowEmptyArchive: true
+                            warnError("Docs") {
+                                sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
+                                sh """docker run -u "\$(id -u):\$(id -g)" \
+                                      --rm \
+                                      -v \$(pwd):/build \
+                                      ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v html latex"""
+
+                                // Zip and archive doc files
+                                zip dir: "doc/_build/html", zipFile: "${REPO}_docs_html.zip"
+                                archiveArtifacts artifacts: "${REPO}_docs_html.zip"
+                                archiveArtifacts artifacts: "doc/_build/pdf/${REPO}*.pdf"
+                            }
                         }
                     }
                     post {
