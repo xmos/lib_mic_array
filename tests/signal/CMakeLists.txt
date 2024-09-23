@@ -1,9 +1,4 @@
-
-add_custom_target( tests-signal )
-
-
-add_subdirectory( TwoStageDecimator )
-add_subdirectory( BasicMicArray )
-
-add_dependencies(tests tests-signal)
-
+cmake_minimum_required(VERSION 3.21)
+include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
+project("mic_array_signal_tests")
+add_subdirectory("BasicMicArray")

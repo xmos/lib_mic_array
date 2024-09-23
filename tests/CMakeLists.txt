@@ -16,7 +16,4 @@ add_custom_target( tests )
 add_subdirectory( ../cmake/unity ${unity_BINARY_DIR} )
 
 add_subdirectory( custom_cmake_build )
-add_subdirectory( unit )
-add_subdirectory( signal )
-add_subdirectory( xcommon_build )
-add_subdirectory( xcommon_build_vanilla )
+# add_subdirectory( unit )

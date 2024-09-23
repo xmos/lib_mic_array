@@ -3,6 +3,7 @@ set( APP_NAME tests-build-prefab )
 
 set( TARGET_XN   XVF3610_Q60A.xn )
 
+include( ../../../etc/vanilla/vanilla.cmake )
 
 set(APP_COMPILE_FLAGS
   "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
