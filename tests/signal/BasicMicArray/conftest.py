@@ -19,44 +19,6 @@ def pytest_addoption(parser):
 
     [addflag(x) for x in FLAGS]
 
-# Parameters come from CMakeLists.txt.  If that changes, this may also need
-# to change.
-
-# (MICS, FRAME_SIZE, USE_ISR)
-xe_params = [
-  (1, 1,   0),
-  (1, 16,  0),
-  (2, 1,   0),
-  (2, 16,  0),
-  (4, 1,   0),
-  (4, 16,  0),
-  (8, 1,   0),
-  (8, 16,  0),
-  (8, 64,  0),
-  (1, 1,   1),
-  (1, 16,  1),
-  (2, 1,   1),
-  (2, 16,  1),
-  (4, 1,   1),
-  (4, 16,  1),
-  (8, 1,   1),
-  (8, 16,  1),
-  (8, 64,  1),
-]
-
-test_params = [
-  pytest.param((x,y,z), id=f"{x}ch_{y}smp_{z}") for x,y,z in xe_params
-]
-
-# Get the file path given params and build_dir
-def xe_file_path(params, build_dir):
-  config = f"{params[0]}ch_{params[1]}smp_{params[2]}isr"
-  xe_name = f"tests-signal-basicmicarray_{params[0]}ch_{params[1]}smp_{params[2]}isr.xe"
-  xe_path = os.path.abspath(
-    os.path.join(build_dir, "bin", config, xe_name)
-  )
-  return xe_path
-
 
 class DevCommand(enum.Enum):
   RESUME = 0

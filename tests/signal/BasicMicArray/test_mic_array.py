@@ -34,8 +34,12 @@ from mic_array import filters
 from mic_array.pdm_signal import PdmSignal
 from micarray_device import MicArrayDevice
 import pytest
-from conftest import test_params, xe_file_path, FLAGS, DevCommand
+from conftest import FLAGS, DevCommand
+import json
+from pathlib import Path
 
+with open(Path(__file__).parent / "test_params.json") as f:
+    params = json.load(f)
 
 class Test_BasicMicArray(object):
 
@@ -85,16 +89,15 @@ class Test_BasicMicArray(object):
     return filters.TwoStageFilter(s1_filter, s2_filter)
     
 
-  @pytest.mark.parametrize('xe_param', test_params)
-  def test_BasicMicArray(self, request, xe_param):
+  @pytest.mark.parametrize("chans", params["N_MICS"], ids=[f"{nm}n_mics" for nm in params["N_MICS"]])
+  @pytest.mark.parametrize("frame_size", params["FRAME_SIZE"], ids=[f"{fs}frame" for fs in params["FRAME_SIZE"]])
+  @pytest.mark.parametrize("use_isr", params["USE_ISR"], ids=[f"{ui}_isr" for ui in params["USE_ISR"]])
+  def test_BasicMicArray(self, request, chans, frame_size, use_isr):
 
-    chans, frame_size, use_isr = xe_param
-    
-    print(f"\nParams[Channels: {chans}; Frame Size: {frame_size}; Use ISR: {use_isr}]")
-
-    xe_path = xe_file_path(xe_param, request.config.getoption("build_dir"))
-
-    assert os.path.isfile(xe_path), f"Required executable does not exist ({xe_path})"
+    cwd = Path(request.fspath).parent
+    cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr"
+    xe_path = f'{cwd}/bin/{cfg}/tests-signal-basicmicarray_{cfg}.xe'
+    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
 
     frames = request.config.getoption("frames")
 
