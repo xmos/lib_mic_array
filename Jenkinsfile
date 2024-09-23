@@ -64,15 +64,13 @@ pipeline {
                     steps {
                         dir("${REPO}") {
                             checkout scm
-                            dir("tests") {
+                            dir("tests/xcommon_build") {
                                 withTools(params.TOOLS_VERSION) {
                                     sh 'cmake -B build -G "Unix Makefiles"'
-                                    dir("xcommon_build") {
-                                        sh "xmake all -j 16"
-                                    }
+                                    sh "xmake all -j 16"
                                 }
+                                archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
                             }
-                            // archiveArtifacts artifacts: "doc/_build/**", allowEmptyArchive: true
                         }
                     }
                     post {
@@ -95,6 +93,7 @@ pipeline {
                                 sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=./xs3a.cmake"
                                 sh "cd build.xcore && make all -j 16"
                             }
+                            archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
                         }
                     }
                     post {
@@ -115,7 +114,7 @@ pipeline {
                                 sh "git clone --branch v1.6.0 git@github.com:xmos/infr_apps"
                                 sh "git clone --branch v1.3.0 git@github.com:xmos/infr_scripts_py"
                                 // clone
-                                dir("$REPO/examples") {
+                                dir("${REPO}/examples") {
                                     checkout scm
                                     installPipfile(false)
                                     withVenv {
@@ -124,6 +123,7 @@ pipeline {
                                             sh 'xmake -j 16 -C build'
                                         }
                                     }
+                                    archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
                                 }
                             }
                         }
