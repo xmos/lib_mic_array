@@ -37,6 +37,7 @@ pipeline {
                     steps {
                         dir("${REPO}") {
                             warnError("Docs") {
+                                checkout scm
                                 sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
                                 sh """docker run -u "\$(id -u):\$(id -g)" \
                                       --rm \
