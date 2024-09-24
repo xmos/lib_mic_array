@@ -156,6 +156,7 @@ pipeline {
                                     println "RUNNING ON"
                                     println env.NODE_NAME
                                     checkout scm
+                                    installPipfile(false)
                                     withVenv {
                                         withTools(params.TOOLS_VERSION) {
                                             dir("tests") {
