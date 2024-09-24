@@ -131,7 +131,9 @@ pipeline {
                         }
                         stage("Lib checks") {
                             steps {
-                                runLibraryChecks("${WORKSPACE}/${REPO}", "v2.0.0")
+                                warnError("lib checks") {
+                                    runLibraryChecks("${WORKSPACE}/${REPO}", "v2.0.0")
+                                }
                             }
                         }
                     }

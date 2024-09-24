@@ -1,5 +1,5 @@
-
-if(XCOMMON_CMAKE_VER STREQUAL "")
+if("${XCOMMON_CMAKE_VER}" STREQUAL "")
+    # only do this section if using custom CMake
     ## Some of the test applications require the Unity test framework
     CPMAddPackage(
       NAME unity
@@ -18,7 +18,7 @@ if(XCOMMON_CMAKE_VER STREQUAL "")
     add_subdirectory( custom_cmake_build )
     # add_subdirectory( unit )
 else()
-    message(STATUS "XCCM")
+    # XCommon CMake only
     cmake_minimum_required(VERSION 3.21)
     include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
     project(mic_array_tests_xccm)
