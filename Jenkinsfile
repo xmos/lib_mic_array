@@ -119,7 +119,7 @@ pipeline {
                                     installPipfile(false)
                                     withVenv {
                                         withTools(params.TOOLS_VERSION) {
-                                            dir("${REPO}/examples") {
+                                            dir("examples") {
                                                 sh 'cmake -B build -G "Unix Makefiles"'
                                                 sh 'xmake -j 16 -C build'
                                             }
@@ -156,7 +156,7 @@ pipeline {
                             checkout scm
                             withVenv {
                                 withTools(params.TOOLS_VERSION) {
-                                    dir("tests/signal") {
+                                    dir("tests") {
                                         sh 'cmake -B build -G "Unix Makefiles"'
                                         sh 'xmake -j 16 -C build'
                                     }
@@ -167,7 +167,7 @@ pipeline {
                 }
                 stage('Run tests') {
                     steps {
-                        dir("${REPO}/tests/signal") {
+                        dir("${REPO}/tests") {
                             withTools(params.TOOLS_VERSION) {
                                 withVenv {
                                     // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
@@ -175,8 +175,15 @@ pipeline {
                                     // sh ". .github/scripts/run_test_apps.sh"
                                     // # Unit tests
                                     // xrun --xscope tests/unit/tests-unit.xe
-
-                                    runPytest('-s -vv')
+                                    dir("signal/BasicMicArray") {
+                                        runPytest('-s -vv')
+                                    }
+                                    dir("signal/TwoStageDecimator") {
+                                        runPytest('-s -vv')
+                                    }
+                                    dir("signal/FilterDesign") {
+                                        runPytest('-s -vv')
+                                    }
                                 }
                             }
                             archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true

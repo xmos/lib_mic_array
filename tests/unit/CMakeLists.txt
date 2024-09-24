@@ -1,49 +1,27 @@
+cmake_minimum_required(VERSION 3.21)
+include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
+project(tests-unit )
+set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
-set( APP_NAME tests-unit )
-
-set( TARGET_XN   XVF3610_Q60A.xn )
-
-
-set(APP_COMPILE_FLAGS
-  "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
-  "-fxscope"
-  "-mcmodel=large"
-  "-Wno-xcore-fptrgroup"
-  "-Wno-unknown-pragmas"
-  "-Wno-format"
-  "-g"
-  "-O2"
-)
-
-set(APP_LINK_FLAGS ${APP_COMPILE_FLAGS} ) 
-list( APPEND  APP_LINK_FLAGS  "-report"                     )
-list( APPEND  APP_LINK_FLAGS  "-fcmdline-buffer-bytes=1024" )
+include(${CMAKE_CURRENT_LIST_DIR}/../test_deps.cmake)
+set(APP_HW_TARGET           XVF3610_Q60A.xn)
 
 
-set( APP_INCLUDES  "src" )
+set(APP_COMPILER_FLAGS_${CONFIG}    -O2
+                                    -g
+                                    -report
+                                    -mcmodel=large
+                                    -fcmdline-buffer-bytes=1024
+                                    -Wno-xcore-fptrgroup
+                                    -Wno-unknown-pragmas
+                                    -Wno-format)
 
-file( GLOB_RECURSE APP_SOURCES 
-    "src/*.c" 
-    "src/*.xc" 
-    "src/*.cpp" )
+XMOS_REGISTER_APP()
 
-add_executable( ${APP_NAME} )
 
-target_compile_options( ${APP_NAME}
-PRIVATE ${APP_COMPILE_FLAGS} )
 
-target_link_options( ${APP_NAME}
-PRIVATE ${APP_LINK_FLAGS} )
+# target_link_libraries( ${APP_NAME}
+#   lib_xcore_math
+#   lib_mic_array
+#   unity )
 
-target_sources( ${APP_NAME} 
-PRIVATE ${APP_SOURCES} )
-
-target_include_directories( ${APP_NAME}
-PRIVATE ${APP_INCLUDES} )
-
-target_link_libraries( ${APP_NAME}
-  lib_xcore_math
-  lib_mic_array
-  unity )
-
-add_dependencies( tests  ${APP_NAME} )
