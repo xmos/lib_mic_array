@@ -22,10 +22,12 @@ The microphone array library has the following features:
   - DC offset removal
   - Extensible C++ design
 
+
 Software version and dependencies
 .................................
 
 The CHANGELOG contains information about the current and previous versions.
+For a list of direct dependencies, look for DEPENDENT_MODULES in lib_mic_array/module_build_info.
 
 Related application notes
 .........................
