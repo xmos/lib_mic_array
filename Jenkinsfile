@@ -12,7 +12,6 @@ pipeline {
         XMOSDOC_VERSION = "v6.0.0"          
     }
     options {
-        disableConcurrentBuilds()
         skipDefaultCheckout()
         timestamps()
         // on develop discard builds after a certain number else keep forever
