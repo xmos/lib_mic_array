@@ -66,8 +66,8 @@ pipeline {
                             checkout scm
                             dir("tests") {
                                 withTools(params.TOOLS_VERSION) {
+                                    sh 'cmake -B build -G "Unix Makefiles"'
                                     dir("xcommon_build") {
-                                        sh 'cmake -B build -G "Unix Makefiles"'
                                         sh "xmake all -j 16"
                                     }
                                 }
