@@ -1,6 +1,6 @@
 VERSION = 5.3.0
 
-DEPENDENT_MODULES = lib_xcore_math(>=2.1.4)
+DEPENDENT_MODULES = lib_xcore_math(>=2.2.0)
 
 MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -Os
 

@@ -8,6 +8,10 @@ lib_mic_array change log
   * ADDED:   Support for XCommon CMake build system
   * CHANGED: All examples and tests now build under XCommon CMake build system
 
+  * Changes to dependencies:
+
+    - lib_xcore_math: 2.0.0 -> 2.2.0
+
 5.2.0
 -----
 
@@ -70,7 +74,7 @@ lib_mic_array change log
 
     - lib_xassert: Removed dependency
 
-    - lib_xcore_math: Added dependency 2.2.0
+    - lib_xcore_math: Added dependency 2.0.0
 
 4.3.0
 -----
