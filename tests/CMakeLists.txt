@@ -1,4 +1,4 @@
-if("${USING_CUSTOM_CMAKE}" STREQUAL "1")
+if("${USING_CUSTOM_CMAKE}" STREQUAL "TRUE")
     # only do this section if using custom CMake
     ## Some of the test applications require the Unity test framework
     CPMAddPackage(

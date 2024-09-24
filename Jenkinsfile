@@ -145,59 +145,59 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-        stage('HW tests') {
-            agent {
-                label 'xvf3800' // We have plenty of these (6) and they have a single XTAG connected
-            }
-            stages {
-                stage("Checkout and Build") {
-                    steps {
-                        dir("${REPO}") {
-                            println "RUNNING ON"
-                            println env.NODE_NAME
-                            checkout scm
-                            withVenv {
-                                withTools(params.TOOLS_VERSION) {
-                                    dir("tests") {
-                                        sh 'cmake -B build -G "Unix Makefiles"'
-                                        sh 'xmake -j 16 -C build'
+                stage('HW tests') {
+                    agent {
+                        label 'xvf3800' // We have plenty of these (6) and they have a single XTAG connected
+                    }
+                    stages {
+                        stage("Checkout and Build") {
+                            steps {
+                                dir("${REPO}") {
+                                    println "RUNNING ON"
+                                    println env.NODE_NAME
+                                    checkout scm
+                                    withVenv {
+                                        withTools(params.TOOLS_VERSION) {
+                                            dir("tests") {
+                                                sh 'cmake -B build -G "Unix Makefiles"'
+                                                sh 'xmake -j 16 -C build'
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                }
-                stage('Run tests') {
-                    steps {
-                        dir("${REPO}/tests") {
-                            withTools(params.TOOLS_VERSION) {
-                                withVenv {
-                                    // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
-                                    // sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
-                                    // sh ". .github/scripts/run_test_apps.sh"
-                                    // # Unit tests
-                                    // xrun --xscope tests/unit/tests-unit.xe
-                                    dir("signal/BasicMicArray") {
-                                        runPytest('-s -vv')
+                        stage('Run tests') {
+                            steps {
+                                dir("${REPO}/tests") {
+                                    withTools(params.TOOLS_VERSION) {
+                                        withVenv {
+                                            // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
+                                            // sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
+                                            // sh ". .github/scripts/run_test_apps.sh"
+                                            // # Unit tests
+                                            // xrun --xscope tests/unit/tests-unit.xe
+                                            dir("signal/BasicMicArray") {
+                                                runPytest('-s -vv')
+                                            }
+                                            dir("signal/TwoStageDecimator") {
+                                                runPytest('-s -vv')
+                                            }
+                                            dir("signal/FilterDesign") {
+                                                runPytest('-s -vv')
+                                            }
+                                        }
                                     }
-                                    dir("signal/TwoStageDecimator") {
-                                        runPytest('-s -vv')
-                                    }
-                                    dir("signal/FilterDesign") {
-                                        runPytest('-s -vv')
-                                    }
+                                    archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true
                                 }
                             }
-                            archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true
                         }
                     }
-                }
-            }
-            post {
-                cleanup {
-                    xcoreCleanSandbox()
+                    post {
+                        cleanup {
+                            xcoreCleanSandbox()
+                        }
+                    }
                 }
             }
         }
