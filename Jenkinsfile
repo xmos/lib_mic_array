@@ -64,10 +64,12 @@ pipeline {
                     steps {
                         dir("${REPO}") {
                             checkout scm
-                            dir("tests/xcommon_build") {
+                            dir("tests") {
                                 withTools(params.TOOLS_VERSION) {
-                                    sh 'cmake -B build -G "Unix Makefiles"'
-                                    sh "xmake all -j 16"
+                                    dir("xcommon_build") {
+                                        sh 'cmake -B build -G "Unix Makefiles"'
+                                        sh "xmake all -j 16"
+                                    }
                                 }
                                 archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
                             }
