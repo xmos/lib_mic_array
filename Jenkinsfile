@@ -179,10 +179,10 @@ pipeline {
                                             sh "xrun --xscope unit/bin/tests-unit.xe"
                                             
                                             dir("signal/BasicMicArray") {
-                                                runPytest('-s -vv')
+                                                runPytest('-s -vv -numprocesses=1')
                                             }
                                             dir("signal/TwoStageDecimator") {
-                                                runPytest('-s -vv')
+                                                runPytest('-s -vv -numprocesses=1')
                                             }
                                             dir("signal/FilterDesign") {
                                                 runPytest('-s -vv')
