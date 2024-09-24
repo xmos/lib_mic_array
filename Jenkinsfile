@@ -177,11 +177,12 @@ pipeline {
                                             // Run this first to ensure the XTAG is up and running for subsequent tests 
                                             sh "xrun --xscope unit/bin/tests-unit.xe"
                                             
+                                            // note no xdist for HW tests as only 1 hw instance
                                             dir("signal/BasicMicArray") {
-                                                runPytest('-s -vv -numprocesses=1')
+                                                runPytest('-s -vv --numprocesses=1')
                                             }
                                             dir("signal/TwoStageDecimator") {
-                                                runPytest('-s -vv -numprocesses=1')
+                                                runPytest('-s -vv --numprocesses=1')
                                             }
                                             dir("signal/FilterDesign") {
                                                 runPytest('-s -vv')
