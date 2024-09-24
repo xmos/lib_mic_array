@@ -53,5 +53,6 @@ if(${DEV_LIB_MIC_ARRAY})
     GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
     GIT_TAG        v2.1.0
   )
+  set(USING_CUSTOM_CMAKE 1)
   add_subdirectory( tests )
 endif()
