@@ -174,9 +174,10 @@ pipeline {
                                         withVenv {
                                             // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
                                             // sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
-                                            // sh ". .github/scripts/run_test_apps.sh"
-                                            // # Unit tests
-                                            // xrun --xscope tests/unit/tests-unit.xe
+      
+                                            // Run this first to ensure the XTAG is up and running for subsequent tests 
+                                            sh "xrun --xscope unit/bin/tests-unit.xe"
+                                            
                                             dir("signal/BasicMicArray") {
                                                 runPytest('-s -vv')
                                             }
