@@ -175,8 +175,10 @@ pipeline {
                                             // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
                                             // sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
       
-                                            // Run this first to ensure the XTAG is up and running for subsequent tests 
-                                            sh "xrun --xscope unit/bin/tests-unit.xe"
+                                            // Run this first to ensure the XTAG is up and running for subsequent tests
+                                            timeout(time: 2, unit: 'MINUTES') {
+                                                sh "xrun --xscope unit/bin/tests-unit.xe"
+                                            }
                                             
                                             // note no xdist for HW tests as only 1 hw instance
                                             dir("signal/BasicMicArray") {
