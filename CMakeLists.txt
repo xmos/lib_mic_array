@@ -44,7 +44,7 @@ endif()
 include( etc/vanilla/vanilla.cmake )
 
 #**********************
-# Demos/Tests
+# Tests
 #**********************
 
 if(${DEV_LIB_MIC_ARRAY})
