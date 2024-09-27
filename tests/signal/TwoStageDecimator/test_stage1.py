@@ -29,7 +29,6 @@ import json
 
 with open(Path(__file__).parent / "test_params.json") as f:
     params = json.load(f)
-    print([str(param) for param in params["CONFIG"]])
 
 
 class Test_Stage1(object):

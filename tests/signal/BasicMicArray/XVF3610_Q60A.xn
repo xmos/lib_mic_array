@@ -11,7 +11,7 @@
     <Package id="0" Type="XS3-UnA-1024-QF60A">
       <Nodes>
         <!-- Note that this clock setting is overridden by the app by writing directly to the PLL -->
-        <Node Id="0" InPackageId="0" Type="XS3-L16A-1024" SystemFrequency="600MHz" Oscillator="24MHz" referencefrequency="100MHz">
+        <Node Id="0" InPackageId="0" Type="XS3-L16A-1024" SystemFrequency="700MHz" Oscillator="24MHz" referencefrequency="100MHz">
           <Boot>
             <Source Location="bootFlash"/>
           </Boot>
