@@ -29,6 +29,7 @@ import json
 
 with open(Path(__file__).parent / "test_params.json") as f:
     params = json.load(f)
+    print([str(param) for param in params["CONFIG"]])
 
 
 class Test_Stage1(object):
@@ -56,7 +57,7 @@ class Test_Stage1(object):
     return filters.TwoStageFilter(s1_filter, s2_filter)
     
 
-  @pytest.mark.parametrize("config", params["CONFIG"])
+  @pytest.mark.parametrize("config", params["CONFIG"], ids=[str(param) for param in params["CONFIG"]])
   def test_stage1(self, request, config):
 
     chans, s2_df, s2_taps = [config["N_MICS"], config["S2DECFACTOR"], config["S2TAPCOUNT"]]
