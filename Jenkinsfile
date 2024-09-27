@@ -184,6 +184,7 @@ pipeline {
                                             }
                                             
                                             // note no xdist for HW tests as only 1 hw instance
+                                            // Each test has it's own conftest.py so we need to run these seprarately
                                             dir("signal/BasicMicArray") {
                                                 runPytest('-s -vv --numprocesses=1')
                                             }

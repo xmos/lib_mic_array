@@ -11,7 +11,7 @@
 #include "app.h"
 
 #ifndef USE_ISR
-# error USE_ISR must be defined.
+#error USE_ISR must be defined.
 #endif 
 
 unsafe {
