@@ -33,5 +33,12 @@ For a list of direct dependencies, look for DEPENDENT_MODULES in lib_mic_array/m
 Related application notes
 .........................
 
-See the `demos/` subdirectory for simple examples. Also, `sln_voice` uses this library extensively and contains
-multiple examples both bare-metal and under the RTOS. See https://github.com/xmos/sln_voice/tree/develop/examples.
+The following application notes use this library:
+
+AN000248 - Using lib_xua with lib_mic_array
+
+See the `examples/` subdirectory for simple usage examples.
+
+The examples in `sln_voice <https://github.com/xmos/sln_voice/tree/develop/examples>`_ use this library extensively and contain multiple examples for both bare-metal and under FreeRTOS.
+
+The `XVF3800 <https://www.xmos.com/xvf3800>`_ VocalFusion voice processor products also use this library.
