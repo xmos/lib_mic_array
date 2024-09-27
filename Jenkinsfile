@@ -160,7 +160,7 @@ pipeline {
                                         withTools(params.TOOLS_VERSION) {
                                             dir("tests") {
                                                 sh 'cmake -B build -G "Unix Makefiles"'
-                                                sh 'xmake -j 16 -C build'
+                                                sh 'xmake -j 8 -C build'
                                             }
                                         }
                                     }

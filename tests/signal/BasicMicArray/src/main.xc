@@ -150,7 +150,8 @@ int main()
     }
 
     on tile[0]: {
-      xscope_mode_lossless();
+      xscope_mode_lossy(); // This was lossless but this was causing occasional test failures as app_output_task() couldn't
+                           // output all data in time on 8 mics, 16 frame. No data appears to be lost and tests pass.
 
 #if (USE_ISR)
       app_pdm_rx_isr_setup((chanend_t) c_to_app);
