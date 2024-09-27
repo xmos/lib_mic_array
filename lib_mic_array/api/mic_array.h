@@ -4,6 +4,8 @@
 
 #ifdef __XS3A__ // Only available for xcore.ai
 #include "mic_array/api.h"
+#else
+#warning "lib_mic_array is being built using a target other than XS3 (xcore.ai). This library only supports XS3. Please use version <5.0.0 for XS2 support."  
 #endif // __XS3A__
 #include "mic_array/pdm_resources.h"
 #include "mic_array/dc_elimination.h"

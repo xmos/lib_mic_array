@@ -174,6 +174,9 @@ pipeline {
                                         withVenv {
                                             // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
                                             // sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
+
+                                            // This ensures a project for XS2 can be built and runs OK
+                                            sh "xsim test_xs2_benign/bin/xs2.xe"
       
                                             // Run this first to ensure the XTAG is up and running for subsequent tests
                                             timeout(time: 2, unit: 'MINUTES') {
