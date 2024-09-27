@@ -1,6 +1,8 @@
 // Copyright 2021-2022 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
+#ifdef __XS3A__ // Only available for xcore.ai
+
 /**
  * This function is the optimal FIR on a 1-bit signal with 16-bit coefficients.
  *
@@ -69,3 +71,4 @@ macc_coeffs:
     .short 0x7fff, 0x4000, 0x2000, 0x1000, 0x0800, 0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0008, 0x0004, 0x0002, 0x0001
     .cc_bottom fir_1x16_bit.func
 
+#endif

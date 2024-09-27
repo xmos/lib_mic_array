@@ -7,6 +7,7 @@ lib_mic_array change log
   * FIXED:   Vanilla configuration now compiles correctly under XTC 15.3.0
   * ADDED:   Support for XCommon CMake build system
   * CHANGED: All examples and tests now build under XCommon CMake build system
+  * ADDED:   Will build without errors for XS2 targets but no API available
 
   * Changes to dependencies:
 
