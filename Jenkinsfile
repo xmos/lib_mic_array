@@ -155,8 +155,8 @@ pipeline {
                                     println "RUNNING ON"
                                     println env.NODE_NAME
                                     checkout scm
-                                    installPipfile(false)
                                     withVenv {
+                                        installPipfile(false)
                                         withTools(params.TOOLS_VERSION) {
                                             dir("tests") {
                                                 sh 'cmake -B build -G "Unix Makefiles"'
