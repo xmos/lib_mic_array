@@ -117,8 +117,9 @@ pipeline {
                                 // clone
                                 dir("${REPO}") {
                                     checkout scm
-                                    installPipfile(false)
+                                    createVenv()
                                     withVenv {
+                                        installPipfile(false)
                                         withTools(params.TOOLS_VERSION) {
                                             dir("examples") {
                                                 sh 'cmake -B build -G "Unix Makefiles"'
@@ -155,6 +156,7 @@ pipeline {
                                     println "RUNNING ON"
                                     println env.NODE_NAME
                                     checkout scm
+                                    createVenv()
                                     withVenv {
                                         installPipfile(false)
                                         withTools(params.TOOLS_VERSION) {
