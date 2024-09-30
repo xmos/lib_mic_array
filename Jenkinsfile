@@ -1,6 +1,4 @@
-@Library('xmos_jenkins_shared_library@develop') _
-// need to move this on when JSL is released
-// @Library('xmos_jenkins_shared_library@v0.33.0') _
+@Library('xmos_jenkins_shared_library@v0.34.0') _
 getApproval()
 pipeline {
     agent none
