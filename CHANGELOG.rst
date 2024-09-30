@@ -8,6 +8,9 @@ lib_mic_array change log
   * ADDED:   Support for XCommon CMake build system
   * CHANGED: All examples now build under XCommon CMake build system
   * ADDED:   Will build without errors for XS2 targets but no API available
+  * DEPRECATED: Previously used custom CMake build support. This will be removed
+    in future versions. Please use XCommon CMake build system as provided in XTC
+    15.3.0 onwards for new projects.
 
   * Changes to dependencies:
 
