@@ -1,11 +1,9 @@
 lib_mic_array change log
 ========================
 
-5.3.0
+5.4.0
 -----
 
-  * FIXED:   Vanilla configuration now compiles correctly under XTC 15.3.0
-  * ADDED:   Support for XCommon CMake build system
   * CHANGED: All examples now build under XCommon CMake build system
   * ADDED:   Will build without errors for XS2 targets but no API available
   * DEPRECATED: Previously used custom CMake build support. This will be removed
@@ -15,6 +13,12 @@ lib_mic_array change log
   * Changes to dependencies:
 
     - lib_xcore_math: 2.0.0 -> 2.2.0
+
+5.3.0
+-----
+
+  * FIXED:   Vanilla configuration now compiles correctly under XTC 15.3.0
+  * ADDED:   Support for XCommon CMake build system
 
 5.2.0
 -----
