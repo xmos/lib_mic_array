@@ -1,14 +1,25 @@
 ---
-project: lib_mic_array
-title: Mic Array Library
+lib_name: lib_mic_array
+project: '{{lib_name}}'
+title: '{{lib_name}}: XMOS I2S Library'
 version: 5.3.0
 
 documentation:
   exclude_patterns_path: doc/exclude_patterns.inc
+  substitutions_path: doc/substitutions.inc
+  root_doc: doc/programming_guide/index.rst
+  linkcheck_ignore_regex: ['']
+  cognidox_part_number: XM-010267-UG
   doxygen_projects:
     lib_mic_array:
       doxyfile_path: doc/Doxyfile.inc
   pdfs:
-    doc/programming_guide/index:
-      pdf_title: "{{title}} - Programming Guide"
-      pdf_filename: "{{project}}_programming_guide_v{{version}}"
+    doc/programming_guide/index.rst:
+      pdf_title: '{{title}}'
+      pdf_filename: '{{lib_name}}_v{{version}}'
+    README.rst:
+      pdf_title: '{{title}} (README)'
+      pdf_filename: '{{lib_name}}_v{{version}}_readme'
+      pdf_short: yes
+software:
+  cognidox_part_number: XM-009815-SM
