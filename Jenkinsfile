@@ -176,7 +176,7 @@ pipeline {
       
                                             // Run this first to ensure the XTAG is up and running for subsequent tests
                                             timeout(time: 2, unit: 'MINUTES') {
-                                                sh "xrun --xscope unit/bin/tests-unit.xe"
+                                                sh "xrun --xscope --id 0 unit/bin/tests-unit.xe"
                                             }
                                             
                                             // note no xdist for HW tests as only 1 hw instance
