@@ -86,7 +86,7 @@ class Test_Stage2(object):
     if self.print_out: print(f"Expected output: {expected}")
 
     ## Now see what the device says.
-    with DecimatorDevice(xe_path) as dev:
+    with DecimatorDevice(xe_path, extra_xrun_args="--id 0") as dev:
 
       assert dev.param["channels"] == chans
       assert dev.param["s1.dec_factor"] == 32
