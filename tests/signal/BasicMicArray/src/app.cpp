@@ -73,7 +73,7 @@ void app_pdm_task(chanend_t sc_mics)
 }
 
 
-// Sometimes xscope doesn't keep up causing backpressure so add a FIFO to decouple thi.
+// Sometimes xscope doesn't keep up causing backpressure so add a FIFO to decouple this, at least up to 8 frames.
 // We can buffer up to 8 chars in a same tile chanend.
 const unsigned fifo_entries = 8;
 typedef int32_t ma_frame_t[CHAN_COUNT][SAMPLES_PER_FRAME];
@@ -118,7 +118,6 @@ void app_fifo_to_xscope_task(chanend_t c_fifo)
 {
     while(1){
         uint8_t idx = chanend_in_byte(c_fifo);
-        // printuintln(idx);
         ma_frame_t *ptr = &frame_fifo[idx];
 
         // Send it to host sample by sample rather than channel by channel
