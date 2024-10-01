@@ -83,13 +83,12 @@ pipeline {
                         label "x86_64 && linux" 
                     }
                     steps {
+                        sh "git clone git@github.com:xmos/xmos_cmake_toolchain.git --branch v1.0.0"
                         dir("${REPO}") {
                             checkout scm
                             sh 'git submodule update --init --recursive --depth 1'
-                            sh "wget https://raw.githubusercontent.com/xmos/xmos_cmake_toolchain/main/xs3a.cmake"
-                            sh "wget https://raw.githubusercontent.com/xmos/xmos_cmake_toolchain/main/xc_override.cmake"
                             withTools(params.TOOLS_VERSION) {
-                                sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=./xs3a.cmake"
+                                sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
                                 sh "cd build.xcore && make all -j 16"
                             }
                             archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
