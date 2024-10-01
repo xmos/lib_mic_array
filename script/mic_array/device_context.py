@@ -9,11 +9,11 @@ class DeviceContext(object):
   
   XRUN_CMD_BASE = ('xrun', '--xscope', '--xscope-port','localhost:10234')
 
-  def __init__(self, xe_path, /, probes=[], **kwargs):
+  def __init__(self, xe_path, /, probes=[], extra_xrun_args="", **kwargs):
     
     self.xe_path = xe_path
 
-    self.xrun_cmd = list(DeviceContext.XRUN_CMD_BASE) + [self.xe_path]
+    self.xrun_cmd = list(DeviceContext.XRUN_CMD_BASE) + extra_xrun_args.split() + [self.xe_path]
     self.xrun = None
 
     self.ep = xscope.Endpoint()

@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.21)
+include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
+project(mic_array_examples)
+add_subdirectory(demo)
+add_subdirectory(demo_vanilla)
+add_subdirectory(demo_par_decimator)
+add_subdirectory(measure_mips)

@@ -1,49 +1,38 @@
+cmake_minimum_required(VERSION 3.21)
+include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
 
-set( APP_NAME tests-unit )
+project(tests-unit )
+set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
-set( TARGET_XN   XVF3610_Q60A.xn )
+include(${CMAKE_CURRENT_LIST_DIR}/../test_deps.cmake)
 
+set(APP_HW_TARGET           XVF3610_Q60A.xn)
 
-set(APP_COMPILE_FLAGS
-  "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"
-  "-fxscope"
-  "-mcmodel=large"
-  "-Wno-xcore-fptrgroup"
-  "-Wno-unknown-pragmas"
-  "-Wno-format"
-  "-g"
-  "-O2"
-)
+# Manually grab sources since we want to append unity to them
+file(GLOB_RECURSE APP_C_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.c")
+file(GLOB_RECURSE APP_CXX_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.cpp")
 
-set(APP_LINK_FLAGS ${APP_COMPILE_FLAGS} ) 
-list( APPEND  APP_LINK_FLAGS  "-report"                     )
-list( APPEND  APP_LINK_FLAGS  "-fcmdline-buffer-bytes=1024" )
+# Modify the included sources so they are relative
+set(UNITY_C_SRCS_RELATIVE "")
+foreach(ITEM IN LISTS UNITY_C_SRCS)
+    string(REPLACE "${CMAKE_CURRENT_LIST_DIR}/" "" RELATIVE_ITEM "${ITEM}")
+    list(APPEND UNITY_C_SRCS_RELATIVE ${RELATIVE_ITEM})
+endforeach()
 
+list(APPEND APP_C_SRCS ${UNITY_C_SRCS_RELATIVE})
 
-set( APP_INCLUDES  "src" )
+set(APP_COMPILER_FLAGS              -O2
+                                    -g
+                                    -report
+                                    -mcmodel=large
+                                    -fcmdline-buffer-bytes=1024
+                                    -Wno-xcore-fptrgroup
+                                    -Wno-unknown-pragmas
+                                    -Wno-format
+                                    -fxscope
+                                    ${UNITY_FLAGS})
 
-file( GLOB_RECURSE APP_SOURCES 
-    "src/*.c" 
-    "src/*.xc" 
-    "src/*.cpp" )
+set(APP_INCLUDES                    ${UNITY_INCLUDES}
+                                    src)
 
-add_executable( ${APP_NAME} )
-
-target_compile_options( ${APP_NAME}
-PRIVATE ${APP_COMPILE_FLAGS} )
-
-target_link_options( ${APP_NAME}
-PRIVATE ${APP_LINK_FLAGS} )
-
-target_sources( ${APP_NAME} 
-PRIVATE ${APP_SOURCES} )
-
-target_include_directories( ${APP_NAME}
-PRIVATE ${APP_INCLUDES} )
-
-target_link_libraries( ${APP_NAME}
-  lib_xcore_math
-  lib_mic_array
-  unity )
-
-add_dependencies( tests  ${APP_NAME} )
+XMOS_REGISTER_APP()

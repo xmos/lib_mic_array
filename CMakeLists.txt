@@ -44,7 +44,7 @@ endif()
 include( etc/vanilla/vanilla.cmake )
 
 #**********************
-# Demos/Tests
+# Tests
 #**********************
 
 if(${DEV_LIB_MIC_ARRAY})
@@ -53,6 +53,6 @@ if(${DEV_LIB_MIC_ARRAY})
     GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
     GIT_TAG        v2.1.0
   )
-  add_subdirectory( demos )
+  set(USING_CUSTOM_CMAKE TRUE)
   add_subdirectory( tests )
 endif()

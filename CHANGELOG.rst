@@ -1,6 +1,19 @@
 lib_mic_array change log
 ========================
 
+5.4.0
+-----
+
+  * CHANGED: All examples now build under XCommon CMake build system
+  * ADDED:   Will build without errors for XS2 targets but no API available
+  * DEPRECATED: Previously used custom CMake build support. This will be removed
+    in future versions. Please use XCommon CMake build system as provided in XTC
+    15.3.0 onwards for new projects.
+
+  * Changes to dependencies:
+
+    - lib_xcore_math: 2.0.0 -> 2.2.0
+
 5.3.0
 -----
 
@@ -17,13 +30,14 @@ lib_mic_array change log
 -----
 
   * Added 16ch de-interleave to support 16 DDR mics on a single 8b port
-  * Added parallel decimation use example 
+  * Added parallel decimation use example
   * Fixed documentation generation issues
 
 5.0.3
 -----
 
-  * Improved default audio filter. Reduces noise floor and improves alias attentuation
+  * Improved default audio filter. Reduces noise floor and improves alias
+    attentuation
   * Changed DCOE filter to increase attenuation below 20 Hz
 
 5.0.2
@@ -33,31 +47,42 @@ lib_mic_array change log
 
 5.0.1
 -----
-  * Updates lib_mic_array to use lib_xcore_math (formerly lib_xs3_math) version 2.0.2
-  * Updates CMake project to use CPM to obtain dependencies (when top level project)
-  * [issue #171] Changes behavior when mic array consumer gets backed up from a quiet deadlock to an ECALL exception
-    * Also adds a way to allow blocks of PDM to be quietly dropped instead  (see AssertOnDroppedBlock())
+
+  * Updates lib_mic_array to use lib_xcore_math (formerly lib_xs3_math) version
+    2.0.2
+  * Updates CMake project to use CPM to obtain dependencies (when top level
+    project)
+  * [issue #171] Changes behavior when mic array consumer gets backed up from a
+    quiet deadlock to an ECALL exception
+  * Also adds a way to allow blocks of PDM to be quietly dropped instead  (see
+    AssertOnDroppedBlock())
 
 5.0.0
 -----
 
-  * Mic Array library redesigned from scratch to make efficient use of XMOS XS3 architecture
+  * Mic Array library redesigned from scratch to make efficient use of XMOS XS3
+    architecture
   * Many unused features from previous versions have been dropped
   * Initial v5.0 features:
+  * Supports 1-, 4-, and 8-bit ports
+  * Supports both SDR and DDR microphone configurations
+  * Use 1-16 PDM microphones
+  * Configurable PDM clock frequency
+  * Configurable two-stage decimating FIR
+  * Reference filter with total decimation factor of 192 provided
+  * Optional DC offset elimination filter
+  * Configurable frame size (down to single sample)
+  * Extensible C++ design
 
-    * Supports 1-, 4-, and 8-bit ports
-    * Supports both SDR and DDR microphone configurations
-    * Use 1-16 PDM microphones
-    * Configurable PDM clock frequency
-    * Configurable two-stage decimating FIR
+  * Changes to dependencies:
 
-      * Reference filter with total decimation factor of 192 provided
+    - lib_dsp: Removed dependency
 
-    * Optional DC offset elimination filter
-    * Configurable frame size (down to single sample)
-    * Extensible C++ design
+    - lib_logging: Removed dependency
 
+    - lib_xassert: Removed dependency
 
+    - lib_xcore_math: Added dependency 2.0.0
 
 4.3.0
 -----
@@ -221,3 +246,4 @@ lib_mic_array change log
     - lib_logging: Added dependency 2.0.0
 
     - lib_xassert: Added dependency 2.0.0
+
