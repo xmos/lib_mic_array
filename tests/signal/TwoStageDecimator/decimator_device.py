@@ -10,8 +10,8 @@ from mic_array.pdm_signal import PdmSignal
 
 class DecimatorDevice(DeviceContext):
   
-  def __init__(self, xe_path, /, **kwargs):
-    super().__init__(xe_path, probes=["meta_out", "data_out"], **kwargs)
+  def __init__(self, xe_path, /, extra_xrun_args="", **kwargs):
+    super().__init__(xe_path, probes=["meta_out", "data_out"], extra_xrun_args=extra_xrun_args, **kwargs)
 
     self.channels = None # unknown initially
 

@@ -142,7 +142,7 @@ pipeline {
                 }
                 stage('HW tests') {
                     agent {
-                        label 'xvf3800' // We have plenty of these (6) and they have a single XTAG connected
+                        label 'xcore.ai || xvf3800'
                     }
                     stages {
                         stage("Checkout and Build") {
@@ -176,19 +176,19 @@ pipeline {
       
                                             // Run this first to ensure the XTAG is up and running for subsequent tests
                                             timeout(time: 2, unit: 'MINUTES') {
-                                                sh "xrun --xscope unit/bin/tests-unit.xe"
+                                                sh "xrun --xscope --id 0 unit/bin/tests-unit.xe"
                                             }
                                             
                                             // note no xdist for HW tests as only 1 hw instance
                                             // Each test has it's own conftest.py so we need to run these seprarately
                                             dir("signal/BasicMicArray") {
-                                                runPytest('-s -vv --numprocesses=1')
+                                                runPytest('-vv --numprocesses=1')
                                             }
                                             dir("signal/TwoStageDecimator") {
-                                                runPytest('-s -vv --numprocesses=1')
+                                                runPytest('-vv --numprocesses=1')
                                             }
                                             dir("signal/FilterDesign") {
-                                                runPytest('-s -vv')
+                                                runPytest('-vv')
                                             }
                                         }
                                     }

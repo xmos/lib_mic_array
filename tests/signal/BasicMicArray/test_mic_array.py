@@ -121,7 +121,7 @@ class Test_BasicMicArray(object):
     if self.print_output: print(f"Expected output: {expected}")
 
     ## Now see what the device says.
-    with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb) as dev:
+    with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb, extra_xrun_args="--id 0") as dev:
 
       # Make sure we're talking to the correct application
       assert dev.param["channels"] == chans
