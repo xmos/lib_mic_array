@@ -65,7 +65,7 @@ pipeline {
                             dir("tests") {
                                 withTools(params.TOOLS_VERSION) {
                                     sh 'cmake -B build -G "Unix Makefiles"'
-                                    // Note no -B build so builds the xcommon Makefile
+                                    // Note no -C build so builds the xcommon Makefile
                                     sh "xmake all -j 16"
                                 }
                                 archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
