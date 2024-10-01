@@ -4,9 +4,13 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
-#include <cstdint>
+#include <cstring>
+
+#include <print.h>
+#include <string.h>
 
 #include <xcore/channel.h>
+#include <xcore/hwtimer.h>
 #include <xcore/channel_streaming.h>
 
 extern "C" {
@@ -69,7 +73,14 @@ void app_pdm_task(chanend_t sc_mics)
 }
 
 
-void app_output_task(chanend_t c_frames_in)
+// Sometimes xscope doesn't keep up causing backpressure so add a FIFO to decouple thi.
+// We can buffer up to 8 chars in a same tile chanend.
+const unsigned fifo_entries = 8;
+typedef int32_t ma_frame_t[CHAN_COUNT][SAMPLES_PER_FRAME];
+ma_frame_t frame_fifo[fifo_entries];
+
+
+void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
 {
   // Before listening for any frames, use the META_OUT xscope probe to report
   // our configuration to the host. This will help make sure the right version
@@ -83,19 +94,42 @@ void app_output_task(chanend_t c_frames_in)
   xscope_int(META_OUT, USE_ISR); // Using interrupt
 
 
-  // receive the output of the mic array and send it to the host
+  // receive the output of the mic array and send it to the host via a fifo to decouple the backpressure from xscope
   int32_t frame[CHAN_COUNT][SAMPLES_PER_FRAME];
+  uint8_t fifo_idx = 0;
+
   while(1){
     ma_frame_rx(&frame[0][0], c_frames_in, CHAN_COUNT, SAMPLES_PER_FRAME);
+    memcpy(frame_fifo[fifo_idx], &frame[0][0], sizeof(ma_frame_t));
 
-    // Send it to host sample by sample rather than channel by channel
-    for(int smp = 0; smp < SAMPLES_PER_FRAME; smp++) {
-      for(int ch = 0; ch < CHAN_COUNT; ch++){
-        xscope_int(DATA_OUT, frame[ch][smp]);
-      }
+    int t0 = get_reference_time();
+    chanend_out_byte(c_fifo, fifo_idx++);
+    int t1 = get_reference_time();
+    if(t1 - t0 > 10){
+        printstrln("ERROR - Timing fail");
+    }
+    if(fifo_idx == fifo_entries){
+        fifo_idx = 0;
     }
   }
 }
+
+void app_fifo_to_xscope_task(chanend_t c_fifo)
+{
+    while(1){
+        uint8_t idx = chanend_in_byte(c_fifo);
+        // printuintln(idx);
+        ma_frame_t *ptr = &frame_fifo[idx];
+
+        // Send it to host sample by sample rather than channel by channel
+        for(int smp = 0; smp < SAMPLES_PER_FRAME; smp++) {
+          for(int ch = 0; ch < CHAN_COUNT; ch++){
+            xscope_int(DATA_OUT, (*ptr)[ch][smp]);
+          }
+        }
+    }
+}
+
 
 
 void app_print_filters()

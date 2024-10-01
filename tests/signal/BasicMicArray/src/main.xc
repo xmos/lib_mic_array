@@ -141,6 +141,7 @@ int main()
   chan c_from_host;
   streaming chan c_to_app;
   chan c_frames;
+  chan c_fifo;
 
   par {
     xscope_host_data(c_from_host);
@@ -150,9 +151,8 @@ int main()
     }
 
     on tile[0]: {
-      xscope_mode_lossy(); // This was lossless but this was causing occasional test failures as app_output_task() couldn't
-                           // output all data in time on 8 mics, 16 frame. No data appears to be lost and tests pass.
-
+      xscope_mode_lossless();
+      
 #if (USE_ISR)
       app_pdm_rx_isr_setup((chanend_t) c_to_app);
 #endif
@@ -162,7 +162,8 @@ int main()
         app_pdm_task((chanend_t) c_to_app);
 #endif
         app_dec_task((chanend_t) c_frames);
-        app_output_task((chanend_t) c_frames);
+        app_output_task((chanend_t) c_frames, (chanend_t)c_fifo);
+        app_fifo_to_xscope_task((chanend_t)c_fifo);
       }
     }
   }
