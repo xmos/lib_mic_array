@@ -90,7 +90,6 @@ pipeline {
                                 sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
                                 sh "cd build.xcore && make all -j 16"
                             }
-                            archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
                         }
                     }
                     post {
@@ -129,7 +128,7 @@ pipeline {
                         stage("Lib checks") {
                             steps {
                                 warnError("lib checks") {
-                                    runLibraryChecks("${WORKSPACE}/${REPO}", "v2.0.0")
+                                    runLibraryChecks("${WORKSPACE}/${REPO}", "v2.0.1")
                                 }
                             }
                         }
@@ -142,7 +141,7 @@ pipeline {
                 }
                 stage('HW tests') {
                     agent {
-                        label 'xcore.ai || xvf3800'
+                        label 'xcore.ai' // Did include xvf3800 but XTAG speed meant occasional test fail
                     }
                     stages {
                         stage("Checkout and Build") {

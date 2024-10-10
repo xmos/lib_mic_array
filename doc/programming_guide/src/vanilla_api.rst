@@ -183,11 +183,11 @@ another component of your application uses one of these defaults, you may need
 to change these parameters.
 
 ``MIC_ARRAY_CONFIG_CLOCK_BLOCK_A``
-  Clock block used as 'clock A' (see :ref:`getting_started`). This clock block
+  Clock block used as 'clock A' (see :ref:`mic_array_getting_started`). This clock block
   is used in both SDR and DDR configurations.
 
 ``MIC_ARRAY_CONFIG_CLOCK_BLOCK_B``
-  Clock block used as 'clock B' (see :ref:`getting_started`). This clock block
+  Clock block used as 'clock B' (see :ref:`mic_array_getting_started`). This clock block
   is only needed in DDR configurations and is ignored (not configured) in SDR
   configurations.
 
