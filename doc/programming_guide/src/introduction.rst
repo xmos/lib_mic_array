@@ -8,7 +8,7 @@ on an XMOS device.
 Version 5.0 of this library has been redesigned from scratch to make efficient
 usage of the XMOS XS3 architecture.
 
-See :ref:`getting_started` to get going.
+See :ref:`mic_array_getting_started` to get going.
 
 .. note::
 
