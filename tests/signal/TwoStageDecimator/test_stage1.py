@@ -1,4 +1,4 @@
-# Copyright 2022 XMOS LIMITED.
+# Copyright 2022-2024 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
  
 ######
@@ -24,11 +24,14 @@ from mic_array import filters
 from mic_array.pdm_signal import PdmSignal
 from decimator_device import DecimatorDevice
 import pytest
-from conftest import test_params, xe_file_path
+from pathlib import Path
+import json
+
+with open(Path(__file__).parent / "test_params.json") as f:
+    params = json.load(f)
 
 
 class Test_Stage1(object):
-
   @pytest.fixture(autouse=True)
   def __init_case(self, request):
     np.set_printoptions(threshold=sys.maxsize,  
@@ -53,16 +56,16 @@ class Test_Stage1(object):
     return filters.TwoStageFilter(s1_filter, s2_filter)
     
 
-  @pytest.mark.parametrize('xe_param', test_params)
-  def test_stage1(self, request, xe_param):
+  @pytest.mark.parametrize("config", params["CONFIG"], ids=[str(param) for param in params["CONFIG"]])
+  def test_stage1(self, request, config):
 
-    chans, s2_df, s2_taps = xe_param
-    
+    chans, s2_df, s2_taps = [config["N_MICS"], config["S2DECFACTOR"], config["S2TAPCOUNT"]]
     print(f"\nParams[Channels: {chans}; S2 Dec Factor: {s2_df}; S2 Tap Count: {s2_taps}]")
 
-    xe_path = xe_file_path(xe_param, request.config.getoption("build_dir"))
-
-    assert os.path.isfile(xe_path)
+    cwd = Path(request.fspath).parent
+    cfg = f"{chans}ch_{s2_df}s2dec_{s2_taps}s2taps"
+    xe_path = f'{cwd}/bin/{cfg}/tests-signal-decimator_{cfg}.xe'
+    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
 
     blocks = request.config.getoption("blocks")
 
@@ -78,7 +81,7 @@ class Test_Stage1(object):
     if self.print_out: print(f"Expected output: {expected}")
 
     ## Now see what the device says.
-    with DecimatorDevice(xe_path) as dev:
+    with DecimatorDevice(xe_path, extra_xrun_args="--id 0") as dev:
 
       assert dev.param["channels"] == chans
       assert dev.param["s1.dec_factor"] == 32

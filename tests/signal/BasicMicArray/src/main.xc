@@ -1,4 +1,4 @@
-// Copyright 2022 XMOS LIMITED.
+// Copyright 2022-2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <stdlib.h>
@@ -11,7 +11,7 @@
 #include "app.h"
 
 #ifndef USE_ISR
-# error USE_ISR must be defined.
+#error USE_ISR must be defined.
 #endif 
 
 unsafe {
@@ -141,6 +141,7 @@ int main()
   chan c_from_host;
   streaming chan c_to_app;
   chan c_frames;
+  chan c_fifo;
 
   par {
     xscope_host_data(c_from_host);
@@ -151,7 +152,7 @@ int main()
 
     on tile[0]: {
       xscope_mode_lossless();
-
+      
 #if (USE_ISR)
       app_pdm_rx_isr_setup((chanend_t) c_to_app);
 #endif
@@ -161,7 +162,8 @@ int main()
         app_pdm_task((chanend_t) c_to_app);
 #endif
         app_dec_task((chanend_t) c_frames);
-        app_output_task((chanend_t) c_frames);
+        app_output_task((chanend_t) c_frames, (chanend_t)c_fifo);
+        app_fifo_to_xscope_task((chanend_t)c_fifo);
       }
     }
   }

@@ -1,4 +1,4 @@
-# Copyright 2022 XMOS LIMITED.
+# Copyright 2022-2024 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
  
 
@@ -10,8 +10,8 @@ from mic_array.pdm_signal import PdmSignal
 
 class DecimatorDevice(DeviceContext):
   
-  def __init__(self, xe_path, /, **kwargs):
-    super().__init__(xe_path, probes=["meta_out", "data_out"], **kwargs)
+  def __init__(self, xe_path, /, extra_xrun_args="", **kwargs):
+    super().__init__(xe_path, probes=["meta_out", "data_out"], extra_xrun_args=extra_xrun_args, **kwargs)
 
     self.channels = None # unknown initially
 
