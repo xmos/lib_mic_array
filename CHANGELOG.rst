@@ -12,7 +12,7 @@ lib_mic_array change log
 
   * Changes to dependencies:
 
-    - lib_xcore_math: 2.0.0 -> 2.2.0
+    - lib_xcore_math: 2.0.0 -> 2.3.0
 
 5.3.0
 -----
