@@ -90,7 +90,6 @@ pipeline {
                                 sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
                                 sh "cd build.xcore && make all -j 16"
                             }
-                            archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
                         }
                     }
                     post {
