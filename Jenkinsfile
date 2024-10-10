@@ -142,7 +142,7 @@ pipeline {
                 }
                 stage('HW tests') {
                     agent {
-                        label 'xcore.ai'
+                        label 'xcore.ai' // Did include xvf3800 but XTAG speed meant occasional test fail
                     }
                     stages {
                         stage("Checkout and Build") {
