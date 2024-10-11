@@ -1,7 +1,7 @@
 ---
 lib_name: lib_mic_array
 project: '{{lib_name}}'
-title: '{{lib_name}}: XMOS I2S Library'
+title: '{{lib_name}}: PDM Microphone Arrays'
 version: 5.4.0
 
 documentation:
