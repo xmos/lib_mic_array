@@ -2,5 +2,4 @@
 /build/*build*/**/*.md
 CHANGELOG.rst
 LICENSE.rst
-**README*
 build.xcore

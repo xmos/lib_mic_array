@@ -1,4 +1,4 @@
-
+:orphan:
 
 
 Scripts
@@ -113,7 +113,7 @@ Using Custom Coefficients in an Application
 
 The C files ../lib_mic_array/src/etc/stage1_fir_coef.c and
 ../lib_mic_array/src/etc/stage2_fir_coef.c provide an example of how the outputs
-of ``stage1.py`` and ``stage2.py`` may be used. 
+of ``stage1.py`` and ``stage2.py`` may be used.
 
 .. note:: If the stage 2 decimation factor or tap count changes `../lib_mic_array/api/etc/filters_default.h` must also be updated to reflect that change.
 
