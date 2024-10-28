@@ -6,7 +6,7 @@ lib_mic_array: PDM Microphone Array Library
 ###########################################
 
 :vendor: XMOS
-:version: 5.4.0
+:version: 5.5.0
 :scope: General Use
 :description: PDM Microphone Array Library
 :category: General Purpose
