@@ -1,3 +1,5 @@
+:orphan:
+
 ========================
 PDM to PCM Filter Design
 ========================
@@ -27,7 +29,7 @@ Functions to design 2 and 3 stage decimation filters can be found in
 ``design_filters.py``. This also contains several example designs:
 
 * ``good_2_stage_filter``: decimation from 3.072 MHz to 16 kHz using 2 stages.
-* ``small_2_stage_filter``: as above, but using fewer filter taps in stage 2. 
+* ``small_2_stage_filter``: as above, but using fewer filter taps in stage 2.
   This saves memory, at the cost of reduced alias suppression and early
   passband rolloff.
 * ``good_3_stage_filter``: similar performance to ``good_2_stage_filter``, but
@@ -39,11 +41,11 @@ Each example design returns coefficients in a packed format of
 returned as either float or int. If ``int_coeffs=True``, stage 1 will be int16
 and subsequent stages will be int32.
 
-Calling ``python ./script/filter_design/design_filter.py`` will generate a
-``.pkl`` file for each example. These can be run though script/stage1.py to
+Calling ``python ./python/filter_design/design_filter.py`` will generate a
+``.pkl`` file for each example. These can be run though python/stage1.py to
 convert the coefficients to hexadecimal values for use in
 ``lib_mic_array/src/etc/stage1_fir_coef.c``. More details on this process are
-in ``script/README.rst``
+in ``python/README.rst``
 
 
 Plotting utilities

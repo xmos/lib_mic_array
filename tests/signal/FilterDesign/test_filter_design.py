@@ -1,13 +1,8 @@
-# Copyright 2023 XMOS LIMITED.
+# Copyright 2023-2024 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-import os
-import sys
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
-
-import script.filter_design.plot_coeffs as pc
-import script.filter_design.design_filter as df
+import filter_design.plot_coeffs as pc
+import filter_design.design_filter as df
 
 
 def test_design_filter():

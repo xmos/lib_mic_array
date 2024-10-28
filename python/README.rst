@@ -1,4 +1,4 @@
-
+:orphan:
 
 
 Scripts
@@ -24,7 +24,7 @@ The following is an example of running ``stage1.py``.
 
 .. code::
 
-  lib_mic_array\script>python stage1.py filter_design\good_2_stage_filter_int.pkl
+  lib_mic_array\python>python stage1.py filter_design\good_2_stage_filter_int.pkl
   Stage 1 Decimation Factor: 32
   Stage 1 Tap Count: 125
   Stage 2 Decimation Factor: 6
@@ -64,7 +64,7 @@ The following is an example of ``stage2.py`` being run with the same input file.
 
 .. code::
 
-  lib_mic_array\script>python stage2.py filter_design\good_2_stage_filter_int.pkl
+  lib_mic_array\python>python stage2.py filter_design\good_2_stage_filter_int.pkl
   Stage 1 Decimation Factor: 32
   Stage 1 Tap Count: 125
   Stage 2 Decimation Factor: 6
@@ -113,7 +113,7 @@ Using Custom Coefficients in an Application
 
 The C files ../lib_mic_array/src/etc/stage1_fir_coef.c and
 ../lib_mic_array/src/etc/stage2_fir_coef.c provide an example of how the outputs
-of ``stage1.py`` and ``stage2.py`` may be used. 
+of ``stage1.py`` and ``stage2.py`` may be used.
 
 .. note:: If the stage 2 decimation factor or tap count changes `../lib_mic_array/api/etc/filters_default.h` must also be updated to reflect that change.
 

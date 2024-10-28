@@ -1,4 +1,6 @@
 
+:orphan:
+
 tests-signal-BasicMicArray
 ==========================
 
@@ -37,5 +39,5 @@ the path to the test script as the only necessary argument. For example, to run
 
 ::
 
-  pytest ..\tests\signal\BasicMicArray\test_mic_array.py 
+  pytest ..\tests\signal\BasicMicArray\test_mic_array.py
 

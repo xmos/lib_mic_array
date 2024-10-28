@@ -13,9 +13,9 @@ lib_mic_array: PDM Microphone Array Library
 :keywords: PDM, microphone
 :devices: xcore.ai
 
-********
-Overview
-********
+*******
+Summary
+*******
 
 The XMOS microphone array library is designed to allow interfacing to PDM microphones coupled with efficient decimation to user configurable output
 sample rates.
@@ -42,27 +42,33 @@ The microphone array library has the following features:
 
 
 ************
-Known Issues
+Known issues
 ************
 
   * PDM receive can lock-up in ISR mode when ma_frame_rx is not called isochronously after first transfer.
 
 Also see https://github.com/xmos/lib_mic_array/issues.
 
+****************
+Development repo
+****************
+
+  * `lib_mic_array <https://www.github.com/xmos/lib_mic_array>`_
+
 **************
-Required Tools
+Required tools
 **************
 
   * XMOS XTC Tools: 15.3.0
 
 *********************************
-Required Libraries (dependencies)
+Required libraries (dependencies)
 *********************************
 
-  * None
+  * `lib_xcore_math <https://www.xmos.com/file/lib_xcore_math>`_
 
 *************************
-Related Application Notes
+Related application notes
 *************************
 
 The following application notes use this library:

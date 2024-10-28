@@ -1,3 +1,4 @@
+:orphan:
 
 tests-signal
 ============
@@ -41,7 +42,7 @@ the TwoStageDecimator stage2 tests:
 
 ::
 
-  pytest ..\tests\signal\TwoStageDecimator\test_stage2.py 
+  pytest ..\tests\signal\TwoStageDecimator\test_stage2.py
 
 
 
