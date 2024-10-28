@@ -7,7 +7,7 @@ pipeline {
         REPO = 'lib_mic_array'
         PIP_VERSION = "24.0"
         PYTHON_VERSION = "3.11"
-        XMOSDOC_VERSION = "v6.0.0"          
+        XMOSDOC_VERSION = "v6.1.2"          
     }
     options {
         skipDefaultCheckout()
