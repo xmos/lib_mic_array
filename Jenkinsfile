@@ -7,7 +7,6 @@ pipeline {
         REPO = 'lib_mic_array'
         PIP_VERSION = "24.0"
         PYTHON_VERSION = "3.11"
-        XMOSDOC_VERSION = "v6.1.2"
     }
     options {
         skipDefaultCheckout()
@@ -24,28 +23,24 @@ pipeline {
             defaultValue: '15.3.0',
             description: 'The XTC tools version'
         )
+        string(
+            name: 'XMOSDOC_VERSION',
+            defaultValue: 'v6.1.2',
+            description: 'The xmosdoc version'
+        )
     }
     stages {
         stage('Build and Docs') {
             parallel {
                 stage('Documentation') {
                     agent {
-                        label "docker"
+                        label "documentatation"
                     }
                     steps {
                         dir("${REPO}") {
                             warnError("Docs") {
                                 checkout scm
-                                sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
-                                sh """docker run -u "\$(id -u):\$(id -g)" \
-                                      --rm \
-                                      -v \$(pwd):/build \
-                                      ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v html latex"""
-
-                                // Zip and archive doc files
-                                zip dir: "doc/_build/html", zipFile: "${REPO}_docs_html.zip"
-                                archiveArtifacts artifacts: "${REPO}_docs_html.zip"
-                                archiveArtifacts artifacts: "doc/_build/pdf/${REPO}*.pdf"
+                                buildDocs()
                             }
                         }
                     }
