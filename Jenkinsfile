@@ -34,7 +34,7 @@ pipeline {
             parallel {
                 stage('Documentation') {
                     agent {
-                        label "documentatation"
+                        label "documentation"
                     }
                     steps {
                         dir("${REPO}") {

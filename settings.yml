@@ -1,7 +1,8 @@
+# This file relates to internal XMOS infrastructure and should be ignored by external users
 ---
 lib_name: lib_mic_array
 project: '{{lib_name}}'
-title: '{{lib_name}}: PDM Microphone Arrays'
+title: '{{lib_name}}: PDM Mic Array library for the XMOS XS3 architecture'
 version: 5.5.0
 
 documentation:
