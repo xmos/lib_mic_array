@@ -24,7 +24,7 @@ The following is an example of running ``stage1.py``.
 
 .. code::
 
-  lib_mic_array\script>python stage1.py filter_design\good_2_stage_filter_int.pkl
+  lib_mic_array\python>python stage1.py filter_design\good_2_stage_filter_int.pkl
   Stage 1 Decimation Factor: 32
   Stage 1 Tap Count: 125
   Stage 2 Decimation Factor: 6
@@ -64,7 +64,7 @@ The following is an example of ``stage2.py`` being run with the same input file.
 
 .. code::
 
-  lib_mic_array\script>python stage2.py filter_design\good_2_stage_filter_int.pkl
+  lib_mic_array\python>python stage2.py filter_design\good_2_stage_filter_int.pkl
   Stage 1 Decimation Factor: 32
   Stage 1 Tap Count: 125
   Stage 2 Decimation Factor: 6

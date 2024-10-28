@@ -49,7 +49,7 @@ processing unit (VPU), which can compute the dot product of a pair of
 256-element 1-bit vectors in a single cycle. The first stage uses 256 16-bit
 coefficients for its filter taps.
 
-The signature of the filter function is 
+The signature of the filter function is
 
 .. code-block:: c
 
@@ -94,7 +94,7 @@ coefficients and 'boggling' them into the correct memory layout can be a tricky
 business.  To simplify this process, this library provides a Python (3) script
 which does this process for you.
 
-The script can be found in this repository at ``script/stage1.py``.
+The script can be found in this repository at ``python/stage1.py``.
 
 .. todo::
 
@@ -105,8 +105,8 @@ The script can be found in this repository at ``script/stage1.py``.
 Decimator Stage 2
 -----------------
 
-An application is free to supply its own second stage filter. This library also 
-provides a second stage filter whose characteristics are adequate for many or 
+An application is free to supply its own second stage filter. This library also
+provides a second stage filter whose characteristics are adequate for many or
 most applications.
 
 Filter Implementation (Stage 2)
@@ -119,7 +119,7 @@ of ``PDM_FREQ/32``.
 The output from the second stage decimator, Stream C, is a stream of 32-bit PCM
 samples with a sample rate of ``PDM_FREQ/(32*S2_DEC_FACTOR)``. For example, if
 ``PDM_FREQ`` is 3.072 MHz, and ``S2_DEC_FACTOR`` is ``6``, then Stream C's
-sample rate (the sample rate received by the main application code) is 
+sample rate (the sample rate received by the main application code) is
 
     3.072 MHz / (32*6) = 16 kHz
 
@@ -208,21 +208,21 @@ file which launches the mic array tasks. It may look something like this::
         .... the coeffs
     };
 
-The new decimation object must now be declared that references your new filter coefficients. 
+The new decimation object must now be declared that references your new filter coefficients.
 Again, this example is for 32 kHz output since the decimation factor is 3.::
 
     using TMicArray = mic_array::MicArray<mic_count,
-        mic_array::TwoStageDecimator<mic_count, 
-                                   3, 
+        mic_array::TwoStageDecimator<mic_count,
+                                   3,
                                    MIC_ARRAY_32K_STAGE_2_TAP_COUNT>,
         mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
                                     mic_count,
-                                    3>, 
+                                    3>,
         typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
                                     mic_array::DcoeSampleFilter<mic_count>,
                                     mic_array::NopSampleFilter<mic_count>>::type,
-        mic_array::FrameOutputHandler<mic_count, 
-                                    MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME, 
+        mic_array::FrameOutputHandler<mic_count,
+                                    MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
                                     mic_array::ChannelFrameTransmitter>>;
 
 
@@ -257,7 +257,7 @@ to using the custom version of the object::
     mics.ThreadEntry();
 
 
-The increased sample rate will place a higher MIPS burden on the processor. The typical 
+The increased sample rate will place a higher MIPS burden on the processor. The typical
 MIPS usage (see section :ref:`resource_usage`) is in the order of 11 MIPS per channel
 using a 16 kHz output decimator.
 
@@ -270,8 +270,8 @@ will increase processor usage per channel to around 20 MIPS.
 Filter Characteristics for `good_32k_filter_int.pkl`
 ''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-The plot below indicates the frequency response of the first and second stages of the 
-provided 32 kHz filters as well as the cascaded overall response. Note that the 
+The plot below indicates the frequency response of the first and second stages of the
+provided 32 kHz filters as well as the cascaded overall response. Note that the
 overall combined response provides a nice flat passband.
 
 .. image:: 32k_freq_response.png
@@ -279,8 +279,8 @@ overall combined response provides a nice flat passband.
 Filter Characteristics for `good_48k_filter_int.pkl`
 ''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-The plot below indicates the frequency response of the first and second stages of the 
-provided 48 kHz filters as well as the cascaded overall response. Note that the 
+The plot below indicates the frequency response of the first and second stages of the
+provided 48 kHz filters as well as the cascaded overall response. Note that the
 overall combined response provides a nice flat passband.
 
 .. image:: 48k_freq_response.png

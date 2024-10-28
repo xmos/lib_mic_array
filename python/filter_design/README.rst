@@ -41,11 +41,11 @@ Each example design returns coefficients in a packed format of
 returned as either float or int. If ``int_coeffs=True``, stage 1 will be int16
 and subsequent stages will be int32.
 
-Calling ``python ./script/filter_design/design_filter.py`` will generate a
-``.pkl`` file for each example. These can be run though script/stage1.py to
+Calling ``python ./python/filter_design/design_filter.py`` will generate a
+``.pkl`` file for each example. These can be run though python/stage1.py to
 convert the coefficients to hexadecimal values for use in
 ``lib_mic_array/src/etc/stage1_fir_coef.c``. More details on this process are
-in ``script/README.rst``
+in ``python/README.rst``
 
 
 Plotting utilities
