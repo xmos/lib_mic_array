@@ -7,7 +7,7 @@ pipeline {
         REPO = 'lib_mic_array'
         PIP_VERSION = "24.0"
         PYTHON_VERSION = "3.11"
-        XMOSDOC_VERSION = "v6.1.2"          
+        XMOSDOC_VERSION = "v6.1.2"
     }
     options {
         skipDefaultCheckout()
@@ -80,7 +80,7 @@ pipeline {
                 }
                 stage('Custom CMake build') {
                     agent {
-                        label "x86_64 && linux" 
+                        label "x86_64 && linux"
                     }
                     steps {
                         sh "git clone git@github.com:xmos/xmos_cmake_toolchain.git --branch v1.0.0"
@@ -112,13 +112,10 @@ pipeline {
                                 // clone
                                 dir("${REPO}") {
                                     checkout scm
-                                    createVenv(reqFile: "requirements.txt")
-                                    withVenv {
-                                        withTools(params.TOOLS_VERSION) {
-                                            dir("examples") {
-                                                sh 'cmake -B build -G "Unix Makefiles"'
-                                                sh 'xmake -j 16 -C build'
-                                            }
+                                    withTools(params.TOOLS_VERSION) {
+                                        dir("examples") {
+                                            sh 'cmake -B build -G "Unix Makefiles"'
+                                            sh 'xmake -j 16 -C build'
                                         }
                                     }
                                     archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
@@ -150,10 +147,10 @@ pipeline {
                                     println "RUNNING ON"
                                     println env.NODE_NAME
                                     checkout scm
-                                    createVenv(reqFile: "requirements.txt")
-                                    withVenv {
-                                        withTools(params.TOOLS_VERSION) {
-                                            dir("tests") {
+                                    dir("tests") {
+                                        createVenv(reqFile: "requirements.txt")
+                                        withVenv {
+                                            withTools(params.TOOLS_VERSION) {
                                                 sh 'cmake -B build -G "Unix Makefiles"'
                                                 sh 'xmake -j 8 -C build'
                                             }
@@ -172,12 +169,12 @@ pipeline {
 
                                             // This ensures a project for XS2 can be built and runs OK
                                             sh "xsim test_xs2_benign/bin/xs2.xe"
-      
+
                                             // Run this first to ensure the XTAG is up and running for subsequent tests
                                             timeout(time: 2, unit: 'MINUTES') {
                                                 sh "xrun --xscope --id 0 unit/bin/tests-unit.xe"
                                             }
-                                            
+
                                             // note no xdist for HW tests as only 1 hw instance
                                             // Each test has it's own conftest.py so we need to run these seprarately
                                             dir("signal/BasicMicArray") {
