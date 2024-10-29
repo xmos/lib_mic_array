@@ -1,5 +1,5 @@
 dc_elimination.h
-================
+----------------
 
 .. doxygenstruct:: dcoe_chan_state_t
   :members:

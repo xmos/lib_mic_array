@@ -1,5 +1,5 @@
 setup.h
-=======
+-------
 
 .. doxygenfunction:: mic_array_resources_configure
 

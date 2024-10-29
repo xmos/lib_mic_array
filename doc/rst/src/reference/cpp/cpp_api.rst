@@ -1,11 +1,11 @@
-#################
+
 C++ API Reference
-#################
+=================
 
 
 
 MicArray
-========
+--------
 
 .. doxygenclass:: mic_array::MicArray
   :members:
@@ -18,7 +18,7 @@ MicArray
 
 
 BasicMicArray
-=============
+-------------
 
 .. doxygenclass:: mic_array::prefab::BasicMicArray
   :members:
@@ -32,14 +32,14 @@ BasicMicArray
 
 
 PdmRxService
-============
+------------
 
 
 .. doxygenclass:: mic_array::PdmRxService
   :members:
 
 StandardPdmRxService
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 .. doxygenstruct:: pdm_rx_isr_context_t
   :members:
@@ -60,11 +60,11 @@ StandardPdmRxService
 
 
 TwoStageDecimator
-=================
+-----------------
 
 .. doxygenclass:: mic_array::TwoStageDecimator
   :members:
-  
+
 .. raw:: latex
 
   \newpage
@@ -75,21 +75,21 @@ TwoStageDecimator
 
 
 SampleFilter
-============
+------------
 
 
 NopSampleFilter
----------------
+^^^^^^^^^^^^^^^
 
 .. doxygenclass:: mic_array::NopSampleFilter
   :members:
 
 DcoeSampleFilter
-----------------
-  
+^^^^^^^^^^^^^^^^
+
 .. doxygenclass:: mic_array::DcoeSampleFilter
   :members:
-  
+
 .. raw:: latex
 
   \newpage
@@ -101,11 +101,11 @@ DcoeSampleFilter
 
 
 OutputHandler
-=================
+-------------
 
-An OutputHandler is a class which meets the requirements to be used as the 
-``TOutputHandler`` template parameter of the 
-:cpp:class:`MicArray <mic_array::MicArray>` class template. The basic 
+An OutputHandler is a class which meets the requirements to be used as the
+``TOutputHandler`` template parameter of the
+:cpp:class:`MicArray <mic_array::MicArray>` class template. The basic
 requirement is that it have a method:
 
 .. code-block::c++
@@ -120,15 +120,15 @@ See :cpp:member:`MicArray::OutputHandler <mic_array::MicArray::OutputHandler>`
 for more details.
 
 FrameOutputHandler
-------------------
+^^^^^^^^^^^^^^^^^^
 
 .. doxygenclass:: mic_array::FrameOutputHandler
   :members:
 
 
 ChannelFrameTransmitter
-***********************
-  
+"""""""""""""""""""""""
+
 .. doxygenclass:: mic_array::ChannelFrameTransmitter
   :members:
 
@@ -142,7 +142,7 @@ ChannelFrameTransmitter
 
 
 Misc
-====
+----
 
 .. doxygenfunction:: mic_array::deinterleave_pdm_samples
 
