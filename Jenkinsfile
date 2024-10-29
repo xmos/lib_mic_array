@@ -5,6 +5,16 @@ def archiveLib(String repoName) {
   zip zipFile: "${repoName}_sw.zip", dir: "${repoName}", archive: true, defaultExcludes: false
 }
 
+def checkout_shallow()
+{
+  checkout scm: [
+    $class: 'GitSCM',
+    branches: scm.branches,
+    userRemoteConfigs: scm.userRemoteConfigs,
+    extensions: [[$class: 'CloneOption', depth: 1, shallow: true, noTags: false]]
+  ]
+}
+
 getApproval()
 pipeline {
   agent none
@@ -50,7 +60,7 @@ pipeline {
           steps {
               dir("${REPO}") {
                   warnError("Docs") {
-                      checkout scm
+                      checkout_shallow()
                       buildDocs()
                   }
               }
@@ -67,7 +77,7 @@ pipeline {
           }
           steps {
             dir("${REPO}") {
-              checkout scm
+              checkout_shallow()
               dir("tests") {
                 withTools(params.TOOLS_VERSION) {
                   sh 'cmake -B build -G "Unix Makefiles"'
@@ -91,7 +101,7 @@ pipeline {
           steps {
             sh "git clone git@github.com:xmos/xmos_cmake_toolchain.git --branch v1.0.0"
             dir("${REPO}") {
-              checkout scm
+              checkout_shallow()
               withTools(params.TOOLS_VERSION) {
                 sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
                 sh "cd build.xcore && make all -j 16"
@@ -117,7 +127,7 @@ pipeline {
                 sh "git clone --branch v1.3.0 git@github.com:xmos/infr_scripts_py"
                 // clone
                 dir("${REPO}") {
-                  checkout scm
+                  checkout_shallow()
                   withTools(params.TOOLS_VERSION) {
                     dir("examples") {
                       sh 'cmake -B build -G "Unix Makefiles"'
@@ -157,7 +167,7 @@ pipeline {
                 dir("${REPO}") {
                   println "RUNNING ON"
                   println env.NODE_NAME
-                  checkout scm
+                  checkout_shallow()
                   dir("tests") {
                     createVenv(reqFile: "requirements.txt")
                     withVenv {
