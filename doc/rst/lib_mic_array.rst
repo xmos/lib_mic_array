@@ -1,10 +1,11 @@
 .. lib_mic_array documentation master file
 
-Mic Array Library
-=================
+#############
+lib_mic_array
+#############
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
 
    src/introduction

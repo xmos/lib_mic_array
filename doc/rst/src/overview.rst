@@ -1,7 +1,7 @@
 
-
+********
 Overview
-========
+********
 
 ``lib_mic_array`` is a library for capturing and processing PDM microphone data
 on xcore.ai devices.
@@ -12,7 +12,7 @@ stream is captured by the device, filtered and decimated to a 32-bit PCM audio
 stream.
 
 Capabilities
-------------
+============
 
 * Both SDR (1 mic per pin) and DDR (2 mics per pin) microphone configurations
   are supported
@@ -44,7 +44,7 @@ Capabilities
   \newpage
 
 High-Level Process View
------------------------
+=======================
 
 This section gives a brief overview of the steps to process a PDM audio stream
 into a PCM audio stream. This section is concerned with the steady state
@@ -58,7 +58,7 @@ behavior and does not describe any necessary initialization steps.
 
 
 Execution Contexts
-******************
+------------------
 
 The mic array unit uses two different execution contexts. The first is the PDM
 rx service ("PDM rx"), which is responsible for reading PDM samples from the
@@ -68,7 +68,7 @@ decimation thread, which is where all processing other than PDM capture is
 performed.
 
 This two-context model relaxes the need for tight coupling and synchronization
-between PDM rx and the decimation thread, allowing significant flexibility in 
+between PDM rx and the decimation thread, allowing significant flexibility in
 how samples are processed in the decimation thread.
 
 PDM rx is typically run within an interrupt on the same hardware core as the
@@ -80,7 +80,7 @@ in the case where the processing load exceeds the MIPS available in a single
 thread.
 
 Step 1: PDM Capture
-*******************
+-------------------
 
 The PDM data signal is captured by the xcore.ai device's port hardware. The port
 receiving the PDM signals buffers the received samples. Each time the port
@@ -90,16 +90,16 @@ Samples are collected word-by-word and assembled into blocks. Each time a block
 has been filled, the block is transferred to the decimation thread where all
 remaining mic array processing takes place.
 
-The size of PDM data blocks varies depending upon the configured number of 
-microphone channels and the configured second stage decimator's decimation 
+The size of PDM data blocks varies depending upon the configured number of
+microphone channels and the configured second stage decimator's decimation
 factor. Each PDM data block will contain exactly enough PDM samples to produce
 one new mic array (multi-channel) output sample.
 
 Step 2: First Stage Decimation
-******************************
+------------------------------
 
-The conversion from the high-sample-rate PDM stream to lower-sample-rate PCM 
-stream involves two stages of decimating filters. After the decimation thread 
+The conversion from the high-sample-rate PDM stream to lower-sample-rate PCM
+stream involves two stages of decimating filters. After the decimation thread
 receives a block of PDM samples, the samples are filtered by the first stage
 decimator.
 
@@ -117,7 +117,7 @@ samples with a sample time ``32`` times longer than the PDM sample time.
 See :ref:`decimator_stages` for further details.
 
 Step 3: Second Stage Decimation
-*******************************
+-------------------------------
 
 The second stage decimator is a decimating FIR filter with a configurable
 decimation factor and tap count. Like the first stage decimator, this library
@@ -136,9 +136,9 @@ and a 3.072 MHz PDM clock, the output sample rate is 16 kHz.
 See :ref:`decimator_stages` for further details.
 
 Step 4: Post-Processing
-***********************
+-----------------------
 
-After second stage decimation, the resulting sample goes to post-processing 
+After second stage decimation, the resulting sample goes to post-processing
 where two (optional) post-processing steps are available.
 
 The first is a simple IIR filter, called DC Offset Elimination, which seeks to
@@ -155,7 +155,7 @@ Finally, the sample or frame is transmitted over a channel from the mic array
 module to the next stage of the processing pipeline.
 
 Extending/Modifying Mic Array Behavior
-**************************************
+--------------------------------------
 
 At the core of ``lib_mic_array`` are several C++ class templates which are
 loosely coupled and intended to be easily overridden for modified behavior. The
