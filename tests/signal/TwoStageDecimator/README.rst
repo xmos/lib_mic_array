@@ -1,8 +1,9 @@
+:orphan:
 
 tests-signal-TwoStageDecimator
 ==============================
 
-Tests in this directory ensure that the signal processing performed by the 
+Tests in this directory ensure that the signal processing performed by the
 ``TwoStageDecimator`` class template behaves as expected.
 
 Each of these scripts are run using ``pytest``, which will launch the
@@ -37,5 +38,5 @@ the TwoStageDecimator stage2 tests:
 
 ::
 
-  pytest ..\tests\signal\TwoStageDecimator\test_stage2.py 
+  pytest ..\tests\signal\TwoStageDecimator\test_stage2.py
 

@@ -1,3 +1,4 @@
+:orphan:
 
 tests-build-vanilla
 ===================
@@ -19,7 +20,7 @@ parameters, a separate target with different preprocessor defintions is
 generated for each test configuration.
 
 A custom target, called `tests-build-vanilla`, is defined which builds each
-generated test target. 
+generated test target.
 
 To build, (with your CMake project properly configured) navigate to your CMake
 build directory and use the following command:

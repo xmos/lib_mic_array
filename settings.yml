@@ -1,20 +1,21 @@
+# This file relates to internal XMOS infrastructure and should be ignored by external users
 ---
 lib_name: lib_mic_array
 project: '{{lib_name}}'
-title: '{{lib_name}}: PDM Microphone Arrays'
-version: 5.4.0
+title: '{{lib_name}}: PDM microphone array library'
+version: 5.5.0
 
 documentation:
   exclude_patterns_path: doc/exclude_patterns.inc
   substitutions_path: doc/substitutions.inc
-  root_doc: doc/programming_guide/index.rst
+  root_doc: doc/rst/lib_mic_array.rst
   linkcheck_ignore_regex: ['']
   cognidox_part_number: XM-010267-UG
   doxygen_projects:
     lib_mic_array:
       doxyfile_path: doc/Doxyfile.inc
   pdfs:
-    doc/programming_guide/index.rst:
+    doc/rst/lib_mic_array.rst:
       pdf_title: '{{title}}'
       pdf_filename: '{{lib_name}}_v{{version}}'
     README.rst:

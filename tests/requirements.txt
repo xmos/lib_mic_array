@@ -1,0 +1,9 @@
+# python_version 3.11.9
+
+pytest==8.3.2
+pytest-xdist==3.6.1
+numpy==2.1.1
+scipy==1.14.1
+matplotlib==3.9.2
+
+-e ../python

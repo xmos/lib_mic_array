@@ -1,6 +1,6 @@
-VERSION = 5.4.0
+VERSION = 5.5.0
 
-DEPENDENT_MODULES = lib_xcore_math(>=2.3.0)
+DEPENDENT_MODULES = lib_xcore_math(>=2.4.0)
 
 MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -Os
 
@@ -13,7 +13,7 @@ INCLUDE_DIRS = api
 
 SOURCE_DIRS = src				\
               src/etc
-							
+
 # If using xmake/module_build_info instead of cmake, the vanilla API can still
 # be used by setting VANILLA_API_ENABLED to 1 in your application Makefile.
 # This also requires the following compile definitions to be added for your

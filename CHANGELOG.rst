@@ -1,6 +1,17 @@
 lib_mic_array change log
 ========================
 
+5.5.0
+-----
+
+  * CHANGED: Documentation updated
+  * CHANGED: Renamed examples to app_
+  * CHANGED: Renamed the scripts/ directory to python/
+
+  * Changes to dependencies:
+
+    - lib_xcore_math: 2.3.0 -> 2.4.0
+
 5.4.0
 -----
 
