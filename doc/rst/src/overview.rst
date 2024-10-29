@@ -48,8 +48,10 @@ High-Level Process View
 
 This section gives a brief overview of the steps to process a PDM audio stream
 into a PCM audio stream. This section is concerned with the steady state
-behavior and does not describe any necessary initialization steps.
+behavior and does not describe any necessary initialization steps. The high level
+process view is depicted in the figure :ref:`below <high_level_process>`.
 
+.. _high_level_process:
 
 .. figure:: diagrams/high_level_process.drawio.png
    :align: center

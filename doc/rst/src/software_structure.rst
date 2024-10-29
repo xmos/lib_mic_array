@@ -74,8 +74,10 @@ interface.
   the contract is enforced (at compile time) solely in how the ``MicArray``
   object makes use of the sub-component.
 
-The following diagram conceptually captures the flow of information through the
+The following :ref:`diagram <high_level_flow>` conceptually captures the flow of information through the
 ``MicArray`` sub-components.
+
+.. _high_level_flow:
 
 .. figure:: diagrams/high_level_process.drawio.png
    :align: center
