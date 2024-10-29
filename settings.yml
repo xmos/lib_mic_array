@@ -2,7 +2,7 @@
 ---
 lib_name: lib_mic_array
 project: '{{lib_name}}'
-title: '{{lib_name}}: PDM Mic Array library for the XMOS XS3 architecture'
+title: '{{lib_name}}: PDM microphone array library'
 version: 5.5.0
 
 documentation:
