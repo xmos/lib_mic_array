@@ -84,12 +84,16 @@ header ``mic_array/etc/filters_default.h`` as ``stage1_coef``.
 Filter Characteristics (Stage 1)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The plot below indicates the :ref:`frequency response of the provided first stage
-decimation filter <first_stage_decimation_filter>`.
+The plot below indicates the frequency response of the provided first stage
+decimation filter :ref:`first_stage_decimation_filter`.
 
 .. _first_stage_decimation_filter:
 
-.. image:: stage1_freq_response.png
+.. figure:: stage1_freq_response.png
+   :align: center
+   :scale: 100 %
+   
+   First stage decimation filter freq response
 
 
 Filter Conversion Script
@@ -145,12 +149,16 @@ For the provided filter ``S2_TAP_COUNT = 65``, and ``S2_DEC_FACTOR = 6``.
 Filter Characteristics (Stage 2)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The plot below indicates the :ref:`frequency response of the provided second stage
-decimation filter <second_stage_decimation_filter>`.
+The plot below indicates the frequency response of the provided second stage
+decimation filter :ref:`second_stage_decimation_filter`.
 
 .. _second_stage_decimation_filter:
 
-.. image:: stage2_freq_response.png
+.. figure:: stage2_freq_response.png
+   :align: center
+   :scale: 100 %
+   
+   Second stage decimation filter freq response
 
 
 Custom Filters
@@ -280,20 +288,28 @@ Filter Characteristics for `good_32k_filter_int.pkl`
 
 The plot below indicates the frequency response of the first and second stages of the
 provided 32 kHz filters as well as the cascaded overall response. Note that the
-overall combined response provides a nice flat passband as shown in the :ref:`figure <freq_response_32k>`.
+overall combined response provides a nice flat passband as shown in the :ref:`freq_response_32k`.
 
 .. _freq_response_32k:
 
-.. image:: 32k_freq_response.png
+.. figure:: 32k_freq_response.png
+   :align: center
+   :scale: 100 %
+   
+   good_32k_filter_int.pkl frequency response
 
 Filter Characteristics for `good_48k_filter_int.pkl`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plot below indicates the frequency response of the first and second stages of the
 provided 48 kHz filters as well as the cascaded overall response. Note that the
-overall combined response provides a nice flat passband as shown :ref:`here <freq_response_48k>`.
+overall combined response provides a nice flat passband as shown :ref:`freq_response_48k`.
 
 .. _freq_response_48k:
 
-.. image:: 48k_freq_response.png
+.. figure:: 48k_freq_response.png
+   :align: center
+   :scale: 100 %
+   
+   good_48k_filter_int.pkl frequency response
 

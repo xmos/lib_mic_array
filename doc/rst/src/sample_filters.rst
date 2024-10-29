@@ -141,8 +141,12 @@ and previous output sample values respectively.
 DCOE Filter Frequency Response
 ------------------------------
 
-The plot below indicates the :ref:`frequency response of DCOE filter <freq_response_dcoe>`.
+The plot below indicates the frequency response of DCOE filter :ref:`freq_response_dcoe`.
 
 .. _freq_response_dcoe:
 
-.. image:: dcoe_freq_response.png
+.. figure:: dcoe_freq_response.png
+   :align: center
+   :scale: 100 %
+
+   DCOE filter frequency response

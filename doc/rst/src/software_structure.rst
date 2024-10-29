@@ -74,7 +74,7 @@ interface.
   the contract is enforced (at compile time) solely in how the ``MicArray``
   object makes use of the sub-component.
 
-The following :ref:`diagram <high_level_flow>` conceptually captures the flow of information through the
+The following diagram :ref:`high_level_flow` conceptually captures the flow of information through the
 ``MicArray`` sub-components.
 
 .. _high_level_flow:
@@ -82,7 +82,8 @@ The following :ref:`diagram <high_level_flow>` conceptually captures the flow of
 .. figure:: diagrams/high_level_process.drawio.png
    :align: center
    :scale: 100 %
-   :alt: Mic Array High Level Process
+
+   Mic Array High Level Process
 
 .. note::
 
