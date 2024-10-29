@@ -130,7 +130,7 @@ pipeline {
                   checkout_shallow()
                   withTools(params.TOOLS_VERSION) {
                     dir("examples") {
-                      sh 'cmake -B build -G "Unix Makefiles"'
+                      sh 'cmake -B build -G "Unix Makefiles" -DDEPS_CLONE_SHALLOW=TRUE'
                       sh 'xmake -j 16 -C build'
                     }
                   }
