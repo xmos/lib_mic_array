@@ -1,8 +1,8 @@
 # This file provides overrides to the Doxyfile configuration
 
 PROJECT_NAME           = lib_mic_array
-PROJECT_BRIEF          = "PDM Mic Array library for the XMOS XS3 architecture"
+PROJECT_BRIEF          = "PDM microphone array library"
 
-INPUT                  = ../lib_mic_array/api ../etc/vanilla  ../doc/programming_guide/src
+INPUT                  = ../lib_mic_array/api ../etc/vanilla  ../doc/rst/src
 
 PREDEFINED             = MA_C_API= C_API_START= C_API_END= __DOXYGEN__=1
