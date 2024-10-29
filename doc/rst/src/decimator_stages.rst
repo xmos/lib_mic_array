@@ -8,14 +8,15 @@ The mic array unit provided by this library uses a two-stage decimation process
 to convert a high sample rate stream of (1-bit) PDM samples into a lower sample
 rate stream of (32-bit) PCM samples.
 
-Below is a :ref:`simplified model of the mic array unit <decimator_stages_simplified>`.
+Below is a :ref:`decimator_stages_simplified`.
 
 .. _decimator_stages_simplified:
 
 .. figure:: diagrams/decimator_stages.drawio.png
    :align: center
    :scale: 100 %
-   :alt: Simplified Decimator Model
+   
+   Simplified Decimator Model
 
 The first stage filter is a decimating FIR filter with a fixed tap count
 (``S1_TAP_COUNT``) of ``256`` and a fixed decimation factor (``S1_DEC_FACTOR``)
