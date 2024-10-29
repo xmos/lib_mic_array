@@ -1,7 +1,7 @@
 .. lib_mic_array documentation master file
 
 #############
-lib_mic_array
+lib_mic_array: PDM microphone array library
 #############
 
 .. toctree::
