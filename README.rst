@@ -2,13 +2,13 @@
 :orphan:
 
 ###########################################
-lib_mic_array: PDM Microphone Array Library
+lib_mic_array: PDM microphone array library
 ###########################################
 
 :vendor: XMOS
 :version: 5.5.0
 :scope: General Use
-:description: PDM Microphone Array Library
+:description: PDM microphone array library
 :category: General Purpose
 :keywords: PDM, microphone
 :devices: xcore.ai
@@ -74,12 +74,6 @@ Related application notes
 The following application notes use this library:
 
   * AN000248 - Using lib_xua with lib_mic_array
-
-See the `examples/` subdirectory for simple usage examples.
-
-The examples in `sln_voice <https://github.com/xmos/sln_voice/tree/develop/examples>`_ use this library extensively and contain multiple examples for both bare-metal and under FreeRTOS.
-
-The `XVF3800 <https://www.xmos.com/xvf3800>`_ VocalFusion voice processor products also use this library.
 
 *******
 Support
