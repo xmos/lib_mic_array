@@ -1,22 +1,23 @@
 .. _resource_usage:
 
+************************
 Mic Array Resource Usage
-########################
+************************
 
-The mic array unit requires several kinds of hardware resources, including 
+The mic array unit requires several kinds of hardware resources, including
 ports, clock blocks, chanends, hardware threads, compute time (MIPS) and memory.
-Compared to previous versions of this library, the biggest advantage to the 
+Compared to previous versions of this library, the biggest advantage to the
 current version with respect to hardware resources is a greatly reduced compute
-requirement. This was made possible by the introduction of the VPU in the XMOS 
-XS3 architecture. The VPU can do certain operations in a single instruction 
+requirement. This was made possible by the introduction of the VPU in the XMOS
+XS3 architecture. The VPU can do certain operations in a single instruction
 which would take many, many instructions on previous architectures.
 
-This page attempts to capture the requirements for each hardware type with 
+This page attempts to capture the requirements for each hardware type with
 relevant configurations.
 
 .. warning::
-  The usage information below applies when the Vanilla API or prefab APIs are 
-  used. Resource usage in an application which uses custom mic array 
+  The usage information below applies when the Vanilla API or prefab APIs are
+  used. Resource usage in an application which uses custom mic array
   sub-components will depend crucially on the specifics of the customization.
 
 Discrete Resources
@@ -77,7 +78,7 @@ The prefab API can run the PDM rx service either as a stand-alone thread or as
 an interrupt in another thread. The Vanilla API only supports running it as an
 interrupt. The Vanilla API requires only on hardware thread. The prefab API
 requires 1 thread if PDM rx is used in interrupt mode, and 2 if PDM rx is a
-stand-alone thread.. 
+stand-alone thread..
 
 Running PDM rx as a stand-alone thread modestly reduces the mic array unit's
 MIPS consumption by eliminating the context switch overhead of an interrupt. The
@@ -85,7 +86,7 @@ cost of that is one hardware thread.
 
 .. note::
 
-  When configured as an interrupt, PDM rx ISR is typically configured on the 
+  When configured as an interrupt, PDM rx ISR is typically configured on the
   decimation thread, but this is not a strict requirement. The PDM rx interrupt
   can be configured for any thread on the same tile as the decimation thread.
   They must be on the same tile because shared memory is used between the two
@@ -150,7 +151,7 @@ PdmRx
 
 Measurements indicate that enabling or disabling the DC offset removal filter
 has little effect on the MIPS usage. The selected frame size has only a slight
-negative correlation with MIPS usage. 
+negative correlation with MIPS usage.
 
 
 
@@ -170,7 +171,7 @@ Not included in the table is the space allocated for the first and second stage
 filter coefficients. The first stage filter coefficients take a constant ``523``
 bytes. The second stage filter coefficients use ``4*S2TC`` bytes, where ``S2TC``
 is the stage 2 decimator tap count. The value shown in the 'data' column of the
-table is the ``sizeof()`` the 
+table is the ``sizeof()`` the
 :cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>` that is
 instantiated. The table below indicates the data size for various
 configurations.

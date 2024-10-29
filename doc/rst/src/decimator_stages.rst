@@ -1,18 +1,22 @@
 .. _decimator_stages:
 
+****************
 Decimator Stages
-================
+****************
 
 The mic array unit provided by this library uses a two-stage decimation process
 to convert a high sample rate stream of (1-bit) PDM samples into a lower sample
 rate stream of (32-bit) PCM samples.
 
-Below is a simplified model of the mic array unit.
+Below is a :ref:`decimator_stages_simplified`.
+
+.. _decimator_stages_simplified:
 
 .. figure:: diagrams/decimator_stages.drawio.png
    :align: center
    :scale: 100 %
-   :alt: Simplified Decimator Model
+   
+   Simplified Decimator Model
 
 The first stage filter is a decimating FIR filter with a fixed tap count
 (``S1_TAP_COUNT``) of ``256`` and a fixed decimation factor (``S1_DEC_FACTOR``)
@@ -23,7 +27,7 @@ The second stage decimator is a fully configurable FIR filter with tap count
 ``1``).
 
 Decimator Stage 1
------------------
+=================
 
 For the first stage decimating FIR filter, the actual filter coefficients used
 are configurable, so an application is free to use a custom first stage filter,
@@ -32,7 +36,7 @@ the first stage filter, whose filter characteristics are adequate for most
 applications.
 
 Filter Implementation (Stage 1)
-*******************************
+-------------------------------
 
 The input to the first stage decimator (here called "Stream A") is a stream of
 1-bit PDM samples with a sample rate of ``PDM_FREQ``.  Rather than each PDM
@@ -71,23 +75,29 @@ rearranged bit-by-bit into a block form suitable for VPU processing. See the
 section below on filter conversion if supplying a custom filter for stage 1.
 
 Provided Filter (Stage 1)
-*************************
+-------------------------
 
 This library provides filter coefficients that may be used with the first stage
 decimator. These coefficients are available in your application through the
 header ``mic_array/etc/filters_default.h`` as ``stage1_coef``.
 
 Filter Characteristics (Stage 1)
-''''''''''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plot below indicates the frequency response of the provided first stage
-decimation filter.
+decimation filter :ref:`first_stage_decimation_filter`.
 
-.. image:: stage1_freq_response.png
+.. _first_stage_decimation_filter:
+
+.. figure:: stage1_freq_response.png
+   :align: center
+   :scale: 100 %
+   
+   First stage decimation filter freq response
 
 
 Filter Conversion Script
-************************
+------------------------
 
 Taking a set of floating-point coefficients, quantizing them into 16-bit
 coefficients and 'boggling' them into the correct memory layout can be a tricky
@@ -103,14 +113,14 @@ The script can be found in this repository at ``python/stage1.py``.
 
 
 Decimator Stage 2
------------------
+=================
 
 An application is free to supply its own second stage filter. This library also
 provides a second stage filter whose characteristics are adequate for many or
 most applications.
 
 Filter Implementation (Stage 2)
-*******************************
+-------------------------------
 
 The input to the second stage decimator (here called "Stream B") is the stream
 of 32-bit PCM samples emitted from the first stage decimator with a sample rate
@@ -128,7 +138,7 @@ The second stage filter uses the 32-bit FIR filter implementation from
 ``xs3_filter_fir_s32()`` in that library for more implementation details.
 
 Provided Filter (Stage 2)
-*************************
+-------------------------
 
 This library provides a filter suitable for the second stage decimator. It is
 available in your application through the header
@@ -137,16 +147,22 @@ available in your application through the header
 For the provided filter ``S2_TAP_COUNT = 65``, and ``S2_DEC_FACTOR = 6``.
 
 Filter Characteristics (Stage 2)
-''''''''''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plot below indicates the frequency response of the provided second stage
-decimation filter.
+decimation filter :ref:`second_stage_decimation_filter`.
 
-.. image:: stage2_freq_response.png
+.. _second_stage_decimation_filter:
+
+.. figure:: stage2_freq_response.png
+   :align: center
+   :scale: 100 %
+   
+   Second stage decimation filter freq response
 
 
 Custom Filters
---------------
+==============
 
 Without writing a custom decimator implementation, the tap count and decimation
 factor for the first stage decimator are fixed to ``256`` and ``32``
@@ -173,7 +189,7 @@ this library, can be used to help with this formatting. See the associated READM
 
 
 Configuring for 32 kHz or 48 kHz output
-***************************************
+---------------------------------------
 
 Filter design scripts are provided to support higher output sampling rates than the default 16 kHz.
 
@@ -268,20 +284,32 @@ Increasing the filer lengths to 148 and 96 for stages 1 and 2 respectively at 48
 will increase processor usage per channel to around 20 MIPS.
 
 Filter Characteristics for `good_32k_filter_int.pkl`
-''''''''''''''''''''''''''''''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plot below indicates the frequency response of the first and second stages of the
 provided 32 kHz filters as well as the cascaded overall response. Note that the
-overall combined response provides a nice flat passband.
+overall combined response provides a nice flat passband as shown in the :ref:`freq_response_32k`.
 
-.. image:: 32k_freq_response.png
+.. _freq_response_32k:
+
+.. figure:: 32k_freq_response.png
+   :align: center
+   :scale: 100 %
+   
+   good_32k_filter_int.pkl frequency response
 
 Filter Characteristics for `good_48k_filter_int.pkl`
-''''''''''''''''''''''''''''''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plot below indicates the frequency response of the first and second stages of the
 provided 48 kHz filters as well as the cascaded overall response. Note that the
-overall combined response provides a nice flat passband.
+overall combined response provides a nice flat passband as shown :ref:`freq_response_48k`.
 
-.. image:: 48k_freq_response.png
+.. _freq_response_48k:
+
+.. figure:: 48k_freq_response.png
+   :align: center
+   :scale: 100 %
+   
+   good_48k_filter_int.pkl frequency response
 

@@ -1,5 +1,5 @@
 frame_transfer.h
-================
+----------------
 
 .. doxygenfunction:: ma_frame_tx
 

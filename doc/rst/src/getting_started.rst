@@ -1,7 +1,8 @@
 .. _mic_array_getting_started:
 
+***************
 Getting Started
-===============
+***************
 
 There are three models for how the mic array unit can be included in an
 application. The details of how to allocate, initialize and start the mic array
@@ -29,7 +30,7 @@ application is to *identify the required hardware resources*.
 
 
 Identify Resources
-------------------
+==================
 
 The key hardware resources to be identified are the *ports* and *clock blocks*
 that will be used by the mic array unit.  The ports correspond to the physical
@@ -38,7 +39,7 @@ of hardware resource which can be attached to ports to coordinate the
 presentation and capture of signals on physical pins.
 
 Clock Blocks
-************
+------------
 
 While clock blocks may be more abstract than ports, their implications for this
 library are actually simpler. First, the mic array unit will need a way of
@@ -55,7 +56,7 @@ to as "Clock B" in the API documentation.
 
 Each tile on an xcore.ai device has 5 clock blocks available. In code, a clock
 block is identified by its resource ID, which are given as the preprocessor
-macros ``XS1_CLKBLK_1`` through ``XS1_CLKBLK_5``. 
+macros ``XS1_CLKBLK_1`` through ``XS1_CLKBLK_5``.
 
 Unlike ports, which are tied to specific physical pins, clock blocks are
 fungible. Your application is free to use any clock block that has not already
@@ -63,7 +64,7 @@ been allocated for another purpose. The vanilla component model defaults to
 using ``XS1_CLKBLK_1`` and ``XS1_CLKBLK_2``.
 
 Ports
-*****
+-----
 
 Three ports are needed for the mic array component. As mentioned above, ports
 are physically tied to specific device pins, and so the correct ports must be
@@ -115,13 +116,13 @@ described above:
 The first 3 ports listed, ``PORT_PDM_CLK``, ``PORT_PDM_DATA`` and
 ``PORT_MCLK_IN_OUT`` are respectively ``p_pdm_clk``, ``p_pdm_mics`` and
 ``p_mclk``. The value in the ``Location`` attribute (e.g. ``XS1_PORT_1G``) is
-the port name as you will find it in your package documentation. 
+the port name as you will find it in your package documentation.
 
 In this case, either ``PORT_PDM_CLK`` or ``XS1_PORT_1G`` can be used in code to
 identify this port.
 
 Declaring Resources
-*******************
+-------------------
 
 Once the ports and clock blocks to be used have been identified, these
 resources can be represented in code using a ``pdm_rx_resources_t`` struct. The
@@ -142,7 +143,7 @@ following is an example of declaring resources in a DDR configuration. See
 Note that this is not necessary in applications using the vanilla model.
 
 Other Resources
-***************
+---------------
 
 In addition to ports and clock blocks, there are also several other hardware
 resource types used by ``lib_mic_array`` which are worth considering. Running
@@ -161,7 +162,7 @@ all)
 
 
 Vanilla Model
--------------
+=============
 
 Mic array configuration with the vanilla model is achieved mostly through the
 application's build system configuration.
@@ -173,7 +174,7 @@ those files to your *application*'s build (*not* the library target), and
 defining several compile options which tell it how to behave.
 
 Vanilla - CMake Macro
-*********************
+---------------------
 
 To simplify this further, a CMake macro called ``mic_array_vanilla_add()`` has
 been included with the build system.
@@ -181,23 +182,23 @@ been included with the build system.
 ``mic_array_vanilla_add()`` takes several arguments:
 
 * ``TARGET_NAME`` - The name of the CMake application target that the vanilla
-  mode source should be added to. 
-* ``MCLK_FREQ`` - The frequency of the master audio clock, in Hz. 
-* ``PDM_FREQ`` - The desired frequency of the PDM clock, in Hz. 
-* ``MIC_COUNT`` - The number of microphone channels to be captured. 
+  mode source should be added to.
+* ``MCLK_FREQ`` - The frequency of the master audio clock, in Hz.
+* ``PDM_FREQ`` - The desired frequency of the PDM clock, in Hz.
+* ``MIC_COUNT`` - The number of microphone channels to be captured.
 * ``SAMPLES_PER_FRAME`` - The size of the audio frames produced by the mic array
   unit (frames will be 2 dimensional arrays with shape
   ``(MIC_COUNT,SAMPLES_PER_FRAME)``).
 
 Vanilla - Optional Configuration
-********************************
+--------------------------------
 
 Though not exposed by the ``mic_array_vanilla_add()`` macro, several additional
 configuration options are available when using the vanilla model. These are all
 configured by adding defines to the application target.
 
 Vanilla - Initializing and Starting
-***********************************
+-----------------------------------
 
 Once the configuration options have been chosen, initializing and starting the
 mic array at run-time is easily achieved. Two function calls are necessary, both
@@ -223,7 +224,7 @@ on the tile.
   core which will host the decimation thread.
 
 Prefab Model
-------------
+============
 
 The ``lib_mic_array`` library has a C++ namespace ``mic_array::prefab`` which
 contains class templates for typical mic array setups using common
@@ -234,7 +235,7 @@ they can focus only on pieces they care about.
 .. note::
 
   As of version 5.0.1, only one prefab class template,
-  :cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>`, has been 
+  :cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>`, has been
   defined.
 
 To configure the mic array using a prefab, you will need to add a C++ source
@@ -242,7 +243,7 @@ file to your application. NB: This will end up looking a lot like the contents
 of ``mic_array_vanilla.cpp`` when you are through.
 
 Prefab - Declare Resources
-**************************
+--------------------------
 
 The example in this section will use ``2`` microphones in a DDR configuration
 with DC offset elimination enabled, and using 128-sample frames. The resource
@@ -271,7 +272,7 @@ Within a C++ source file:
 
 
 Prefab - Allocate MicArray
-**************************
+--------------------------
 
 The C++ class template :cpp:class:`MicArray <mic_array::MicArray>` is central to
 the mic array unit in this library. The class templates defined in the
@@ -300,7 +301,7 @@ optimized out at build time so that at run time it won't even need to check
 whether DCOE is enabled.
 
 Prefab - Init and Start Functions
-*********************************
+---------------------------------
 
 Now a couple functions need to be implemented in your C++ file. In most cases
 these functions will need to be callable from C or XC, and so they should not be
@@ -309,7 +310,7 @@ preprocessor macro provided by the library).
 
 First, a function which initializes the ``MicArray`` object and configures the
 port and clock block resources.  The documentation for
-:cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>` indicates any 
+:cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>` indicates any
 parts of the ``MicArray`` object that need to be initialized.
 
 .. code-block:: c++

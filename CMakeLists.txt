@@ -6,14 +6,14 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source build is not allowed! Please specify a build folder.\n\tex:cmake -B build")
 endif()
 
-include(cmake/CPM.cmake)
+include(tests/custom_cmake_build/cmake/CPM.cmake)
 
 # if( PROJECT_IS_TOP_LEVEL )
 #   message(STATUS "Configuring as top-level project")
 #   set( DEV_LIB_MIC_ARRAY 1 )
 # endif()
 
-# If DEV_LIB_MIC_ARRAY is not defined, set it to true iff the root 
+# If DEV_LIB_MIC_ARRAY is not defined, set it to true iff the root
 # build dir (CMAKE_BINARY_DIR) is a child of the current source dir.
 # This will tell us whether to include the demos and tests.
 if(NOT DEFINED DEV_LIB_MIC_ARRAY)
@@ -24,7 +24,7 @@ if(NOT DEFINED DEV_LIB_MIC_ARRAY)
   endif()
 endif()
 
-project(lib_mic_array 
+project(lib_mic_array
     VERSION 5.0.1
     LANGUAGES CXX C ASM)
 

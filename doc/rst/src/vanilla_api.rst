@@ -1,14 +1,15 @@
 .. _vanilla_api:
 
+***********
 Vanilla API
-###########
+***********
 
 The Vanilla API is a small optional API which greatly simplifies the process of
 including a mic array unit in an xcore.ai application. Most applications that
 make use of a PDM mic array will not have complicated needs from the mic array
 software component beyond delivery of frames of audio data from a configurable
-set of microphones at a configurable rate. This API targets that majority of 
-applications. 
+set of microphones at a configurable rate. This API targets that majority of
+applications.
 
 The prefab API requires the application developer to have at least some
 minimal understanding of the objects and classes associated with the mic array
@@ -19,8 +20,8 @@ and instead moves the majority of the application logic into the application's
 build project.
 
 .. note::
-  
-  **Why "Vanilla"?** "Vanilla" was originally meant as a generic placeholder 
+
+  **Why "Vanilla"?** "Vanilla" was originally meant as a generic placeholder
   name, but no better name was ever suggested.
 
 How It Works
@@ -34,7 +35,7 @@ control configuration, the source file relies on a set of pre-processor macros
 instantiated.
 
 The API is included in an application by using a CMake macro
-(``mic_array_vanilla_add()``) provided in this library. The macro updates the 
+(``mic_array_vanilla_add()``) provided in this library. The macro updates the
 application's sources, includes and compile definitions to include the API.
 
 In the application code, two function calls are needed. First,
@@ -56,8 +57,8 @@ a (non-streaming) channel using the :c:func:`ma_frame_rx()` or
 
 .. note::
 
-  The Vanilla API uses the default filters provided with this library, 
-  and does not currently provide a way to override this. To use custom filters, 
+  The Vanilla API uses the default filters provided with this library,
+  and does not currently provide a way to override this. To use custom filters,
   you must either use a lower-level API or modify the vanilla API.
 
 Configuration
@@ -77,12 +78,12 @@ application.
 
   macro( mic_array_vanilla_add
             TARGET_NAME
-            MCLK_FREQ 
+            MCLK_FREQ
             PDM_FREQ
             MIC_COUNT
             SAMPLES_PER_FRAME )
 
-``TARGET_NAME`` 
+``TARGET_NAME``
   The name of the application's CMake target. It is the target the Vanilla API
   is added to.
 
@@ -92,9 +93,9 @@ application.
   master audio clock. (Equivalent compile definition:
   ``MIC_ARRAY_CONFIG_MCLK_FREQ``)
 
-``PDM_FREQ`` 
+``PDM_FREQ``
   The desired frequency, in Hz, of the PDM clock. This should be an integer
-  factor of ``MCLK_FREQ`` between ``1`` and ``510``. (Equivalent compile 
+  factor of ``MCLK_FREQ`` between ``1`` and ``510``. (Equivalent compile
   definition: ``MIC_ARRAY_CONFIG_PDM_FREQ``)
 
 ``MIC_COUNT``
@@ -106,13 +107,13 @@ application.
   width. (Equivalent compile definition: ``MIC_ARRAY_CONFIG_MIC_COUNT``)
 
 .. note::
-    This API does not support capturing only a subset of the capture port's 
+    This API does not support capturing only a subset of the capture port's
     channels, e.g. capturing only 3 channels on a 4-bit port. To accomplish this
     the prefab API should be used.
 
 .. note::
     Though listed under Optional Configuration below, if the microphones are in
-    a DDR configuration and ``MIC_COUNT`` is not ``2``, the application must 
+    a DDR configuration and ``MIC_COUNT`` is not ``2``, the application must
     also define ``MIC_ARRAY_CONFIG_USE_DDR``.
 
 ``SAMPLES_PER_FRAME`` is the number of samples (for each microphone channel)
@@ -132,22 +133,22 @@ application's ``CMakeLists.txt`` using CMake's built-in
 
 
 ``MIC_ARRAY_CONFIG_USE_DDR``
-  Indicates whether the microphones are arranged in an SDR (``0``) or DDR 
+  Indicates whether the microphones are arranged in an SDR (``0``) or DDR
   (``1``) configuration. An SDR configuration is one in which each port pin is
-  connected to a single PDM microphone. A DDR configuration is one which each 
+  connected to a single PDM microphone. A DDR configuration is one which each
   port pin is connected to two PDM microphones. Defaults to ``0`` (SDR), unless
-  ``MIC_ARRAY_CONFIG_MIC_COUNT`` is ``2`` in which case it defaults to ``1`` 
+  ``MIC_ARRAY_CONFIG_MIC_COUNT`` is ``2`` in which case it defaults to ``1``
   (DDR).
 
 
 ``MIC_ARRAY_CONFIG_USE_DC_ELIMINATION``
-  Indicates whether the :ref:`DC offset elimination <sample_filters>` filter 
+  Indicates whether the :ref:`DC offset elimination <sample_filters>` filter
   should be applied to the output of the decimator. Set to ``0`` to disable or
   ``1`` to enable. Defaults to ``1`` (filter on).
 
 The next three parameters are the identifiers for hardware port resources used
 by the mic array unit. They can be specified as either the identifier listed in
-your device's datasheet (e.g. ``XS1_PORT_1D``) or as an alias for the port 
+your device's datasheet (e.g. ``XS1_PORT_1D``) or as an alias for the port
 listed in your application's XN file (e.g. ``PORT_MCLK_IN_OUT``). For example:
 
 .. code-block:: xml
@@ -199,8 +200,8 @@ Using the Vanilla API with build systems other than CMake is simple.
 
 * Add the file ``etc/vanilla/mic_array_vanilla.cpp`` to the application's
   source files.
-* Add  ``etc/vanilla/`` (relative to repository root) to the application include 
+* Add  ``etc/vanilla/`` (relative to repository root) to the application include
   paths.
-* Add the compile definitions for the parameters listed in the previous sections 
+* Add the compile definitions for the parameters listed in the previous sections
   (each parameter beginning with ``MIC_ARRAY_CONFIG_``) to the compile options
   for ``mic_array_vanilla.cpp``.
