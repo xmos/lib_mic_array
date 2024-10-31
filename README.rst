@@ -9,7 +9,7 @@ lib_mic_array: PDM microphone array library
 :version: 5.5.0
 :scope: General Use
 :description: PDM microphone array library
-:category: General Purpose
+:category: Audio
 :keywords: PDM, microphone
 :devices: xcore.ai
 
