@@ -42,7 +42,7 @@ pipeline {
     )
     string(
       name: 'XMOSDOC_VERSION',
-      defaultValue: 'v6.1.2',
+      defaultValue: 'v6.1.3',
       description: 'The xmosdoc version'
     )
     string(
