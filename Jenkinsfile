@@ -47,7 +47,7 @@ pipeline {
     )
     string(
       name: 'INFR_APPS_VERSION',
-      defaultValue: 'v2.0.1',
+      defaultValue: 'develop', // to pin in next release
       description: 'The infr_apps version'
     )
   }
@@ -123,9 +123,6 @@ pipeline {
             stage("XCCM Build") {
                 // Clone and install build dependencies
               steps {
-                // Clone infrastructure repos
-                sh "git clone --branch v1.6.0 git@github.com:xmos/infr_apps"
-                sh "git clone --branch v1.3.0 git@github.com:xmos/infr_scripts_py"
                 // clone
                 dir("${REPO}") {
                   checkout_shallow()

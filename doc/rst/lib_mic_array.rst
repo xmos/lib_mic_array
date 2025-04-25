@@ -1,8 +1,8 @@
 .. lib_mic_array documentation master file
 
-#############
+###########################################
 lib_mic_array: PDM microphone array library
-#############
+###########################################
 
 .. toctree::
    :maxdepth: 2
