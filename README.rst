@@ -57,7 +57,7 @@ Development repo
 
 **************
 Required tools
-**************
+**************r
 
   * XMOS XTC Tools: 15.3.0
 
@@ -73,7 +73,7 @@ Related application notes
 
 The following application notes use this library:
 
-  * AN000248 - Using lib_xua with lib_mic_array
+  * AN00248 - Using lib_xua with lib_mic_array
 
 *******
 Support
