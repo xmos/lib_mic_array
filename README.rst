@@ -29,43 +29,40 @@ Features
 
 The microphone array library has the following features:
 
-  - 48, 32, 16 kHz output sample rates by default (3.072 MHz PDM clock)
-  - 44.1, 29.4, 14.7 kHz output samples using 2.8224 MHz PDM clock
-  - Other sample rates possible using custom decimation filter
-  - 1 to 16 PDM microphones
-  - Supports up to 8 microphones using only a single thread
-  - Configurable MCLK to PDM clock divider
-  - Supports both SDR and DDR microphone configurations
-  - Framing with configurable frame size
-  - DC offset removal
-  - Extensible C++ design
-
+* 48, 32, 16 kHz output sample rates by default (3.072 MHz PDM clock)
+* 44.1, 29.4, 14.7 kHz output samples using 2.8224 MHz PDM clock
+* Other sample rates possible using custom decimation filter
+* 1 to 16 PDM microphones
+* Supports up to 8 microphones using only a single thread
+* Configurable MCLK to PDM clock divider
+* Supports both SDR and DDR microphone configurations
+* Framing with configurable frame size
+* DC offset removal
+* Extensible C++ design
 
 ************
 Known issues
 ************
 
-  * PDM receive can lock-up in ISR mode when ma_frame_rx is not called isochronously after first transfer.
-
-Also see https://github.com/xmos/lib_mic_array/issues.
+* PDM receive can lock-up in ISR mode when ma_frame_rx is not called isochronously after first transfer.
 
 ****************
 Development repo
 ****************
 
-  * `lib_mic_array <https://www.github.com/xmos/lib_mic_array>`_
+* `lib_mic_array <https://www.github.com/xmos/lib_mic_array>`_
 
 **************
 Required tools
 **************r
 
-  * XMOS XTC Tools: 15.3.0
+* XMOS XTC Tools: 15.3.0
 
 *********************************
 Required libraries (dependencies)
 *********************************
 
-  * `lib_xcore_math <https://www.xmos.com/file/lib_xcore_math>`_
+* `lib_xcore_math <https://www.xmos.com/file/lib_xcore_math>`_
 
 *************************
 Related application notes
@@ -73,7 +70,7 @@ Related application notes
 
 The following application notes use this library:
 
-  * AN00248 - Using lib_xua with lib_mic_array
+* AN00248 - Using lib_xua with lib_mic_array
 
 *******
 Support
