@@ -31,7 +31,8 @@ def test_pdmrx_isr(request):
       cmd,
       capture_output=True,
       text=True,
-      check=True
+      check=True,
+      timeout=30
   )
   print("STDOUT:\n", result.stdout)
   if result.stderr:
