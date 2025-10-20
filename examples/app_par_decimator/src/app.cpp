@@ -27,7 +27,7 @@
 # define MIC_ARRAY_CONFIG_CLOCK_BLOCK_A         (XS1_CLKBLK_1)
 #endif
 
-#ifndef MIC_ARRAY_CONFIG_CLOCK_BLOCK_B 
+#ifndef MIC_ARRAY_CONFIG_CLOCK_BLOCK_B
 # define MIC_ARRAY_CONFIG_CLOCK_BLOCK_B         (XS1_CLKBLK_2)
 #endif
 
@@ -47,6 +47,8 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
                                 MIC_ARRAY_CONFIG_PORT_MCLK,
                                 MIC_ARRAY_CONFIG_PORT_PDM_CLK,
                                 MIC_ARRAY_CONFIG_PORT_PDM_DATA,
+                                MIC_ARRAY_CONFIG_MCLK_FREQ,
+                                MIC_ARRAY_CONFIG_PDM_FREQ,
                                 MIC_ARRAY_CONFIG_CLOCK_BLOCK_A,
                                 MIC_ARRAY_CONFIG_CLOCK_BLOCK_B);
 

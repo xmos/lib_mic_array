@@ -19,8 +19,6 @@ foreach(N_MICS  1 2)
                                             -mcmodel=large
                                             -DAPP_NAME="DEMO_${CONFIG}"
                                             -DAPP_USE_PDM_RX_ISR=${USE_ISR}
-                                            -DMIC_ARRAY_CONFIG_MCLK_FREQ=24576000
-                                            -DMIC_ARRAY_CONFIG_PDM_FREQ=3072000
                                             -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
                                             -DN_MICS=${N_MICS})
     endforeach()

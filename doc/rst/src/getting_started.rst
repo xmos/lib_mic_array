@@ -202,7 +202,7 @@ Vanilla - Initializing and Starting
 
 Once the configuration options have been chosen, initializing and starting the
 mic array at run-time is easily achieved. Two function calls are necessary, both
-are included through ``mic_array_vanilla.h`` (which was added to your include
+are included through ``mic_array_task.h`` (which was added to your include
 path through your build configuration).
 
 First, during application initialization, the function

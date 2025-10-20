@@ -6,7 +6,6 @@
 #include "device_pll_ctrl.h"
 
 #include "app.h"
-#include "mic_array_vanilla.h"
 #include "util/audio_buffer.h"
 
 #include <platform.h>
@@ -19,16 +18,19 @@
 #include <string.h>
 #include <assert.h>
 
-
+on tile[PORT_PDM_CLK_TILE_NUM] : port p_mclk = PORT_MCLK_IN_OUT;
+on tile[PORT_PDM_CLK_TILE_NUM] : port p_pdm_clk = PORT_PDM_CLK;
+on tile[PORT_PDM_CLK_TILE_NUM] : port p_pdm_data = PORT_PDM_DATA;
+on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_a = XS1_CLKBLK_1;
+on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_b = XS1_CLKBLK_2;
 
 unsafe{
-
 
 int main() {
 
   chan c_tile_sync;
   chan c_audio_frames;
-  
+
   par {
 
     on tile[0]: {
@@ -53,20 +55,27 @@ int main() {
       unsigned ready;
       c_tile_sync :> ready;
 
-      ma_vanilla_init();
 
-      // XC complains about parallel usage rules if we pass the 
+#if (!(MIC_ARRAY_CONFIG_USE_DDR))
+      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(p_mclk, p_pdm_clk, p_pdm_data, 24576000, 3072000, clk_a);
+#else
+      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(p_mclk, p_pdm_clk, p_pdm_data, 24576000, 3072000, clk_a, clk_b);
+#endif
+
+      mic_array_init(&pdm_res, null, 16000);
+
+      // XC complains about parallel usage rules if we pass the
       // object's address directly
       void * unsafe app_ctx = &app_context;
 
       par {
-        ma_vanilla_task((chanend_t) c_audio_frames);
+        mic_array_start((chanend_t) c_audio_frames);
 
-        receive_and_buffer_audio_task((chanend_t) c_audio_frames, 
+        receive_and_buffer_audio_task((chanend_t) c_audio_frames,
                                       &app_context, MIC_ARRAY_CONFIG_MIC_COUNT,
                                       MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
                                       MIC_ARRAY_CONFIG_MIC_COUNT * MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
-                           
+
         app_i2s_task( (void*) app_ctx );
       }
     }

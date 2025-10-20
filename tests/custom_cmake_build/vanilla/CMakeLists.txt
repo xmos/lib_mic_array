@@ -17,7 +17,7 @@ set(APP_COMPILE_FLAGS
   "-O2"
 )
 
-set(APP_LINK_FLAGS ${APP_COMPILE_FLAGS} ) 
+set(APP_LINK_FLAGS ${APP_COMPILE_FLAGS} )
 
 set( APP_INCLUDES  "src" )
 
@@ -49,11 +49,11 @@ foreach( MIC_COUNT  1 2 )
 
         target_compile_options( ${TARG_NAME}
           PRIVATE ${APP_COMPILE_FLAGS} )
-        
+
         target_link_options( ${TARG_NAME}
           PRIVATE ${APP_LINK_FLAGS} )
-        
-        target_sources( ${TARG_NAME} 
+
+        target_sources( ${TARG_NAME}
           PRIVATE ${APP_SOURCES} )
 
         target_include_directories( ${TARG_NAME}
@@ -62,13 +62,9 @@ foreach( MIC_COUNT  1 2 )
         target_link_libraries( ${TARG_NAME}
             lib_xcore_math
             lib_mic_array )
-        
+
         target_compile_definitions( ${TARG_NAME}
           PRIVATE MIC_ARRAY_CONFIG_USE_DC_ELIMINATION=${DCOE_ENABLED} )
-
-        mic_array_vanilla_add( ${TARG_NAME} 
-            ${MCLK_FREQ} ${PDM_FREQ} 
-            ${MIC_COUNT} ${FRAME_SIZE} )
 
         add_dependencies( ${APP_NAME} ${TARG_NAME} )
 

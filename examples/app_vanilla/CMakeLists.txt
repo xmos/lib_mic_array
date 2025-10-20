@@ -18,16 +18,12 @@ foreach( N_MICS  1 2 )
                                         -DMIC_ARRAY_CONFIG_PDM_FREQ=3072000
                                         -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16
                                         -DMIC_ARRAY_CONFIG_USE_DDR=1
-                                        -DMIC_ARRAY_CONFIG_PORT_MCLK=PORT_MCLK_IN_OUT
-                                        -DMIC_ARRAY_CONFIG_PORT_PDM_CLK=PORT_PDM_CLK
-                                        -DMIC_ARRAY_CONFIG_PORT_PDM_DATA=PORT_PDM_DATA
                                         -DAPP_NAME="VANILLA_${CONFIG}")
 endforeach()
 
 # Manually set sources as we take from the common directory too
 file(GLOB_RECURSE APP_C_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.c" "../common/src/*.c")
 file(GLOB_RECURSE APP_XC_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.xc" "../common/src/*.xc")
-file(GLOB_RECURSE APP_CXX_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR}  "src/*.cpp" "../../etc/vanilla/*.cpp")
 file(GLOB_RECURSE APP_ASM_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR} "../common/src/*.S")
 
 set(APP_INCLUDES    src ../common/src ../common/util)

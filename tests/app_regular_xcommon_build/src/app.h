@@ -28,9 +28,9 @@ void app_init();
  */
 MA_C_API
 void app_pdm_rx_task();
-    
+
 /**
- * @brief 
+ * @brief
  */
 MA_C_API
 void app_decimator_task(chanend_t c_audio_frames);

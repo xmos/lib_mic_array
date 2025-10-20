@@ -10,8 +10,6 @@ TARGET = XVF3610_Q60A.xn
 
 APP_NAME = legacy_build_vanilla
 
-VANILLA_API_ENABLED=1
-
 SOURCE_DIRS = src
 
 
@@ -23,12 +21,10 @@ SOURCE_DIRS = src
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
 
-XCC_FLAGS = -fxscope -g -mcmodel=large  					\
-						-report -Os 													\
-						-DMIC_ARRAY_CONFIG_MCLK_FREQ=24576000 \
-						-DMIC_ARRAY_CONFIG_PDM_FREQ=3072000 	\
+XCC_FLAGS = -fxscope -g -mcmodel=large  		\
+						-report -Os 			\
 						-DMIC_ARRAY_CONFIG_MIC_COUNT=2				\
-						-DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16 
+						-DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16
 
 XCC_CPP_FLAGS = $(XCC_FLAGS) -std=c++11
 

@@ -143,7 +143,7 @@ pipeline {
         } // stage('Custom CMake build')
         stage('HW tests') {
           agent {
-            label 'xcore.ai' // Did include xvf3800 but XTAG speed meant occasional test fail
+            label 'xcore.ai && !vrd' // Did include xvf3800 but XTAG speed meant occasional test fail
           }
           stages {
             stage("Checkout and Build") {

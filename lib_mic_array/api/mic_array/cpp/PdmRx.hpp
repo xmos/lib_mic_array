@@ -10,6 +10,7 @@
 #include <xcore/interrupt.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/port.h>
+#include <xcore/select.h>
 
 #include "mic_array.h"
 #include "Util.hpp"
@@ -260,6 +261,8 @@ namespace  mic_array {
        * that it can be signaled to the next processing stage.
        */
       uint32_t* blocks[2] = {&block_data[0][0], &block_data[1][0]};
+      volatile bool shutdown = false;
+      volatile bool shutdown_complete = false;
 
     public:
 
@@ -269,18 +272,12 @@ namespace  mic_array {
       void SetPort(port_t p_pdm_mics);
 
       /**
-       * @brief Perform a port read and if a new block has completed, signal.
-       */
-      void ProcessNext();
-
-      /**
        * @brief Entry point for PDM processing thread.
        *
-       * This function loops forever, calling `ProcessNext()` with each
-       * iteration.
+       * This function loops forever, performing a port read and if a new block has completed, signal a block send,
+       * every iteration.
        */
       void ThreadEntry();
-
   };
 
 
@@ -415,6 +412,9 @@ namespace  mic_array {
        */
       uint32_t out_block[CHANNELS_OUT][SUBBLOCKS];
 
+      volatile bool isr_used = false;
+      std::atomic<unsigned> pending_blocks{0};
+
     public:
 
       /**
@@ -453,7 +453,7 @@ namespace  mic_array {
        *
        * @param map Array containing new channel map.
        */
-      void MapChannels(unsigned map[CHANNELS_OUT]);
+      void MapChannels(const unsigned map[CHANNELS_OUT]);
 
       /**
        * @brief Set the input-output mapping for a single output channel.
@@ -507,6 +507,8 @@ namespace  mic_array {
        * `pdm_rx_isr_context.missed_blocks`.
        */
       void AssertOnDroppedBlock(bool doAssert);
+
+      void Shutdown();
   };
 
 }
@@ -526,32 +528,28 @@ void mic_array::PdmRxService<BLOCK_SIZE,SubType>::SetPort(port_t p_pdm_mics)
   this->p_pdm_mics = p_pdm_mics;
 }
 
-
-template <unsigned BLOCK_SIZE, class SubType>
-void mic_array::PdmRxService<BLOCK_SIZE,SubType>::ProcessNext()
-{
-  this->blocks[0][--phase] =  static_cast<SubType*>(this)->ReadPort();
-
-  if(!phase){
-    this->phase = BLOCK_SIZE;
-    uint32_t* ready_block = this->blocks[0];
-    this->blocks[0] = this->blocks[1];
-    this->blocks[1] = ready_block;
-
-    static_cast<SubType*>(this)->SendBlock(ready_block);
-  }
-}
-
-
 template <unsigned BLOCK_SIZE, class SubType>
 void mic_array::PdmRxService<BLOCK_SIZE,SubType>::ThreadEntry()
 {
   while(1){
-    this->ProcessNext();
+    this->blocks[0][--phase] =  static_cast<SubType*>(this)->ReadPort();
+
+    if(!phase){
+      this->phase = BLOCK_SIZE;
+      uint32_t* ready_block = this->blocks[0];
+      this->blocks[0] = this->blocks[1];
+      this->blocks[1] = ready_block;
+
+      static_cast<SubType*>(this)->SendBlock(ready_block);
+      // Check for shutdown only after sending a block so we know there's atleast one pending block at the time of shutdown
+      if(this->shutdown)
+      {
+        break;
+      }
+    }
   }
+  this->shutdown_complete = true;
 }
-
-
 
 //////////////////////////////////////////////
 //          StandardPdmRxService            //
@@ -587,10 +585,9 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
   this->SetPort(p_pdm_mics);
 }
 
-
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
-    ::MapChannels(unsigned map[CHANNELS_OUT])
+    ::MapChannels(const unsigned map[CHANNELS_OUT])
 {
   for(int k = 0; k < CHANNELS_OUT; k++)
     this->channel_map[k] = map[k];
@@ -609,6 +606,7 @@ template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
     ::InstallISR()
 {
+  this->isr_used = true;
   pdm_rx_isr_context.p_pdm_mics = this->p_pdm_mics;
   pdm_rx_isr_context.c_pdm_data = this->c_pdm_blocks.end_a;
   pdm_rx_isr_context.pdm_buffer[0] = &this->block_data[0][0];
@@ -658,4 +656,39 @@ uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
     }
   }
   return &this->out_block[0][0];
+}
+
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+    ::Shutdown() {
+  if(this->isr_used) {
+    interrupt_mask_all(); // With the way the credit scheme is,
+                          //there isn't going to be a pending block unless credit is set in GetPdmBlock(), so mask interrupts and return
+  }
+  else
+  {
+    this->shutdown = true; // start the shutdown process of the PdmRx thread
+    // The way PdmRx thread shutdown works, there will be atleast one pending block. Read it.
+    uint32_t *pdm_samples = GetPdmBlock(); // It's important to Get the Pdm block first in case PdmRx thread is blocked on SendBlock()
+                                           // Getting a block unblocks it.
+    // The block we just read could be a buffered block due to streaming channel
+    // so we need to explicitly wait for PdmRx thread to exit since
+    // we can't be draining blocks while PdmRx is still running.
+    while(!this->shutdown_complete) {
+      continue;
+    }
+    // Now that we're sure that PdmRx thread has exited, drain any pending blocks
+    SELECT_RES(CASE_THEN(this->c_pdm_blocks.end_b, rx_pending_block),
+                 DEFAULT_THEN(empty))
+    {
+      rx_pending_block:
+        pdm_samples = GetPdmBlock();
+        SELECT_CONTINUE_NO_RESET;
+
+      empty:
+        break;
+    }
+  }
+  // Now that shutdown is complete, free the pdmrx channel
+  s_chan_free(this->c_pdm_blocks);
 }

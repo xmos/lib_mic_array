@@ -1,6 +1,6 @@
-mic_array_vanilla.h
+mic_array_task.h
 -------------------
 
-.. doxygenfunction:: ma_vanilla_init
+.. doxygenfunction:: mic_array_init
 
-.. doxygenfunction:: ma_vanilla_task
+.. doxygenfunction:: mic_array_start
