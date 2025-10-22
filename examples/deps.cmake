@@ -15,4 +15,5 @@ endif()
 
 set(APP_DEPENDENT_MODULES   "lib_mic_array"
                             "i2s"
-                            "i2c")
+                            "i2c"
+                            "lib_xassert")

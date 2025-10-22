@@ -50,19 +50,19 @@ Known issues
 Development repo
 ****************
 
-* `lib_mic_array <https://www.github.com/xmos/lib_mic_array>`_
+* `lib_mic_array <https://www.github.com/xmos/lib_mic_array>`_ (https://www.github.com/xmos/lib_mic_array)
 
 **************
 Required tools
-**************r
+**************
 
-* XMOS XTC Tools: 15.3.0
+* XMOS XTC Tools: 15.3.1
 
 *********************************
 Required libraries (dependencies)
 *********************************
 
-* `lib_xcore_math <https://www.xmos.com/file/lib_xcore_math>`_
+* `lib_xcore_math <https://www.xmos.com/file/lib_xcore_math>`_ (https://www.xmos.com/file/lib_xcore_math)
 
 *************************
 Related application notes

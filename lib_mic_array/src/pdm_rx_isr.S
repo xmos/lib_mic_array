@@ -3,7 +3,7 @@
 
 #if defined(__XS3A__)
 
-/*  
+/*
 
   File contains the ISR logic for capturing PDM samples coming in.
 
@@ -76,6 +76,13 @@ pdm_rx_isr:
     ldw A, dp[.L_credit]
     bt A, .L_has_credit
   .L_no_credit:
+    // Undo swap if no credit, to avoid writing to a buffer that is potentially simultaneously being read.
+    // Since we check for credits after writing to the buffer, the number of available buffers need to be one more than the
+    // max allowed credits, so the last buffer written to before realising that we're out of credits can be used
+    // for writing subsequent blocks (no credit no swap) and what's already sent over the channel doesn't get tampered with.
+    ldw A, dp[.L_buffA]
+    stw A, dp[.L_buffB]
+    stw D, dp[.L_buffA]
     // No credit. increment the missed block counter.
     ldw A, dp[.L_missed_blocks]
     not D, A  // if the missed blocks counter is set to -1 (default)
@@ -89,7 +96,7 @@ pdm_rx_isr:
 
     ldw A, dp[.L_c_out]
     out res[A], D
-  
+
   .L_finish:
   // And we're done
     ldw r4, sp[0];    ldw r5, sp[1]
@@ -102,5 +109,3 @@ pdm_rx_isr:
 .global pdm_rx_isr
 
 #endif //defined(__XS3A__)
-
-

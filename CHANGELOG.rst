@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+UNRELEASED
+----------
+
+  * FIXED: PDM RX ISR deadlock bug
+
 5.5.0
 -----
 
