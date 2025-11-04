@@ -136,4 +136,23 @@ void mic_array_start(
   }
   g_kind = NONE;
 }
+
+// Override pdm data port. Only used in tests where a chanend is used as a 'port' for input pdm data.
+void _mic_array_override_pdm_port(chanend_t c_pdm)
+{
+  switch (g_kind) {
+    case DF_6:
+      g_mics_df_6->PdmRx.SetPort((port_t)c_pdm);
+      break;
+    case DF_3:
+      g_mics_df_3->PdmRx.SetPort((port_t)c_pdm);
+      break;
+    case DF_2:
+      g_mics_df_2->PdmRx.SetPort((port_t)c_pdm);
+      break;
+    case NONE:
+      assert(0); // Attempting to shutdown mic_array before initialising it
+  }
+
+}
 #endif

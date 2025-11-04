@@ -8,7 +8,7 @@ correctly build with various configurations. This is necessary because this
 library makes use of C++ class templates, which are not instantiated until used
 in an application.
 
-* `vanilla`_ - Build tests using the vanilla API
+* `default`_ - Build tests using the default API
 * `prefab`_ - Build tests using the prefab API
 
 
@@ -25,7 +25,7 @@ command:
 
     make tests-build
 
-To build only the ``vanilla`` or ``prefab`` targets, use ``tests-build-vanilla`` and ``tests-build-prefab`` respectively.
+To build only the ``default`` or ``prefab`` targets, use ``tests-build-default`` and ``tests-build-prefab`` respectively.
 
 
 Running Test Apps
@@ -33,5 +33,5 @@ Running Test Apps
 
 The generated binaries can be run with ``xrun`` to verify that no run-time exceptions happen during initialization or steady-state operation.
 
-.. _vanilla: vanilla/
+.. _default: default/
 .. _prefab: prefab/

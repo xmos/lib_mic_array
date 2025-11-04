@@ -13,9 +13,6 @@ MA_C_API
 void app_init();
 
 MA_C_API
-void app_pdm_rx_task();
-    
-MA_C_API
-void app_decimator_task(chanend_t c_frames_out);
+void app_start(chanend_t c_frames_out);
 
-C_API_END 
+C_API_END

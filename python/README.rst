@@ -122,7 +122,7 @@ decimator (e.g. ``mic_array::TwoStageDecimator``). To use custom coefficients
 when directly working with the mic array's C++ objects, simply provide a pointer
 to your custom coefficients to the decimator's ``Init()`` method.
 
-Alternatively, ``lib_mic_array``'s Vanilla API and the
+Alternatively, ``lib_mic_array``'s default API and the
 ``mic_array::prefab::BasicMicArray`` class template both automatically use the
 filter coefficients given by the symbols ``stage1_coef``, ``stage2_coef`` and
 ``stage2_shr`` when initializing the decimator.

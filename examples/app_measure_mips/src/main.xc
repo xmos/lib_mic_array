@@ -26,30 +26,26 @@ unsafe{
 int main() {
 
   chan c_audio_frames;
-  
+
   par {
 
     on tile[0]: {
       printf("Running " APP_NAME "..\n");
 
-      eat_audio_frames_task((chanend_t) c_audio_frames, 
-                            N_MICS*SAMPLES_PER_FRAME);
+      eat_audio_frames_task((chanend_t) c_audio_frames,
+                            MIC_ARRAY_CONFIG_MIC_IN_COUNT * MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
     }
 
 
     on tile[1]: {
       // Set up the media clocks
       device_pll_init();
-      
+
       // Initialize the mic array
       app_init();
 
       par {
-#if (!APP_USE_PDM_RX_ISR)
-        app_pdm_rx_task();
-#endif
-
-        app_decimator_task((chanend_t) c_audio_frames);
+        app_start((chanend_t) c_audio_frames);
 
         // The burn_mips() and the count_mips() should all consume as many MIPS as they're offered. And
         // they should all get the SAME number of MIPS.
@@ -59,7 +55,7 @@ int main() {
 
 // If we're using the ISR we'll use 5 burn_mips(). Otherwise just 4. Either way the printed MIPS will
 // be all the mic array work.
-#if APP_USE_PDM_RX_ISR
+#if MIC_ARRAY_CONFIG_USE_PDM_ISR
         burn_mips();
 #endif
 
@@ -68,7 +64,7 @@ int main() {
         burn_mips();
         burn_mips();
         count_mips();
-        print_mips(APP_USE_PDM_RX_ISR);
+        print_mips(MIC_ARRAY_CONFIG_USE_PDM_ISR);
       }
     }
   }

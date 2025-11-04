@@ -9,7 +9,7 @@ works as expected.
 Each of these tests are run using ``pytest``, which will launch the application
 in the debugger.
 
-* `BasicMicArray`_ - Build tests using the vanilla API
+* `BasicMicArray`_ - Build tests using the default API
 * `TwoStageDecimator`_ - Build tests using the prefab API
 
 Requirements

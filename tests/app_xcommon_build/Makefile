@@ -21,11 +21,10 @@ SOURCE_DIRS = src
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
 
-XCC_FLAGS = -fxscope -g -mcmodel=large  	\
-						-report -Os 									\
-						-DAPP_NAME=\"demo_2mic_isr\" 	\
-						-DN_MICS=2 										\
-						-DAPP_USE_PDM_RX_ISR=1				
+XCC_FLAGS = -fxscope -g -mcmodel=large  		\
+						-report -Os 			\
+						-DMIC_ARRAY_CONFIG_MIC_COUNT=2				\
+						-DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16
 
 XCC_CPP_FLAGS = $(XCC_FLAGS) -std=c++11
 

@@ -19,7 +19,9 @@
 
 #include <math.h>
 
+
 #define I2S_CLKBLK    XS1_CLKBLK_3
+
 
 
 static int i2s_mclk_bclk_ratio(
@@ -31,16 +33,17 @@ static int i2s_mclk_bclk_ratio(
 
 
 
+
 I2S_CALLBACK_ATTR
-void app_i2s_send(audio_ring_buffer_t* app_data,
+void app_i2s_send(audio_ring_buffer_t* audio_buff,
                   size_t num_out, 
                   int32_t* samples)
 {
-  int32_t frame[MIC_ARRAY_CONFIG_MIC_COUNT];
-  abuff_frame_get(app_data, frame);
+  int32_t frame[N_MICS];
+  abuff_frame_get(audio_buff, frame);
   
   for(int c = 0; c < num_out; c++){
-    int32_t samp = frame[(MIC_ARRAY_CONFIG_MIC_COUNT==1)?0:c];
+    int32_t samp = frame[(N_MICS==1)?0:c];
     samples[c] = samp;
   }
 }
@@ -49,12 +52,11 @@ void app_i2s_send(audio_ring_buffer_t* app_data,
 
 I2S_CALLBACK_ATTR
 static 
-void app_i2s_init(audio_ring_buffer_t* app_data, 
+void app_i2s_init(void* app_data, 
                   i2s_config_t* config)
 {
   config->mode = I2S_MODE_I2S;
-  config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(MIC_ARRAY_CONFIG_MCLK_FREQ, 
-                                                 APP_I2S_AUDIO_SAMPLE_RATE);
+  config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(APP_AUDIO_CLOCK_FREQUENCY, APP_I2S_AUDIO_SAMPLE_RATE);
 }
 
 
@@ -62,7 +64,7 @@ void app_i2s_init(audio_ring_buffer_t* app_data,
 
 I2S_CALLBACK_ATTR
 static 
-i2s_restart_t app_i2s_restart(audio_ring_buffer_t* app_data)
+i2s_restart_t app_i2s_restart(void* app_data)
 {
   static unsigned do_restart = 0;
   i2s_restart_t res = do_restart? I2S_RESTART : I2S_NO_RESTART;
@@ -76,7 +78,7 @@ i2s_restart_t app_i2s_restart(audio_ring_buffer_t* app_data)
 
 I2S_CALLBACK_ATTR
 static
-void app_i2s_receive(audio_ring_buffer_t* app_data, 
+void app_i2s_receive(void* app_data, 
                      size_t num_in, 
                      const int32_t* samples)
 {
@@ -95,7 +97,7 @@ i2s_callback_group_t i2s_context = {
 
 
 
-void app_i2s_task( void* app_context )
+void app_i2s_task( audio_ring_buffer_t* app_context )
 {
   i2s_context.app_data = app_context;
 

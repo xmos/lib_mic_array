@@ -10,10 +10,6 @@
 
 #include "app.h"
 
-#ifndef USE_ISR
-#error USE_ISR must be defined.
-#endif 
-
 unsafe {
 
 
@@ -49,9 +45,9 @@ void host_words_to_app(
             - Interpret command based on received word value:
               - CMD 0: break from command loop back to data loop
               - CMD 1: terminate application
-    
+
     The reason for the command loop is so that the application can terminate
-    gracefully. This design should also make it relatively easy to add 
+    gracefully. This design should also make it relatively easy to add
     additional commands if need be.
   */
   while(1){
@@ -100,7 +96,7 @@ void host_words_to_app(
           }
 
         } else {
-          
+
           // Send all (complete) words to app
           int* next_word = ((int*) (void*) &buff[0]);
           while(buff_lvl >= sizeof(int)){
@@ -114,7 +110,7 @@ void host_words_to_app(
             // Ultimately, we just need to avoid sending PDM data faster than
             // the decimator thread can process the data. Unfortunately, because
             // frames are being used, we don't actually know when it's done
-            // processing a given block of data.  So, we'll just insert a 
+            // processing a given block of data.  So, we'll just insert a
             // reasonable delay here.
 
             // With a 3.072 MHz PDM clock and 1 microphone, we expect to have
@@ -152,16 +148,9 @@ int main()
 
     on tile[0]: {
       xscope_mode_lossless();
-      
-#if (USE_ISR)
-      app_pdm_rx_isr_setup((chanend_t) c_to_app);
-#endif
 
       par {
-#if !(USE_ISR)
-        app_pdm_task((chanend_t) c_to_app);
-#endif
-        app_dec_task((chanend_t) c_frames);
+        app_mic((chanend_t) c_to_app, (chanend_t) c_frames);
         app_output_task((chanend_t) c_frames, (chanend_t)c_fifo);
         app_fifo_to_xscope_task((chanend_t)c_fifo);
       }

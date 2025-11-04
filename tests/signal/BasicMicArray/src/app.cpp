@@ -8,6 +8,7 @@
 
 #include <print.h>
 #include <string.h>
+#include <platform.h>
 
 #include <xcore/channel.h>
 #include <xcore/hwtimer.h>
@@ -21,16 +22,7 @@ extern "C" {
 
 #include "app.h"
 
-#ifndef CHAN_COUNT
-# error CHAN_COUNT must be defined.
-#endif
-#ifndef SAMPLES_PER_FRAME
-# error SAMPLES_PER_FRAME must be defined.
-#endif
-#ifndef USE_ISR
-# error USE_ISR must be defined.
-#endif
-
+extern void _mic_array_override_pdm_port(chanend_t c_pdm);
 
 // We'll be using a fairly standard mic array setup here, with one big
 // exception. Instead of feeding the PDM rx service with a port, we're going
@@ -39,44 +31,35 @@ extern "C" {
 // doesn't particularly care what the resource is.
 // Since we're not using a port, we also don't need to worry about setting up
 // clocks or any of that silliness
-using TMicArray = mic_array::prefab::BasicMicArray<CHAN_COUNT, SAMPLES_PER_FRAME,
-                                                    false, CHAN_COUNT>;
+using TMicArray = mic_array::prefab::BasicMicArray<MIC_ARRAY_CONFIG_MIC_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
+                                                    false, MIC_ARRAY_CONFIG_MIC_IN_COUNT>;
 
 TMicArray mics;
 
+pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
+                                PORT_MCLK_IN_OUT,
+                                PORT_PDM_CLK,
+                                PORT_PDM_DATA,
+                                24576000,
+                                3072000,
+                                XS1_CLKBLK_1);
 
-void app_dec_task(
+void app_mic(
+    chanend_t c_pdm_in,
     chanend_t c_frames_out) //non-streaming
 {
-  mics.Init();
-  mics.SetOutputChannel(c_frames_out);
-  mics.ThreadEntry();
+  mic_array_init(&pdm_res, NULL, 16000);
+  _mic_array_override_pdm_port((port_t)c_pdm_in); // get pdm input from channel instead of port.
+                                                  // mic_array_init() calls mic_array_resources_configure which would crash
+                                                  // if a chanend were to be passed instead of a port for the pdm data port, so
+                                                  // this overriding has to be done only after calling mic_array_init()
+  mic_array_start(c_frames_out);
 }
-
-void app_pdm_rx_isr_setup(
-    chanend_t c_from_host)
-{
-  mics.SetPort((port_t)c_from_host);
-
-  mics.InstallPdmRxISR();
-  mics.UnmaskPdmRxISR();
-}
-
-
-void app_pdm_task(chanend_t sc_mics)
-{
-  // We're just going to pretend that the streaming chanend is a port.
-  mics.SetPort((port_t)sc_mics);
-
-  // no need to start any clocks
-  mics.PdmRxThreadEntry();
-}
-
 
 // Sometimes xscope doesn't keep up causing backpressure so add a FIFO to decouple this, at least up to 8 frames.
 // We can buffer up to 8 chars in a same tile chanend.
 const unsigned fifo_entries = 8;
-typedef int32_t ma_frame_t[CHAN_COUNT][SAMPLES_PER_FRAME];
+typedef int32_t ma_frame_t[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
 ma_frame_t frame_fifo[fifo_entries];
 
 
@@ -85,21 +68,21 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
   // Before listening for any frames, use the META_OUT xscope probe to report
   // our configuration to the host. This will help make sure the right version
   // of this application is being used.
-  xscope_int(META_OUT, CHAN_COUNT);
+  xscope_int(META_OUT, MIC_ARRAY_CONFIG_MIC_COUNT);
   xscope_int(META_OUT, 256); // S1_TAP_COUNT
   xscope_int(META_OUT, 32); // S1_DEC_FACTOR
   xscope_int(META_OUT, STAGE2_TAP_COUNT);
   xscope_int(META_OUT, STAGE2_DEC_FACTOR);
-  xscope_int(META_OUT, SAMPLES_PER_FRAME);
-  xscope_int(META_OUT, USE_ISR); // Using interrupt
+  xscope_int(META_OUT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
+  xscope_int(META_OUT, MIC_ARRAY_CONFIG_USE_PDM_ISR); // Using interrupt
 
 
   // receive the output of the mic array and send it to the host via a fifo to decouple the backpressure from xscope
-  int32_t frame[CHAN_COUNT][SAMPLES_PER_FRAME];
+  int32_t frame[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
   uint8_t fifo_idx = 0;
 
   while(1){
-    ma_frame_rx(&frame[0][0], c_frames_in, CHAN_COUNT, SAMPLES_PER_FRAME);
+    ma_frame_rx(&frame[0][0], c_frames_in, MIC_ARRAY_CONFIG_MIC_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
     memcpy(frame_fifo[fifo_idx], &frame[0][0], sizeof(ma_frame_t));
 
     int t0 = get_reference_time();
@@ -121,8 +104,8 @@ void app_fifo_to_xscope_task(chanend_t c_fifo)
         ma_frame_t *ptr = &frame_fifo[idx];
 
         // Send it to host sample by sample rather than channel by channel
-        for(int smp = 0; smp < SAMPLES_PER_FRAME; smp++) {
-          for(int ch = 0; ch < CHAN_COUNT; ch++){
+        for(int smp = 0; smp < MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME; smp++) {
+          for(int ch = 0; ch < MIC_ARRAY_CONFIG_MIC_COUNT; ch++){
             xscope_int(DATA_OUT, (*ptr)[ch][smp]);
           }
         }

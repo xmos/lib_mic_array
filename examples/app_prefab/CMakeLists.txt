@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
-project(measure_mips)
+project(app_prefab)
 
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
@@ -18,10 +18,9 @@ foreach(N_MICS  1 2)
                                             -report
                                             -mcmodel=large
                                             -DAPP_NAME="DEMO_${CONFIG}"
-                                            -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
+                                            -DAPP_USE_PDM_RX_ISR=${USE_ISR}
                                             -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
-                                            -DMIC_ARRAY_CONFIG_MIC_IN_COUNT=${N_MICS}
-                                            -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=16)
+                                            -DN_MICS=${N_MICS})
     endforeach()
 endforeach()
 

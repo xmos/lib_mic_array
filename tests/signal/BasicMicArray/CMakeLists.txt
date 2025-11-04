@@ -32,7 +32,7 @@ foreach(i RANGE 0 ${NUM_N_MICS})
         string(JSON FRAME_SIZE GET ${FRAME_SIZE_LIST} ${j})
         foreach(k RANGE 0 ${NUM_USE_ISR})
             string(JSON USE_ISR GET ${USE_ISR_LIST} ${k})
-            
+
             set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr")
             message(${CONFIG})
             set(APP_COMPILER_FLAGS_${CONFIG}    -O2
@@ -42,9 +42,11 @@ foreach(i RANGE 0 ${NUM_N_MICS})
                                                 -Wno-xcore-fptrgroup
                                                 -Wno-unknown-pragmas
                                                 -Wno-format
-                                                -DCHAN_COUNT=${N_MICS}
-                                                -DSAMPLES_PER_FRAME=${FRAME_SIZE}
-                                                -DUSE_ISR=${USE_ISR}
+                                                -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
+                                                -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=${FRAME_SIZE}
+                                                -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
+                                                -DMIC_ARRAY_CONFIG_MIC_IN_COUNT=${N_MICS}
+                                                -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
                                                 )
         endforeach()
     endforeach()
