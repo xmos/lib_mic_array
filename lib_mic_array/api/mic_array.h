@@ -8,6 +8,7 @@
 #include "mic_array/pdm_resources.h"
 #include "mic_array/dc_elimination.h"
 #include "mic_array/frame_transfer.h"
+#include "mic_array/shutdown.h"
 #include "mic_array/setup.h"
 #include "mic_array/mic_array_task.h"
 

@@ -19,18 +19,24 @@
 // Defaults for MIC_ARRAY_CONFIG_* macros (build-time config)
 // ---------------------------------------------------------------------------
 
-/** @brief Number of PDM microphone channels. */
+/** @brief Number of PDM microphone channels.
+ * Default: 2
+*/
 #ifndef MIC_ARRAY_CONFIG_MIC_COUNT
 #define MIC_ARRAY_CONFIG_MIC_COUNT  (2)
 #endif
 
-/** @brief Number of input mic channels (defaults to MIC_ARRAY_CONFIG_MIC_COUNT). */
+/** @brief Number of input mic channels - This is the width of the pdm port.
+ * Default: MIC_ARRAY_CONFIG_MIC_COUNT
+*/
 #ifndef MIC_ARRAY_CONFIG_MIC_IN_COUNT
 #define MIC_ARRAY_CONFIG_MIC_IN_COUNT   (MIC_ARRAY_CONFIG_MIC_COUNT)
 #endif
 
 
-/** @brief Use interrupt-driven PDM capture (1 = ISR, 0 = polling/task). */
+/** @brief Use interrupt-driven PDM capture (1 = ISR, 0 = polling/task).
+ * Default: 1 -> Use ISR
+*/
 #ifndef MIC_ARRAY_CONFIG_USE_PDM_ISR
 #define MIC_ARRAY_CONFIG_USE_PDM_ISR    (1)
 #endif
@@ -38,6 +44,7 @@
 /**
  * @brief PCM samples per frame emitted by the driver.
  * Must be >= 1.
+ * Default: 1
  */
 #ifndef MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME
 # define MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME    (1)
@@ -47,7 +54,9 @@
 # endif
 #endif
 
-/** @brief Enable DC elimination on the PCM output (1 = enabled). */
+/** @brief Enable DC elimination on the PCM output (1 = enabled).
+ * Default: 1
+*/
 #ifndef MIC_ARRAY_CONFIG_USE_DC_ELIMINATION
 # define MIC_ARRAY_CONFIG_USE_DC_ELIMINATION    (1)
 #endif

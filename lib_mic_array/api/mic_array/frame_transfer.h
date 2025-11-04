@@ -128,7 +128,5 @@ void ma_frame_rx_transpose(
     const unsigned channel_count,
     const unsigned sample_count);
 
-MA_C_API
-void ma_shutdown(const chanend_t c_frame_in);
 
 C_API_END

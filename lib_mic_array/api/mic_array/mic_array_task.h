@@ -12,17 +12,20 @@ C_API_START
  * @brief Initializes the mic array task
  *
  * Initializes the contexts for the decimator thread and configures
- * the clocks and ports for PDM reception.
+ * the clocks and ports for PDM reception. Note that this does not start any threads
+ * or PDM capture.
  *
  * After calling this, the PDM clock is active and signaling, but the PDM rx
- * service (ISR) has not yet been activated, so received PDM samples are
- * ignored. The real-time condition is not yet active.
+ * service has not been activated (when running in the interrupt context)/PDM rx thread
+ * is not created (when running in thread context) so the received PDM samples are
+ * ignored.
  *
- * @param pdm_res     Hardware resources required by the mic array module.
+ * @param pdm_res     Pointer to the pdm_rx_resources_t struct contianing hardware resources
+ *                    required by the mic array module.
  * @param channel_map Array containing MIC_ARRAY_CONFIG_MIC_IN_COUNT to MIC_ARRAY_CONFIG_MIC_COUNT mapping.
- *                    array dimension should be MIC_ARRAY_CONFIG_MIC_COUNT, and the ith entry would give the
+ *                    array dimension should be MIC_ARRAY_CONFIG_MIC_COUNT, and the i<sup>th</sup> entry is the
  *                    input pdm pin index mapped to mic array output index i
- * @param output_samp_freq output PCM sampling frequency (supported values are 16, 32 and 48KHz (for a PDM freq of 3.072MHz?))
+ * @param output_samp_freq output PCM sampling frequency (supported values are 16, 32 and 48KHz)
  */
 MA_C_API
 void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq);

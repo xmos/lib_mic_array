@@ -34,29 +34,11 @@ Whether the DCOE filter is enabled by default and how to enable or disable it
 depends on which approach your project uses to include the mic array component
 in the application.
 
-Vanilla Model
+Default model
 ^^^^^^^^^^^^^
 
-If your project uses the vanilla model (see :ref:`vanilla_api`) to include the
-mic array unit in your application, then DCOE is **enabled** by default.  To
-disable DCOE your build script must add a compiler option to your application
-target that sets the ``MIC_ARRAY_CONFIG_USE_DC_ELIMINATION`` preprocessor macro
-to the value ``0``.
-
-For example, in a typical application's ``CMakeLists.txt``, that may look like
-the following.
-
-.. code-block:: cmake
-
-  # Gather sources and create application target
-  # ...
-  # Add vanilla source to application build
-  mic_array_vanilla_add(my_app  ${MCLK_FREQ} ${PDM_FREQ}
-                              ${MIC_COUNT} ${FRAME_SIZE} )
-  # ...
-  # Disable DCOE
-  target_compile_definitions(my_app
-      PRIVATE MIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0 )
+DCOE is **enabled** by default in ``mic_array_conf_default.h``. To disable, override it via including
+a ``mic_array_conf.h`` file in the application or in the application's CMakeLists.txt.
 
 
 Prefab Model
@@ -99,7 +81,7 @@ For example, in your application source:
 General Model
 ^^^^^^^^^^^^^
 
-If your project does not use either the vanilla or prefab models to include the
+If your project does not use either the default or prefab models to include the
 mic array unit in your application, then precisely how the DCOE filter is
 included may depend on the specifics of your application. In general, however,
 the DCOE filter will be enabled by using

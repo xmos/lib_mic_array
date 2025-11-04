@@ -6,6 +6,8 @@
 #include <stdio.h>
 
 #include "mic_array/frame_transfer.h"
+#include "mic_array/shutdown.h" // ma_shutdown() follows the same channel transfer protocol as other ma_frame transfer functions
+                                // (without the actual data transfer), hence defining here for ease of maintenance
 
 
 unsigned ma_frame_tx(

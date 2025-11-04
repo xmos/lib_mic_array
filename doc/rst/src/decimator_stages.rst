@@ -15,7 +15,7 @@ Below is a :ref:`decimator_stages_simplified`.
 .. figure:: diagrams/decimator_stages.drawio.png
    :align: center
    :scale: 100 %
-   
+
    Simplified Decimator Model
 
 The first stage filter is a decimating FIR filter with a fixed tap count
@@ -92,7 +92,7 @@ decimation filter :ref:`first_stage_decimation_filter`.
 .. figure:: stage1_freq_response.png
    :align: center
    :scale: 100 %
-   
+
    First stage decimation filter freq response
 
 
@@ -157,7 +157,7 @@ decimation filter :ref:`second_stage_decimation_filter`.
 .. figure:: stage2_freq_response.png
    :align: center
    :scale: 100 %
-   
+
    Second stage decimation filter freq response
 
 
@@ -174,7 +174,7 @@ decimator's metaparameters (tap count, decimation factor) are given as C++
 template parameters for the decimator class template. Pointers to the
 coefficients are provided to the decimator when it is initialized.
 
-To keep things simple, when using the vanilla API or when constructing the mic
+To keep things simple, when using the default model or when constructing the mic
 array component using :cpp:class:`BasicMicArray
 <mic_array::prefab::BasicMicArray>`, it is assumed that the filter parameters
 will be those from ``stage1_fir_coef.c``, ``stage2_fir_coef.c`` and
@@ -295,7 +295,7 @@ overall combined response provides a nice flat passband as shown in the :ref:`fr
 .. figure:: 32k_freq_response.png
    :align: center
    :scale: 100 %
-   
+
    good_32k_filter_int.pkl frequency response
 
 Filter Characteristics for `good_48k_filter_int.pkl`
@@ -310,6 +310,6 @@ overall combined response provides a nice flat passband as shown :ref:`freq_resp
 .. figure:: 48k_freq_response.png
    :align: center
    :scale: 100 %
-   
+
    good_48k_filter_int.pkl frequency response
 

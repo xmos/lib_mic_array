@@ -58,8 +58,19 @@ typedef struct {
    */
   port_t p_pdm_mics;
 
-  unsigned mclk_freq; /// used with pdm_freq to calculate clock divider
-  unsigned pdm_freq; /// used with mclk freq to calculate clock divider. TODO - should the user be required to send the divider itself?
+  /**
+   * @brief Master clock frequency
+   *
+   * Application's master audio clock frequency in Hz. A typical value is 24576000 Hz
+   */
+  unsigned mclk_freq;
+
+   /**
+   * @brief PDM clock frequency
+   *
+   * Desired frequency in Hz of the PDM clock. This should be an integer factor of the mclk frequency.
+   */
+  unsigned pdm_freq; /// used with mclk freq to calculate clock divider.
 
   /**
    * @brief Resource ID of the clock block used to derive the PDM clock from the
