@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
 project("mic_array_signal_tests")
+add_subdirectory("shutdown")
 add_subdirectory("pdmrx_isr")
 add_subdirectory("BasicMicArray")
 add_subdirectory("TwoStageDecimator")

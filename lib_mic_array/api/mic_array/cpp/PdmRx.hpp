@@ -671,6 +671,8 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
     // The way PdmRx thread shutdown works, there will be atleast one pending block. Read it.
     uint32_t *pdm_samples = GetPdmBlock(); // It's important to Get the Pdm block first in case PdmRx thread is blocked on SendBlock()
                                            // Getting a block unblocks it.
+                                           // Also, reading a block ensures there's space in the channel buffer for another block
+                                           // so SendBlock() will return and see this->shutdown as set
     // The block we just read could be a buffered block due to streaming channel
     // so we need to explicitly wait for PdmRx thread to exit since
     // we can't be draining blocks while PdmRx is still running.

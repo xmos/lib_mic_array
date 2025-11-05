@@ -57,9 +57,9 @@ int main() {
 
 
 #if (!(MIC_ARRAY_CONFIG_USE_DDR))
-      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(p_mclk, p_pdm_clk, p_pdm_data, 24576000, 3072000, clk_a);
+      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(p_mclk, p_pdm_clk, p_pdm_data, MCLK_FREQ, PDM_FREQ, clk_a);
 #else
-      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(p_mclk, p_pdm_clk, p_pdm_data, 24576000, 3072000, clk_a, clk_b);
+      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(p_mclk, p_pdm_clk, p_pdm_data, MCLK_FREQ, PDM_FREQ, clk_a, clk_b);
 #endif
 
       mic_array_init(&pdm_res, null, 16000);

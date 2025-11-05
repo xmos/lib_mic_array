@@ -33,12 +33,12 @@ static int i2s_mclk_bclk_ratio(
 
 I2S_CALLBACK_ATTR
 void app_i2s_send(audio_ring_buffer_t* app_data,
-                  size_t num_out, 
+                  size_t num_out,
                   int32_t* samples)
 {
   int32_t frame[MIC_ARRAY_CONFIG_MIC_COUNT];
   abuff_frame_get(app_data, frame);
-  
+
   for(int c = 0; c < num_out; c++){
     int32_t samp = frame[(MIC_ARRAY_CONFIG_MIC_COUNT==1)?0:c];
     samples[c] = samp;
@@ -48,12 +48,12 @@ void app_i2s_send(audio_ring_buffer_t* app_data,
 
 
 I2S_CALLBACK_ATTR
-static 
-void app_i2s_init(audio_ring_buffer_t* app_data, 
+static
+void app_i2s_init(audio_ring_buffer_t* app_data,
                   i2s_config_t* config)
 {
   config->mode = I2S_MODE_I2S;
-  config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(MIC_ARRAY_CONFIG_MCLK_FREQ, 
+  config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(MCLK_FREQ,
                                                  APP_I2S_AUDIO_SAMPLE_RATE);
 }
 
@@ -61,7 +61,7 @@ void app_i2s_init(audio_ring_buffer_t* app_data,
 
 
 I2S_CALLBACK_ATTR
-static 
+static
 i2s_restart_t app_i2s_restart(audio_ring_buffer_t* app_data)
 {
   static unsigned do_restart = 0;
@@ -76,11 +76,11 @@ i2s_restart_t app_i2s_restart(audio_ring_buffer_t* app_data)
 
 I2S_CALLBACK_ATTR
 static
-void app_i2s_receive(audio_ring_buffer_t* app_data, 
-                     size_t num_in, 
+void app_i2s_receive(audio_ring_buffer_t* app_data,
+                     size_t num_in,
                      const int32_t* samples)
 {
-  
+
 }
 
 
@@ -103,11 +103,11 @@ void app_i2s_task( void* app_context )
   // port_t p_i2s_din[]  = { I2S_DATA_IN };
   port_t p_i2s_din[0];
 
-  i2s_master(&i2s_context, 
+  i2s_master(&i2s_context,
              p_i2s_dout, 1,
              p_i2s_din,  0,
-             PORT_I2S_BCLK, 
-             PORT_I2S_LRCLK, 
+             PORT_I2S_BCLK,
+             PORT_I2S_LRCLK,
              PORT_MCLK_IN_OUT,
              I2S_CLKBLK);
 }

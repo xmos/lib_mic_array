@@ -228,5 +228,7 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
     shutdown = OutputHandler.OutputSample(sample_out);
   }
   PdmRx.Shutdown();
+  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
+                                    // ma_shutdown() will now return
   return;
 }

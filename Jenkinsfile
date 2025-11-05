@@ -181,6 +181,9 @@ pipeline {
                       dir("signal/pdmrx_isr") {
                           runPytest('-v --numprocesses=1')
                       }
+                      dir("signal/shutdown") {
+                          runPytest('-v --numprocesses=1')
+                      }
                       dir("signal/BasicMicArray") {
                           runPytest('-v --numprocesses=1')
                       }

@@ -30,6 +30,7 @@ unsigned ma_frame_tx(
   if(shutdown)
   {
     chanend_check_control_token(c_frame_out, XS1_CT_END);
+    // For shutdown, MicArray thread closes channel only after shutdown is complete
   }
   else {
     int dummy = chanend_in_byte(c_frame_out);
@@ -37,9 +38,10 @@ unsigned ma_frame_tx(
     for(int i=0; i<channel_count*sample_count; i++) {
       chanend_out_word(c_frame_out, frame[i]);
     }
+    chanend_out_control_token(c_frame_out, XS1_CT_END); // close the channel only when not shutting down
+    chanend_check_control_token(c_frame_out, XS1_CT_END);
   }
-  chanend_out_control_token(c_frame_out, XS1_CT_END); // close the channel for irrespective of shutdown or not
-  chanend_check_control_token(c_frame_out, XS1_CT_END);
+
 #endif
   return shutdown;
 }

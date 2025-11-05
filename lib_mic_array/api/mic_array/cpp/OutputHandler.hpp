@@ -158,6 +158,12 @@ namespace  mic_array {
        * @param sample Sample to be added to current frame.
        */
       bool OutputSample(int32_t sample[MIC_COUNT]);
+
+      /**
+       * @brief Complete mic array shutdown process
+       *
+       */
+      void CompleteShutdown();
   };
 
 
@@ -246,6 +252,13 @@ namespace  mic_array {
        * @param frame Frame to be transmitted.
        */
       bool OutputFrame(int32_t frame[MIC_COUNT][SAMPLE_COUNT]);
+
+      /**
+       * @brief Complete mic array shutdown process by exchanging
+       * end tokens with the app.
+       * This causes ma_shutdown() to return indicating mic array shutdown completion
+       */
+      void CompleteShutdown();
   };
 
 }
@@ -281,6 +294,16 @@ bool mic_array::FrameOutputHandler<MIC_COUNT,SAMPLE_COUNT,
   return false;
 }
 
+template <unsigned MIC_COUNT,
+          unsigned SAMPLE_COUNT,
+          template <unsigned, unsigned> class FrameTransmitter,
+          unsigned FRAME_COUNT>
+void mic_array::FrameOutputHandler<MIC_COUNT,SAMPLE_COUNT,
+                        FrameTransmitter,FRAME_COUNT>::CompleteShutdown()
+{
+  FrameTx.CompleteShutdown();
+}
+
 
 
 template <unsigned MIC_COUNT, unsigned SAMPLE_COUNT>
@@ -305,4 +328,11 @@ bool mic_array::ChannelFrameTransmitter<MIC_COUNT,SAMPLE_COUNT>::OutputFrame(
                         reinterpret_cast<int32_t*>(frame),
                         MIC_COUNT, SAMPLE_COUNT);
   return shutdown;
+}
+
+template <unsigned MIC_COUNT, unsigned SAMPLE_COUNT>
+void mic_array::ChannelFrameTransmitter<MIC_COUNT,SAMPLE_COUNT>::CompleteShutdown()
+{
+  chanend_out_control_token(this->c_frame_out, XS1_CT_END); // close the channel only when not shutting down
+  chanend_check_control_token(this->c_frame_out, XS1_CT_END);
 }
