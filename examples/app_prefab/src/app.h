@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include "app_config.h"
-#include "app_common.h"
-#include "util/audio_buffer.h"
 #include "mic_array.h"
 
 C_API_START
@@ -21,14 +18,14 @@ void app_init();
  */
 MA_C_API
 void app_pdm_rx_task();
-    
+
 /**
- * @brief 
+ * @brief
  */
 MA_C_API
 void app_decimator_task(chanend_t c_audio_frames);
 
 MA_C_API
-void app_i2s_task( audio_ring_buffer_t* audio_buff );
+void app_i2s_task( chanend_t c_from_mic_array );
 
 C_API_END

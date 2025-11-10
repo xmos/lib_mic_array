@@ -6,9 +6,9 @@
 #include <stdint.h>
 
 #include "app_config.h"
-#include "app_common.h"
+#include "audio_buffer_task.h"
 #include "mic_array.h"
-#include "util/audio_buffer.h"
+#include "audio_buffer.h"
 
 typedef struct app_ctx {
   audio_ring_buffer_t rb; // Ring buffer for the mic array audio samples.

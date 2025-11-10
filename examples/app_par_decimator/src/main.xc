@@ -1,13 +1,5 @@
 // Copyright 2023-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-
-#include "app_config.h"
-#include "util/mips.h"
-#include "device_pll_ctrl.h"
-
-#include "app.h"
-#include "util/audio_buffer.h"
-
 #include <platform.h>
 #include <xs1.h>
 #include <xclib.h>
@@ -17,11 +9,29 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+#include "app_config.h"
+#include "mips.h"
+
+#include "app.h"
+#include "audio_buffer.h"
+#include "xk_evk_xu316/board.h"
 
 unsafe{ // We are sharing memory so use unsafe globally to remove XC compiler checks
 
+void AudioHwInit()
+{
+    xk_evk_xu316_config_t hw_config = {MCLK_48};
+    xk_evk_xu316_AudioHwInit(hw_config);
+
+    const int samFreq = APP_AUDIO_SAMPLE_RATE; /* xk_evk_xu316_AudioHwConfig doesn't like rates below 22kHz so force to 48k which works OK */
+    xk_evk_xu316_AudioHwConfig(samFreq, MCLK_48, 0, 32, 32);
+
+    return;
+}
+
 int main() {
 
+  chan c_i2c;
   chan c_tile_sync;
   chan c_audio_frames;
 
@@ -39,23 +49,15 @@ int main() {
                                   &audio_buffer[0][0]);
 #endif
 
-      // Wait for DAC CODEC to be pulled out of reset and
-      // PLL to initialize on Tile[1]
-      unsigned ready;
-      c_tile_sync :> ready;
-
-      aic3204_board_init();
-
-      // Signal that the DAC has been initialized.
-      c_tile_sync <: 1;
+      xk_evk_xu316_AudioHwRemote(c_i2c); // Startup remote I2C master server task
 
 #if (MIC_ARRAY_TILE == 0)
       app_mic_array_init();
+      app_mic_array_assertion_disable();
 #endif
 
 #if (MIC_ARRAY_TILE == 0 || USE_BUTTONS)
-      // XC complains about parallel usage rules if we pass the
-      // object's address directly
+      // Use unsafe pointer type to avoid XC parallal usage error
       void * unsafe app_ctx = &app_context;
 #endif
 
@@ -108,14 +110,9 @@ int main() {
     }
 
     on tile[1]: {
-      // Pull DAC CODEC out of reset
-      aic3204_codec_reset();
-
-      // Set up the media clock
-      device_pll_init();
-
-      // Signal that DAC has been released from reset and PLL initialization is done.
-      c_tile_sync <: 1;
+      xk_evk_xu316_AudioHwChanInit(c_i2c);
+      AudioHwInit();
+      c_i2c <: AUDIOHW_CMD_EXIT; // Kill the remote config task
 
       app_context_t app_context;
 
@@ -127,20 +124,16 @@ int main() {
                                   &audio_buffer[0][0]);
 
       // Wait until tile[0] is done initializing the DAC via I2C
-      unsigned ready;
-      c_tile_sync :> ready;
+
 
       app_mic_array_init();
-#else
-      unsigned ready;
-      c_tile_sync :> ready;
+      app_mic_array_assertion_disable();
 #endif
 #if (MIC_ARRAY_TILE == 0 || USE_BUTTONS)
       app_context.c_intertile = (chanend_t)c_tile_sync;
 #endif
 
-      // XC complains about parallel usage rules if we pass the
-      // object's address directly
+      // Use unsafe pointer type to avoid XC parallal usage error
       void * unsafe app_ctx = &app_context;
 
       par {

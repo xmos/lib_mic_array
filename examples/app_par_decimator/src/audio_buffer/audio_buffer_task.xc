@@ -1,22 +1,11 @@
 // Copyright 2022-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-#include "app_common.h"
+#include "audio_buffer_task.h"
 
 #ifndef MIC_ARRAY_CONFIG_MIC_COUNT
 #define MIC_ARRAY_CONFIG_MIC_COUNT N_MICS
 #endif
-
-void eat_audio_frames_task(
-    chanend_t c_from_decimator,
-    static const unsigned frame_words)
-{
-  int32_t audio_frame[frame_words];
-
-  while(1){
-    ma_frame_rx(audio_frame, c_from_decimator, frame_words, 1);
-  }
-}
 
 void receive_and_buffer_audio_task(
     chanend_t c_from_decimator,

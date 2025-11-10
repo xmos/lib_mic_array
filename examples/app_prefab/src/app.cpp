@@ -1,6 +1,7 @@
 // Copyright 2022-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
+#include "app_config.h"
 #include "app.h"
 #include <platform.h>
 #include "mic_array/cpp/Prefab.hpp"
@@ -10,7 +11,7 @@
 
 #if (N_MICS != 2)
 pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
-                                PORT_MCLK_IN_OUT,
+                                PORT_MCLK_IN,
                                 PORT_PDM_CLK,
                                 PORT_PDM_DATA,
                                 24576000,
@@ -18,7 +19,7 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
                                 MIC_ARRAY_CLK1);
 #else
 pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
-                                PORT_MCLK_IN_OUT,
+                                PORT_MCLK_IN,
                                 PORT_PDM_CLK,
                                 PORT_PDM_DATA,
                                 24576000,
@@ -29,7 +30,7 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
 
 
 using TMicArray = mic_array::prefab::BasicMicArray<
-                    N_MICS, SAMPLES_PER_FRAME, DCOE_ENABLED>;
+                    N_MICS, 1, DCOE_ENABLED>;
 
 TMicArray mics;
 

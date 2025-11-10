@@ -10,7 +10,6 @@
 
 #include "mic_array.h"
 #include "mic_array/etc/filters_default.h"
-#include "mic_array_conf_full.h"
 #include "mic_array_task_internal.hpp"
 
 TMicArray_stg2df_6* g_mics_df_6;

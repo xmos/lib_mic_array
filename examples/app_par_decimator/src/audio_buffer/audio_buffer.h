@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #include "mic_array/api.h"
-#include "util/audio_buffer.h"
 
+#include "audio_buffer.h"
 C_API_START
 
 MA_C_API
@@ -24,10 +24,7 @@ typedef struct {
 } audio_ring_buffer_t;
 
 
-
-
-
-static inline 
+static inline
 audio_ring_buffer_t abuff_init(
   const unsigned channel_count,
   const unsigned max_frames,

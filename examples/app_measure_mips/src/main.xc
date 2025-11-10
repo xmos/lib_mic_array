@@ -1,14 +1,5 @@
 // Copyright 2022-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-
-#include "app_config.h"
-#include "util/mips.h"
-#include "device_pll_ctrl.h"
-#include "mic_array/frame_transfer.h"
-
-#include "app.h"
-#include "app_common.h"
-
 #include <platform.h>
 #include <xs1.h>
 #include <xclib.h>
@@ -19,9 +10,35 @@
 #include <string.h>
 #include <assert.h>
 
+#include "app_config.h"
+#include "mips.h"
+#include "mic_array.h"
+extern "C" {
+#include "sw_pll.h"
+}
 
+// mic array resources
+on tile[PORT_PDM_CLK_TILE_NUM]: in port p_mclk =    PORT_MCLK_IN;
+on tile[PORT_PDM_CLK_TILE_NUM] : port p_pdm_clk =   PORT_PDM_CLK;
+on tile[PORT_PDM_CLK_TILE_NUM] : port p_pdm_data =  PORT_PDM_DATA;
+on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_a =      XS1_CLKBLK_1;
+on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_b =      XS1_CLKBLK_2;
 
 unsafe{
+
+static void eat_audio_frames_task(
+    chanend c_from_decimator,
+    static const unsigned channel_count,
+    static const unsigned sample_count
+    )
+{
+  int32_t audio_frame[MIC_ARRAY_CONFIG_MIC_IN_COUNT * MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
+
+  while(1){
+    ma_frame_rx(audio_frame, (chanend_t)c_from_decimator, channel_count, sample_count);
+  }
+}
+
 
 int main() {
 
@@ -31,21 +48,26 @@ int main() {
 
     on tile[0]: {
       printf("Running " APP_NAME "..\n");
-
-      eat_audio_frames_task((chanend_t) c_audio_frames,
-                            MIC_ARRAY_CONFIG_MIC_IN_COUNT * MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
+      eat_audio_frames_task(c_audio_frames,
+                            MIC_ARRAY_CONFIG_MIC_IN_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
     }
 
 
     on tile[1]: {
       // Set up the media clocks
-      device_pll_init();
+      sw_pll_fixed_clock(APP_MCLK_FREQUENCY);
+
+#if (MIC_ARRAY_CONFIG_MIC_COUNT == 2)
+      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(p_mclk, p_pdm_clk, p_pdm_data, APP_MCLK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY, clk_a, clk_b);
+#else
+      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(p_mclk, p_pdm_clk, p_pdm_data, APP_MCLK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY, clk_a);
+#endif
 
       // Initialize the mic array
-      app_init();
+      mic_array_init(&pdm_res, null, APP_AUDIO_SAMPLE_RATE);
 
       par {
-        app_start((chanend_t) c_audio_frames);
+        mic_array_start((chanend_t) c_audio_frames);
 
         // The burn_mips() and the count_mips() should all consume as many MIPS as they're offered. And
         // they should all get the SAME number of MIPS.

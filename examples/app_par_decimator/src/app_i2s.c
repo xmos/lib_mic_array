@@ -5,7 +5,7 @@
 
 #include "app.h"
 #include "i2s.h"
-#include "util/audio_buffer.h"
+#include "audio_buffer.h"
 
 #include "app_config.h"
 
@@ -26,6 +26,10 @@
 
 #if !defined(MIC_ARRAY_CONFIG_USE_DDR)
   #error "MIC_ARRAY_CONFIG_USE_DDR must be defined"
+#endif
+
+#if (APP_AUDIO_SAMPLE_RATE != 48000)
+  #error "App only runs at 48KHz. ParMicArray only supports output freq of 48KHz"
 #endif
 
 // Every two values in this LUT relates to DDR samples on a given MIC dataline (lut_index = 2 * mic_dataline).
@@ -133,8 +137,8 @@ void app_i2s_init(void* app_context,
                   i2s_config_t* config)
 {
   config->mode = I2S_MODE_I2S;
-  config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(MIC_ARRAY_CONFIG_MCLK_FREQ,
-                                                 APP_I2S_AUDIO_SAMPLE_RATE);
+  config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(MCLK_FREQ,
+                                                 APP_AUDIO_SAMPLE_RATE);
 }
 
 I2S_CALLBACK_ATTR

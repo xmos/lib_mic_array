@@ -1,13 +1,5 @@
 // Copyright 2022-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-
-#include "app_config.h"
-#include "util/mips.h"
-#include "device_pll_ctrl.h"
-
-#include "app.h"
-#include "app_common.h"
-
 #include <platform.h>
 #include <xs1.h>
 #include <xclib.h>
@@ -18,43 +10,43 @@
 #include <string.h>
 #include <assert.h>
 
+#include "app_config.h"
+#include "app.h"
+#include "xk_voice_l71/board.h"
 
+static const xk_voice_l71_config_t hw_config = {
+                                                CLK_FIXED,
+                                                ENABLE_MCLK | ENABLE_I2S,
+                                                DAC_DIN_SEC,
+                                                MCLK_48
+                                               };
 
 unsafe{
 
-int main() {
+void AudioHwInit()
+{
+    xk_voice_l71_AudioHwInit(hw_config);
+    xk_voice_l71_AudioHwConfig(hw_config, APP_AUDIO_SAMPLE_RATE, MCLK_48);
+    return;
+}
 
-  chan c_tile_sync;
+int main() {
   chan c_audio_frames;
-  
+  chan c_i2c;
+
   par {
 
     on tile[0]: {
-      board_dac3101_init();
-      c_tile_sync <: 1;
-      printf("Running " APP_NAME "..\n");
+      xk_voice_l71_AudioHwRemote(c_i2c); // Startup remote I2C master server task
     }
 
 
     on tile[1]: {
-      // This will buffer output audio for when I2S needs it.
-      int32_t audio_buffer[AUDIO_BUFFER_SAMPLES][N_MICS];
-      audio_ring_buffer_t output_audio_buffer = 
-            abuff_init(N_MICS, AUDIO_BUFFER_SAMPLES, &audio_buffer[0][0]);
+      xk_voice_l71_AudioHwChanInit(c_i2c);
+      AudioHwInit();
 
-      // Set up the media clock
-      device_pll_init();
-      
       // Initialize the mic array
       app_init();
-      
-      // Wait until tile[0] is done initializing the DAC via I2C
-      unsigned ready;
-      c_tile_sync :> ready;
-
-      // XC complains about parallel usage rules if we pass the 
-      // buffer's address directly
-      void * unsafe oab = &output_audio_buffer;
 
       par {
         app_decimator_task((chanend_t) c_audio_frames);
@@ -62,12 +54,7 @@ int main() {
 #if (!APP_USE_PDM_RX_ISR)
         app_pdm_rx_task();
 #endif
-        app_i2s_task( (void*) oab );
-
-        receive_and_buffer_audio_task( (chanend_t) c_audio_frames,
-                                       &output_audio_buffer,
-                                       N_MICS, SAMPLES_PER_FRAME,
-                                       N_MICS * SAMPLES_PER_FRAME );
+        app_i2s_task( (chanend_t) c_audio_frames );
       }
     }
   }

@@ -57,8 +57,14 @@ void decimator_subtask_run(const unsigned num_mics,
 #if NUM_DECIMATOR_SUBTASKS > 4
   #error "NUM_DECIMATOR_SUBTASKS: Value not supported"
 #endif
-  );
 #endif
+
+  );
+
+  /*decimator_subtask(1, NUM_DECIMATOR_SUBTASKS, num_mics,
+                             s1_hist, s1_filter_coef,
+                             s2_dec_factor, s2_filters,
+                             pdm_block, sample_out);*/
 }
 
 /**

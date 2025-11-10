@@ -9,7 +9,7 @@
 #include <xcore/hwtimer.h>
 #include <xcore/channel_streaming.h>
 #include "app.h"
-#include "mic_array_conf_full.h"
+#include "mic_array/mic_array_conf_full.h"
 #include <print.h>
 
 /**

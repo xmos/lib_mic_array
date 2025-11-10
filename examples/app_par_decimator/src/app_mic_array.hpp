@@ -14,6 +14,7 @@
 # error Application must not define the following as precompiler macros: MIC_COUNT, MICS_IN, FRAME_SIZE, USE_DCOE.
 #endif
 
+#define STG2_DEC_FACTOR_48KHZ   (2)
 /**
  * A copy of Prefab with TwoStageDecimator replaced with a custom MyTwoStageDecimator.
  * This implementation provides support for > 8 mics by using multiple cores to
@@ -23,9 +24,9 @@ namespace par_mic_array {
   template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN=MIC_COUNT>
   class ParMicArray
       : public mic_array::MicArray<MIC_COUNT,
-                        MyTwoStageDecimator<MIC_COUNT, STAGE2_DEC_FACTOR,
-                                  STAGE2_TAP_COUNT>,
-                        mic_array::StandardPdmRxService<MICS_IN,MIC_COUNT,STAGE2_DEC_FACTOR>,
+                        MyTwoStageDecimator<MIC_COUNT, STG2_DEC_FACTOR_48KHZ,
+                                  MIC_ARRAY_48K_STAGE_2_TAP_COUNT>,
+                        mic_array::StandardPdmRxService<MICS_IN,MIC_COUNT,STG2_DEC_FACTOR_48KHZ>,
                         // std::conditional uses USE_DCOE to determine which
                         // sample filter is used.
                         typename std::conditional<USE_DCOE,
@@ -41,9 +42,9 @@ namespace par_mic_array {
        * template inherits.
        */
       using TParent = mic_array::MicArray<MIC_COUNT,
-                                MyTwoStageDecimator<MIC_COUNT, STAGE2_DEC_FACTOR,
-                                          STAGE2_TAP_COUNT>,
-                                mic_array::StandardPdmRxService<MICS_IN,MIC_COUNT,STAGE2_DEC_FACTOR>,
+                                MyTwoStageDecimator<MIC_COUNT, STG2_DEC_FACTOR_48KHZ,
+                                          MIC_ARRAY_48K_STAGE_2_TAP_COUNT>,
+                                mic_array::StandardPdmRxService<MICS_IN,MIC_COUNT,STG2_DEC_FACTOR_48KHZ>,
                                 typename std::conditional<USE_DCOE,
                                           mic_array::DcoeSampleFilter<MIC_COUNT>,
                                           mic_array::NopSampleFilter<MIC_COUNT>>::type,
@@ -148,7 +149,7 @@ namespace par_mic_array {
 template <unsigned MIC_COUNT, unsigned FRAME_SIZE, bool USE_DCOE, unsigned MICS_IN>
 void par_mic_array::ParMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>::Init()
 {
-  this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, stage2_shr);
+  this->Decimator.Init((uint32_t*) stage1_48k_coefs, stage2_48k_coefs, stage2_48k_shift);
 }
 
 
@@ -157,13 +158,13 @@ par_mic_array::ParMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
     ::ParMicArray(
         port_t p_pdm_mics,
         chanend_t c_frames_out) : TParent(
-            mic_array::StandardPdmRxService<MICS_IN, MIC_COUNT, STAGE2_DEC_FACTOR>(p_pdm_mics),
+            mic_array::StandardPdmRxService<MICS_IN, MIC_COUNT, STG2_DEC_FACTOR_48KHZ>(p_pdm_mics),
             mic_array::FrameOutputHandler<MIC_COUNT, FRAME_SIZE,
                 mic_array::ChannelFrameTransmitter>(
                     mic_array::ChannelFrameTransmitter<MIC_COUNT, FRAME_SIZE>(
                         c_frames_out)))
 {
-  this->Decimator.Init((uint32_t*) stage1_coef, stage2_coef, stage2_shr);
+  this->Decimator.Init((uint32_t*) stage1_48k_coefs, stage2_48k_coefs, stage2_48k_shift);
 }
 
 

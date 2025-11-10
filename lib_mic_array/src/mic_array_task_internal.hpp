@@ -5,8 +5,6 @@
 #include <stdint.h>
 #include "mic_array.h"
 #include "mic_array/etc/filters_default.h"
-#include "mic_array_conf_full.h"
-
 
 using TMicArray_stg2df_6 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
                           mic_array::TwoStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT,

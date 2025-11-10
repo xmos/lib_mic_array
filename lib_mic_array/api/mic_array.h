@@ -11,6 +11,7 @@
 #include "mic_array/shutdown.h"
 #include "mic_array/setup.h"
 #include "mic_array/mic_array_task.h"
+#include "mic_array/mic_array_conf_full.h"
 
 #ifdef __cplusplus
 # include "mic_array/cpp/Decimator.hpp"
