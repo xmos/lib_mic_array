@@ -1,7 +1,7 @@
 
 set( APP_NAME tests-build-default )
 
-set( TARGET_XN   XVF3610_Q60A.xn )
+set( TARGET_XN   XK-EVK-XU316.xn )
 
 set( MCLK_FREQ            24576000  )
 

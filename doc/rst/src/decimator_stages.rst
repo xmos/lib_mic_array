@@ -283,6 +283,13 @@ processor usage per channel to approximately 13 MIPS rising to 15.6 MIPS for 48 
 Increasing the filer lengths to 148 and 96 for stages 1 and 2 respectively at 48 kHz
 will increase processor usage per channel to around 20 MIPS.
 
+.. note::
+    The filters generated using `good_48k_filter_int.pkl` and `good_32k_filter_int.pkl` to support
+    48 kHz and 32 kHz are included in ``stage1_fir_coef.c``, ``stage2_fir_coef.c``, and
+    ``filters_default.h``. When using the default API and passing 32000 or 48000 as the
+    ``output_samp_freq`` argument to :c:func:`mic_array_init()`, these filters are used automatically.
+
+
 Filter Characteristics for `good_32k_filter_int.pkl`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -1,7 +1,7 @@
 
 set( APP_NAME tests-build-prefab )
 
-set( TARGET_XN   XVF3610_Q60A.xn )
+set( TARGET_XN   XK-EVK-XU316.xn )
 
 set(APP_COMPILE_FLAGS
   "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_XN}"

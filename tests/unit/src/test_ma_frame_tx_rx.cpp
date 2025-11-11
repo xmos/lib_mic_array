@@ -51,7 +51,7 @@ extern "C" {
   }
 
 
-  static unsigned long long stack[8000/2]; // dword-alignment required for this. LOAD_STORE exception otherwise.
+  static unsigned __attribute__((aligned (8))) stack[8000]; // dword-alignment required for this. LOAD_STORE exception otherwise.
                                            // (ma_frame_tx         +  6) : std     r5(0x0), r4(0x0), sp[0x0] S[0x8c59c] @47378
                                            // tile[0]@1 *000829f6 : TRAP ET: 5, SPC: 000829f6, SSR: 0, ED: 0008c59c (LOAD_STORE)
                                            // Limitation of run_async() perhaps?

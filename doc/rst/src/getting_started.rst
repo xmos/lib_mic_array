@@ -4,6 +4,8 @@
 Getting started
 ***************
 
+.. _mic_array_default_model:
+
 Recommended usage: Default model
 ================================
 

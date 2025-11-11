@@ -21,6 +21,7 @@ Whichever model is chosen, the first step to integrate a mic array unit into an
 application is to *identify the required hardware resources*. This is the same as described
 in :ref:`mic_array_identify_resources`.
 
+.. _mic_array_prefab_model:
 
 Prefab model
 ============

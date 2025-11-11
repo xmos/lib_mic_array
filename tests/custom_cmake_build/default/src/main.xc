@@ -16,7 +16,7 @@
 #define MIC_COUNT   MIC_ARRAY_CONFIG_MIC_COUNT
 #define FRAME_SIZE  MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME
 
-on tile[PORT_PDM_CLK_TILE_NUM] : port p_mclk = PORT_MCLK_IN_OUT;
+on tile[PORT_PDM_CLK_TILE_NUM] : port p_mclk = PORT_MCLK_IN;
 on tile[PORT_PDM_CLK_TILE_NUM] : port p_pdm_clk = PORT_PDM_CLK;
 on tile[PORT_PDM_CLK_TILE_NUM] : port p_pdm_data = PORT_PDM_DATA;
 on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_a = XS1_CLKBLK_1;

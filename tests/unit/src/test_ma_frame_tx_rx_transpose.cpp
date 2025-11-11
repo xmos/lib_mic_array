@@ -52,7 +52,7 @@ extern "C" {
   }
 
 
-  static unsigned long long stack[8000/2]; // dword alignment requirement? see comment in test_ma_frame_tx_rx.cpp
+  static unsigned __attribute__((aligned (8))) stack[8000]; // dword alignment requirement. see comment in test_ma_frame_tx_rx.cpp
   static void* stack_start = stack_base(stack, 8000);
 
 }

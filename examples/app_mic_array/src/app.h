@@ -14,4 +14,3 @@ MA_C_API
 void app_i2s_task( chanend_t c_from_mic_array );
 
 C_API_END
-

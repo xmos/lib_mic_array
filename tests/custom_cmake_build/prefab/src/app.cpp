@@ -11,7 +11,7 @@
 
 pdm_rx_resources_t pdm_res_sdr =
     PDM_RX_RESOURCES_SDR(
-      PORT_MCLK_IN_OUT,
+      PORT_MCLK_IN,
       PORT_PDM_CLK,
       PORT_PDM_DATA,
       APP_AUDIO_CLOCK_FREQUENCY,
@@ -20,7 +20,7 @@ pdm_rx_resources_t pdm_res_sdr =
 
 pdm_rx_resources_t pdm_res_ddr =
     PDM_RX_RESOURCES_DDR(
-      PORT_MCLK_IN_OUT,
+      PORT_MCLK_IN,
       PORT_PDM_CLK,
       PORT_PDM_DATA,
       APP_AUDIO_CLOCK_FREQUENCY,

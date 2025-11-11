@@ -65,10 +65,13 @@ typedef struct {
    */
   unsigned mclk_freq;
 
-   /**
+  /**
    * @brief PDM clock frequency
    *
-   * Desired frequency in Hz of the PDM clock. This should be an integer factor of the mclk frequency.
+   * Frequency in Hz of the physical PDM clock driving the microphones.
+   * This is the actual bit clock output to the PDM mics, not the PDM capture clock,
+   * which may differ when using DDR capture mode.
+   * Must be an integer factor of the MCLK frequency.
    */
   unsigned pdm_freq; /// used with mclk freq to calculate clock divider.
 

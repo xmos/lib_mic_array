@@ -6,7 +6,7 @@ set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../../examples/deps.cmake)
 
-set(APP_HW_TARGET       XVF3610_Q60A.xn)
+set(APP_HW_TARGET       XK-EVK-XU316)
 
 # Get JSON lists
 file(READ ${CMAKE_CURRENT_LIST_DIR}/test_params.json JSON_CONTENT)

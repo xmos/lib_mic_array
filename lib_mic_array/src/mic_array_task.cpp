@@ -53,7 +53,6 @@ void ma_task_start_decimator_df_2(TMicArray_stg2df_2& mics, chanend_t c_audio_fr
 
 void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq)
 {
-  //printf("MIC_ARRAY_CONFIG_USE_PDM_ISR = %d\n", MIC_ARRAY_CONFIG_USE_PDM_ISR);
   if (g_kind == NONE) {
     unsigned stg2_decimation_factor = (pdm_res->pdm_freq/STAGE1_DEC_FACTOR)/output_samp_freq;
     assert ((output_samp_freq*STAGE1_DEC_FACTOR*stg2_decimation_factor) == pdm_res->pdm_freq); // assert if it doesnt divide cleanly
@@ -82,8 +81,6 @@ void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, un
 void mic_array_start(
     chanend_t c_frames_out)
 {
-  //printintln(1);
-  //outuint(c_frames_out, 1);
   switch (g_kind) {
     case DF_6:
 #if MIC_ARRAY_CONFIG_USE_PDM_ISR

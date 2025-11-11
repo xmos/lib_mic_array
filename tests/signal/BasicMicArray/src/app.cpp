@@ -37,7 +37,7 @@ using TMicArray = mic_array::prefab::BasicMicArray<MIC_ARRAY_CONFIG_MIC_COUNT, M
 TMicArray mics;
 
 pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
-                                PORT_MCLK_IN_OUT,
+                                PORT_MCLK_IN,
                                 PORT_PDM_CLK,
                                 PORT_PDM_DATA,
                                 24576000,
