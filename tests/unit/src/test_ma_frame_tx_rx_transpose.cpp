@@ -29,12 +29,12 @@ extern "C" {
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_1chan_16samp);
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_1chan_256samp);
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_1chan_1024samp);
-    
+
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_2chan_1samp);
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_2chan_16samp);
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_2chan_256samp);
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_2chan_1024samp);
-    
+
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_4chan_1samp);
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_4chan_16samp);
     RUN_TEST_CASE(ma_frame_tx_rx_transpose, case_4chan_256samp);
@@ -52,7 +52,7 @@ extern "C" {
   }
 
 
-  static unsigned stack[8000];
+  static unsigned __attribute__((aligned (8))) stack[8000]; // dword alignment requirement. see comment in test_ma_frame_tx_rx.cpp
   static void* stack_start = stack_base(stack, 8000);
 
 }
@@ -83,14 +83,14 @@ static
 void test_ma_frame_tx_rx_transpose()
 {
   srand(7685664*CHANS + SAMPLE_COUNT);
-  
+
   constexpr unsigned LOOP_COUNT=400;
-  
+
   for(int r = 0; r < LOOP_COUNT; r++){
+    int32_t exp_frame[SAMPLE_COUNT][CHANS];
     set_test_details(r);
     int32_t tx_frame[CHANS][SAMPLE_COUNT];
-    int32_t exp_frame[SAMPLE_COUNT][CHANS];
-    
+
     for(int c = 0; c < CHANS; c++) {
       for(int s = 0; s < SAMPLE_COUNT; s++) {
         tx_frame[c][s] = rand();
@@ -109,7 +109,7 @@ void test_ma_frame_tx_rx_transpose()
 }
 
 extern "C" {
-  
+
   TEST(ma_frame_tx_rx_transpose, case_1chan_1samp)     { test_ma_frame_tx_rx_transpose<1,1>();    }
   TEST(ma_frame_tx_rx_transpose, case_1chan_16samp)    { test_ma_frame_tx_rx_transpose<1,16>();   }
   TEST(ma_frame_tx_rx_transpose, case_1chan_256samp)   { test_ma_frame_tx_rx_transpose<1,256>();  }

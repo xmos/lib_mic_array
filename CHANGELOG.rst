@@ -5,6 +5,14 @@ UNRELEASED
 ----------
 
   * FIXED: PDM RX ISR deadlock bug
+  * REMOVED: Vanilla API and configuration
+  * ADDED: A new API to replace vanilla that is the default recommended way
+    of using the mic array.
+  * ADDED: Support for mic array shutdown which causes the mic arry thread(s)
+    to return.
+  * ADDED: Test for mic array shutdown
+  * CHANGED: BasicMicArray tests to test the default API
+  * CHANGED: app_measure_mips example to run the default API
 
 5.5.0
 -----

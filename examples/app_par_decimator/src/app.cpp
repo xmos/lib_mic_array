@@ -2,13 +2,15 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <stdint.h>
+#include <platform.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/interrupt.h>
+#include <xcore/parallel.h>
 
 #include "app_config.h"
-#include "app_mic_array.hpp"
 
 #include "mic_array.h"
+#include "app_decimator.hpp"
 #include "mic_array/etc/filters_default.h"
 
 #ifndef STR
@@ -19,85 +21,84 @@
 #define XSTR(s) STR(s)
 #endif
 
-#ifndef MIC_ARRAY_CONFIG_USE_DC_ELIMINATION
-# define MIC_ARRAY_CONFIG_USE_DC_ELIMINATION    (1)
-#endif
-
-#ifndef MIC_ARRAY_CONFIG_CLOCK_BLOCK_A
-# define MIC_ARRAY_CONFIG_CLOCK_BLOCK_A         (XS1_CLKBLK_1)
-#endif
-
-#ifndef MIC_ARRAY_CONFIG_CLOCK_BLOCK_B 
-# define MIC_ARRAY_CONFIG_CLOCK_BLOCK_B         (XS1_CLKBLK_2)
-#endif
 
 ////// Additional macros derived from others
 
-#define MIC_ARRAY_CONFIG_MCLK_DIVIDER           ((MIC_ARRAY_CONFIG_MCLK_FREQ)       \
-                                                /(MIC_ARRAY_CONFIG_PDM_FREQ))
-#define MIC_ARRAY_CONFIG_OUT_SAMPLE_RATE        ((MIC_ARRAY_CONFIG_PDM_FREQ)      \
-                                                /(STAGE2_DEC_FACTOR))
-
-////// Any Additional correctness checks
+#define MCLK_DIVIDER          ((MCLK_FREQ)       \
+                                /(PDM_FREQ))
 
 
 ////// Allocate needed objects
 
 pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
-                                MIC_ARRAY_CONFIG_PORT_MCLK,
-                                MIC_ARRAY_CONFIG_PORT_PDM_CLK,
-                                MIC_ARRAY_CONFIG_PORT_PDM_DATA,
-                                MIC_ARRAY_CONFIG_CLOCK_BLOCK_A,
-                                MIC_ARRAY_CONFIG_CLOCK_BLOCK_B);
+                                PORT_MCLK_IN,
+                                PORT_PDM_CLK,
+                                PORT_PDM_DATA,
+                                MCLK_FREQ,
+                                PDM_FREQ,
+                                XS1_CLKBLK_1,
+                                XS1_CLKBLK_2);
 
-using TMicArray = par_mic_array::ParMicArray<
-                        MIC_ARRAY_CONFIG_MIC_COUNT,
-                        MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
-                        MIC_ARRAY_CONFIG_USE_DC_ELIMINATION>;
 
+#ifndef APP_N_MICS_IN
+  #define APP_N_MICS_IN APP_N_MICS
+#endif
+#define STAGE2_DEC_FACTOR_48KHZ   2
+#define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
+#define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
+
+using TMicArray = mic_array::MicArray<APP_N_MICS,
+                          par_mic_array::MyTwoStageDecimator<APP_N_MICS,
+                                              STAGE2_DEC_FACTOR_48KHZ,
+                                              MIC_ARRAY_48K_STAGE_2_TAP_COUNT>,
+                          mic_array::StandardPdmRxService<APP_N_MICS_IN,
+                                                          APP_N_MICS,
+                                                          STAGE2_DEC_FACTOR_48KHZ>,
+                          typename std::conditional<APP_USE_DC_ELIMINATION,
+                                              mic_array::DcoeSampleFilter<APP_N_MICS>,
+                                              mic_array::NopSampleFilter<APP_N_MICS>>::type,
+                          mic_array::FrameOutputHandler<APP_N_MICS,
+                                                        MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
+                                                        mic_array::ChannelFrameTransmitter>>;
 TMicArray mics;
 
 MA_C_API
 void app_mic_array_init()
 {
-  printf("MIC CONFIG:\n");
-  printf("- MIC_ARRAY_TILE: " XSTR(MIC_ARRAY_TILE) "\n");
-  printf("- MIC_ARRAY_CONFIG_CLOCK_BLOCK_A: " XSTR(MIC_ARRAY_CONFIG_CLOCK_BLOCK_A) "\n");
-  printf("- MIC_ARRAY_CONFIG_CLOCK_BLOCK_B: " XSTR(MIC_ARRAY_CONFIG_CLOCK_BLOCK_B) "\n");
-  printf("- MIC_ARRAY_CONFIG_MCLK_FREQ: " XSTR(MIC_ARRAY_CONFIG_MCLK_FREQ) "\n");
-  printf("- MIC_ARRAY_CONFIG_PDM_FREQ: " XSTR(MIC_ARRAY_CONFIG_PDM_FREQ) "\n");
-  printf("- MIC_ARRAY_CONFIG_MIC_COUNT: " XSTR(MIC_ARRAY_CONFIG_MIC_COUNT) "\n");
-  printf("- MIC_ARRAY_CONFIG_USE_DDR: " XSTR(MIC_ARRAY_CONFIG_USE_DDR) "\n");
-  printf("- MIC_ARRAY_CONFIG_PORT_MCLK: " XSTR(MIC_ARRAY_CONFIG_PORT_MCLK) "\n");
-  printf("- MIC_ARRAY_CONFIG_PORT_PDM_CLK: " XSTR(MIC_ARRAY_CONFIG_PORT_PDM_CLK) "\n");
-  printf("- MIC_ARRAY_CONFIG_PORT_PDM_DATA: " XSTR(MIC_ARRAY_CONFIG_PORT_PDM_DATA) "\n");
-  printf("- MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME: " XSTR(MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME) "\n");
-
-  mics.Init();
-  mics.SetPort(pdm_res.p_pdm_mics);
-  mic_array_resources_configure(&pdm_res, MIC_ARRAY_CONFIG_MCLK_DIVIDER);
+  mics.Decimator.Init((uint32_t*) stage1_48k_coefs, stage2_48k_coefs, stage2_48k_shift);
+  mics.PdmRx.Init(pdm_res.p_pdm_mics);
+  mic_array_resources_configure(&pdm_res, MCLK_DIVIDER);
   mic_array_pdm_clock_start(&pdm_res);
+}
+
+DECLARE_JOB(ma_task_start_pdm, (TMicArray&));
+void ma_task_start_pdm(TMicArray& m){
+  m.PdmRx.ThreadEntry();
+}
+
+DECLARE_JOB(ma_task_start_decimator, (TMicArray&, chanend_t));
+void ma_task_start_decimator(TMicArray& m, chanend_t c_audio_frames){
+  m.ThreadEntry();
 }
 
 MA_C_API
 void app_mic_array_task(chanend_t c_frames_out)
 {
-  mics.SetOutputChannel(c_frames_out);
+#if APP_USE_PDMRX_ISR
+  CLEAR_KEDI()
 
-  mics.InstallPdmRxISR();
-  mics.UnmaskPdmRxISR();
-
-  mics.ThreadEntry();
-}
-
-MA_C_API
-void app_mic_array_assertion_disable()
-{
+  mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
+  // Setup the ISR and enable. Then start decimator.
   mics.PdmRx.AssertOnDroppedBlock(false);
+  mics.PdmRx.InstallISR();
+  mics.PdmRx.UnmaskISR();
+  mics.ThreadEntry();
+#else
+  mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
+  PAR_JOBS(
+      PJOB(ma_task_start_pdm, (mics)),
+      PJOB(ma_task_start_decimator, (mics, c_frames_out))
+    );
+#endif
 }
 
-MA_C_API
-void app_mic_array_assertion_enable()
-{
-  mics.PdmRx.AssertOnDroppedBlock(true);
-}

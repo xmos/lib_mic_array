@@ -6,7 +6,7 @@ set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../test_deps.cmake)
 
-set(APP_HW_TARGET           XVF3610_Q60A.xn)
+set(APP_HW_TARGET           XK-EVK-XU316)
 
 # Manually grab sources since we want to append unity to them
 file(GLOB_RECURSE APP_C_SRCS RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.c")

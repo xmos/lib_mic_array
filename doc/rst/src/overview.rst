@@ -36,7 +36,12 @@ Capabilities
 
 * Optional DC offset elimination filter
 * Sample framing with user selectable frame size (down to single samples)
-* Most configurations require only a single hardware thread
+* Configurations with up to 4 microphones require only a single hardware thread. For higher microphone
+  counts, multiple hardware threads are needed to split the decimation process
+  across threads — support for this is not provided as part of the :ref:`default <mic_array_default_model>` or
+  :ref:`prefab <mic_array_prefab_model>` usage model.
+  Refer to the ``lib_mic_array/examples/app_par_decimator`` example to see how this can be achieved
+  by creating a custom mic array instance that implements a multi-threaded decimator.
 
 
 
@@ -55,7 +60,7 @@ process view is depicted in the figure :ref:`image_high_level_process`.
 .. figure:: diagrams/high_level_process.drawio.png
    :align: center
    :scale: 100 %
-   
+
    Mic Array High Level Process
 
 

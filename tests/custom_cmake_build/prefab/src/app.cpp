@@ -9,18 +9,22 @@
 #define APP_AUDIO_CLOCK_FREQUENCY   24576000
 #define APP_PDM_CLOCK_FREQUENCY      3072000
 
-pdm_rx_resources_t pdm_res_sdr = 
+pdm_rx_resources_t pdm_res_sdr =
     PDM_RX_RESOURCES_SDR(
-      PORT_MCLK_IN_OUT,
+      PORT_MCLK_IN,
       PORT_PDM_CLK,
       PORT_PDM_DATA,
+      APP_AUDIO_CLOCK_FREQUENCY,
+      APP_PDM_CLOCK_FREQUENCY,
       XS1_CLKBLK_1);
 
-pdm_rx_resources_t pdm_res_ddr = 
+pdm_rx_resources_t pdm_res_ddr =
     PDM_RX_RESOURCES_DDR(
-      PORT_MCLK_IN_OUT,
+      PORT_MCLK_IN,
       PORT_PDM_CLK,
       PORT_PDM_DATA,
+      APP_AUDIO_CLOCK_FREQUENCY,
+      APP_PDM_CLOCK_FREQUENCY,
       XS1_CLKBLK_1,
       XS1_CLKBLK_2);
 
@@ -90,17 +94,17 @@ BasicMicArray<2, 256, true>   mics_2_256_true;
 // `BasicMicArray` instances from being optimized out
 MA_C_API
 void app_init(
-    unsigned mic_count, 
+    unsigned mic_count,
     unsigned frame_size,
     unsigned use_dcoe)
 {
   assert(mic_count == 1 || mic_count == 2);
   assert(frame_size == 1 || frame_size == 16 || frame_size == 256);
-  
+
   const unsigned mclk_div = mic_array_mclk_divider(
       APP_AUDIO_CLOCK_FREQUENCY, APP_PDM_CLOCK_FREQUENCY);
 
-  
+
   mics_1_1_true.Init();
   mics_1_16_true.Init();
   mics_1_256_true.Init();
@@ -129,7 +133,7 @@ void app_init(
   mics_2_1_false.SetPort(pdm_res_ddr.p_pdm_mics);
   mics_2_16_false.SetPort(pdm_res_ddr.p_pdm_mics);
   mics_2_256_false.SetPort(pdm_res_ddr.p_pdm_mics);
-  
+
   if(mic_count == 1)
     mic_array_resources_configure(&pdm_res_sdr, mclk_div);
   else
@@ -139,34 +143,34 @@ void app_init(
 // If pdm_rx is to be run as a thread
 MA_C_API
 void app_pdm_rx_task(
-    unsigned mic_count, 
+    unsigned mic_count,
     unsigned frame_size,
     unsigned use_dcoe)
-{  
+{
   assert(mic_count == 1 || mic_count == 2);
   assert(frame_size == 1 || frame_size == 16 || frame_size == 256);
-  
-  if(mic_count == 1) 
+
+  if(mic_count == 1)
     mic_array_pdm_clock_start(&pdm_res_sdr);
-  else 
+  else
     mic_array_pdm_clock_start(&pdm_res_ddr);
-  
+
   mics_call(PdmRxThreadEntry());
 }
 
 
 MA_C_API
 void app_setup_pdm_rx_isr(
-    unsigned mic_count, 
+    unsigned mic_count,
     unsigned frame_size,
     unsigned use_dcoe)
-{  
+{
   assert(mic_count == 1 || mic_count == 2);
   assert(frame_size == 1 || frame_size == 16 || frame_size == 256);
 
-  if(mic_count == 1) 
+  if(mic_count == 1)
     mic_array_pdm_clock_start(&pdm_res_sdr);
-  else 
+  else
     mic_array_pdm_clock_start(&pdm_res_ddr);
 
   mics_call(InstallPdmRxISR());
@@ -176,11 +180,11 @@ void app_setup_pdm_rx_isr(
 
 MA_C_API
 void app_decimator_task(
-    unsigned mic_count, 
+    unsigned mic_count,
     unsigned frame_size,
     unsigned use_dcoe,
     chanend_t c_audio_frames)
-{  
+{
   assert(mic_count == 1 || mic_count == 2);
   assert(frame_size == 1 || frame_size == 16 || frame_size == 256);
 

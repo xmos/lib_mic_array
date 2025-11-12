@@ -1,13 +1,5 @@
 // Copyright 2022-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-
-#include "app_config.h"
-#include "util/mips.h"
-#include "device_pll_ctrl.h"
-
-#include "app.h"
-#include "app_common.h"
-
 #include <platform.h>
 #include <xs1.h>
 #include <xclib.h>
@@ -17,62 +9,65 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+#include "xk_voice_l71/board.h"
+#include "app_config.h"
+#include "mic_array.h"
+#include "app.h"
 
+static const xk_voice_l71_config_t hw_config = {
+                                                CLK_FIXED,
+                                                ENABLE_MCLK | ENABLE_I2S,
+                                                DAC_DIN_SEC,
+                                                MCLK_48
+                                               };
 
+// mic array resources
+on tile[PORT_PDM_CLK_TILE_NUM]: in port p_mclk =    PORT_MCLK_IN;
+on tile[PORT_PDM_CLK_TILE_NUM] : port p_pdm_clk =   PORT_PDM_CLK;
+on tile[PORT_PDM_CLK_TILE_NUM] : port p_pdm_data =  PORT_PDM_DATA;
+on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_a =      XS1_CLKBLK_1;
+on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_b =      XS1_CLKBLK_2;
 
 unsafe{
 
-int main() {
+void AudioHwInit()
+{
+    xk_voice_l71_AudioHwInit(hw_config);
+    xk_voice_l71_AudioHwConfig(hw_config, APP_AUDIO_SAMPLE_RATE, MCLK_48);
+    return;
+}
 
-  chan c_tile_sync;
+int main() {
   chan c_audio_frames;
-  
+  chan c_i2c;
+
   par {
 
     on tile[0]: {
-      board_dac3101_init();
-      c_tile_sync <: 1;
-      printf("Running " APP_NAME "..\n");
+      xk_voice_l71_AudioHwRemote(c_i2c); // Startup remote I2C master server task
     }
 
 
     on tile[1]: {
-      // This will buffer output audio for when I2S needs it.
-      int32_t audio_buffer[AUDIO_BUFFER_SAMPLES][N_MICS];
-      audio_ring_buffer_t output_audio_buffer = 
-            abuff_init(N_MICS, AUDIO_BUFFER_SAMPLES, &audio_buffer[0][0]);
+      xk_voice_l71_AudioHwChanInit(c_i2c);
+      AudioHwInit();
 
-      // Set up the media clock
-      device_pll_init();
-      
-      // Initialize the mic array
-      app_init();
-      
-      // Wait until tile[0] is done initializing the DAC via I2C
-      unsigned ready;
-      c_tile_sync :> ready;
+#if (MIC_ARRAY_CONFIG_MIC_COUNT == 2)
+      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(p_mclk, p_pdm_clk, p_pdm_data, MCLK_48, PDM_FREQ, clk_a, clk_b);
+#else
+      pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(p_mclk, p_pdm_clk, p_pdm_data, MCLK_48, PDM_FREQ, clk_a);
+#endif
 
-      // XC complains about parallel usage rules if we pass the 
-      // buffer's address directly
-      void * unsafe oab = &output_audio_buffer;
+      mic_array_init(&pdm_res, null, APP_AUDIO_SAMPLE_RATE);
 
       par {
-        app_decimator_task((chanend_t) c_audio_frames);
+        mic_array_start((chanend_t) c_audio_frames);
 
-#if (!APP_USE_PDM_RX_ISR)
-        app_pdm_rx_task();
-#endif
-        app_i2s_task( (void*) oab );
-
-        receive_and_buffer_audio_task( (chanend_t) c_audio_frames,
-                                       &output_audio_buffer,
-                                       N_MICS, SAMPLES_PER_FRAME,
-                                       N_MICS * SAMPLES_PER_FRAME );
+        app_i2s_task( (chanend_t)c_audio_frames );
       }
     }
   }
 
   return 0;
 }
-
 }

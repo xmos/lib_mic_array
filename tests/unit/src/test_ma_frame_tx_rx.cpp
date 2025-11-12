@@ -28,12 +28,12 @@ extern "C" {
     RUN_TEST_CASE(ma_frame_tx_rx, case_1chan_16samp);
     RUN_TEST_CASE(ma_frame_tx_rx, case_1chan_256samp);
     RUN_TEST_CASE(ma_frame_tx_rx, case_1chan_1024samp);
-    
+
     RUN_TEST_CASE(ma_frame_tx_rx, case_2chan_1samp);
     RUN_TEST_CASE(ma_frame_tx_rx, case_2chan_16samp);
     RUN_TEST_CASE(ma_frame_tx_rx, case_2chan_256samp);
     RUN_TEST_CASE(ma_frame_tx_rx, case_2chan_1024samp);
-    
+
     RUN_TEST_CASE(ma_frame_tx_rx, case_4chan_1samp);
     RUN_TEST_CASE(ma_frame_tx_rx, case_4chan_16samp);
     RUN_TEST_CASE(ma_frame_tx_rx, case_4chan_256samp);
@@ -51,8 +51,12 @@ extern "C" {
   }
 
 
-  static unsigned stack[8000];
-  static void* stack_start = stack_base(stack, 8000);
+  static unsigned __attribute__((aligned (8))) stack[8000]; // dword-alignment required for this. LOAD_STORE exception otherwise.
+                                           // (ma_frame_tx         +  6) : std     r5(0x0), r4(0x0), sp[0x0] S[0x8c59c] @47378
+                                           // tile[0]@1 *000829f6 : TRAP ET: 5, SPC: 000829f6, SSR: 0, ED: 0008c59c (LOAD_STORE)
+                                           // Limitation of run_async() perhaps?
+
+  static void* stack_start = stack_base((unsigned*)stack, 8000);
 
 }
 
@@ -71,12 +75,12 @@ static
 void test_ma_frame_tx_rx()
 {
   srand(7685664*CHANS + SAMPLE_COUNT);
-  
+
   constexpr unsigned LOOP_COUNT=400;
-  
+
   for(int r = 0; r < LOOP_COUNT; r++){
     int32_t exp_frame[CHANS][SAMPLE_COUNT];
-    
+
     for(int c = 0; c < CHANS; c++)
       for(int s = 0; s < SAMPLE_COUNT; s++)
         exp_frame[c][s] = rand();
@@ -92,7 +96,7 @@ void test_ma_frame_tx_rx()
 }
 
 extern "C" {
-  
+
   TEST(ma_frame_tx_rx, case_1chan_1samp)     { test_ma_frame_tx_rx<1,1>();    }
   TEST(ma_frame_tx_rx, case_1chan_16samp)    { test_ma_frame_tx_rx<1,16>();   }
   TEST(ma_frame_tx_rx, case_1chan_256samp)   { test_ma_frame_tx_rx<1,256>();  }

@@ -4,27 +4,13 @@
 #pragma once
 
 
-#ifndef N_MICS
-#  error "N_MICS not defined."
-#endif
+#define AUDIO_BUFFER_SAMPLES       ((unsigned) (MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME))
+#define APP_AUDIO_SAMPLE_RATE   48000
+#define APP_I2S_AUDIO_SAMPLE_RATE   APP_AUDIO_SAMPLE_RATE
+#define MCLK_48                             (512 * 48000)    /* 48kHz family master clock frequency */
 
-#ifndef APP_USE_PDM_RX_ISR
-#  error "APP_USE_PDM_RX_ISR not defined."
-#endif
-
-
-#define SAMPLES_PER_FRAME         16
-
-#define AUDIO_BUFFER_SAMPLES       ((unsigned) (SAMPLES_PER_FRAME * 1.2f + 4))
-
-#define APP_AUDIO_CLOCK_FREQUENCY        24576000
-#define APP_PDM_CLOCK_FREQUENCY          3072000
-#define APP_AUDIO_PIPELINE_SAMPLE_RATE   16000
-
-
-#define APP_I2S_AUDIO_SAMPLE_RATE   APP_AUDIO_PIPELINE_SAMPLE_RATE
-
-#define APP_USE_DC_OFFSET_ELIMINATION   1
-
-#define MIC_ARRAY_CLK1  XS1_CLKBLK_1
-#define MIC_ARRAY_CLK2  XS1_CLKBLK_2
+#define MASTER_CLOCK_FREQUENCY  MCLK_48
+#define PDM_FREQ                (3072000)
+#define DATA_BITS               32
+#define CHANS_PER_FRAME         I2S_CHANS_PER_FRAME
+#define NUM_I2S_LINES           1

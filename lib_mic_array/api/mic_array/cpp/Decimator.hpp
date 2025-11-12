@@ -20,30 +20,30 @@ namespace  mic_array {
 
 /**
  * @brief Rotate 8-word buffer 1 word up.
- * 
+ *
  * Each word `buff[k]` is moved to `buff[(k+1)%8]`.
- * 
+ *
  * @param buff  Word buffer to be rotated.
  */
-static inline 
+static inline
 void shift_buffer(uint32_t* buff);
 
 
 /**
  * @brief First and Second Stage Decimator
- * 
+ *
  * This class template represents a two stage decimator which converts a stream
  * of PDM samples to a lower sample rate stream of PCM samples.
- * 
+ *
  * Concrete implementations of this class template are meant to be used as the
  * `TDecimator` template parameter in the @ref MicArray class template.
- * 
+ *
  * @tparam MIC_COUNT      Number of microphone channels.
  * @tparam S2_DEC_FACTOR  Stage 2 decimation factor.
  * @tparam S2_TAP_COUNT   Stage 2 tap count.
  */
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
-class TwoStageDecimator 
+class TwoStageDecimator
 {
 
   public:
@@ -100,7 +100,7 @@ class TwoStageDecimator
 #endif
       ;
     } stage1;
-    
+
     /**
      * Stage 2 decimation configuration and state.
      */
@@ -121,45 +121,45 @@ class TwoStageDecimator
 
     /**
      * @brief Initialize the decimator.
-     * 
-     * Sets the stage 1 and 2 filter coefficients. The decimator must be 
+     *
+     * Sets the stage 1 and 2 filter coefficients. The decimator must be
      * initialized before any calls to `ProcessBlock()`.
-     * 
+     *
      * `s1_filter_coef` points to a block of coefficients for the first stage
      * decimator. This library provides coefficients for the first stage
      * decimator; see `mic_array/etc/filters_default.h`.
-     * 
+     *
      * `s2_filter_coef` points to an array of coefficients for the second stage
-     * decimator. This library provides coefficients for the second stage 
+     * decimator. This library provides coefficients for the second stage
      * decimator where the second stage decimation factor is 6; see
      * `mic_array/etc/filters_default.h`.
-     * 
-     * `s2_filter_shr` is the final right-shift applied to the stage 2 filter's 
-     * accumulator prior to output. See 
+     *
+     * `s2_filter_shr` is the final right-shift applied to the stage 2 filter's
+     * accumulator prior to output. See
      * <a href="https://github.com/xmos/lib_xcore_math">lib_xcore_math's</a>
      * documentation of `filter_fir_s32_t` for more details.
-     * 
-     * @param s1_filter_coef  @parblock 
+     *
+     * @param s1_filter_coef  @parblock
      *        Stage 1 filter coefficients.
-     *        
-     *        This points to a block of coefficients for the first stage 
-     *        decimator. This library provides coefficients for the first stage 
-     *        decimator. \verbatim embed:rst 
+     *
+     *        This points to a block of coefficients for the first stage
+     *        decimator. This library provides coefficients for the first stage
+     *        decimator. \verbatim embed:rst
               See :c:var:`stage1_coef`.\endverbatim
      *        @endparblock
      * @param s2_filter_coef  @parblock
      *        Stage 2 filter coefficients.
-     * 
-     *        This points to a block of coefficients for the second stage 
+     *
+     *        This points to a block of coefficients for the second stage
      *        decimator. This library provides coefficients for the second stage
-     *        decimator. \verbatim embed:rst 
+     *        decimator. \verbatim embed:rst
               See :c:var:`stage2_coef`.\endverbatim
      *        @endparblock
      * @param s2_filter_shr   @parblock
      *        Stage 2 filter right-shift.
-     *        
-     *        This is the output shift used by the second stage decimator. 
-     *        \verbatim embed:rst 
+     *
+     *        This is the output shift used by the second stage decimator.
+     *        \verbatim embed:rst
               See :c:var:`stage2_shr`.\endverbatim
      *        @endparblock
      */
@@ -170,14 +170,14 @@ class TwoStageDecimator
 
     /**
      * @brief Process one block of PDM data.
-     * 
-     * Processes a block of PDM data to produce an output sample from the 
+     *
+     * Processes a block of PDM data to produce an output sample from the
      * second stage decimator.
-     * 
+     *
      * `pdm_block` contains exactly enough PDM samples to produce a single
      * output sample from the second stage decimator. The layout of `pdm_block`
      * should (effectively) be:
-     * 
+     *
      * @code{.cpp}
      *  struct {
      *    struct {
@@ -187,10 +187,10 @@ class TwoStageDecimator
      *    } microphone[MIC_COUNT]; // mic channels are in ascending order
      *  } pdm_block;
      * @endcode
-     * 
+     *
      * A single output sample from the second stage decimator is computed and
      * written to `sample_out[]`.
-     * 
+     *
      * @param sample_out  Output sample vector.
      * @param pdm_block   PDM data to be processed.
      */
@@ -209,8 +209,8 @@ template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
 void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
     const uint32_t* s1_filter_coef,
     const int32_t* s2_filter_coef,
-    const right_shift_t s2_shr) 
-{      
+    const right_shift_t s2_shr)
+{
   this->stage1.filter_coef = s1_filter_coef;
 
   for(int k = 0; k < MIC_COUNT; k++){
@@ -247,7 +247,7 @@ void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
 }
 
 
-static inline 
+static inline
 void mic_array::shift_buffer(uint32_t* buff)
 {
   uint32_t* src = &buff[-1];

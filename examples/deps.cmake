@@ -1,6 +1,5 @@
-#Fetch I2S and I2C from fwk_io
+#Fetch I2S from fwk_io
 set(XMOS_DEP_DIR_i2s ${XMOS_SANDBOX_DIR}/fwk_io/modules)
-set(XMOS_DEP_DIR_i2c ${XMOS_SANDBOX_DIR}/fwk_io/modules)
 if(NOT EXISTS ${XMOS_SANDBOX_DIR}/fwk_io)
     include(FetchContent)
     message(STATUS "Fetching fwk_io")
@@ -15,5 +14,5 @@ endif()
 
 set(APP_DEPENDENT_MODULES   "lib_mic_array"
                             "i2s"
-                            "i2c"
-                            "lib_xassert")
+                            "lib_xassert"
+                            "lib_board_support(develop)")

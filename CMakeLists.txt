@@ -40,9 +40,6 @@ if( PROJECT_IS_TOP_LEVEL )
   set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 endif()
 
-# Make vanilla API macro available
-include( etc/vanilla/vanilla.cmake )
-
 #**********************
 # Tests
 #**********************

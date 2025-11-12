@@ -30,7 +30,7 @@ extern "C" {
     RUN_TEST_CASE(FrameOutputHandler, case_4x16);
     RUN_TEST_CASE(FrameOutputHandler, case_4x256);
     RUN_TEST_CASE(FrameOutputHandler, case_4x1024);
-    
+
     RUN_TEST_CASE(FrameOutputHandler, multibuffer);
   }
 
@@ -52,11 +52,12 @@ class MockFrameTransmitter
 
     MockFrameTransmitter() {}
 
-    void OutputFrame(int32_t frame[MIC_COUNT][SAMPLE_COUNT])
+    bool OutputFrame(int32_t frame[MIC_COUNT][SAMPLE_COUNT])
     {
       OutputFrame_called++;
       memcpy(&last_frame[0][0], &frame[0][0], sizeof(last_frame));
       last_frame_ptr = &frame[0][0];
+      return false;
     }
 };
 
@@ -66,13 +67,13 @@ static
 void test_FrameOutputHandler()
 {
   srand(45634*CHANS + SAMPLE_COUNT);
-  
+
   constexpr unsigned LOOP_COUNT=400;
 
   using TFrameOutputHandler = mic_array::FrameOutputHandler<CHANS,SAMPLE_COUNT,MockFrameTransmitter>;
 
   TFrameOutputHandler handler;
-  
+
   for(int r = 0; r < LOOP_COUNT; r++){
 
     TEST_ASSERT_EQUAL(r, handler.FrameTx.OutputFrame_called);
@@ -96,12 +97,12 @@ void test_FrameOutputHandler()
     }
 
     TEST_ASSERT_EQUAL_INT32_ARRAY(&exp_frame[0][0], &handler.FrameTx.last_frame[0][0], CHANS * SAMPLE_COUNT);
-    
+
   }
 }
 
 extern "C" {
-  
+
   TEST(FrameOutputHandler, case_1x1)    { test_FrameOutputHandler<1,1>();    }
   TEST(FrameOutputHandler, case_1x16)   { test_FrameOutputHandler<1,16>();   }
   TEST(FrameOutputHandler, case_1x256)  { test_FrameOutputHandler<1,256>();  }
@@ -125,7 +126,7 @@ void test_FrameOutputHandlerB()
 }
 
 extern "C" {
-  
+
   TEST(FrameOutputHandler, multibuffer)
   {
     constexpr unsigned CHANS = 1;
@@ -157,7 +158,7 @@ extern "C" {
 
     // If FRAME_COUNT had been 1, any more calls to OutputSample() would start overwriting the first frame.
     auto* first_frame_ptr = handler.FrameTx.last_frame_ptr;
-    
+
     int32_t sample_0x55[CHANS];
     for(int c = 0; c < CHANS; c++)
       sample_0x55[c] = 0x55555555;

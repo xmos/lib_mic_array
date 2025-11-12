@@ -16,7 +16,7 @@ This page attempts to capture the requirements for each hardware type with
 relevant configurations.
 
 .. warning::
-  The usage information below applies when the Vanilla API or prefab APIs are
+  The usage information below applies when the default API or prefab APIs are
   used. Resource usage in an application which uses custom mic array
   sub-components will depend crucially on the specifics of the customization.
 
@@ -35,9 +35,8 @@ Discrete Resources
 | chanend           | 4                  |
 |                   |                    |
 +-------------------+--------------------+
-| thread            | 1 (Vanilla)        |
+| thread            | 1 or 2             |
 |                   |                    |
-|                   | 1 or 2 (prefab)    |
 +-------------------+--------------------+
 
 Ports
@@ -74,11 +73,9 @@ mic array unit to other application components.
 Threads
 -------
 
-The prefab API can run the PDM rx service either as a stand-alone thread or as
-an interrupt in another thread. The Vanilla API only supports running it as an
-interrupt. The Vanilla API requires only on hardware thread. The prefab API
-requires 1 thread if PDM rx is used in interrupt mode, and 2 if PDM rx is a
-stand-alone thread..
+The PDM rx service can run either as a stand-alone thread or as an interrupt within the decimator thread.
+Accordingly, the mic array requires one thread when the PDM rx service runs in interrupt mode,
+and two threads when it runs as a stand-alone thread.
 
 Running PDM rx as a stand-alone thread modestly reduces the mic array unit's
 MIPS consumption by eliminating the context switch overhead of an interrupt. The

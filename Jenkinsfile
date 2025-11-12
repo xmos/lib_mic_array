@@ -143,7 +143,7 @@ pipeline {
         } // stage('Custom CMake build')
         stage('HW tests') {
           agent {
-            label 'xcore.ai' // Did include xvf3800 but XTAG speed meant occasional test fail
+            label 'xcore.ai && !vrd' // Did include xvf3800 but XTAG speed meant occasional test fail
           }
           stages {
             stage("Checkout and Build") {
@@ -179,6 +179,9 @@ pipeline {
                       // note no xdist for HW tests as only 1 hw instance
                       // Each test has it's own conftest.py so we need to run these seprarately
                       dir("signal/pdmrx_isr") {
+                          runPytest('-v --numprocesses=1')
+                      }
+                      dir("signal/shutdown") {
                           runPytest('-v --numprocesses=1')
                       }
                       dir("signal/BasicMicArray") {

@@ -9,15 +9,7 @@ C_API_START
 
 // Thread that runs the decimator
 MA_C_API
-void app_dec_task(chanend_t c_frames_out);
-
-// Install and unmask ISR
-MA_C_API
-void app_pdm_rx_isr_setup(chanend_t c_from_host);
-
-// Thread that receives PDM data
-MA_C_API
-void app_pdm_task(chanend_t sc_mics);
+void app_mic(chanend_t c_pdm_in, chanend_t c_frames_out);
 
 // Thread that receives samples and pushes them into a FIFO
 MA_C_API
