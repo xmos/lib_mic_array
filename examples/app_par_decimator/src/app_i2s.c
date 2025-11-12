@@ -5,13 +5,9 @@
 
 #include "app.h"
 #include "i2s.h"
-#include "audio_buffer.h"
 
 #include "app_config.h"
 
-#if USE_BUTTONS
-#include <xcore/hwtimer.h>
-#endif
 #include <xcore/channel_streaming.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -23,27 +19,16 @@
 #include <math.h>
 
 #define I2S_CLKBLK    XS1_CLKBLK_3
+typedef struct {
+  chanend_t c_from_mic_array;
+}ma_interface_t;
 
-#if !defined(MIC_ARRAY_CONFIG_USE_DDR)
-  #error "MIC_ARRAY_CONFIG_USE_DDR must be defined"
-#endif
+ma_interface_t ma_interface;
 
 #if (APP_AUDIO_SAMPLE_RATE != 48000)
   #error "App only runs at 48KHz. ParMicArray only supports output freq of 48KHz"
 #endif
 
-// Every two values in this LUT relates to DDR samples on a given MIC dataline (lut_index = 2 * mic_dataline).
-#if MIC_ARRAY_CONFIG_MIC_COUNT == 16 && MIC_ARRAY_CONFIG_USE_DDR == 1
-static const int lut_index[] = {0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15};
-#elif MIC_ARRAY_CONFIG_MIC_COUNT == 8 && MIC_ARRAY_CONFIG_USE_DDR == 1
-static  const int lut_index[] = {0, 4, 1, 5, 2, 6, 3, 7};
-#elif MIC_ARRAY_CONFIG_MIC_COUNT == 2
-static  const int lut_index[] = {0, 1};
-#elif MIC_ARRAY_CONFIG_MIC_COUNT == 1
-static  const int lut_index[] = {0};
-#else
-    #error "MIC_ARRAY_CONFIG_MIC_COUNT: Unsupported value"
-#endif
 
 static int i2s_mclk_bclk_ratio(
         const unsigned audio_clock_frequency,
@@ -52,84 +37,22 @@ static int i2s_mclk_bclk_ratio(
     return audio_clock_frequency / (sample_rate * (8 * sizeof(int32_t)) * I2S_CHANS_PER_FRAME);
 }
 
-#if (MIC_ARRAY_TILE == 0)
-
-// When MICS are on Tile 0,
-// Tile 0, send a subset of the MIC data to Tile 1.
-// The selected data to be sent is optionally provided via pushbutton control.
-
-void app_i2s_task0(void *app_context)
-{
-  app_context_t *ctx = (app_context_t *)app_context;
-
-  printf("0: audio_buff=%p\n", &ctx->rb);
-
-  while (1) {
-    int32_t frame[MIC_ARRAY_CONFIG_MIC_COUNT];
-    abuff_frame_get(&ctx->rb, frame);
-
-    size_t num_out;
-    num_out = chanend_in_word(ctx->c_intertile);
-
-    // Transfer frame data to other tile
-    int start_index = app_get_selected_mic_dataline() << 1;
-    for (int c = start_index; c < start_index + num_out; c++) {
-      int index = (MIC_ARRAY_CONFIG_MIC_COUNT == 1) ? lut_index[0] :lut_index[c];
-      int32_t samp = frame[index];
-      chanend_out_word(ctx->c_intertile, samp);
-    }
-  }
-}
-
-I2S_CALLBACK_ATTR
-void app_i2s_send(void *app_context,
-                  size_t num_out,
-                  int32_t *samples)
-{
-  app_context_t *ctx = (app_context_t *)app_context;
-  chanend_out_word(ctx->c_intertile, num_out);
-
-  // Receive frame data from other tile
-  for(int c = 0; c < num_out; c++){
-    samples[c] = chanend_in_word(ctx->c_intertile);
-  }
-}
-
-#else // (MIC_ARRAY_TILE == 0)
-
 // When MICS are on Tile 1,
 // Tile 0 optionally provides the selected MIC data line pair to listen to on the DAC.
 
 I2S_CALLBACK_ATTR
-void app_i2s_send(void *app_context,
+void app_i2s_send(ma_interface_t* app_data,
                   size_t num_out,
                   int32_t *samples)
 {
-  app_context_t *ctx = (app_context_t *)app_context;
-  int32_t frame[MIC_ARRAY_CONFIG_MIC_COUNT];
+  int32_t frame[APP_N_MICS];
+  ma_frame_rx(frame, app_data->c_from_mic_array, MIC_ARRAY_CONFIG_MIC_COUNT, 1);
 
-  // Read from ring buffer the full frame and the copy only the samples needed to drive the I2S DAC.
-  abuff_frame_get(&ctx->rb, frame);
-
-#if USE_BUTTONS
-   app_set_selected_mic_dataline(chanend_in_word(ctx->c_intertile));
-   static int last_selected_mic_dataline = 255;
-   if (last_selected_mic_dataline != app_get_selected_mic_dataline()) {
-      last_selected_mic_dataline = app_get_selected_mic_dataline();
-      printf("TILE1 DATALINE: %lu\n", app_get_selected_mic_dataline());
-   }
-#endif
-
-  int start_index = app_get_selected_mic_dataline() << 1;
-  for (int c = start_index; c < start_index + num_out; c++) {
-    int index = (MIC_ARRAY_CONFIG_MIC_COUNT == 1) ? lut_index[0] :lut_index[c];
-    int32_t samp = frame[index];
+  for(int c = 0; c < num_out; c++){
+    int32_t samp = frame[(APP_N_MICS==1)?0:c] << 6;
     samples[c] = samp;
   }
 }
-
-#endif // (MIC_ARRAY_TILE == 0)
-
 
 I2S_CALLBACK_ATTR
 static
@@ -165,12 +88,12 @@ i2s_callback_group_t i2s_context = {
   .app_data = NULL
 };
 
-void app_i2s_task(void *app_context)
+void app_i2s_task(chanend_t c_from_mic_array)
 {
-  i2s_context.app_data = app_context;
+  ma_interface.c_from_mic_array = c_from_mic_array;
+  i2s_context.app_data = &ma_interface;
 
-  port_t p_i2s_dout[] = { PORT_I2S_DAC_DATA };
-  // port_t p_i2s_din[]  = { I2S_DATA_IN };
+  port_t p_i2s_dout[] = { PORT_I2S_DAC0 };
   port_t p_i2s_din[0];
 
   i2s_master(&i2s_context,
