@@ -17,11 +17,17 @@ def main(args):
   # print(f"Scale: {stage2.ScaleInt32}")
 
   print(f"Right-shift: {stage2.Shr}")
-
-
+  num_coefs = len(stage2.Coef)
+  initial_count = (num_coefs//4) * 4
   print("\n")
   print("{")
-  print(", ".join( [hex(x) for x in stage2.Coef] ))
+  for i in range(0,initial_count,4): # print 4 coefs per row
+    s = ", ".join( [hex(x) for x in stage2.Coef[i:i+4]] )
+    print(s,end=',\n')
+
+  if initial_count != num_coefs:
+    print(", ".join( [hex(x) for x in stage2.Coef[initial_count:]] ))
+
   print("}")
 
 

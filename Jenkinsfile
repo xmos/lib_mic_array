@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@v0.43.1') _
+@Library('xmos_jenkins_shared_library@v0.43.3') _
 
 getApproval()
 pipeline {
@@ -19,7 +19,7 @@ pipeline {
 
     string(
       name: 'INFR_APPS_VERSION',
-      defaultValue: 'v3.1.1',
+      defaultValue: 'v3.2.0',
       description: 'The infr_apps version'
     )
     choice(
@@ -59,6 +59,14 @@ pipeline {
           steps {
             dir("${REPO_NAME}/examples") {
               xcoreBuild()
+            }
+          }
+        }
+        stage('Tests build') {
+          steps {
+            dir("${REPO_NAME}/tests") {
+              xcoreBuild()
+              stash includes: '**/*.xe', name: 'test_bin', useDefaultExcludes: false
             }
           }
         }
@@ -153,9 +161,7 @@ pipeline {
                   println "Stage running on ${env.NODE_NAME}"
                   dir("tests") {
                     createVenv(reqFile: "requirements.txt")
-                    withVenv {
-                      xcoreBuild()
-                    }
+                    unstash "test_bin"
                   }
                 }
               }
@@ -185,8 +191,20 @@ pipeline {
                           runPytest('-v --numprocesses=1')
                       }
                       dir("signal/BasicMicArray") {
-                          runPytest('-v --numprocesses=1')
+                          script {
+                            if(params.TEST_LEVEL == 'smoke')
+                            {
+                              echo "Running tests with fixed seed 12345"
+                              sh "pytest -v --junitxml=pytest_basic_mic.xml --seed 12345 --level ${params.TEST_LEVEL} "
+                            }
+                            else
+                            {
+                              echo "Running tests with random seed"
+                              sh "pytest -v --junitxml=pytest_basic_mic.xml --level ${params.TEST_LEVEL} "
+                            }
+                          }
                       }
+
                       dir("signal/TwoStageDecimator") {
                           runPytest('-v --numprocesses=1')
                       }

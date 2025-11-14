@@ -22,6 +22,44 @@ extern "C" {
 
 #include "app.h"
 
+typedef struct {
+  unsigned stg1_tap_count;
+  unsigned stg1_decimation_factor;
+  unsigned stg2_tap_count;
+  unsigned stg2_decimation_factor;
+  int stg2_shr;
+  uint32_t *stg1_coef_ptr;
+  int32_t *stg2_coef_ptr;
+}filt_config_t;
+
+static void get_filter_config(unsigned fs, filt_config_t *cfg) {
+  cfg->stg1_tap_count = 256;
+  cfg->stg1_decimation_factor = 32;
+
+  if(fs == 16000) {
+    cfg->stg2_tap_count = STAGE2_TAP_COUNT;
+    cfg->stg2_decimation_factor = STAGE2_DEC_FACTOR;
+    cfg->stg1_coef_ptr = stage1_coef;
+    cfg->stg2_coef_ptr = stage2_coef;
+    cfg->stg2_shr = stage2_shr;
+  }
+  else if(fs == 32000) {
+    cfg->stg2_tap_count = MIC_ARRAY_32K_STAGE_2_TAP_COUNT;
+    cfg->stg2_decimation_factor = 3;
+    cfg->stg1_coef_ptr = stage1_32k_coefs;
+    cfg->stg2_coef_ptr = stage2_32k_coefs;
+    cfg->stg2_shr = stage2_32k_shift;
+  }
+  else if(fs == 48000) {
+    cfg->stg2_tap_count = MIC_ARRAY_48K_STAGE_2_TAP_COUNT;
+    cfg->stg2_decimation_factor = 2;
+    cfg->stg1_coef_ptr = stage1_48k_coefs;
+    cfg->stg2_coef_ptr = stage2_48k_coefs;
+    cfg->stg2_shr = stage2_48k_shift;
+  }
+
+}
+
 extern void _mic_array_override_pdm_port(chanend_t c_pdm);
 
 // We'll be using a fairly standard mic array setup here, with one big
@@ -31,10 +69,6 @@ extern void _mic_array_override_pdm_port(chanend_t c_pdm);
 // doesn't particularly care what the resource is.
 // Since we're not using a port, we also don't need to worry about setting up
 // clocks or any of that silliness
-using TMicArray = mic_array::prefab::BasicMicArray<MIC_ARRAY_CONFIG_MIC_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
-                                                    false, MIC_ARRAY_CONFIG_MIC_IN_COUNT>;
-
-TMicArray mics;
 
 pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
                                 PORT_MCLK_IN,
@@ -48,7 +82,7 @@ void app_mic(
     chanend_t c_pdm_in,
     chanend_t c_frames_out) //non-streaming
 {
-  mic_array_init(&pdm_res, NULL, 16000);
+  mic_array_init(&pdm_res, NULL, APP_SAMP_FREQ);
   _mic_array_override_pdm_port((port_t)c_pdm_in); // get pdm input from channel instead of port.
                                                   // mic_array_init() calls mic_array_resources_configure which would crash
                                                   // if a chanend were to be passed instead of a port for the pdm data port, so
@@ -68,11 +102,14 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
   // Before listening for any frames, use the META_OUT xscope probe to report
   // our configuration to the host. This will help make sure the right version
   // of this application is being used.
+  filt_config_t filt_cfg;
+  get_filter_config(APP_SAMP_FREQ, &filt_cfg);
+
   xscope_int(META_OUT, MIC_ARRAY_CONFIG_MIC_COUNT);
-  xscope_int(META_OUT, 256); // S1_TAP_COUNT
-  xscope_int(META_OUT, 32); // S1_DEC_FACTOR
-  xscope_int(META_OUT, STAGE2_TAP_COUNT);
-  xscope_int(META_OUT, STAGE2_DEC_FACTOR);
+  xscope_int(META_OUT, filt_cfg.stg1_tap_count);
+  xscope_int(META_OUT, filt_cfg.stg1_decimation_factor);
+  xscope_int(META_OUT, filt_cfg.stg2_tap_count);
+  xscope_int(META_OUT, filt_cfg.stg2_decimation_factor);
   xscope_int(META_OUT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
   xscope_int(META_OUT, MIC_ARRAY_CONFIG_USE_PDM_ISR); // Using interrupt
 
@@ -116,22 +153,37 @@ void app_fifo_to_xscope_task(chanend_t c_fifo)
 
 void app_print_filters()
 {
+  filt_config_t filt_cfg;
+  get_filter_config(APP_SAMP_FREQ, &filt_cfg);
+
+  unsigned stg1_tap_words = filt_cfg.stg1_tap_count / 2;
+
+
+  printf("stage1 filter length: %d 16bit coefs -> %d 32b words\n", stg1_tap_words*2, stg1_tap_words);
+  int initial_list = stg1_tap_words/4;
   printf("stage1_coef = [\n");
-  for(int a = 0; a < 32; a++){
+  for(int a = 0; a < initial_list; a++){
     printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
-      (unsigned) stage1_coef[a*4+0], (unsigned) stage1_coef[a*4+1],
-      (unsigned) stage1_coef[a*4+2], (unsigned) stage1_coef[a*4+3]);
+      filt_cfg.stg1_coef_ptr[a*4+0], filt_cfg.stg1_coef_ptr[a*4+1],
+      filt_cfg.stg1_coef_ptr[a*4+2], filt_cfg.stg1_coef_ptr[a*4+3]);
+  }
+  for(int a = initial_list*4; a < stg1_tap_words; a++){
+    printf("0x%08X, ", filt_cfg.stg1_coef_ptr[a]);
   }
   printf("]\n");
 
+  printf("stage2 filter length: %d\n", filt_cfg.stg2_tap_count);
   printf("stage2_coef = [\n");
-  for(int a = 0; a < 13; a++){
-    printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
-      (unsigned) stage2_coef[5*a+0], (unsigned) stage2_coef[5*a+1],
-      (unsigned) stage2_coef[5*a+2], (unsigned) stage2_coef[5*a+3],
-      (unsigned) stage2_coef[5*a+4]);
+  initial_list = filt_cfg.stg2_tap_count/4;
+  for(int a = 0; a < initial_list; a++){
+    printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
+      filt_cfg.stg2_coef_ptr[4*a+0], filt_cfg.stg2_coef_ptr[4*a+1],
+      filt_cfg.stg2_coef_ptr[4*a+2], filt_cfg.stg2_coef_ptr[4*a+3]);
+  }
+  for(int a = initial_list*4; a < filt_cfg.stg2_tap_count; a++){
+    printf("0x%08X, ", filt_cfg.stg2_coef_ptr[a]);
   }
   printf("]\n");
 
-  printf("stage2_shr = %d\n", stage2_shr);
+  printf("stage2_shr = %d\n", filt_cfg.stg2_shr);
 }

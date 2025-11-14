@@ -13,9 +13,9 @@ setuptools.setup(
     name='lib_mic_array',
     packages=setuptools.find_packages(),
     install_requires=[
-        'matplotlib==3.9.2',
-        'numpy==2.1.1',
-        'scipy==1.14.1',
+        'matplotlib==3.10.3',
+        'numpy==1.26.4',
+        'scipy==1.15.3',
     ],
     dependency_links=[
     ],

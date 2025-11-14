@@ -2,8 +2,9 @@
 
 pytest==8.3.2
 pytest-xdist==3.6.1
-numpy==2.1.1
-scipy==1.14.1
-matplotlib==3.9.2
+numpy==1.26.4
+scipy==1.15.3
+matplotlib==3.10.3
 
 -e ../python
+-e git+ssh://git@github.com/xmos/audio_test_tools.git@develop#egg=audio_test_tools&subdirectory=python
