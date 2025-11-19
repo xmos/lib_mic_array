@@ -50,7 +50,7 @@ class Stage1Filter(object):
   @property
   def TapCount(self):
     return len(self.coefs)
-  
+
   @property
   def BlockCount(self):
     return len(self.coefs) // Stage1Filter.BLOCK_SIZE
@@ -58,11 +58,11 @@ class Stage1Filter(object):
   @property
   def Coef(self):
     return self.coefs
-  
+
   @property
   def CoefBipolar(self):
     return self.coefs_bipolar
-  
+
   @property
   def CoefBinary(self):
     return self.coefs_binary
@@ -77,14 +77,14 @@ class Stage1Filter(object):
     S[:,:P] = (2*(np.arange(P) % 2) - 1).astype(sig_in.dtype)
     S[:,P:] = sig_in
     return S
-  
+
   def FilterInt16(self, pdm_signal: np.ndarray) -> np.ndarray:
     if pdm_signal.ndim == 1:
       pdm_signal = pdm_signal[np.newaxis,:]
     CHANS, SAMPS_IN = pdm_signal.shape
     Q = self.DecimationFactor
     N_pcm = SAMPS_IN // self.DecimationFactor
-    
+
     S = self._pad_input(pdm_signal)
     coefs = self.Coef.astype(np.int32)[:,np.newaxis]
     res = np.empty((CHANS, N_pcm), dtype=np.int32)
@@ -92,7 +92,7 @@ class Stage1Filter(object):
       x = S[:,Q*k:Q*k+self.TapCount]
       res[:,k] = np.matmul(x, coefs).squeeze()
     return (res << 8) # stage1 does this on device
-  
+
   def ToXCoreCoefArray(self):
 
     B = self.CoefBinary
@@ -102,12 +102,12 @@ class Stage1Filter(object):
     B = B.reshape((B.size // 32, 32))
     N = B.shape[0]
     y = np.zeros(N, dtype=np.uint32)
-    
+
     F = (2**np.arange(32)).astype(np.uint32)[::-1]
-    
+
     for k in range(N):
       y[k] = np.dot(F, B[k,:])
-    
+
     return y
 
 
@@ -138,13 +138,15 @@ class Stage2Filter(object):
     # Determine the maximum output value of the filter
 
     #  (the 0x7FFFFF00 is the largest value a 1-block Stage1 filter can output)
-    max_samp_out = np.dot( np.int64( 0x7FFFFF00) * np.sign(self.coefs), 
+    max_samp_out = np.dot( np.int64( 0x7FFFFF00) * np.sign(self.coefs),
                            np.round(self.coefs ).astype(np.int64) )
+
     # 32-bit VPU multiplications have a built-in 30-bit right-shift
     max_samp_out >>= 30
     # We can do floor(log2()-30) or ceil(log2()-31) and the result is basically
     # the same.
-    frac_shr = np.log2(max_samp_out) - 30
+    frac_shr = np.log2(np.abs(max_samp_out)) - 30
+
     self.shr = np.int32(np.floor(frac_shr))
 
   @property
@@ -166,11 +168,11 @@ class Stage2Filter(object):
   # @property
   # def ScaleInt32(self):
   #   return self.scale_int32
-  
+
   @property
   def Shr(self):
     return self.shr
-  
+
   def _pad_input(self, sig_in):
     if sig_in.ndim == 1:
       sig_in = sig_in[np.newaxis,:]
@@ -199,7 +201,7 @@ class Stage2Filter(object):
       p = np.round(np.ldexp(p, -30 - self.shr))
       res[:,k] = p.astype(np.int32).squeeze()
     return res
-  
+
 
 class TwoStageFilter(object):
 
@@ -215,7 +217,7 @@ class TwoStageFilter(object):
     s1_output = self.s1.FilterInt16(pdm_signal)
     return self.s2.FilterInt32(s1_output)
 
-    
+
 
 
 def load(coef_file: str):

@@ -79,7 +79,7 @@ extern uint32_t stage1_coef[STAGE1_WORDS];
  * This is the number of filter taps associated with the second stage filter
  * supplied with this library.
  */
-#define STAGE2_TAP_COUNT    65
+#define STAGE2_TAP_COUNT    64
 
 /**
  * @brief Stage 2 Decimation Filter Default Coefficients
