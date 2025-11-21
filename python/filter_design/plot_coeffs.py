@@ -6,6 +6,7 @@ from pathlib import Path
 import scipy.signal as spsig
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 
 try:
     # for pytest
@@ -134,7 +135,7 @@ def plot_filters(coeffs: list, fs_0, axs=None):
 
     n_stages = len(coeffs)
     if axs is None:
-        fig, axs = plt.subplots(3, (n_stages + 1))
+        fig, axs = plt.subplots(3, (n_stages + 1), figsize=(12, 8))
 
     nfft = 32768
     fs = fs_0
@@ -205,14 +206,11 @@ def plot_filters(coeffs: list, fs_0, axs=None):
     return axs
 
 
-def main():
-    # load default coefficients & decimation factors
-    path = Path(Path(__file__).parent, "..", "..", "tests", "signal", "BasicMicArray", "default_filters.pkl")
-
+def main(pkl_file):
     # optionally load custom filters
     # path = Path(Path(__file__).parent, "..", "good_32k_filter_int.pkl")
     # path = Path(Path(__file__).parent, "..", "good_48k_filter_int.pkl")
-    coeffs = np.load(path, allow_pickle=True)
+    coeffs = np.load(pkl_file, allow_pickle=True)
 
     # sample rates and decimations
     fs_0 = 3072000
@@ -226,4 +224,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    default_file = Path(__file__).parent / ".." / ".." / "tests" / "signal" / "BasicMicArray" / "default_filters.pkl"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--pkl-file", type=str, help='Path to pkl file containing first and second stage coefficients.', default=default_file)
+    args = parser.parse_args()
+    main(args.pkl_file)

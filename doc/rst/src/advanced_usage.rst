@@ -1,151 +1,161 @@
 .. _mic_array_adv_use_methods:
 
-**********************
-Advanced usage methods
-**********************
+**************
+Advanced usage
+**************
 
-There are 2 advanced usage methods for the mic array - these are:
+.. note::
 
-* Prefab model - This model involves a little more effort from the application
-  developer, including writing some C++ wrapper functions, but gives the
-  application access to any of the defined prefab mic array components.
-* General model - Any other case. This is necessary if an application wishes to
-  use a customized mic array component.
+  Even when using a custom integration, including the library in an
+  application follows the same procedure as described in :ref:`including_mic_array`.
 
-The prefab model for integrating the mic array into an
-application will be discussed in more detail below. The general model may
-involve customizing or extending the classes in ``lib_mic_array`` and is beyond
-the scope of this introduction.
+The advanced use method requires familiarity with the mic array
+:ref:`software structure <software_structure>` and a basic understanding of C++.
 
-Whichever model is chosen, the first step to integrate a mic array unit into an
-application is to *identify the required hardware resources*. This is the same as described
-in :ref:`mic_array_identify_resources`.
+A custom integration involves creating a custom :cpp:class:`MicArray <mic_array::MicArray>`
+object.
+This allows overriding default behavior such as decimation, PDM reception etc.
 
-.. _mic_array_prefab_model:
+Before creating a custom object, the required hardware resources must be identified.
+This process is the same as described in :ref:`mic_array_identify_resources`.
 
-Prefab model
-============
+Configuring the mic array using a custom :cpp:class:`MicArray <mic_array::MicArray>`
+object requires a C++ source file to be added to the application.
 
-The ``lib_mic_array`` library has a C++ namespace ``mic_array::prefab`` which
-contains a class template :cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>`
-for typical mic array setup using common sub-components. The ``BasicMicArray`` template hides most
-of the complexity (and unneeded flexibility) from the application author, so
-they can focus only on pieces they care about.
-
-Configuring the mic array using a prefab requires a C++ source file to be added
-to the application.
+The following sections describe the general structure of this file.
 
 Declare resources
 -----------------
 
-The example in this section will use ``2`` microphones in a DDR configuration
-with DC offset elimination enabled, and using 128-sample frames. The resource
-IDs used may differ and are application dependent.
+The first step is to declare a ``pdm_rx_resources_t`` struct listing the
+hardware resources.
 
-``pdm_res`` will be used to identify the ports and clocks which will be
-configured for PDM capture.
+.. code-block:: c++
 
-Within a C++ source file:
-
-.. code-block:: cpp
-
-  #include "mic_array/mic_array.h"
-  ...
-  #define MIC_COUNT    2    // 2 mics
-  #define DCOE_ENABLE  true // DCOE on
-  #define FRAME_SIZE   128  // 128 samples per frame
-  ...
   pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
-                                  PORT_MCLK_IN_OUT,
-                                  PORT_PDM_CLK,
-                                  PORT_PDM_DATA,
-                                  24576000,
-                                  3072000,
-                                  MIC_ARRAY_CLK1,
-                                  MIC_ARRAY_CLK2);
-  ...
+                                PORT_MCLK_IN,
+                                PORT_PDM_CLK,
+                                PORT_PDM_DATA,
+                                MCLK_FREQ,
+                                PDM_FREQ,
+                                XS1_CLKBLK_1,
+                                XS1_CLKBLK_2);
 
 
-Prefab - Allocate MicArray
---------------------------
+Construct MicArray object
+-------------------------
 
-The C++ class template :cpp:class:`MicArray <mic_array::MicArray>` is central to
-the mic array unit in this library. The class templates defined in the
-``mic_array::prefab`` namespace each derive from ``mic_array::MicArray``.
-
-Define and allocate the specific implementation of ``MicArray`` to be used.
-
-.. code-block:: c++
-
-  ...
-  // Using the full name of the class could become cumbersome. Using an alias.
-  using TMicArray = mic_array::prefab::BasicMicArray<
-                        MIC_COUNT, FRAME_SIZE, DCOE_ENABLED>
-  // Allocate mic array
-  TMicArray mics = TMicArray();
-  ...
-
-
-Now the mic array unit has been defined and allocated. The template parameters
-supplied (e.g. `MIC_COUNT` and `FRAME_SIZE`) are used to calculate the size of
-any data buffers required by the mic array, and so the ``mics`` object is
-self-contained, with all required buffers being statically allocated.
-Additionally, class templates will ultimately allow unused features to be
-optimized out at build time. For example, if DCOE is disabled, it will be
-optimized out at build time so that at run time it won't even need to check
-whether DCOE is enabled.
-
-Prefab - Init and Start Functions
----------------------------------
-
-Now a couple functions need to be implemented in your C++ file. In most cases
-these functions will need to be callable from C or XC, and so they should not be
-static, and they should be decorated with ``extern "C"`` (or the ``MA_C_API``
-preprocessor macro provided by the library).
-
-First, a function which initializes the ``MicArray`` object and configures the
-port and clock block resources.  The documentation for
-:cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>` indicates any
-parts of the ``MicArray`` object that need to be initialized.
+Next, instantiate a :cpp:class:MicArray <mic_array::MicArray> object.
+The example below creates the object with the standard component classes that are provided
+by the library.
+One or more of these can be overridden by a custom class, provided it implements the
+:ref:`interface <mic_array_subcomponents_interface_requirement>` required by
+the :cpp:class:`MicArray <mic_array::MicArray>`:
 
 .. code-block:: c++
 
-  #define MCLK_FREQ   24576000
-  #define PDM_FREQ    3072000
-  ...
+  using TMicArray = mic_array::MicArray<APP_N_MICS,
+                          mic_array::TwoStageDecimator<APP_N_MICS,
+                                              STAGE2_DEC_FACTOR_48KHZ,
+                                              MIC_ARRAY_48K_STAGE_2_TAP_COUNT>,
+                          mic_array::StandardPdmRxService<APP_N_MICS_IN,
+                                                          APP_N_MICS,
+                                                          STAGE2_DEC_FACTOR_48KHZ>,
+                          typename std::conditional<APP_USE_DC_ELIMINATION,
+                                              mic_array::DcoeSampleFilter<APP_N_MICS>,
+                                              mic_array::NopSampleFilter<APP_N_MICS>>::type,
+                          mic_array::FrameOutputHandler<APP_N_MICS,
+                                                        MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
+                                                        mic_array::ChannelFrameTransmitter>>;
+
+  TMicArray mics;
+
+- ``TwoStageDecimator``, ``StandardPdmRxService``, ``DcoeSampleFilter``,
+  and ``FrameOutputHandler`` can all be replaced with custom classes if needed.
+
+- Any custom class must implement the same interface expected by :cpp:class:`MicArray <mic_array::MicArray>`.
+
+.. note::
+
+  The ``examples/app_par_decimator`` example demonstrates replacing the standard decimator class with a
+  custom multi-threaded decimator.
+
+.. note::
+
+  If the application requires custom decimation filters, refer to :ref:`custom_filters` to see how to do so.
+
+Define app-callable functions
+-------------------------------
+
+Define the functions that the application will call to initialise and
+run the mic array - ````app_mic_array_init()`` and ````app_mic_array_start()``:
+
+.. code-block:: c++
+
   MA_C_API
-  void app_init() {
-    // Configure clocks and ports
-    const unsigned mclk_div = mic_array_mclk_divider(MCLK_FREQ, PDM_FREQ);
-    mic_array_resources_configure(&pdm_res, mclk_div);
-
-    // Initialize the PDM rx service
+  void app_mic_array_init()
+  {
+    mics.Decimator.Init((uint32_t*) stage1_48k_coefs, stage2_48k_coefs, stage2_48k_shift); // Replace stage1_48k_coefs with custom filter coefs if needed
     mics.PdmRx.Init(pdm_res.p_pdm_mics);
+    mic_array_resources_configure(&pdm_res, MCLK_DIVIDER);
+    mic_array_pdm_clock_start(&pdm_res);
   }
-  ...
 
+  DECLARE_JOB(ma_task_start_pdm, (TMicArray&));
+  void ma_task_start_pdm(TMicArray& m){
+    m.PdmRx.ThreadEntry();
+  }
 
-``app_init()`` can be called from an XC ``main()`` during initialization.
+  DECLARE_JOB(ma_task_start_decimator, (TMicArray&, chanend_t));
+  void ma_task_start_decimator(TMicArray& m, chanend_t c_audio_frames){
+    m.ThreadEntry();
+  }
 
-Assuming the PDM rx service is to be run as an ISR, a second function is used to
-actually start the mic array unit. This starts the PDM clock, install the ISR
-and enter the decimator thread's main loop.
+  MA_C_API
+  void app_mic_array_task(chanend_t c_frames_out)
+  {
+  #if APP_USE_PDMRX_ISR
+    CLEAR_KEDI()
+
+    mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
+    // Setup the ISR and enable. Then start decimator.
+    mics.PdmRx.AssertOnDroppedBlock(false);
+    mics.PdmRx.InstallISR();
+    mics.PdmRx.UnmaskISR();
+    mics.ThreadEntry();
+  #else
+    mics.OutputHandler.FrameTx.SetChannel(c_frames_out);
+    PAR_JOBS(
+        PJOB(ma_task_start_pdm, (mics)),
+        PJOB(ma_task_start_decimator, (mics, c_frames_out))
+      );
+  #endif
+  }
+
+- ``app_mic_array_init()`` initialises the component classes and configures
+  the hardware resources. Note that things like initialising the decimator with
+  custom filters would be done here by passing said filters to the ``mics.Decimator.Init()``
+  call.
+
+- ``app_mic_array_task()`` starts the PDM and decimator threads or ISR-based processing.
+
+Application main function
+-------------------------
+
+The application main function is modified to include calls to ``app_mic_array_init()``
+and ``app_mic_array_task()``
 
 .. code-block:: c++
 
-  MA_C_API
-  void app_mic_array_task(chanend_t c_audio_frames) {
-    mics.SetOutputChannel(c_audio_frames);
-
-    // Start the PDM clock
-    mic_array_pdm_clock_start(&pdm_res);
-
-    mics.InstallPdmRxISR();
-    mics.UnmaskPdmRxISR();
-
-    mics.ThreadEntry();
+  int main() {
+    par {
+      on tile[1]: {
+        app_mic_array_init();
+        par {
+          app_mic_array_task((chanend_t) c_audio_frames);
+          <... other application threads ...>
+        }
+      }
+    }
+    return 0;
   }
-
-
-Now a call to ``app_mic_array_task()`` with the channel to send frames on can be
-placed inside a ``par {...}`` block to spawn the thread.

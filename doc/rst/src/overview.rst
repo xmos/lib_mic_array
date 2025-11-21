@@ -23,9 +23,9 @@ Capabilities
   * First stage has fixed tap count of 256 and decimation factor of 32
   * Second stage has fully configurable tap count and decimation factor
   * Custom filter coefficients can be used for either stage
-  * Reference filter with total decimation factor of 192 is provided (16 kHz
-    output sample rate w/ 3.072 MHz PDM clock).
-  * Filter generation scripts and examples are included to support 32 kHz and 48 kHz.
+  * Predesigned reference filters with total decimation factor of 192, 96 and 64 are provided
+    (16 kHz, 32 kHz and 48 kHz output sample rates with 3.072 MHz input PDM clock).
+  * Filter generation scripts and examples are included to support custom filter design.
 
 * Supports 1-, 4- and 8-bit ports.
 * Supports 1 to 16 microphones
@@ -38,8 +38,8 @@ Capabilities
 * Sample framing with user selectable frame size (down to single samples)
 * Configurations with up to 4 microphones require only a single hardware thread. For higher microphone
   counts, multiple hardware threads are needed to split the decimation process
-  across threads — support for this is not provided as part of the :ref:`default <mic_array_default_model>` or
-  :ref:`prefab <mic_array_prefab_model>` usage model.
+  across threads — support for this is not provided as part of the :ref:`default <mic_array_default_model>`
+  usage model.
   Refer to the ``lib_mic_array/examples/app_par_decimator`` example to see how this can be achieved
   by creating a custom mic array instance that implements a multi-threaded decimator.
 
@@ -68,30 +68,30 @@ Execution Contexts
 ------------------
 
 The mic array unit uses two different execution contexts. The first is the PDM
-rx service ("PDM rx"), which is responsible for reading PDM samples from the
+RX service ("PDM RX"), which is responsible for reading PDM samples from the
 physical port, and has relatively little work to do, but also has a strict
 real-time constraint on reading port data in a timely manner. The second is the
 decimation thread, which is where all processing other than PDM capture is
 performed.
 
 This two-context model relaxes the need for tight coupling and synchronization
-between PDM rx and the decimation thread, allowing significant flexibility in
+between PDM RX and the decimation thread, allowing significant flexibility in
 how samples are processed in the decimation thread.
 
-PDM rx is typically run within an interrupt on the same hardware core as the
+PDM RX is typically run within an interrupt on the same hardware core as the
 decimation thread, but it can also be run as a separate thread in cases where
 many channels result in a high processing load.
 
 Likewise, the decimators may be split into multiple parallel hardware threads
 in the case where the processing load exceeds the MIPS available in a single
-thread.
+hardware thread.
 
 Step 1: PDM Capture
 -------------------
 
 The PDM data signal is captured by the xcore.ai device's port hardware. The port
 receiving the PDM signals buffers the received samples. Each time the port
-buffer is filled, PDM rx reads the received samples.
+buffer is filled, PDM RX reads the received samples.
 
 Samples are collected word-by-word and assembled into blocks. Each time a block
 has been filled, the block is transferred to the decimation thread where all
@@ -129,7 +129,7 @@ Step 3: Second Stage Decimation
 The second stage decimator is a decimating FIR filter with a configurable
 decimation factor and tap count. Like the first stage decimator, this library
 provides a reference filter suitable for the second stage decimator. The
-supplied filter has a tap count of ``65`` and a decimation factor of ``6``.
+supplied filter has a tap count of ``64`` and a decimation factor of ``6``.
 
 The output of the first stage decimator is a block of ``N*K`` PCM values,
 where ``N`` is the number of microphones and ``K`` is the second stage
@@ -138,7 +138,8 @@ the second stage decimator.
 
 The resulting sample is vector-valued (one element per channel) and has a sample
 time corresponding to ``32*K`` PDM clock periods. Using the reference filters
-and a 3.072 MHz PDM clock, the output sample rate is 16 kHz.
+and a 3.072 MHz PDM clock, his corresponds to an output sampling rate of
+16 kHz, 32 kHz, or 48 kHz.
 
 See :ref:`decimator_stages` for further details.
 
@@ -158,22 +159,25 @@ aggregated and transferred to subsequent processing stages as non-overlapping
 blocks. The size of each frame is configurable (down to ``1`` sample per frame,
 where framing is functionally disabled).
 
-Finally, the sample or frame is transmitted over a channel from the mic array
+Finally, the sample or frame is transmitted over a XCORE channel from the mic array
 module to the next stage of the processing pipeline.
 
 Extending/Modifying Mic Array Behavior
 --------------------------------------
 
+Most applications are expected to use the :ref:`default <mic_array_default_model>` usage model,
+which provides a complete, ready-to-integrate mic-array pipeline and should be sufficient
+for the majority of use cases.
+Only applications with specialised requirements such as non-standard data-transfer mechanisms,
+custom decimation behaviour etc. are likely to require customisation beyond the default model.
+
 At the core of ``lib_mic_array`` are several C++ class templates which are
 loosely coupled and intended to be easily overridden for modified behavior. The
 mic array unit itself is an object made by the composition of several smaller
-components which perform well-defined roles.
+components which perform well-defined roles (See :ref:`software_structure`).
 
 For example, modifying the mic array unit to use some mechanism other than a
 channel to move the audio frames out of the mic array is a matter of defining a
 small new class encapsulating just the modified transfer behavior, and then
 instantiating the mic array class template with the new class as the appropriate
 template parameter.
-
-With that in mind, while most applications will have no need to modify the mic
-array behavior, it is nevertheless designed to be easy to do so.

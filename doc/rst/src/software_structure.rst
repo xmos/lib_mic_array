@@ -1,7 +1,7 @@
 .. _software_structure:
 
 ******************
-Software Structure
+Software structure
 ******************
 
 The core of ``lib_mic_array`` are a set of C++ class templates representing the
@@ -45,22 +45,29 @@ the class templates have this as a parameter.
 
 A ``MicArray`` object comprises 4 sub-components:
 
+.. _mic_array_subcomponents_table:
 
-+-----------------------------------------------------------------+-------------------------+--------------------------------+
-| Member Field                                                    | Component Class         | Responsibility                 |
-+=================================================================+=========================+================================+
-| :cpp:member:`PdmRx <mic_array::MicArray::PdmRx>`                | ``TPdmRx``              | Capturing PDM data from a port.|
-+-----------------------------------------------------------------+-------------------------+--------------------------------+
-| :cpp:member:`Decimator <mic_array::MicArray::Decimator>`        | ``TDecimator``          | 2-stage decimation on blocks of|
-|                                                                 |                         | PDM data.                      |
-+-----------------------------------------------------------------+-------------------------+--------------------------------+
-| :cpp:member:`SampleFilter <mic_array::MicArray::SampleFilter>`  | ``TSampleFilter``       | Post-processing of decimated   |
-|                                                                 |                         | samples.                       |
-+-----------------------------------------------------------------+-------------------------+--------------------------------+
-| :cpp:member:`OutputHandler <mic_array::MicArray::OutputHandler>`| ``TOutputHandler``      | Transferring audio data to     |
-|                                                                 |                         | subsequent pipeline stages.    |
-+-----------------------------------------------------------------+-------------------------+--------------------------------+
+.. list-table:: MicArray sub-components
+   :header-rows: 1
+   :widths: 30 25 45
 
+   * - Member Field
+     - Component Class
+     - Responsibility
+   * - :cpp:member:`PdmRx <mic_array::MicArray::PdmRx>`
+     - ``TPdmRx``
+     - Capturing PDM data from a port
+   * - :cpp:member:`Decimator <mic_array::MicArray::Decimator>`
+     - ``TDecimator``
+     - 2-stage decimation on blocks of PDM data
+   * - :cpp:member:`SampleFilter <mic_array::MicArray::SampleFilter>`
+     - ``TSampleFilter``
+     - Post-processing of decimated samples
+   * - :cpp:member:`OutputHandler <mic_array::MicArray::OutputHandler>`
+     - ``TOutputHandler``
+     - Transferring audio data to subsequent pipeline stages
+
+.. _mic_array_subcomponents_interface_requirement:
 
 Each of the ``MicArray`` sub-components has a type that is specified as a
 template parameter when the class template is instantiated. ``MicArray``
@@ -103,22 +110,21 @@ The following code snippet is the implementation for the main mic array thread
 
 .. code-block:: c++
 
-  void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
-                                    TSampleFilter,
-                                    TOutputHandler>::ThreadEntry()
-  {
-    int32_t sample_out[MIC_COUNT] = {0};
+  int32_t sample_out[MIC_COUNT] = {0};
+  volatile bool shutdown = false;
 
-    while(1){
-      uint32_t* pdm_samples = PdmRx.GetPdmBlock();
-      Decimator.ProcessBlock(sample_out, pdm_samples);
-      SampleFilter.Filter(sample_out);
-      OutputHandler.OutputSample(sample_out);
-    }
+  while(!shutdown){
+    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlock(sample_out, pdm_samples);
+    SampleFilter.Filter(sample_out);
+    shutdown = OutputHandler.OutputSample(sample_out);
+  }
+  PdmRx.Shutdown();
+  OutputHandler.CompleteShutdown();
   }
 
 
-The thread loops forever, and on each iteration
+The thread loops till ``OutputHandler.OutputSample()`` indicates a shutdown request and on each iteration,
 
 * Requests a block of PDM sample data from the PDM rx service. This is a
   blocking call which only returns once a complete block becomes
@@ -128,8 +134,7 @@ The thread loops forever, and on each iteration
 * Applies a post-processing filter to the sample data.
 * Passes the processed sample to the output handler to be transferred to the
   next stage of the processing pipeline. This may also be a blocking call, only
-  returning once the data has been
-  transferred.
+  returning once the data has been transferred.
 
 Note that the ``MicArray`` object doesn't care how these steps are actually
 implemented. For example, one output handler implementation may send samples
@@ -178,7 +183,7 @@ Sub-Component Initialization
 
 Each of ``MicArray``'s sub-components may have implementation-specific
 configuration or initialization requirements. Each sub-component is a ``public``
-member of ``MicArray`` (see table above). An application can access a
+member of ``MicArray`` (see :ref:`mic_array_subcomponents_table`). An application can access a
 sub-component directly to perform any type-specific initialization or other
 manipulation.
 
@@ -195,23 +200,24 @@ Sub-Components
 PdmRx
 -----
 
-:cpp:member:`PdmRx <mic_array::MicArray::PdmRx>`, or the PDM rx service is the
+:cpp:member:`PdmRx <mic_array::MicArray::PdmRx>`, or the PDM RX service is the
 ``MicArray`` sub-component responsible for capturing PDM sample data, assembling
 it into blocks, and passing it along so that it can be decimated.
 
 The ``MicArray`` class requires only that ``PdmRx`` implement ``GetPdmBlock()``,
 a blocking call that returns a pointer to a block of PDM data which is ready for
-further processing.
+further processing and ``Shutdown()``, which is called in the even of ``MicArray``
+shutdown.
 
 Generally speaking, ``PdmRx`` will derive from the
 :cpp:class:`PdmRxService <mic_array::PdmRxService>`
 class template. ``PdmRxService`` encapsulates the logic of using an xCore
 ``port`` for capturing PDM samples one word (32 bits) at a time, and managing
 two buffers where blocks of samples are collected. It also simplifies the logic
-of running PDM rx as either an interrupt or as a stand-alone thread.
+of running PDM RX as either an interrupt or as a stand-alone thread.
 
 ``PdmRxService`` has 2 template parameters. The first is the ``BLOCK_SIZE``,
-which specifies the size of a PDM sample block (in words). The second,
+which specifies the size of a PDM sample block (in 32-bit words). The second,
 ``SubType``, is the type of the sub-class being derived from ``PdmRxService``.
 This is the CRTP (Curiously Recurring Template Pattern), which allows a base
 class to use polymorphic-like behaviors while ensuring that all types are known

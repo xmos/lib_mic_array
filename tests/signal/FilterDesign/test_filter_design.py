@@ -3,6 +3,7 @@
 
 import filter_design.plot_coeffs as pc
 import filter_design.design_filter as df
+from pathlib import Path
 
 
 def test_design_filter():
@@ -10,7 +11,7 @@ def test_design_filter():
 
 
 def test_plot_coeffs():
-    pc.main()
+    pc.main(Path(__file__).parent / ".." / "BasicMicArray" / "default_filters.pkl")
 
 
 if __name__ == "__main__":

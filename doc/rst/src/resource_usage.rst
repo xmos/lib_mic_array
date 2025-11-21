@@ -1,22 +1,17 @@
 .. _resource_usage:
 
-************************
-Mic Array Resource Usage
-************************
+********************************
+``lib_mic_array`` resource usage
+********************************
 
 The mic array unit requires several kinds of hardware resources, including
 ports, clock blocks, chanends, hardware threads, compute time (MIPS) and memory.
-Compared to previous versions of this library, the biggest advantage to the
-current version with respect to hardware resources is a greatly reduced compute
-requirement. This was made possible by the introduction of the VPU in the XMOS
-XS3 architecture. The VPU can do certain operations in a single instruction
-which would take many, many instructions on previous architectures.
 
 This page attempts to capture the requirements for each hardware type with
 relevant configurations.
 
 .. warning::
-  The usage information below applies when the default API or prefab APIs are
+  The usage information below applies when the default usage model is
   used. Resource usage in an application which uses custom mic array
   sub-components will depend crucially on the specifics of the customization.
 
@@ -85,7 +80,7 @@ cost of that is one hardware thread.
 
   When configured as an interrupt, PDM rx ISR is typically configured on the
   decimation thread, but this is not a strict requirement. The PDM rx interrupt
-  can be configured for any thread on the same tile as the decimation thread.
+  can be configured for any thread **on the same tile** as the decimation thread.
   They must be on the same tile because shared memory is used between the two
   contexts.
 
