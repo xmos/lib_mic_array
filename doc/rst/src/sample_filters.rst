@@ -19,7 +19,9 @@ which implements the ``Filter()`` function as required by ``MicArray``. See the
 implementation of :cpp:class:`DcoeSampleFilter <mic_array::DcoeSampleFilter>`
 for a simple example.
 
-DC Offset Elimination
+.. _dcoe:
+
+DC Offset elimination
 =====================
 
 The current version of this library provides a simple IIR filter called DC
@@ -69,7 +71,7 @@ for any ``MicArray`` implementation deriving from that sub-class.
   };
 
 
-DCOE Filter Equation
+DCOE filter equation
 --------------------
 
 As mentioned above, the DCOE filter is a simple IIR filter given by the
@@ -83,7 +85,7 @@ and previous output sample values respectively.
     y[t] = R * y[t-1] + x[t] - x[t-1]
 
 
-DCOE Filter Frequency Response
+DCOE filter frequency response
 ------------------------------
 
 The plot below indicates the frequency response of DCOE filter :ref:`freq_response_dcoe`.

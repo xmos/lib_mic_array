@@ -1,8 +1,8 @@
 .. _resource_usage:
 
-********************************
-``lib_mic_array`` resource usage
-********************************
+**************
+Resource usage
+**************
 
 The mic array unit requires several kinds of hardware resources, including
 ports, clock blocks, chanends, hardware threads, compute time (MIPS) and memory.
@@ -85,6 +85,8 @@ cost of that is one hardware thread.
   contexts.
 
 
+.. _mic_array_mips_requirement:
+
 Compute
 =======
 
@@ -104,46 +106,23 @@ and no more than ``CORE_CLOCK_MHZ/5`` millions of issue slots per second, where
 ``CORE_CLOCK_MHZ`` is the core CPU clock rate. With a core clock rate of 600
 MHz, that means that each core should expect at least 75 MIPS.
 
-The MIPS values in the table below are estimates obtained using the demo
-applications in ``demo/measure_mips``.
+Table :ref:`mic_array_mips` shows the mic array MIPS by profiling an application that includes the
+mic array. The application used to generate the MIPS numbers runs the :ref:`default <mic_array_default_model>` mic
+array API (so the decimator running in a single hardware thread) with all defines set to their default values as listed
+in :ref:`mic_array_default_model_defines` except for ``MIC_ARRAY_CONFIG_MIC_COUNT``
+and ``MIC_ARRAY_CONFIG_USE_PDM_ISR``. These two (along with the output sampling rate) are varied to build the
+different configurations that are profiled.
 
+.. include:: ../../../tests/signal/profile/mic_array_mips_table.rst
 
-+------------+------+------+-------+-------+-------+-------+-------+
-| PDM Freq   | S2DF | S2TC | PdmRx | 1 mic | 2 mic | 4 mic | 8 mic |
-|            |      |      |       | MIPS  | MIPS  | MIPS  | MIPS  |
-+============+======+======+=======+=======+=======+=======+=======+
-| 3.072 MHz  |  6   |  65  | ISR   | 10.65 | 22.00 | 43.70 |  N/A  |
-+------------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz  |  6   |  65  |Thread |  9.33 | 19.37 | 38.48 | 75.90 |
-+------------+------+------+-------+-------+-------+-------+-------+
-| 6.144 MHz  |  6   |  65  | ISR   | 21.26 | 43.89 |  TBD  |  TBD  |
-+------------+------+------+-------+-------+-------+-------+-------+
-| 6.144 MHz  |  6   |  65  |Thread | 18.66 | 38.73 |  TBD  |  TBD  |
-+------------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz  |  3   |  65  | ISR   | 12.90 | 26.44 |  TBD  |  TBD  |
-+------------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz  |  3   |  65  |Thread | 11.62 | 23.85 |  TBD  |  TBD  |
-+------------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz  |  6   | 130  | ISR   | 11.17 | 23.04 |  TBD  |  TBD  |
-+------------+------+------+-------+-------+-------+-------+-------+
-| 3.072 MHz  |  6   | 130  |Thread |  9.86 | 20.42 |  TBD  |  TBD  |
-+------------+------+------+-------+-------+-------+-------+-------+
+.. note::
 
-PDM Freq
-  Frequency of the PDM clock.
-
-S2DF
-  Stage 2 decimation factor. Output sample rate is ``(PDM Freq / (32 * S2DF))``.
-
-S2TC
-  Stage 2 tap count.
-
-PdmRx
-  Whether PDM capture is done in a stand-alone thread or in an ISR.
-
-Measurements indicate that enabling or disabling the DC offset removal filter
-has little effect on the MIPS usage. The selected frame size has only a slight
-negative correlation with MIPS usage.
+  The MIPS numbers scale approximately linearly with the number of microphones. Although the table lists values only
+  for the 1- and 2-mic configurations, these results can be extrapolated to estimate MIPS for configurations with a
+  higher microphone count. If a given configuration cannot be accommodated within a single hardware thread, the
+  decimator can be split across multiple threads to distribute the compute load. This approach is not supported by the
+  :ref:`default <mic_array_default_model>` mic array API. An example of a custom multi-threaded decimator implementation
+  can be found in :ref:`mic_array_par_decimator`.
 
 
 
@@ -155,56 +134,32 @@ Code is the memory needed to store compiled instructions in RAM. Stack is the
 memory required to store intermediate results during function calls, and data is
 the memory used to store persistant objects, variables and constants.
 
-The stack memory requirement is minimal. The code memory requirement depends on
-the particular configuration, but ranges from about ``1600`` bytes in a 1 mic
-configuration to about ``2000`` bytes in an 8 mic configuration.
+Table :ref:`mic_array_memory_usage` reports the memory usage of two minimal applications that include the mic array:
+one using the :ref:`default <mic_array_default_model>` mic array API and another using a :ref:`custom <mic_array_adv_use_methods>`
+configuration created by instantiating a :cpp:class:`MicArray <mic_array::MicArray>` object.
 
-Not included in the table is the space allocated for the first and second stage
-filter coefficients. The first stage filter coefficients take a constant ``523``
-bytes. The second stage filter coefficients use ``4*S2TC`` bytes, where ``S2TC``
-is the stage 2 decimator tap count. The value shown in the 'data' column of the
-table is the ``sizeof()`` the
-:cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>` that is
-instantiated. The table below indicates the data size for various
-configurations.
+Both applications are built for **1 or 2 microphones** with a **48 kHz output sample rate**, with the other
+compile-time parameters set to their default values as defined in :ref:`mic_array_default_model_defines`.
 
-+------+------+------+------+-------+--------------+
-| Mics | S2DF | S2TC | SPF  | DCOE  | Data Memory  |
-+======+======+======+======+=======+==============+
-| 1    |  6   | 65   | 16   | On    | 504 B        |
-+------+------+------+------+-------+--------------+
-| 2    |  6   | 65   | 16   | On    | 968 B        |
-+------+------+------+------+-------+--------------+
-| 4    |  6   | 65   | 16   | On    | 1888 B       |
-+------+------+------+------+-------+--------------+
-| 8    |  6   | 65   | 16   | On    | 3728 B       |
-+------+------+------+------+-------+--------------+
-| 1    |  6   | 65   | 16   | On    | 768 B        |
-+------+------+------+------+-------+--------------+
-| 2    |  6   | 130  | 16   | On    | 1488 B       |
-+------+------+------+------+-------+--------------+
-| 1    |  6   | 130  | 16   | On    | 576 B        |
-+------+------+------+------+-------+--------------+
-| 2    | 12   | 65   | 16   | On    | 1112 B       |
-+------+------+------+------+-------+--------------+
-| 1    | 12   | 65   | 160  | On    | 1080 B       |
-+------+------+------+------+-------+--------------+
-| 2    |  6   | 65   | 160  | On    | 2120 B       |
-+------+------+------+------+-------+--------------+
-| 1    |  6   | 65   | 16   | Off   | 496 B        |
-+------+------+------+------+-------+--------------+
-| 2    |  6   | 65   | 16   | Off   | 948 B        |
-+------+------+------+------+-------+--------------+
+Memory for higher microphone counts can be extrapolated from the 1- and 2-mic numbers.
 
+Across different sampling rates, memory usage with the default API remains unchanged
+since the default API compiles all the decimation filters included in the library.
+For custom usage, the data memory across different sampling rates varies depending on the
+:ref:`decimation filters <decimator_stages>` included.
 
-S2DF
-  Stage 2 decimator's decimation factor.
+.. include:: ../../../tests/signal/profile/mic_array_memory_table.rst
 
-S2TC
-  Stage 2 decimator's tap count.
+.. note::
 
-SPF
-  Samples per frame in frames delivered by the mic array unit.
+  The default API requires approximately 6 KiB more memory than the custom configuration.
+  The additional code usage comes from the wrapper and abstraction code included in the default API.
+  The increased data usage results from the inclusion of filter coefficients
+  for all filters provided by the library, whereas the custom build includes only the coefficients
+  required by the specific MicArray instance.
 
-DCOE
-  DC Offset Elimination
+.. note::
+
+  A minimal empty application (no mic array) occupies ~4.6 KiB
+  (Stack: 356 B, Code: 3754 B, Data: 542 B). Subtract this baseline
+  from the reported totals to isolate mic array overhead.

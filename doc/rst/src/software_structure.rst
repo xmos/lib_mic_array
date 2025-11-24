@@ -13,7 +13,7 @@ quantitative configuration values, such as the number of microphone channels or
 the second stage decimator tap count. Type template parameters, on the other
 hand, are used for configuring the behavior of sub-components.
 
-High-Level View
+High level view
 ===============
 
 At the heart of the mic array API is the
@@ -98,7 +98,7 @@ The following diagram :ref:`high_level_flow` conceptually captures the flow of i
   samples or an XCore channel for transferring processed data. This is just the
   typical usage.
 
-Mic Array / Decimator Thread
+Mic Array / Decimator thread
 ----------------------------
 
 Aside from aggregating its sub-components into a single logical entity, the
@@ -145,7 +145,7 @@ thread.
 
 .. _crtp:
 
-Curiously Recurring Template Pattern
+Curiously recurring template pattern
 ------------------------------------
 
 The C++ API of this library makes heavy use of the `Curiously Recurring Template
@@ -178,7 +178,7 @@ The downside to CRTP is that it tends to lead to highly verbose class type
 names, where templated classes end up with type parameter assignments are
 themselves templated classes with their own template parameters.
 
-Sub-Component Initialization
+Sub-Component initialization
 ----------------------------
 
 Each of ``MicArray``'s sub-components may have implementation-specific

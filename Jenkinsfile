@@ -151,7 +151,7 @@ pipeline {
         } // stage('Custom CMake build')
         stage('HW tests') {
           agent {
-            label 'xcore.ai && !vrd' // Did include xvf3800 but XTAG speed meant occasional test fail
+            label 'xcore.ai'
           }
           stages {
             stage("Checkout and Build") {
@@ -210,6 +210,9 @@ pipeline {
                       }
                       dir("signal/FilterDesign") {
                           runPytest('-v')
+                      }
+                      dir("signal/profile") {
+                          sh "pytest -v"
                       }
                     }
                   }

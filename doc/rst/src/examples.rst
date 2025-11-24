@@ -43,6 +43,15 @@ Setup procedure
 
 #. Connect the other Micro USB cable between the host computer and the XTAG.
 
+:ref:`l71_hw_setup` shows the ``XK-VOICE-L71`` board with all the cables connected.
+
+.. _l71_hw_setup:
+
+.. figure:: mic_array_l71.*
+   :width: 80%
+
+   XK-VOICE-L71 setup
+
 
 Building
 --------
@@ -75,6 +84,8 @@ Finally, the application binaries can be built using ``xmake``:
 
 The example build four configurations - ``1mic_isr``, ``1mic_thread``, ``2mic_isr`` and ``2mic_thread``,
 which indicate the number of microphones used and whether the PDM RX service runs in an ISR or a hardware thread.
+The executable binaries (.xe files) for each configuration are placed in ``bin/<config>`` directory
+(e.g. ``bin/2mic_isr/app_mic_array_2mic_isr.xe``).
 
 Running the application
 -----------------------
@@ -96,16 +107,18 @@ Connect headphones to the 3.5mm LINE OUT jack on the board to listen to the capt
 
 Other examples
 --------------
+.. _mic_array_par_decimator:
 
 ``app_par_decimator``
 ^^^^^^^^^^^^^^^^^^^^^
 
-The ``app_par_decimator`` example behaves like ``app_mic_array``, but internally uses a custom
-mic array decimator implementation. The custom decimator runs in two threads, with each thread
+The ``app_par_decimator`` example behaves like ``app_mic_array``, but internally uses a :ref:`custom
+mic array <mic_array_adv_use_methods>` decimator implementation. The custom decimator runs in two threads, with each thread
 processing one channel of microphone output. This example serves as a reference for using
 ``lib_mic_array`` in applications with many microphone channels, where decimation must be
 split across multiple hardware threads (e.g., two decimator threads, each handling four channels).
 
+.. _mic_array_app_shutdown:
 
 ``app_shutdown``
 ^^^^^^^^^^^^^^^^

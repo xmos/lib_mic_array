@@ -279,6 +279,12 @@ The code block below shows the application ``main()`` function containing calls 
     }
     }
 
+.. note::
+
+  Code above does not demonstrate mic array shutdown.
+  See the :ref:`mic array shutdown example <mic_array_app_shutdown>` for
+  usage of :c:func:`ma_shutdown()`.
+
 .. _mic_array_default_model_limitation:
 
 Limitations of the default model
@@ -300,10 +306,23 @@ following constraints:
 
 - Single decimator thread:
 
-  The default model runs the entire decimator process in one hardware thread.
-  This works for up to 8 microphones if PDM RX runs in
-  a separate thread and up to 4 microphones if PDM RX runs as an ISR.
-  Higher channel counts require splitting the decimation process across multiple hardware threads
-  and using lib_mic_array in a customised configuration.
+  In the default model, the entire decimation process runs within a single hardware thread.
+  For higher microphone counts, this may exceed the available compute capacity of one thread
+  (see :ref:`mic array MIPS requirement <mic_array_mips_requirement>`). In general, up to
+  four microphones can be accommodated within a single thread, depending on the configuration.
+  Higher channel counts therefore require splitting the decimation process across multiple
+  hardware threads and using lib_mic_array in a :ref:`customised <mic_array_adv_use_methods>`
+  configuration. The :ref:`mic_array_par_decimator` example demonstrates a two-threaded
+  decimator implementation.
 
-For custom usage refer to the advanced usage methods described in :ref:`mic_array_adv_use_methods`
+
+- Memory usage:
+
+  The default API incurs an additional ~6 KiB (code + data) compared to a custom
+  instantiation of :cpp:class:`MicArray <mic_array::MicArray>` object.
+  This overhead is primarily from wrapper code and inclusion of all
+  provided filter coefficient sets, even when only a subset is used (see
+  :ref:`mic_array_memory_usage`). For memory‑constrained systems a custom
+  configuration might be preferable.
+
+For custom usage refer to the advanced use methods described in :ref:`mic_array_adv_use_methods`

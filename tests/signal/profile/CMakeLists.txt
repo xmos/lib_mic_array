@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.21)
+include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
+project("test_profile")
+add_subdirectory("app_mips")
+add_subdirectory("app_memory")

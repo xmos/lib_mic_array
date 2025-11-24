@@ -18,7 +18,7 @@ Capabilities
   are supported
 * Configurable clock divider allows user-selectable PDM sample clock frequency
   (3.072 MHz typical)
-* Configurable two-stage decimating FIR filter
+* Configurable :ref:`two-stage decimating FIR filter <decimator_stages>`
 
   * First stage has fixed tap count of 256 and decimation factor of 32
   * Second stage has fully configurable tap count and decimation factor
@@ -33,21 +33,16 @@ Capabilities
   * Includes ability to capture samples on a subset of a port's pins (e.g. 3 PDM
     microphones may be used with a 4- or 8-bit port)
   * Also supports microphone channel index remapping
+  * See :ref:`mic_array_mips_requirement` for the mic array MIPS requirement.
 
-* Optional DC offset elimination filter
+* Optional :ref:`DC offset elimination filter <dcoe>`
 * Sample framing with user selectable frame size (down to single samples)
-* Configurations with up to 4 microphones require only a single hardware thread. For higher microphone
-  counts, multiple hardware threads are needed to split the decimation process
-  across threads — support for this is not provided as part of the :ref:`default <mic_array_default_model>`
-  usage model.
-  Refer to the ``lib_mic_array/examples/app_par_decimator`` example to see how this can be achieved
-  by creating a custom mic array instance that implements a multi-threaded decimator.
 
 
 
 |newpage|
 
-High-Level Process View
+High level process view
 =======================
 
 This section gives a brief overview of the steps to process a PDM audio stream
@@ -64,7 +59,7 @@ process view is depicted in the figure :ref:`image_high_level_process`.
    Mic Array High Level Process
 
 
-Execution Contexts
+Execution contexts
 ------------------
 
 The mic array unit uses two different execution contexts. The first is the PDM
@@ -86,7 +81,7 @@ Likewise, the decimators may be split into multiple parallel hardware threads
 in the case where the processing load exceeds the MIPS available in a single
 hardware thread.
 
-Step 1: PDM Capture
+Step 1: PDM capture
 -------------------
 
 The PDM data signal is captured by the xcore.ai device's port hardware. The port
@@ -102,7 +97,7 @@ microphone channels and the configured second stage decimator's decimation
 factor. Each PDM data block will contain exactly enough PDM samples to produce
 one new mic array (multi-channel) output sample.
 
-Step 2: First Stage Decimation
+Step 2: First stage decimation
 ------------------------------
 
 The conversion from the high-sample-rate PDM stream to lower-sample-rate PCM
@@ -123,7 +118,7 @@ samples with a sample time ``32`` times longer than the PDM sample time.
 
 See :ref:`decimator_stages` for further details.
 
-Step 3: Second Stage Decimation
+Step 3: Second stage decimation
 -------------------------------
 
 The second stage decimator is a decimating FIR filter with a configurable
@@ -143,7 +138,7 @@ and a 3.072 MHz PDM clock, his corresponds to an output sampling rate of
 
 See :ref:`decimator_stages` for further details.
 
-Step 4: Post-Processing
+Step 4: post-processing
 -----------------------
 
 After second stage decimation, the resulting sample goes to post-processing
@@ -162,7 +157,7 @@ where framing is functionally disabled).
 Finally, the sample or frame is transmitted over a XCORE channel from the mic array
 module to the next stage of the processing pipeline.
 
-Extending/Modifying Mic Array Behavior
+Extending/Modifying mic array behavior
 --------------------------------------
 
 Most applications are expected to use the :ref:`default <mic_array_default_model>` usage model,
