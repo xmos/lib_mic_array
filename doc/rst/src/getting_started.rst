@@ -6,8 +6,8 @@ Using ``lib_mic_array``
 
 .. _including_mic_array:
 
-Including ``lib_mic_array`` in an application
-=============================================
+Including in an application
+===========================
 
 ``lib_mic_array`` is intended to be used with `XCommon CMake <https://www.xmos.com/file/xcommon-cmake-documentation/?version=latest>`_
 , the `XMOS` application build and dependency management system.
@@ -23,8 +23,8 @@ Applications should then include the ``mic_array.h`` header file.
 
 .. _mic_array_default_model:
 
-``lib_mic_array`` default usage model
-=====================================
+Default usage model
+===================
 
 The default model described in this section is the recommended approach for integrating
 the mic array into an application and is suitable for most use cases.
@@ -230,6 +230,13 @@ terminated.
 Once shut down, :c:func:`mic_array_init()` and :c:func:`mic_array_start()` can be called
 again to restart the mic array.
 
+.. note::
+
+  Shutting down and restarting the mic array is the supported method for changing
+  the output sample rate. The sample rate cannot be modified while the mic array
+  is running; instead, call :c:func:`ma_shutdown()`, reconfigure the desired rate,
+  and then restart the mic array.
+
 .. _mic_array_default_use_example:
 
 Example code
@@ -298,7 +305,7 @@ following constraints:
   Only **16 kHz**, **32 kHz**, and **48 kHz** are supported.
   This is because the default decimation factors provided as part of the
   library (see :ref:`default_filters`) are predesigned for a small set of decimation
-  factors and they assune a fixed input PDM frequency of **3.072 MHz**
+  factors and they assume a fixed input PDM frequency of **3.072 MHz**
 
 - Only one mic array instance:
 

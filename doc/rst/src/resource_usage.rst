@@ -101,10 +101,10 @@ and is, in general, affected by both the number of threads being used, as well
 as the work being done by each thread.
 
 As a rule of thumb, however, the core scheduler will offer each thread a minimum
-of ``CORE_CLOCK_MHZ/8`` millions of instruction issue slots per second (~MIPS),
-and no more than ``CORE_CLOCK_MHZ/5`` millions of issue slots per second, where
-``CORE_CLOCK_MHZ`` is the core CPU clock rate. With a core clock rate of 600
-MHz, that means that each core should expect at least 75 MIPS.
+of `CORE_CLOCK_MHZ/8` millions of instruction issue slots per second (~MIPS),
+and no more than `CORE_CLOCK_MHZ/5` millions of issue slots per second, where
+`CORE_CLOCK_MHZ` is the core CPU clock rate (specified as ``SystemFrequency`` in the XN file).
+With a core clock rate of 600 MHz, that means that each core should expect at least 75 MIPS.
 
 Table :ref:`mic_array_mips` shows the mic array MIPS by profiling an application that includes the
 mic array. The application used to generate the MIPS numbers runs the :ref:`default <mic_array_default_model>` mic

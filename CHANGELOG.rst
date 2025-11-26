@@ -13,7 +13,7 @@ UNRELEASED
   * ADDED: Test for mic array shutdown
   * CHANGED: BasicMicArray tests to test the default API
   * CHANGED: app_measure_mips example to run the default API
-  * CHANGED: Doc improvements
+  * CHANGED: Documentation improvements
 
 5.5.0
 -----
