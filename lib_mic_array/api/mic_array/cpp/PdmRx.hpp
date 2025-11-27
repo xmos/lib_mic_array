@@ -16,8 +16,8 @@
 #include "Util.hpp"
 
 // This has caused problems previously, so just catch the problems here.
-#if defined(BLOCK_SIZE) || defined(CHANNELS_IN) || defined(CHANNELS_OUT) || defined(SUBBLOCKS)
-# error Application must not define the following as precompiler macros: MIC_COUNT, CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS.
+#if defined(BLOCK_SIZE) || defined(CHANNELS_IN) || defined(CHANNELS_OUT)
+# error Application must not define the following as precompiler macros: MIC_COUNT, CHANNELS_IN, CHANNELS_OUT.
 #endif
 
 using namespace std;
@@ -213,73 +213,6 @@ namespace  mic_array {
    * @tparam BLOCK_SIZE   Number of words of PDM data per block.
    * @tparam SubType      Subclass of `PdmRxService` actually being used.
    */
-  template <unsigned BLOCK_SIZE, class SubType>
-  class PdmRxService
-  {
-    // @todo: Use a static assertion to check that SubType is in fact a sub-type
-    //        of `PdmRxService`.
-
-    public:
-
-      /**
-       * @brief Number of words of PDM data per block.
-       *
-       * Typically (e.g. @ref TwoStageDecimator) `BLOCK_SIZE` will be exactly
-       * the number of words of PDM samples required to produce exactly one new
-       * output sample for the mic array unit's output stream.
-       *
-       * Once `BlockSize` words have been read into one of the @ref block_data,
-       * buffers, PDM rx will signal to the decimator thread that new PDM data
-       * is available for processing.
-       */
-      static constexpr unsigned BlockSize = BLOCK_SIZE;
-
-    protected:
-      /**
-       * @brief Port from which to collect PDM data.
-       */
-      port_t p_pdm_mics;
-
-      /**
-       * Number of words left to capture for the current block.
-       */
-      unsigned phase = BLOCK_SIZE;
-
-      /**
-       * @brief Buffers for PDM data blocks.
-       *
-       * The PDM rx service will swap back and forth between filling these two
-       * buffers.
-       */
-      uint32_t block_data[2][BLOCK_SIZE];
-
-      /**
-       * @brief PDM block redirection pointers.
-       *
-       * Each time a new block of data is ready, a double buffer pointer swap
-       * is performed and `blocks[1]` is passed to `SubType::SendBlock()` so
-       * that it can be signaled to the next processing stage.
-       */
-      uint32_t* blocks[2] = {&block_data[0][0], &block_data[1][0]};
-      volatile bool shutdown = false;
-      volatile bool shutdown_complete = false;
-
-    public:
-
-      /**
-       * @brief Set the port from which to collect PDM samples.
-       */
-      void SetPort(port_t p_pdm_mics);
-
-      /**
-       * @brief Entry point for PDM processing thread.
-       *
-       * This function loops forever, performing a port read and if a new block has completed, signal a block send,
-       * every iteration.
-       */
-      void ThreadEntry();
-  };
-
 
   /**
    * @brief PDM rx service which uses a streaming channel to send a block of
@@ -375,17 +308,35 @@ namespace  mic_array {
    * @tparam SUBBLOCKS    The number of 32-sample sub-blocks to be captured for
    *                      each microphone channel.
    */
-  template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-  class StandardPdmRxService : public PdmRxService<CHANNELS_IN * SUBBLOCKS,
-                                      StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>>
+  template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+  class StandardPdmRxService
   {
-    /**
-     * @brief Alias for parent class.
-     */
-    using Super = PdmRxService<CHANNELS_IN * SUBBLOCKS,
-                    StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>>;
-
     private:
+      /**
+       * @brief Port from which to collect PDM data.
+       */
+      port_t p_pdm_mics;
+
+      /**
+       * Number of words left to capture for the current block.
+       */
+      unsigned phase;
+
+      /**
+       * @brief PDM block redirection pointers.
+       *
+       * Each time a new block of data is ready, a double buffer pointer swap
+       * is performed and `blocks[1]` is passed to `SubType::SendBlock()` so
+       * that it can be signaled to the next processing stage.
+       */
+      uint32_t* blocks[2];
+      volatile bool shutdown = false;
+      volatile bool shutdown_complete = false;
+      uint32_t out_block_size; // per channel block size
+      uint32_t mic_count;
+      uint32_t in_mic_count;
+      uint32_t num_phases;
+
       /**
        * @brief Streaming channel over which PDM blocks are sent.
        */
@@ -402,15 +353,7 @@ namespace  mic_array {
        */
       unsigned channel_map[CHANNELS_OUT];
 
-      /**
-       * @brief Buffer for output PDM data.
-       *
-       * A pointer to this array is delivered to the Decimator component for
-       * decimation. `GetPdmBlock()` (called from the mic array thread)
-       * populates this array (based on `channel_map`) after deinterleaving the
-       * PDM input buffer.
-       */
-      uint32_t out_block[CHANNELS_OUT][SUBBLOCKS];
+      uint32_t *out_block_ptr;
 
       volatile bool isr_used = false;
       std::atomic<unsigned> pending_blocks{0};
@@ -430,14 +373,9 @@ namespace  mic_array {
        *
        * @param block   PDM data to send.
        */
-      void SendBlock(uint32_t block[CHANNELS_IN * SUBBLOCKS]);
+      void SendBlock(uint32_t *block);
 
-      /**
-       * @brief Initialize this object with a channel and port.
-       *
-       * @param p_pdm_mics Port to receive PDM data on.
-       */
-      void Init(port_t p_pdm_mics);
+      void Init_new(port_t p_pdm_mics, pdm_rx_config_t &pdm_rx_config);
 
       /**
        * @brief Set the input-output mapping for all output channels.
@@ -509,6 +447,18 @@ namespace  mic_array {
       void AssertOnDroppedBlock(bool doAssert);
 
       void Shutdown();
+      /**
+       * @brief Set the port from which to collect PDM samples.
+       */
+      void SetPort(port_t p_pdm_mics);
+
+      /**
+       * @brief Entry point for PDM processing thread.
+       *
+       * This function loops forever, performing a port read and if a new block has completed, signal a block send,
+       * every iteration.
+       */
+      void ThreadEntry();
   };
 
 }
@@ -522,25 +472,25 @@ namespace  mic_array {
 //              PdmRxService                //
 //////////////////////////////////////////////
 
-template <unsigned BLOCK_SIZE, class SubType>
-void mic_array::PdmRxService<BLOCK_SIZE,SubType>::SetPort(port_t p_pdm_mics)
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::SetPort(port_t p_pdm_mics)
 {
   this->p_pdm_mics = p_pdm_mics;
 }
 
-template <unsigned BLOCK_SIZE, class SubType>
-void mic_array::PdmRxService<BLOCK_SIZE,SubType>::ThreadEntry()
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
 {
   while(1){
-    this->blocks[0][--phase] =  static_cast<SubType*>(this)->ReadPort();
+    this->blocks[0][--phase] =  this->ReadPort();
 
     if(!phase){
-      this->phase = BLOCK_SIZE;
+      this->phase = this->num_phases;
       uint32_t* ready_block = this->blocks[0];
       this->blocks[0] = this->blocks[1];
       this->blocks[1] = ready_block;
 
-      static_cast<SubType*>(this)->SendBlock(ready_block);
+      this->SendBlock(ready_block);
       // Check for shutdown only after sending a block so we know there's atleast one pending block at the time of shutdown
       if(this->shutdown)
       {
@@ -556,28 +506,37 @@ void mic_array::PdmRxService<BLOCK_SIZE,SubType>::ThreadEntry()
 //////////////////////////////////////////////
 
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-uint32_t mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+uint32_t mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::ReadPort()
 {
   return port_in(this->p_pdm_mics);
 }
 
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
-    ::SendBlock(uint32_t block[CHANNELS_IN*SUBBLOCKS])
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
+    ::SendBlock(uint32_t *block)
 {
   s_chan_out_word(this->c_pdm_blocks.end_a,
                   reinterpret_cast<uint32_t>( &block[0] ));
 }
 
-
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
-    ::Init(port_t p_pdm_mics)
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
+    ::Init_new(port_t p_pdm_mics, pdm_rx_config_t &pdm_rx_config)
 {
-  for(int k = 0; k < CHANNELS_OUT; k++)
+  this->out_block_ptr = pdm_rx_config.out_block;
+  this->out_block_size = pdm_rx_config.out_block_size;
+  this->mic_count = pdm_rx_config.num_mics;
+  this->in_mic_count = pdm_rx_config.num_mics_in;
+  this->phase = this->in_mic_count * this->out_block_size;
+  this->num_phases = this->in_mic_count * this->out_block_size;
+
+  this->blocks[0] = pdm_rx_config.out_block_double_buf;
+  this->blocks[1] = pdm_rx_config.out_block_double_buf + (this->in_mic_count * this->out_block_size);
+
+  for(int k = 0; k < this->mic_count; k++)
     this->channel_map[k] = k;
 
   this->c_pdm_blocks = s_chan_alloc();
@@ -585,8 +544,8 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
   this->SetPort(p_pdm_mics);
 }
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::MapChannels(const unsigned map[CHANNELS_OUT])
 {
   for(int k = 0; k < CHANNELS_OUT; k++)
@@ -594,45 +553,45 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
 }
 
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::MapChannel(unsigned out_channel, unsigned in_channel)
 {
   this->channel_map[out_channel] = in_channel;
 }
 
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::InstallISR()
 {
   this->isr_used = true;
   pdm_rx_isr_context.p_pdm_mics = this->p_pdm_mics;
   pdm_rx_isr_context.c_pdm_data = this->c_pdm_blocks.end_a;
-  pdm_rx_isr_context.pdm_buffer[0] = &this->block_data[0][0];
-  pdm_rx_isr_context.pdm_buffer[1] = &this->block_data[1][0];
-  pdm_rx_isr_context.phase_reset = CHANNELS_IN*SUBBLOCKS-1;
-  pdm_rx_isr_context.phase = CHANNELS_IN*SUBBLOCKS-1;
+  pdm_rx_isr_context.pdm_buffer[0] = this->blocks[0];
+  pdm_rx_isr_context.pdm_buffer[1] = this->blocks[1];
+  pdm_rx_isr_context.phase_reset = (CHANNELS_IN * this->out_block_size) -1;
+  pdm_rx_isr_context.phase = (CHANNELS_IN * this->out_block_size) - 1;
 
   enable_pdm_rx_isr(this->p_pdm_mics);
 }
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::AssertOnDroppedBlock(bool doAssert)
 {
   pdm_rx_isr_context.missed_blocks = doAssert? -1 : 0;
 }
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::UnmaskISR()
 {
   interrupt_unmask_all();
 }
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::GetPdmBlock()
 {
   // Has to be in a critical section to avoid race conditions with ISR.
@@ -645,21 +604,22 @@ uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
 
 
   uint32_t* full_block = (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
-  mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, SUBBLOCKS);
+  mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, this->out_block_size);
 
   uint32_t (*block)[CHANNELS_IN] = (uint32_t (*)[CHANNELS_IN]) full_block;
-
+  uint32_t *out_ptr;
   for(int ch = 0; ch < CHANNELS_OUT; ch++) {
-    for(int sb = 0; sb < SUBBLOCKS; sb++) {
+    out_ptr = this->out_block_ptr + (ch * this->out_block_size);
+    for(int sb = 0; sb < this->out_block_size; sb++) {
       unsigned d = this->channel_map[ch];
-      this->out_block[ch][sb] = block[SUBBLOCKS-1-sb][d];
+      out_ptr[sb] = block[this->out_block_size - 1 - sb][d];
     }
   }
-  return &this->out_block[0][0];
+  return this->out_block_ptr;
 }
 
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT, unsigned SUBBLOCKS>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT, SUBBLOCKS>
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::Shutdown() {
   if(this->isr_used) {
     interrupt_mask_all(); // With the way the credit scheme is,

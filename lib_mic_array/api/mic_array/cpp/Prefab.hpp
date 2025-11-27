@@ -8,6 +8,7 @@
 #include "MicArray.hpp"
 #include "mic_array/etc/filters_default.h"
 
+#if 0
 // This has caused problems previously, so just catch the problems here.
 #if defined(MIC_COUNT) || defined(MICS_IN) || defined(FRAME_SIZE) || defined(USE_DCOE)
 # error Application must not define the following as precompiler macros: MIC_COUNT, MICS_IN, FRAME_SIZE, USE_DCOE.
@@ -518,3 +519,4 @@ void mic_array::prefab::BasicMicArray<MIC_COUNT, FRAME_SIZE, USE_DCOE, MICS_IN>
 {
   this->PdmRx.UnmaskISR();
 }
+#endif

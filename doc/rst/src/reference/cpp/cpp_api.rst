@@ -16,30 +16,8 @@ MicArray
 
 
 
-
-BasicMicArray (DEPRECATED)
---------------------------
-
-.. doxygenclass:: mic_array::prefab::BasicMicArray
-  :members:
-
-.. raw:: latex
-
-  \newpage
-
-
-
-
-
-PdmRxService
-------------
-
-
-.. doxygenclass:: mic_array::PdmRxService
-  :members:
-
 StandardPdmRxService
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 .. doxygenstruct:: pdm_rx_isr_context_t
   :members:

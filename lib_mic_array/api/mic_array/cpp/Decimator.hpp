@@ -11,8 +11,8 @@
 #include "mic_array/etc/fir_1x16_bit.h"
 
 // This has caused problems previously, so just catch the problems here.
-#if defined(MIC_COUNT) || defined(S2_DEC_FACTOR) || defined(S2_TAP_COUNT)
-# error Application must not define the following as precompiler macros: MIC_COUNT, S2_DEC_FACTOR, S2_TAP_COUNT.
+#if defined (MIC_COUNT)
+# error Application must not define the following as precompiler macros: MIC_COUNT, S2_DEC_FACTOR.
 #endif
 
 
@@ -39,38 +39,10 @@ void shift_buffer(uint32_t* buff);
  * `TDecimator` template parameter in the @ref MicArray class template.
  *
  * @tparam MIC_COUNT      Number of microphone channels.
- * @tparam S2_DEC_FACTOR  Stage 2 decimation factor.
- * @tparam S2_TAP_COUNT   Stage 2 tap count.
  */
-template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
+template <unsigned MIC_COUNT>
 class TwoStageDecimator
 {
-
-  public:
-    /**
-     * Size of a block of PDM data in words.
-     */
-    static constexpr unsigned BLOCK_SIZE = MIC_COUNT * S2_DEC_FACTOR;
-
-    /**
-     * Number of microphone channels.
-     */
-    static constexpr unsigned MicCount = MIC_COUNT;
-
-    /**
-     * Stage 2 decimator parameters
-     */
-    static const struct {
-      /**
-       * Stage 2 decimator decimation factor.
-       */
-      unsigned DecimationFactor = S2_DEC_FACTOR;
-      /**
-       * Stage 2 decimator tap count.
-       */
-      unsigned TapCount = S2_TAP_COUNT;
-    } Stage2;
-
   private:
 
     /**
@@ -81,24 +53,9 @@ class TwoStageDecimator
        * Pointer to filter coefficients for Stage 1
        */
       const uint32_t* filter_coef;
-      /**
-       * Filter state (PDM history) for stage 1 filters.
-       */
-      uint32_t pdm_history[MIC_COUNT][8]
-#ifndef __DOXYGEN__ // doxygen breaks if it encounters this.
-      // Must be initialized in this way. Initializing the history values in the
-      // constructor causes an XCore-specific problem. Specifically, if the
-      // MicArray instance where this decimator is used is declared outside of a
-      // function scope (that is, as a global- or module-scope object; which it
-      // ordinarily will be), initializing the PDM history within the
-      // constructor forces the compiler to allocate the object on _all tiles_.
-      // Being allocated on a tile where it is not used does not by itself break
-      // anything, but it does result in less memory being available for other
-      // things on that tile. Initializing the history in this way prevents
-      // that.
-        = {[0 ... (MIC_COUNT-1)] = { [0 ... 7] = 0x55555555 } }
-#endif
-      ;
+
+      uint32_t *pdm_history_ptr;
+      unsigned pdm_history_sz;
     } stage1;
 
     /**
@@ -112,8 +69,10 @@ class TwoStageDecimator
       /**
        * Stage 2 filter stage.
        */
-      int32_t filter_state[MIC_COUNT][S2_TAP_COUNT] = {{0}};
+      unsigned decimation_factor;
     } stage2;
+
+    unsigned mic_count;
 
   public:
 
@@ -163,10 +122,12 @@ class TwoStageDecimator
               See :c:var:`stage2_shr`.\endverbatim
      *        @endparblock
      */
-    void Init(
+    /*void Init(
         const uint32_t* s1_filter_coef,
         const int32_t* s2_filter_coef,
-        const right_shift_t s2_filter_shr);
+        const right_shift_t s2_filter_shr);*/
+
+    void Init_new(mic_array_decimator_conf_t &decimator_conf);
 
     /**
      * @brief Process one block of PDM data.
@@ -196,7 +157,7 @@ class TwoStageDecimator
      */
     void ProcessBlock(
         int32_t sample_out[MIC_COUNT],
-        uint32_t pdm_block[BLOCK_SIZE]);
+        uint32_t *pdm_block);
   };
 }
 
@@ -204,40 +165,40 @@ class TwoStageDecimator
 // Template function implementations below. //
 //////////////////////////////////////////////
 
-
-template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::Init(
-    const uint32_t* s1_filter_coef,
-    const int32_t* s2_filter_coef,
-    const right_shift_t s2_shr)
+template <unsigned MIC_COUNT>
+void mic_array::TwoStageDecimator<MIC_COUNT>::Init_new(
+    mic_array_decimator_conf_t &decimator_conf)
 {
-  this->stage1.filter_coef = s1_filter_coef;
+  this->mic_count = decimator_conf.mic_count;
+  this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
+  this->stage1.pdm_history_ptr = (uint32_t*)decimator_conf.filter_conf[0].state;
+  this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_size;
 
-  for(int k = 0; k < MIC_COUNT; k++){
-    filter_fir_s32_init(&this->stage2.filters[k], &this->stage2.filter_state[k][0],
-                        S2_TAP_COUNT, s2_filter_coef, s2_shr);
+  memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * this->mic_count * this->stage1.pdm_history_sz);
+
+  for(int k = 0; k < this->mic_count; k++){
+    filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_size),
+                        decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
   }
+  this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;
 }
 
 
-
-template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
+template <unsigned MIC_COUNT>
+void mic_array::TwoStageDecimator<MIC_COUNT>
     ::ProcessBlock(
         int32_t sample_out[MIC_COUNT],
-        uint32_t pdm_block[BLOCK_SIZE])
+        uint32_t *pdm_block)
 {
-  uint32_t (*pdm_data)[S2_DEC_FACTOR] = (uint32_t (*)[S2_DEC_FACTOR]) pdm_block;
+  for(unsigned mic = 0; mic < this->mic_count; mic++){
+    uint32_t* hist = this->stage1.pdm_history_ptr + (mic * this->stage1.pdm_history_sz);
 
-  for(unsigned mic = 0; mic < MIC_COUNT; mic++){
-    uint32_t* hist = &this->stage1.pdm_history[mic][0];
-
-    for(unsigned k = 0; k < S2_DEC_FACTOR; k++){
-      hist[0] = pdm_data[mic][k];
+    for(unsigned k = 0; k < this->stage2.decimation_factor; k++){
+      hist[0] = *(pdm_block + (mic*this->stage2.decimation_factor + k));
       int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
       shift_buffer(hist);
 
-      if(k < (S2_DEC_FACTOR-1)){
+      if(k < (this->stage2.decimation_factor-1)){
         filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
       } else {
         sample_out[mic] = filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
