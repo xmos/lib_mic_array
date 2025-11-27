@@ -11,7 +11,7 @@ The template parameters of these class templates are (mainly) used for two
 different purposes. Non-type template parameters are used to specify certain
 quantitative configuration values, such as the number of microphone channels or
 the second stage decimator tap count. Type template parameters, on the other
-hand, are used for configuring the behavior of sub-components.
+hand, are used for configuring the behaviour of sub-components.
 
 High level view
 ===============
@@ -159,7 +159,7 @@ parameter must follow a contract with the class template where it implements
 one or more methods with specific names and signatures that the class template
 directly calls.
 
-There are a couple notable advantages of using CRTP over polymorphic behavior.
+There are a couple notable advantages of using CRTP over polymorphic behaviour.
 With CRTP flexibility does not generally come with the same run-time costs (in
 terms of both compute and memory) as polymorphic solutions. This is because the
 CRTP class template always knows the concrete type of any objects it uses at
@@ -220,7 +220,7 @@ of running PDM RX as either an interrupt or as a stand-alone thread.
 which specifies the size of a PDM sample block (in 32-bit words). The second,
 ``SubType``, is the type of the sub-class being derived from ``PdmRxService``.
 This is the CRTP (Curiously Recurring Template Pattern), which allows a base
-class to use polymorphic-like behaviors while ensuring that all types are known
+class to use polymorphic-like behaviours while ensuring that all types are known
 at compile-time, avoiding the drawbacks of using virtual functions.
 
 There is currently one class template which derives from ``PdmRxService``,
@@ -311,7 +311,7 @@ interrupt or as a stand-alone thread, and where audio frames are transmitted to
 subsequent processing stages using a channel.
 
 To demonstrate how ``BasicMicArray`` simplifies this process, observe that the
-following ``MicArray`` type is behaviorally identical to the above:
+following ``MicArray`` type is behaviourally identical to the above:
 
 .. code-block:: c++
 

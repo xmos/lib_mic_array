@@ -83,7 +83,7 @@ Ports
 
 Three ports are needed for the mic array component. As mentioned above, ports
 are physically tied to specific device pins, and so the correct ports must be
-identified for correct behavior.
+identified for correct behaviour.
 
 Note that while ports are physically tied to specific pins, this is *not* a
 1-to-1 mapping. Each port has a port width (measured in bits) which is the
@@ -152,7 +152,7 @@ all)
   requirement will depend on the configuration used.
 * Memory - The mic array requires a modest amount of memory for code and data.
   (see :ref:`resource_usage`).
-* Chanends - At least 4 chanends must be available for signaling between
+* Chanends - At least 4 chanends must be available for signalling between
   threads/sub-components.
 
 .. _mic_array_declare_resources:
@@ -304,7 +304,7 @@ following constraints:
 
   Only **16 kHz**, **32 kHz**, and **48 kHz** are supported.
   This is because the default decimation factors provided as part of the
-  library (see :ref:`default_filters`) are predesigned for a small set of decimation
+  library (see :ref:`default_filters`) are designed for a small set of decimation
   factors and they assume a fixed input PDM frequency of **3.072 MHz**
 
 - Only one mic array instance:

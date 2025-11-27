@@ -14,6 +14,7 @@ DETAIL_LINE_RE = re.compile(r'^\s*\(Stack:\s+(\d+),\s+Code:\s+(\d+),\s+Data:\s+(
 
 def parse_mem_report(stdout: str):
     current_tile = None
+    cfg = None
     tile_of_interest = 1
     lines = stdout.splitlines()
     configs = {}
@@ -24,6 +25,7 @@ def parse_mem_report(stdout: str):
             cfg = exe.parent.name
             assert exe not in configs, f"{cfg} already present in configs. {configs}"
             configs[cfg] = {}
+            current_tile = None
             continue
         m_tile = TILE_HEADER_RE.match(line)
         if m_tile:
@@ -31,13 +33,13 @@ def parse_mem_report(stdout: str):
             continue
         if current_tile == tile_of_interest:
             m_mem = MEM_LINE_RE.match(line)
-            if m_mem:
+            if m_mem and cfg:
                 configs[cfg]["available"] = int(m_mem.group(1))
                 configs[cfg]["used"] = int(m_mem.group(2))
                 configs[cfg]["status"] = m_mem.group(3)
                 continue
             m_det = DETAIL_LINE_RE.match(line)
-            if m_det:
+            if m_det and cfg:
                 configs[cfg]["stack"] = int(m_det.group(1))
                 configs[cfg]["code"] = int(m_det.group(2))
                 configs[cfg]["data"] = int(m_det.group(3))
@@ -123,7 +125,7 @@ def test_measure_memory(pytestconfig):
 
     if update:
         with json_out.open("w") as f:
-                json.dump(configs, f, indent=2)
+            json.dump(configs, f, indent=2)
 
         rst_out = pkg_dir / "mic_array_memory_table.rst"
         write_rst_table(configs, rst_out)

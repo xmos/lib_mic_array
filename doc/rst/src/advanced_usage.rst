@@ -14,7 +14,7 @@ The advanced use method requires familiarity with the mic array
 
 A custom integration involves creating a custom :cpp:class:`MicArray <mic_array::MicArray>`
 object.
-This allows overriding default behavior such as decimation, PDM reception etc.
+This allows overriding default behaviour such as decimation, PDM reception etc.
 
 Before creating a custom object, the required hardware resources must be identified.
 This process is the same as described in :ref:`mic_array_identify_resources`.
@@ -45,7 +45,7 @@ hardware resources.
 Construct MicArray object
 -------------------------
 
-Next, instantiate a :cpp:class:MicArray <mic_array::MicArray> object.
+Next, instantiate a :cpp:class:`MicArray <mic_array::MicArray>` object.
 The example below creates the object with the standard component classes that are provided
 by the library.
 One or more of these can be overridden by a custom class, provided it implements the
@@ -88,7 +88,7 @@ Define app-callable functions
 -------------------------------
 
 Define the functions that the application will call to initialise and
-run the mic array - ````app_mic_array_init()`` and ````app_mic_array_start()``:
+run the mic array - ``app_mic_array_init()`` and ``app_mic_array_start()``:
 
 .. code-block:: c++
 

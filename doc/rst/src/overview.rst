@@ -23,7 +23,7 @@ Capabilities
   * First stage has fixed tap count of 256 and decimation factor of 32
   * Second stage has fully configurable tap count and decimation factor
   * Custom filter coefficients can be used for either stage
-  * Predesigned reference filters with total decimation factor of 192, 96 and 64 are provided
+  * Pre-designed reference filters with total decimation factor of 192, 96 and 64 are provided
     (16 kHz, 32 kHz and 48 kHz output sample rates with 3.072 MHz input PDM clock).
   * Filter generation scripts and examples are included to support custom filter design.
 
@@ -47,7 +47,7 @@ High level process view
 
 This section gives a brief overview of the steps to process a PDM audio stream
 into a PCM audio stream. This section is concerned with the steady state
-behavior and does not describe any necessary initialization steps. The high level
+behaviour and does not describe any necessary initialization steps. The high level
 process view is depicted in the figure :ref:`image_high_level_process`.
 
 .. _image_high_level_process:
@@ -148,7 +148,7 @@ The first is a simple IIR filter, called DC Offset Elimination, which seeks to
 ensure each output channel tends to approach zero mean. DC Offset Elimination
 can be disabled if not desired. See :ref:`sample_filters` for further details.
 
-The second post-processing step is framing, where instead of signaling each
+The second post-processing step is framing, where instead of signalling each
 sample of audio to subsequent processing stages one at a time, samples can be
 aggregated and transferred to subsequent processing stages as non-overlapping
 blocks. The size of each frame is configurable (down to ``1`` sample per frame,
@@ -157,8 +157,8 @@ where framing is functionally disabled).
 Finally, the sample or frame is transmitted over a XCORE channel from the mic array
 module to the next stage of the processing pipeline.
 
-Extending/Modifying mic array behavior
---------------------------------------
+Extending/Modifying mic array behaviour
+---------------------------------------
 
 Most applications are expected to use the :ref:`default <mic_array_default_model>` usage model,
 which provides a complete, ready-to-integrate mic-array pipeline and should be sufficient
@@ -167,12 +167,12 @@ Only applications with specialised requirements such as non-standard data-transf
 custom decimation behaviour etc. are likely to require customisation beyond the default model.
 
 At the core of ``lib_mic_array`` are several C++ class templates which are
-loosely coupled and intended to be easily overridden for modified behavior. The
+loosely coupled and intended to be easily overridden for modified behaviour. The
 mic array unit itself is an object made by the composition of several smaller
 components which perform well-defined roles (See :ref:`software_structure`).
 
 For example, modifying the mic array unit to use some mechanism other than a
 channel to move the audio frames out of the mic array is a matter of defining a
-small new class encapsulating just the modified transfer behavior, and then
+small new class encapsulating just the modified transfer behaviour, and then
 instantiating the mic array class template with the new class as the appropriate
 template parameter.

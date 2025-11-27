@@ -62,7 +62,7 @@ Chanends
 Chanends are a hardware resource which allow threads (possibly running on
 different tiles) to communicate over channels. The mic array unit requires 4
 chanends. Two are used for communication between the PDM rx service and the
-decimation thread. Two more are needed for transfering completed frames from the
+decimation thread. Two more are needed for transferring completed frames from the
 mic array unit to other application components.
 
 Threads
@@ -95,7 +95,7 @@ configuration being used. The compute requirement is expressed in millions of
 instructions per second (MIPS) and is approximately linearly related to many
 of the configuration parameters.
 
-Each tile of an xcore.ai device has 8 hardware threads and a 5 stage pipline.
+Each tile of an xcore.ai device has 8 hardware threads and a 5 stage pipeline.
 The exact calculation of how many MIPS are available to a thread is complicated,
 and is, in general, affected by both the number of threads being used, as well
 as the work being done by each thread.
@@ -132,7 +132,7 @@ Memory
 The memory cost of the mic array unit has three parts: code, stack and data.
 Code is the memory needed to store compiled instructions in RAM. Stack is the
 memory required to store intermediate results during function calls, and data is
-the memory used to store persistant objects, variables and constants.
+the memory used to store persistent objects, variables and constants.
 
 Table :ref:`mic_array_memory_usage` reports the memory usage of two minimal applications that include the mic array:
 one using the :ref:`default <mic_array_default_model>` mic array API and another using a :ref:`custom <mic_array_adv_use_methods>`

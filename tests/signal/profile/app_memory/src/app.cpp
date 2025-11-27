@@ -26,8 +26,7 @@
 ////// Additional macros derived from others
 #define MCLK_FREQ (24576000)
 #define PDM_FREQ (3072000)
-#define MCLK_DIVIDER          ((MCLK_FREQ)       \
-                                /(PDM_FREQ))
+#define MCLK_DIVIDER          ((MCLK_FREQ) /(PDM_FREQ))
 
 
 ////// Allocate needed objects

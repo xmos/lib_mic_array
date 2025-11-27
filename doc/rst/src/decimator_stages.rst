@@ -41,10 +41,10 @@ These filters are available to include in the application, through the header ``
 .. note::
 
    Although the first stage has a fixed decimation factor of 32, its
-   coefficients must differ for 16 kHz, 32 kHz, and 48 kHz output paths.
+   coefficients must differ for 16 kHz, 32 kHz, and 48 kHz output sampling rate paths.
    The passband must be extended appropriately so sufficient
-   bandwidth is preserved before the second stage decimates by 6 (→16 kHz),
-   3 (→32 kHz), or 2 (→48 kHz).
+   bandwidth is preserved before the second stage decimates by 6 (output sampling rate 16 kHz),
+   3 (output sampling rate 32 kHz), or 2 (output sampling rate 48 kHz).
 
 The increased sample rate will place a higher MIPS burden on the processor. The typical
 MIPS usage (see section :ref:`resource_usage`) is in the order of 11 MIPS per channel
@@ -57,14 +57,14 @@ Increasing the filer lengths to 148 and 96 for stages 1 and 2 respectively at 48
 will increase processor usage per channel to around 20 MIPS.
 
 
-``lib_mic_array`` stage 1 filters
----------------------------------
+Stage 1 filters
+---------------
 
 .. list-table:: Provided first stage decimation filters
    :header-rows: 1
    :widths: 12 12 20 28
 
-   * - Output Rate
+   * - Output PCM sampling rate
      - Decimation factor
      - Tap count
      - Coeffs
@@ -81,14 +81,14 @@ will increase processor usage per channel to around 20 MIPS.
      - 256
      - ``stage1_48k_coefs``
 
-``lib_mic_array`` stage 2 filters
----------------------------------
+Stage 2 filters
+---------------
 
 .. list-table:: Provided second stage decimation filters
    :header-rows: 1
    :widths: 12 12 20 28 16
 
-   * - Output Rate
+   * - Output PCM sampling Rate
      - Decimation factor
      - Tap count
      - Coeffs
@@ -115,11 +115,11 @@ Filter characteristics
 This sections provides filters characteristics of the filters provided as part of
 ``lib_mic_array``.
 
-``lib_mic_array`` 16 kHz filter
--------------------------------
+16 kHz output PCM sampling rate filter
+--------------------------------------
 
 :ref:`freq_response_16k` shows the frequency response of the first and second stages of the provided
-16 kHz filters as well as the cascaded overall response.
+16 kHz sampling rate filters as well as the cascaded overall response.
 
 .. _freq_response_16k:
 
@@ -127,14 +127,14 @@ This sections provides filters characteristics of the filters provided as part o
    :align: center
    :scale: 100 %
 
-   16 kHz filter freq response
+   16 kHz output sampling rate filter freq response
 
 
-``lib_mic_array`` 32 kHz filter
--------------------------------
+32 kHz output PCM sampling rate filter
+--------------------------------------
 
 :ref:`freq_response_32k` shows the frequency response of the first and second stages of the
-provided 32 kHz filters as well as the cascaded overall response. Note that the
+provided 32 kHz sampling rate filters as well as the cascaded overall response. Note that the
 overall combined response provides a nice flat passband.
 
 .. _freq_response_32k:
@@ -143,14 +143,14 @@ overall combined response provides a nice flat passband.
    :align: center
    :scale: 100 %
 
-   32 kHz filter freq response
+   32 kHz output sampling rate filter freq response
 
 
-``lib_mic_array`` 48 kHz filter
--------------------------------
+48 kHz output PCM sampling rate filter
+--------------------------------------
 
 :ref:`freq_response_48k` shows the frequency response of the first and second stages of the
-provided 48 kHz filters as well as the cascaded overall response. Note that the
+provided 48 kHz sampling rate filters as well as the cascaded overall response. Note that the
 overall combined response provides a nice flat passband.
 
 .. _freq_response_48k:
@@ -159,7 +159,7 @@ overall combined response provides a nice flat passband.
    :align: center
    :scale: 100 %
 
-   48 kHz filter freq response
+   48 kHz output sampling rate filter freq response
 
 The following sections provide more details about the first and second stage decimation filters.
 
