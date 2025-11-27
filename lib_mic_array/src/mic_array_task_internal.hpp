@@ -60,6 +60,12 @@ union UAnyMicArray {
     TMicArray_stg2df_2 m2;
 };
 
+union UStg2_filter_state {
+  int32_t filter_state_df_6[MIC_ARRAY_CONFIG_MIC_COUNT][STAGE2_TAP_COUNT];
+  int32_t filter_state_df_3[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_32K_STAGE_2_TAP_COUNT];
+  int32_t filter_state_df_2[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_48K_STAGE_2_TAP_COUNT];
+};
+
 enum MicArrayKind { NONE, DF_6, DF_3, DF_2 };
 extern MicArrayKind g_kind;
 
@@ -67,6 +73,7 @@ extern TMicArray_stg2df_6* g_mics_df_6;
 extern TMicArray_stg2df_3* g_mics_df_3;
 extern TMicArray_stg2df_2* g_mics_df_2;
 
+UStg2_filter_state stg2_filter_state_mem;
 
 inline const uint32_t* stage_1_filter(unsigned stg2_dec_factor) {
   // stg2 decimation factor also seems to affect the stage1 filter used
@@ -75,13 +82,39 @@ inline const uint32_t* stage_1_filter(unsigned stg2_dec_factor) {
 inline const int32_t* stage_2_filter(unsigned stg2_dec_factor) {
     return (stg2_dec_factor == 2) ? &stage2_48k_coefs[0] : ((stg2_dec_factor == 3) ? &stage2_32k_coefs[0] : &stage2_coef[0]);
 }
-inline const right_shift_t* stage_2_shift(unsigned stg2_dec_factor) {
-    return (stg2_dec_factor == 2) ? &stage2_48k_shift : ((stg2_dec_factor == 3) ? &stage2_32k_shift : &stage2_shr);
+inline const right_shift_t stage_2_shift(unsigned stg2_dec_factor) {
+    return (stg2_dec_factor == 2) ? stage2_48k_shift : ((stg2_dec_factor == 3) ? stage2_32k_shift : stage2_shr);
+}
+inline unsigned stage_2_num_taps(unsigned stg2_dec_factor) {
+    return (stg2_dec_factor == 2) ? MIC_ARRAY_48K_STAGE_2_TAP_COUNT : ((stg2_dec_factor == 3) ? MIC_ARRAY_32K_STAGE_2_TAP_COUNT : STAGE2_TAP_COUNT);
+}
+inline int32_t* stage_2_state_memory(unsigned stg2_dec_factor) {
+   return (stg2_dec_factor == 2) ? (int32_t*)stg2_filter_state_mem.filter_state_df_6 \
+            : ((stg2_dec_factor == 3) ? (int32_t*)stg2_filter_state_mem.filter_state_df_3 \
+            : (int32_t*)stg2_filter_state_mem.filter_state_df_2);
 }
 
 template <typename TMicArrayType>
 inline void init_mics(TMicArrayType* m, pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor) {
-  m->Decimator.Init(stage_1_filter(stg2_dec_factor), stage_2_filter(stg2_dec_factor), *stage_2_shift(stg2_dec_factor));
+  static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
+  mic_array_decimator_conf_t decimator_conf;
+  memset(&decimator_conf, 0, sizeof(decimator_conf));
+  decimator_conf.mic_count = MIC_ARRAY_CONFIG_MIC_COUNT;
+  decimator_conf.filter_conf[0].coef = (int32_t*)stage_1_filter(stg2_dec_factor);
+  decimator_conf.filter_conf[0].num_taps = 256;
+  decimator_conf.filter_conf[0].decimation_factor = 32;
+  decimator_conf.filter_conf[0].state = (int32_t*)stg1_filter_state;
+  decimator_conf.filter_conf[0].state_size = 8;
+
+  decimator_conf.filter_conf[1].coef = (int32_t*)stage_2_filter(stg2_dec_factor);
+  decimator_conf.filter_conf[1].decimation_factor = stg2_dec_factor;
+  decimator_conf.filter_conf[1].num_taps = stage_2_num_taps(stg2_dec_factor);
+  decimator_conf.filter_conf[1].shr = stage_2_shift(stg2_dec_factor);
+  decimator_conf.filter_conf[1].state_size = decimator_conf.filter_conf[1].num_taps;
+  decimator_conf.filter_conf[1].state = stage_2_state_memory(stg2_dec_factor);
+
+  m->Decimator.Init_new(decimator_conf);
+
   m->PdmRx.Init(pdm_res->p_pdm_mics);
   if(channel_map) {
       m->PdmRx.MapChannels(channel_map);
