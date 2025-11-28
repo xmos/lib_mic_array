@@ -9,8 +9,7 @@
 using TMicArray_stg2df_6 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
                           mic_array::TwoStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
                           mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
-                                                          MIC_ARRAY_CONFIG_MIC_COUNT,
-                                                          6>,
+                                                          MIC_ARRAY_CONFIG_MIC_COUNT>,
                           // std::conditional uses USE_DCOE to determine which
                           // sample filter is used.
                           typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
@@ -23,8 +22,7 @@ using TMicArray_stg2df_6 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
 using TMicArray_stg2df_3 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
                           mic_array::TwoStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
                           mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
-                                                          MIC_ARRAY_CONFIG_MIC_COUNT,
-                                                          3>,
+                                                          MIC_ARRAY_CONFIG_MIC_COUNT>,
                           // std::conditional uses USE_DCOE to determine which
                           // sample filter is used.
                           typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
@@ -37,8 +35,7 @@ using TMicArray_stg2df_3 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
 using TMicArray_stg2df_2 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
                           mic_array::TwoStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
                           mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
-                                                          MIC_ARRAY_CONFIG_MIC_COUNT,
-                                                          2>,
+                                                          MIC_ARRAY_CONFIG_MIC_COUNT>,
                           // std::conditional uses USE_DCOE to determine which
                           // sample filter is used.
                           typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
@@ -61,9 +58,15 @@ union UStg2_filter_state {
 };
 
 union UPdmRx_out_block {
-  uint32_t __attribute__((aligned (8))) out_block_df_6[MIC_ARRAY_CONFIG_MIC_COUNT][6];
-  uint32_t __attribute__((aligned (8))) out_block_df_3[MIC_ARRAY_CONFIG_MIC_COUNT][3];
-  uint32_t __attribute__((aligned (8))) out_block_df_2[MIC_ARRAY_CONFIG_MIC_COUNT][2];
+  uint32_t out_block_df_6[MIC_ARRAY_CONFIG_MIC_COUNT][6];
+  uint32_t out_block_df_3[MIC_ARRAY_CONFIG_MIC_COUNT][3];
+  uint32_t out_block_df_2[MIC_ARRAY_CONFIG_MIC_COUNT][2];
+};
+
+union UPdmRx_out_block_double_buf {
+  uint32_t __attribute__((aligned (8))) out_block_double_buf_df_6[2][MIC_ARRAY_CONFIG_MIC_IN_COUNT * 6];
+  uint32_t __attribute__((aligned (8))) out_block_double_buf_df_3[2][MIC_ARRAY_CONFIG_MIC_IN_COUNT * 3];
+  uint32_t __attribute__((aligned (8))) out_block_double_buf_df_2[2][MIC_ARRAY_CONFIG_MIC_IN_COUNT * 2];
 };
 
 enum MicArrayKind { NONE, DF_6, DF_3, DF_2 };
@@ -74,7 +77,8 @@ extern TMicArray_stg2df_3* g_mics_df_3;
 extern TMicArray_stg2df_2* g_mics_df_2;
 
 UStg2_filter_state stg2_filter_state_mem;
-UPdmRx_out_block __attribute__((aligned (8))) pdm_rx_out_block;
+UPdmRx_out_block pdm_rx_out_block;
+UPdmRx_out_block_double_buf __attribute__((aligned (8))) pdm_rx_out_block_double_buf;
 
 inline const uint32_t* stage_1_filter(unsigned stg2_dec_factor) {
   // stg2 decimation factor also seems to affect the stage1 filter used
@@ -101,6 +105,11 @@ inline uint32_t* get_pdm_rx_out_block(unsigned stg2_dec_factor) {
             : (uint32_t*)pdm_rx_out_block.out_block_df_6);
 }
 
+inline uint32_t* get_pdm_rx_out_block_double_buf(unsigned stg2_dec_factor) {
+   return (stg2_dec_factor == 2) ? (uint32_t*)pdm_rx_out_block_double_buf.out_block_double_buf_df_6 \
+            : ((stg2_dec_factor == 3) ? (uint32_t*)pdm_rx_out_block_double_buf.out_block_double_buf_df_3 \
+            : (uint32_t*)pdm_rx_out_block_double_buf.out_block_double_buf_df_2);
+}
 
 template <typename TMicArrayType>
 inline void init_mics(TMicArrayType* m, pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor) {
@@ -128,9 +137,9 @@ inline void init_mics(TMicArrayType* m, pdm_rx_resources_t* pdm_res, const unsig
   pdm_rx_config.num_mics_in = MIC_ARRAY_CONFIG_MIC_IN_COUNT;
   pdm_rx_config.out_block_size = stg2_dec_factor;
   pdm_rx_config.out_block = get_pdm_rx_out_block(stg2_dec_factor);
+  pdm_rx_config.out_block_double_buf = get_pdm_rx_out_block_double_buf(stg2_dec_factor);
 
-  //m->PdmRx.Init_new(pdm_res->p_pdm_mics, pdm_rx_config);
-  m->PdmRx.Init(pdm_res->p_pdm_mics);
+  m->PdmRx.Init_new(pdm_res->p_pdm_mics, pdm_rx_config);
 
   if(channel_map) {
       m->PdmRx.MapChannels(channel_map);

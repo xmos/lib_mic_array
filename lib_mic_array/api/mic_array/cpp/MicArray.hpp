@@ -218,14 +218,14 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                    TSampleFilter,
                                    TOutputHandler>::ThreadEntry()
 {
-  int32_t sample_out[MIC_COUNT] = {0};
+  int64_t sample_out[(MIC_COUNT+1)/2] = {0};
   volatile bool shutdown = false;
 
   while(!shutdown){
     uint32_t *pdm_samples = PdmRx.GetPdmBlock();
-    Decimator.ProcessBlock(sample_out, pdm_samples);
-    SampleFilter.Filter(sample_out);
-    shutdown = OutputHandler.OutputSample(sample_out);
+    Decimator.ProcessBlock((int32_t*)sample_out, pdm_samples);
+    SampleFilter.Filter((int32_t*)sample_out);
+    shutdown = OutputHandler.OutputSample((int32_t*)sample_out);
   }
   PdmRx.Shutdown();
   OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
