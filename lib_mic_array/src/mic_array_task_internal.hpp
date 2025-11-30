@@ -6,50 +6,19 @@
 #include "mic_array.h"
 #include "mic_array/etc/filters_default.h"
 
-using TMicArray_stg2df_6 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
-                          mic_array::TwoStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                          mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
-                                                          MIC_ARRAY_CONFIG_MIC_COUNT>,
-                          // std::conditional uses USE_DCOE to determine which
-                          // sample filter is used.
-                          typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
-                                              mic_array::DcoeSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                                              mic_array::NopSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>>::type,
-                          mic_array::FrameOutputHandler<MIC_ARRAY_CONFIG_MIC_COUNT,
-                                                        MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
-                                                        mic_array::ChannelFrameTransmitter>>;
+using TMicArray =  mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
+                        mic_array::TwoStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
+                        mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
+                                                        MIC_ARRAY_CONFIG_MIC_COUNT>,
+                        // std::conditional uses USE_DCOE to determine which
+                        // sample filter is used.
+                        typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
+                                            mic_array::DcoeSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>,
+                                            mic_array::NopSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>>::type,
+                        mic_array::FrameOutputHandler<MIC_ARRAY_CONFIG_MIC_COUNT,
+                                                      MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
+                                                      mic_array::ChannelFrameTransmitter>>;
 
-using TMicArray_stg2df_3 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
-                          mic_array::TwoStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                          mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
-                                                          MIC_ARRAY_CONFIG_MIC_COUNT>,
-                          // std::conditional uses USE_DCOE to determine which
-                          // sample filter is used.
-                          typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
-                                              mic_array::DcoeSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                                              mic_array::NopSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>>::type,
-                          mic_array::FrameOutputHandler<MIC_ARRAY_CONFIG_MIC_COUNT,
-                                                        MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
-                                                        mic_array::ChannelFrameTransmitter>>;
-
-using TMicArray_stg2df_2 = mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
-                          mic_array::TwoStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                          mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
-                                                          MIC_ARRAY_CONFIG_MIC_COUNT>,
-                          // std::conditional uses USE_DCOE to determine which
-                          // sample filter is used.
-                          typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
-                                              mic_array::DcoeSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                                              mic_array::NopSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>>::type,
-                          mic_array::FrameOutputHandler<MIC_ARRAY_CONFIG_MIC_COUNT,
-                                                        MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
-                                                        mic_array::ChannelFrameTransmitter>>;
-
-union UAnyMicArray {
-    TMicArray_stg2df_6 m6;
-    TMicArray_stg2df_3 m3;
-    TMicArray_stg2df_2 m2;
-};
 
 union UStg2_filter_state {
   int32_t filter_state_df_6[MIC_ARRAY_CONFIG_MIC_COUNT][STAGE2_TAP_COUNT];
@@ -69,12 +38,8 @@ union UPdmRx_out_block_double_buf {
   uint32_t __attribute__((aligned (8))) out_block_double_buf_df_2[2][MIC_ARRAY_CONFIG_MIC_IN_COUNT * 2];
 };
 
-enum MicArrayKind { NONE, DF_6, DF_3, DF_2 };
-extern MicArrayKind g_kind;
 
-extern TMicArray_stg2df_6* g_mics_df_6;
-extern TMicArray_stg2df_3* g_mics_df_3;
-extern TMicArray_stg2df_2* g_mics_df_2;
+extern TMicArray* g_mics;
 
 UStg2_filter_state stg2_filter_state_mem;
 UPdmRx_out_block pdm_rx_out_block;
@@ -152,8 +117,8 @@ inline void init_mics(TMicArrayType* m, pdm_rx_resources_t* pdm_res, const unsig
 #define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
 #define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
 
-template <typename TMicArrayType>
-inline void start_mics_with_pdm_isr(TMicArrayType* m, chanend_t c_frame_output) {
+
+inline void start_mics_with_pdm_isr(TMicArray* m, chanend_t c_frame_output) {
   //clear KEDI since pdm_rx_isr assumes single issue and the module is compiled with dual issue.
   CLEAR_KEDI()
 
@@ -165,17 +130,14 @@ inline void start_mics_with_pdm_isr(TMicArrayType* m, chanend_t c_frame_output) 
   m->ThreadEntry();
 }
 
-template<typename TMicArrayType>
-inline void create_mics_helper(uint32_t* storage, TMicArrayType*& ptr, pdm_rx_resources_t* res, const unsigned* map, unsigned stg2_dec_factor, int kind_value) {
-    new (storage) TMicArrayType;
-    ptr = reinterpret_cast<TMicArrayType*>(storage);
-    g_kind = static_cast<decltype(g_kind)>(kind_value);
+inline void create_mics_helper(uint32_t* storage, TMicArray*& ptr, pdm_rx_resources_t* res, const unsigned* map, unsigned stg2_dec_factor) {
+    new (storage) TMicArray;
+    ptr = reinterpret_cast<TMicArray*>(storage);
     init_mics(ptr, res, map, stg2_dec_factor);
 }
 
-template<typename TMicArrayType>
-inline void shutdown_mics_helper(TMicArrayType*& ptr)
+inline void shutdown_mics_helper(TMicArray*& ptr)
 {
-  ptr->~TMicArrayType();
+  ptr->~TMicArray();
   ptr = nullptr;
 }
