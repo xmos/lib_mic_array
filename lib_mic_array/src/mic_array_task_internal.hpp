@@ -59,9 +59,9 @@ inline unsigned stage_2_num_taps(unsigned stg2_dec_factor) {
     return (stg2_dec_factor == 2) ? MIC_ARRAY_48K_STAGE_2_TAP_COUNT : ((stg2_dec_factor == 3) ? MIC_ARRAY_32K_STAGE_2_TAP_COUNT : STAGE2_TAP_COUNT);
 }
 inline int32_t* stage_2_state_memory(unsigned stg2_dec_factor) {
-   return (stg2_dec_factor == 2) ? (int32_t*)stg2_filter_state_mem.filter_state_df_6 \
+   return (stg2_dec_factor == 2) ? (int32_t*)stg2_filter_state_mem.filter_state_df_2 \
             : ((stg2_dec_factor == 3) ? (int32_t*)stg2_filter_state_mem.filter_state_df_3 \
-            : (int32_t*)stg2_filter_state_mem.filter_state_df_2);
+            : (int32_t*)stg2_filter_state_mem.filter_state_df_6);
 }
 
 inline uint32_t* get_pdm_rx_out_block(unsigned stg2_dec_factor) {

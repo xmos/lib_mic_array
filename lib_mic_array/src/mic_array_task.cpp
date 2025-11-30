@@ -17,13 +17,13 @@ TMicArray *g_mics = nullptr;
 #ifdef __XS2A__ /* to get test_xs2_benign to compile */
 #else
 // Parallel jobs for when XUA_PDM_MIC_USE_PDM_ISR == 0, run separate decimator and pdm rx tasks
-DECLARE_JOB(ma_task_start_pdm, (TMicArray&));
-void ma_task_start_pdm(TMicArray& mics){
+DECLARE_JOB(default_ma_task_start_pdm, (TMicArray&));
+void default_ma_task_start_pdm(TMicArray& mics){
   mics.PdmRx.ThreadEntry();
 }
 
-DECLARE_JOB(ma_task_start_decimator, (TMicArray&, chanend_t));
-void ma_task_start_decimator(TMicArray& mics, chanend_t c_audio_frames){
+DECLARE_JOB(default_ma_task_start_decimator, (TMicArray&, chanend_t));
+void default_ma_task_start_decimator(TMicArray& mics, chanend_t c_audio_frames){
   mics.ThreadEntry();
 }
 
@@ -50,8 +50,8 @@ void mic_array_start(
 #else
   g_mics->OutputHandler.FrameTx.SetChannel(c_frames_out);
   PAR_JOBS(
-    PJOB(ma_task_start_pdm, (*g_mics)),
-    PJOB(ma_task_start_decimator, (*g_mics, c_frames_out)));
+    PJOB(default_ma_task_start_pdm, (*g_mics)),
+    PJOB(default_ma_task_start_decimator, (*g_mics, c_frames_out)));
 #endif
 
   shutdown_mics_helper(g_mics);
