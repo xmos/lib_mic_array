@@ -213,55 +213,6 @@ namespace  mic_array {
    * @tparam BLOCK_SIZE   Number of words of PDM data per block.
    * @tparam SubType      Subclass of `PdmRxService` actually being used.
    */
-  template <class SubType>
-  class PdmRxService
-  {
-    // @todo: Use a static assertion to check that SubType is in fact a sub-type
-    //        of `PdmRxService`.
-
-
-    protected:
-      /**
-       * @brief Port from which to collect PDM data.
-       */
-      port_t p_pdm_mics;
-
-      /**
-       * Number of words left to capture for the current block.
-       */
-      unsigned phase;
-
-      /**
-       * @brief PDM block redirection pointers.
-       *
-       * Each time a new block of data is ready, a double buffer pointer swap
-       * is performed and `blocks[1]` is passed to `SubType::SendBlock()` so
-       * that it can be signaled to the next processing stage.
-       */
-      uint32_t* blocks[2];
-      volatile bool shutdown = false;
-      volatile bool shutdown_complete = false;
-      uint32_t out_block_size; // per channel block size
-      uint32_t mic_count;
-      uint32_t in_mic_count;
-      uint32_t num_phases;
-
-    public:
-
-      /**
-       * @brief Set the port from which to collect PDM samples.
-       */
-      void SetPort(port_t p_pdm_mics);
-
-      /**
-       * @brief Entry point for PDM processing thread.
-       *
-       * This function loops forever, performing a port read and if a new block has completed, signal a block send,
-       * every iteration.
-       */
-      void ThreadEntry();
-  };
-
 
   /**
    * @brief PDM rx service which uses a streaming channel to send a block of
@@ -358,14 +309,34 @@ namespace  mic_array {
    *                      each microphone channel.
    */
   template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
-  class StandardPdmRxService : public PdmRxService<StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>>
+  class StandardPdmRxService
   {
-    /**
-     * @brief Alias for parent class.
-     */
-    using Super = PdmRxService<StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>>;
-
     private:
+      /**
+       * @brief Port from which to collect PDM data.
+       */
+      port_t p_pdm_mics;
+
+      /**
+       * Number of words left to capture for the current block.
+       */
+      unsigned phase;
+
+      /**
+       * @brief PDM block redirection pointers.
+       *
+       * Each time a new block of data is ready, a double buffer pointer swap
+       * is performed and `blocks[1]` is passed to `SubType::SendBlock()` so
+       * that it can be signaled to the next processing stage.
+       */
+      uint32_t* blocks[2];
+      volatile bool shutdown = false;
+      volatile bool shutdown_complete = false;
+      uint32_t out_block_size; // per channel block size
+      uint32_t mic_count;
+      uint32_t in_mic_count;
+      uint32_t num_phases;
+
       /**
        * @brief Streaming channel over which PDM blocks are sent.
        */
@@ -476,6 +447,18 @@ namespace  mic_array {
       void AssertOnDroppedBlock(bool doAssert);
 
       void Shutdown();
+      /**
+       * @brief Set the port from which to collect PDM samples.
+       */
+      void SetPort(port_t p_pdm_mics);
+
+      /**
+       * @brief Entry point for PDM processing thread.
+       *
+       * This function loops forever, performing a port read and if a new block has completed, signal a block send,
+       * every iteration.
+       */
+      void ThreadEntry();
   };
 
 }
@@ -489,17 +472,17 @@ namespace  mic_array {
 //              PdmRxService                //
 //////////////////////////////////////////////
 
-template <class SubType>
-void mic_array::PdmRxService<SubType>::SetPort(port_t p_pdm_mics)
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::SetPort(port_t p_pdm_mics)
 {
   this->p_pdm_mics = p_pdm_mics;
 }
 
-template <class SubType>
-void mic_array::PdmRxService<SubType>::ThreadEntry()
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
 {
   while(1){
-    this->blocks[0][--phase] =  static_cast<SubType*>(this)->ReadPort();
+    this->blocks[0][--phase] =  this->ReadPort();
 
     if(!phase){
       this->phase = this->num_phases;
@@ -507,7 +490,7 @@ void mic_array::PdmRxService<SubType>::ThreadEntry()
       this->blocks[0] = this->blocks[1];
       this->blocks[1] = ready_block;
 
-      static_cast<SubType*>(this)->SendBlock(ready_block);
+      this->SendBlock(ready_block);
       // Check for shutdown only after sending a block so we know there's atleast one pending block at the time of shutdown
       if(this->shutdown)
       {
