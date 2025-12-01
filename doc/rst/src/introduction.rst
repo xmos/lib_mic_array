@@ -6,10 +6,10 @@ Introduction
 ``lib_mic_array`` is a library for interfacing with one or more PDM microphones
 on an XMOS device.
 
-Version 5.0 of this library has been redesigned from scratch to make efficient
-usage of the XMOS XS3 architecture.
+Version 5.0 of this library has been redesigned from scratch to leverage the
+`Vector unit in the XMOS XS3 architecture <https://www.xmos.com/documentation/XM-014007-PS/html/doc/rst/xs3-arch-inst.html#vector-unit>`_.
 
-See :ref:`mic_array_getting_started` to get going.
+See :ref:`using_mic_array` to get started.
 
 .. note::
 

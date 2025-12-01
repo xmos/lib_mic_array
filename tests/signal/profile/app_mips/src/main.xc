@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -33,9 +34,19 @@ static void eat_audio_frames_task(
     )
 {
   int32_t audio_frame[MIC_ARRAY_CONFIG_MIC_IN_COUNT * MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
+  timer t;
+  unsigned long now;
+  t :> now;
 
   while(1){
-    ma_frame_rx(audio_frame, (chanend_t)c_from_decimator, channel_count, sample_count);
+    select {
+      case t when timerafter(now + (XS1_TIMER_HZ*5)) :> now: // run for 5s
+        return;
+        break;
+      default:
+        ma_frame_rx(audio_frame, (chanend_t)c_from_decimator, channel_count, sample_count);
+        break;
+    }
   }
 }
 
@@ -50,6 +61,7 @@ int main() {
       printf("Running " APP_NAME "..\n");
       eat_audio_frames_task(c_audio_frames,
                             MIC_ARRAY_CONFIG_MIC_IN_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
+      exit(0);
     }
 
 
@@ -64,7 +76,7 @@ int main() {
 #endif
 
       // Initialize the mic array
-      mic_array_init(&pdm_res, null, APP_AUDIO_SAMPLE_RATE);
+      mic_array_init(&pdm_res, null, APP_SAMP_FREQ);
 
       par {
         mic_array_start((chanend_t) c_audio_frames);

@@ -10,8 +10,9 @@
 #include "app_config.h"
 
 #include "mic_array.h"
-#include "app_decimator.hpp"
 #include "mic_array/etc/filters_default.h"
+
+#if !USE_DEFAULT_API
 
 #ifndef STR
 #define STR(s) #s
@@ -23,7 +24,8 @@
 
 
 ////// Additional macros derived from others
-
+#define MCLK_FREQ (24576000)
+#define PDM_FREQ (3072000)
 #define MCLK_DIVIDER          ((MCLK_FREQ) /(PDM_FREQ))
 
 
@@ -39,6 +41,12 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
                                 XS1_CLKBLK_2);
 
 
+#define APP_N_MICS      (MIC_ARRAY_CONFIG_MIC_COUNT)
+#define APP_USE_DC_ELIMINATION  (MIC_ARRAY_CONFIG_USE_DC_ELIMINATION)
+#if (APP_SAMP_FREQ != 48000)
+  #error "App built for 48KHz. Compile with -DAPP_SAMP_FREQ=48000"
+#endif
+
 #ifndef APP_N_MICS_IN
   #define APP_N_MICS_IN APP_N_MICS
 #endif
@@ -47,7 +55,7 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
 #define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
 
 using TMicArray = mic_array::MicArray<APP_N_MICS,
-                          par_mic_array::MyTwoStageDecimator<APP_N_MICS,
+                          mic_array::TwoStageDecimator<APP_N_MICS,
                                               STAGE2_DEC_FACTOR_48KHZ,
                                               MIC_ARRAY_48K_STAGE_2_TAP_COUNT>,
                           mic_array::StandardPdmRxService<APP_N_MICS_IN,
@@ -100,4 +108,5 @@ void app_mic_array_task(chanend_t c_frames_out)
     );
 #endif
 }
+#endif
 

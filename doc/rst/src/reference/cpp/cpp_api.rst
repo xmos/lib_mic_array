@@ -17,8 +17,8 @@ MicArray
 
 
 
-BasicMicArray
--------------
+BasicMicArray (DEPRECATED)
+--------------------------
 
 .. doxygenclass:: mic_array::prefab::BasicMicArray
   :members:
