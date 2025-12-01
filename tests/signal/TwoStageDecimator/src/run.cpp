@@ -55,14 +55,33 @@ void load_stage2(chanend_t c_from_host)
 void process_signal(chanend_t c_from_host)
 {
   constexpr unsigned BLOCK_WORDS = CHAN_COUNT * S2_DEC_FACT;
- 
-  using TDecimator = mic_array::TwoStageDecimator<CHAN_COUNT,
-                                                  S2_DEC_FACT,
-                                                  S2_TAPS>;
+
+  using TDecimator = mic_array::TwoStageDecimator<CHAN_COUNT>;
 
   TDecimator dec;
-  dec.Init(const_cast<uint32_t*>(test_stage1_coef), 
-           test_stage2_coef, test_stage2_shr);
+  static int32_t stg1_filter_state[CHAN_COUNT][8];
+  static int32_t stg2_filter_state[CHAN_COUNT][S2_TAPS];
+
+  mic_array_decimator_conf_t decimator_conf;
+  memset(&decimator_conf, 0, sizeof(decimator_conf));
+  decimator_conf.mic_count = CHAN_COUNT;
+  decimator_conf.filter_conf[0].coef = (int32_t*)test_stage1_coef;
+  decimator_conf.filter_conf[0].num_taps = 256;
+  decimator_conf.filter_conf[0].decimation_factor = 32;
+  decimator_conf.filter_conf[0].state = (int32_t*)stg1_filter_state;
+  decimator_conf.filter_conf[0].state_size = 8;
+
+  decimator_conf.filter_conf[1].coef = (int32_t*)test_stage2_coef;
+  decimator_conf.filter_conf[1].decimation_factor = S2_DEC_FACT;
+  decimator_conf.filter_conf[1].num_taps = S2_TAPS;
+  decimator_conf.filter_conf[1].shr = test_stage2_shr;
+  decimator_conf.filter_conf[1].state_size = decimator_conf.filter_conf[1].num_taps;
+  decimator_conf.filter_conf[1].state = (int32_t*)stg2_filter_state;
+
+  dec.Init_new(decimator_conf);
+
+  /*dec.Init(const_cast<uint32_t*>(test_stage1_coef),
+           test_stage2_coef, test_stage2_shr);*/
 
   // Host will tell us how many blocks it intends to send
   unsigned block_count = s_chan_in_word(c_from_host);
@@ -90,7 +109,7 @@ void run(chanend_t c_from_host)
   xscope_int(META_OUT, 32); // S1_DEC_FACTOR
   xscope_int(META_OUT, S2_TAPS);
   xscope_int(META_OUT, S2_DEC_FACT);
-  
+
   load_stage1(c_from_host);
   load_stage2(c_from_host);
 

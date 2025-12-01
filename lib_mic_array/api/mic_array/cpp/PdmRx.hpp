@@ -604,7 +604,7 @@ uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
 
 
   uint32_t* full_block = (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
-  mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, this->out_block_size, this->in_mic_count);
+  mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, this->out_block_size);
 
   uint32_t (*block)[CHANNELS_IN] = (uint32_t (*)[CHANNELS_IN]) full_block;
   uint32_t *out_ptr;

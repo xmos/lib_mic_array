@@ -84,8 +84,7 @@ namespace mic_array {
   template <unsigned MIC_COUNT>
   void deinterleave_pdm_samples(
       uint32_t* samples,
-      unsigned s2_dec_factor,
-      unsigned mic_in_count);
+      unsigned s2_dec_factor);
 
 
 }

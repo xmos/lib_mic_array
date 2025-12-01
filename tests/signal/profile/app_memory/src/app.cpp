@@ -80,7 +80,7 @@ void app_mic_array_init()
   decimator_conf.filter_conf[0].state = (int32_t*)stg1_filter_state;
   decimator_conf.filter_conf[0].state_size = 8;
 
-  decimator_conf.filter_conf[1].coef = (int32_t*)stage1_48k_coefs;
+  decimator_conf.filter_conf[1].coef = (int32_t*)stage2_48k_coefs;
   decimator_conf.filter_conf[1].decimation_factor = STAGE2_DEC_FACTOR_48KHZ;
   decimator_conf.filter_conf[1].num_taps = MIC_ARRAY_48K_STAGE_2_TAP_COUNT;
   decimator_conf.filter_conf[1].shr = stage2_48k_shift;

@@ -11,8 +11,7 @@
 template <>
 void mic_array::deinterleave_pdm_samples<1>(
     uint32_t* samples,
-    unsigned s2_dec_factor,
-    unsigned mic_in_count)
+    unsigned s2_dec_factor)
 {
   //Nothing to do for 1 mic
 }
@@ -20,11 +19,12 @@ void mic_array::deinterleave_pdm_samples<1>(
 template <>
 void mic_array::deinterleave_pdm_samples<2>(
     uint32_t* samples,
-    unsigned s2_dec_factor,
-    unsigned mic_in_count)
+    unsigned s2_dec_factor)
 {
+  constexpr unsigned MICS = 2;
+
   for(int k = 0; k < s2_dec_factor; k++) {
-    uint32_t* sb = &samples[k*mic_in_count];
+    uint32_t* sb = &samples[k*MICS];
     deinterleave2(sb);
   }
 }
@@ -32,11 +32,12 @@ void mic_array::deinterleave_pdm_samples<2>(
 template <>
 void mic_array::deinterleave_pdm_samples<4>(
     uint32_t* samples,
-    unsigned s2_dec_factor,
-    unsigned mic_in_count)
+    unsigned s2_dec_factor)
 {
+  constexpr unsigned MICS = 4;
+
   for(int k = 0; k < s2_dec_factor; k++) {
-    uint32_t* sb = &samples[k*mic_in_count];
+    uint32_t* sb = &samples[k*MICS];
     deinterleave4(sb);
   }
 }
@@ -46,11 +47,12 @@ void mic_array::deinterleave_pdm_samples<4>(
 template <>
 void mic_array::deinterleave_pdm_samples<8>(
     uint32_t* samples,
-    unsigned s2_dec_factor,
-    unsigned mic_in_count)
+    unsigned s2_dec_factor)
 {
+  constexpr unsigned MICS = 8;
+
   for(int k = 0; k < s2_dec_factor; k++) {
-    uint32_t* sb = &samples[k*mic_in_count];
+    uint32_t* sb = &samples[k*MICS];
     deinterleave8(sb);
   }
 }
@@ -58,11 +60,12 @@ void mic_array::deinterleave_pdm_samples<8>(
 template <>
 void mic_array::deinterleave_pdm_samples<16>(
     uint32_t* samples,
-    unsigned s2_dec_factor,
-    unsigned mic_in_count)
+    unsigned s2_dec_factor)
 {
+  constexpr unsigned MICS = 16;
+
   for(int k = 0; k < s2_dec_factor; k++) {
-    uint32_t* sb = &samples[k*mic_in_count];
+    uint32_t* sb = &samples[k*MICS];
     deinterleave16(sb);
   }
 }
