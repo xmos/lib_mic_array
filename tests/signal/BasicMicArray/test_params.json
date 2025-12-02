@@ -2,5 +2,5 @@
     "N_MICS": [1, 2, 4, 8],
     "FRAME_SIZE": [1, 16],
     "USE_ISR": [0, 1],
-    "SAMP_FREQ": [16000, 32000, 48000]
+    "SAMP_FREQ": [16000, 32000, 48000, "good_2_stage_filter_int.pkl"]
 }

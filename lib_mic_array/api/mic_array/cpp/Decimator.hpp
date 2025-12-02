@@ -72,8 +72,6 @@ class TwoStageDecimator
       unsigned decimation_factor;
     } stage2;
 
-    unsigned mic_count;
-
   public:
 
     constexpr TwoStageDecimator() noexcept { }
@@ -169,14 +167,13 @@ template <unsigned MIC_COUNT>
 void mic_array::TwoStageDecimator<MIC_COUNT>::Init_new(
     mic_array_decimator_conf_t &decimator_conf)
 {
-  this->mic_count = decimator_conf.mic_count;
   this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
   this->stage1.pdm_history_ptr = (uint32_t*)decimator_conf.filter_conf[0].state;
   this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_size;
 
-  memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * this->mic_count * this->stage1.pdm_history_sz);
+  memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * MIC_COUNT * this->stage1.pdm_history_sz);
 
-  for(int k = 0; k < this->mic_count; k++){
+  for(int k = 0; k < MIC_COUNT; k++){
     filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_size),
                         decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
   }
@@ -190,7 +187,7 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
         int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block)
 {
-  for(unsigned mic = 0; mic < this->mic_count; mic++){
+  for(unsigned mic = 0; mic < MIC_COUNT; mic++){
     uint32_t* hist = this->stage1.pdm_history_ptr + (mic * this->stage1.pdm_history_sz);
 
     for(unsigned k = 0; k < this->stage2.decimation_factor; k++){

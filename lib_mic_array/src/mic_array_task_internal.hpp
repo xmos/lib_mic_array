@@ -76,12 +76,10 @@ inline uint32_t* get_pdm_rx_out_block_double_buf(unsigned stg2_dec_factor) {
             : (uint32_t*)pdm_rx_out_block_double_buf.out_block_double_buf_df_2);
 }
 
-template <typename TMicArrayType>
-inline void init_mics(TMicArrayType* m, pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor) {
+inline void init_mics_default_filter(TMicArray* m, pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor) {
   static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
   mic_array_decimator_conf_t decimator_conf;
   memset(&decimator_conf, 0, sizeof(decimator_conf));
-  decimator_conf.mic_count = MIC_ARRAY_CONFIG_MIC_COUNT;
   decimator_conf.filter_conf[0].coef = (int32_t*)stage_1_filter(stg2_dec_factor);
   decimator_conf.filter_conf[0].num_taps = 256;
   decimator_conf.filter_conf[0].decimation_factor = 32;
@@ -98,8 +96,6 @@ inline void init_mics(TMicArrayType* m, pdm_rx_resources_t* pdm_res, const unsig
   m->Decimator.Init_new(decimator_conf);
 
   pdm_rx_config_t pdm_rx_config;
-  pdm_rx_config.num_mics = MIC_ARRAY_CONFIG_MIC_COUNT;
-  pdm_rx_config.num_mics_in = MIC_ARRAY_CONFIG_MIC_IN_COUNT;
   pdm_rx_config.out_block_size = stg2_dec_factor;
   pdm_rx_config.out_block = get_pdm_rx_out_block(stg2_dec_factor);
   pdm_rx_config.out_block_double_buf = get_pdm_rx_out_block_double_buf(stg2_dec_factor);
@@ -112,20 +108,4 @@ inline void init_mics(TMicArrayType* m, pdm_rx_resources_t* pdm_res, const unsig
   int divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
   mic_array_resources_configure(pdm_res, divide);
   mic_array_pdm_clock_start(pdm_res);
-}
-
-#define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
-#define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
-
-
-inline void start_mics_with_pdm_isr(TMicArray* m, chanend_t c_frame_output) {
-  //clear KEDI since pdm_rx_isr assumes single issue and the module is compiled with dual issue.
-  CLEAR_KEDI()
-
-  m->OutputHandler.FrameTx.SetChannel(c_frame_output);
-  // Setup the ISR and enable. Then start decimator.
-  m->PdmRx.AssertOnDroppedBlock(false);
-  m->PdmRx.InstallISR();
-  m->PdmRx.UnmaskISR();
-  m->ThreadEntry();
 }

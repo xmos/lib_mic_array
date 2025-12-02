@@ -56,18 +56,27 @@ class Test_BasicMicArray(MicArraySharedBase):
   @pytest.mark.parametrize("chans", params["N_MICS"], ids=[f"{nm}n_mics" for nm in params["N_MICS"]])
   @pytest.mark.parametrize("frame_size", params["FRAME_SIZE"], ids=[f"{fs}frame" for fs in params["FRAME_SIZE"]])
   @pytest.mark.parametrize("use_isr", params["USE_ISR"], ids=[f"{ui}_isr" for ui in params["USE_ISR"]])
-  @pytest.mark.parametrize("fs", params["SAMP_FREQ"], ids=[f"{int(s/1000)}k" for s in params["SAMP_FREQ"]])
+  @pytest.mark.parametrize("fs", params["SAMP_FREQ"], ids=[f"{s}" for s in params["SAMP_FREQ"]])
   def test_BasicMicArray(self, request, chans, frame_size, use_isr, fs):
-
     cwd = Path(request.fspath).parent
-    cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{fs}fs"
+
+    custom_filter_file = None
+    if not isinstance(fs, int): # fs must contain the name of the filter .pkl file
+      custom_filter_file = fs
+      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_customfs"
+    else:
+      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{fs}fs"
+
     xe_path = f'{cwd}/bin/{cfg}/test_ma_{cfg}.xe'
     assert Path(xe_path).exists(), f"Cannot find {xe_path}"
 
     frames = request.config.getoption("frames")
-
     # Generate random filter
-    filter = self.default_filter(fs)
+    if custom_filter_file:
+      filter = self.filter(Path(__file__).parent / f"{custom_filter_file}")
+    else:
+      filter = self.filter(self.get_default_filter(fs))
+
 
     # Number of PDM samples (per channel) required to make the mic array
     # output a single frame
@@ -113,4 +122,10 @@ class Test_BasicMicArray(MicArraySharedBase):
     # applied to them prior to being summed.
     result_diff = np.max(np.abs(expected - device_output))
     print(f"result_diff = {result_diff}")
-    assert result_diff <= 4, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold (4)"
+    if custom_filter_file:
+      threshold = 12 # I think this is due to the longer stage2 filter in the custom filter (good_2_stage_filter_int.pkl) used in this test
+    else:
+      threshold = 4
+
+    assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
+

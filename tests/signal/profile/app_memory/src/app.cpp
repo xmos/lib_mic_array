@@ -73,7 +73,6 @@ void app_mic_array_init()
   static int32_t filter_state_df_2[APP_N_MICS][MIC_ARRAY_48K_STAGE_2_TAP_COUNT];
   mic_array_decimator_conf_t decimator_conf;
   memset(&decimator_conf, 0, sizeof(decimator_conf));
-  decimator_conf.mic_count = APP_N_MICS;
   decimator_conf.filter_conf[0].coef = (int32_t*)stage1_48k_coefs;
   decimator_conf.filter_conf[0].num_taps = 256;
   decimator_conf.filter_conf[0].decimation_factor = 32;
@@ -93,8 +92,6 @@ void app_mic_array_init()
   static uint32_t __attribute__((aligned (8))) pdmrx_out_block_double_buf_df_2[2][APP_N_MICS_IN * STAGE2_DEC_FACTOR_48KHZ];
 
   pdm_rx_config_t pdm_rx_config;
-  pdm_rx_config.num_mics = APP_N_MICS;
-  pdm_rx_config.num_mics_in = APP_N_MICS_IN;
   pdm_rx_config.out_block_size = STAGE2_DEC_FACTOR_48KHZ;
   pdm_rx_config.out_block = (uint32_t*)pdmrx_out_block_df_2;
   pdm_rx_config.out_block_double_buf = (uint32_t*)pdmrx_out_block_double_buf_df_2;

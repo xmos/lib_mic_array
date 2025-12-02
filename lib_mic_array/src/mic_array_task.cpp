@@ -42,7 +42,7 @@ void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, un
   assert ((stg2_decimation_factor == 2) || (stg2_decimation_factor == 3) || (stg2_decimation_factor == 6));
   static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
   g_mics = new (mic_storage) TMicArray();
-  init_mics(g_mics, pdm_res, channel_map, stg2_decimation_factor);
+  init_mics_default_filter(g_mics, pdm_res, channel_map, stg2_decimation_factor);
 
 }
 
@@ -70,12 +70,22 @@ void mic_array_init_custom_filters(pdm_rx_resources_t* pdm_res,
   mic_array_pdm_clock_start(pdm_res);
 }
 
+#define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
+#define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
+
 void mic_array_start(
     chanend_t c_frames_out)
 {
   assert(g_mics != nullptr); // Attempting to start mic_array before initialising it
 #if MIC_ARRAY_CONFIG_USE_PDM_ISR
-  start_mics_with_pdm_isr(g_mics, c_frames_out);
+  //clear KEDI since pdm_rx_isr assumes single issue and the module is compiled with dual issue.
+  CLEAR_KEDI()
+  g_mics->OutputHandler.FrameTx.SetChannel(c_frames_out);
+  // Setup the ISR and enable. Then start decimator.
+  g_mics->PdmRx.AssertOnDroppedBlock(false);
+  g_mics->PdmRx.InstallISR();
+  g_mics->PdmRx.UnmaskISR();
+  g_mics->ThreadEntry();
 #else
   g_mics->OutputHandler.FrameTx.SetChannel(c_frames_out);
   PAR_JOBS(

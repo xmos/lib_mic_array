@@ -28,8 +28,6 @@ void app_pdm_rx_isr_setup(
   static uint32_t __attribute__((aligned (8))) pdmrx_out_block_double_buf[2][1 * MY_STAGE2_DEC_FACTOR];
 
   pdm_rx_config_t pdm_rx_config;
-  pdm_rx_config.num_mics = 1;
-  pdm_rx_config.num_mics_in = 1;
   pdm_rx_config.out_block_size = MY_STAGE2_DEC_FACTOR;
   pdm_rx_config.out_block = (uint32_t*)pdmrx_out_block;
   pdm_rx_config.out_block_double_buf = (uint32_t*)pdmrx_out_block_double_buf;

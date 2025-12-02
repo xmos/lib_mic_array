@@ -36,67 +36,84 @@ pipeline {
 
   stages {
       stage('🏗️ Build') {
-      agent {
-        label 'documentation && x86_64 && linux'
-      }
-      stages {
-        stage('Checkout') {
-          steps {
+        parallel {
+          stage('Build examples, docs, lib checks') {
+            agent {
+              label 'documentation && x86_64 && linux'
+            }
+            stages {
+              stage('Checkout') {
+                steps {
 
-            println "Stage running on ${env.NODE_NAME}"
+                  println "Stage running on ${env.NODE_NAME}"
 
-            script {
-              def (server, user, repo) = extractFromScmUrl()
-              env.REPO_NAME = repo
-            }
-            dir(REPO_NAME){
-              checkoutScmShallow()
-            }
-          }
-        }  // stage('Checkout')
+                  script {
+                    def (server, user, repo) = extractFromScmUrl()
+                    env.REPO_NAME = repo
+                  }
+                  dir(REPO_NAME){
+                    checkoutScmShallow()
+                  }
+                }
+              }  // stage('Checkout')
 
-        stage('Examples build') {
-          steps {
-            dir("${REPO_NAME}/examples") {
-              xcoreBuild()
-            }
-          }
-        }
-        stage('Tests build') {
-          steps {
-            dir("${REPO_NAME}/tests") {
-              xcoreBuild()
-              stash includes: '**/*.xe', name: 'test_bin', useDefaultExcludes: false
-            }
-          }
-        }
-        stage('Repo checks') {
-          steps {
-            warnError("Repo checks failed")
-            {
-              runRepoChecks("${WORKSPACE}/${REPO_NAME}")
-            }
-          }
-        }
-        stage('Doc build') {
-          steps {
-            dir(REPO_NAME) {
-              buildDocs()
-            }
-          }
-        }
-        stage("Archive Lib") {
-          steps {
-            archiveSandbox(REPO_NAME)
-          }
-        } //stage("Archive Lib")
+              stage('Examples build') {
+                steps {
+                  dir("${REPO_NAME}/examples") {
+                    xcoreBuild()
+                  }
+                }
+              }
+              stage('Repo checks') {
+                steps {
+                  warnError("Repo checks failed")
+                  {
+                    runRepoChecks("${WORKSPACE}/${REPO_NAME}")
+                  }
+                }
+              }
+              stage('Doc build') {
+                steps {
+                  dir(REPO_NAME) {
+                    buildDocs()
+                  }
+                }
+              }
+              stage("Archive Lib") {
+                steps {
+                  archiveSandbox(REPO_NAME)
+                }
+              } //stage("Archive Lib")
 
-      } // stages
-      post {
-        cleanup {
-          xcoreCleanSandbox()
-        }
-      }
+            } // stages
+            post {
+              cleanup {
+                xcoreCleanSandbox()
+              }
+            }
+          } // stage('Build examples, docs, lib checks')
+          stage('Tests build') {
+            agent {
+              label 'x86_64 && linux'
+            }
+            steps {
+              script {
+                def (server, user, repo) = extractFromScmUrl()
+                env.REPO_NAME = repo
+              }
+              dir(REPO_NAME) {
+                checkoutScmShallow()
+                dir("tests") {
+                  createVenv(reqFile: "requirements.txt")
+                  withVenv {
+                    xcoreBuild()
+                    stash includes: '**/*.xe', name: 'test_bin', useDefaultExcludes: false
+                  }
+                }
+              }
+            } // steps
+          } // stage('Tests build')
+        } // parallel
     }  // stage 'Build'
 
     stage('Test') {
@@ -107,10 +124,6 @@ pipeline {
           }
           steps {
             println "Stage running on ${env.NODE_NAME}"
-            script {
-              def (server, user, repo) = extractFromScmUrl()
-              env.REPO_NAME = repo
-            }
             dir(REPO_NAME){
               checkoutScmShallow()
               dir("tests") {

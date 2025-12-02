@@ -22,7 +22,6 @@ typedef struct
 }mic_array_filter_conf_t;
 
 typedef struct {
-    unsigned mic_count;
     mic_array_filter_conf_t filter_conf[MAX_DECIMATION_STAGES];
 }mic_array_decimator_conf_t;
 
@@ -31,12 +30,9 @@ typedef struct {
     uint32_t *out_block_double_buf;
     const unsigned* channel_map;
     unsigned out_block_size; // per channel pdm rx output block (input to the decimator) size
-    unsigned num_mics;
-    unsigned num_mics_in;
 }pdm_rx_config_t;
 
 typedef struct {
-    uint32_t mic_count;
     mic_array_decimator_conf_t decimator_conf;
     pdm_rx_config_t pdmrx_conf;
 }mic_array_conf_t;

@@ -64,7 +64,6 @@ void process_signal(chanend_t c_from_host)
 
   mic_array_decimator_conf_t decimator_conf;
   memset(&decimator_conf, 0, sizeof(decimator_conf));
-  decimator_conf.mic_count = CHAN_COUNT;
   decimator_conf.filter_conf[0].coef = (int32_t*)test_stage1_coef;
   decimator_conf.filter_conf[0].num_taps = 256;
   decimator_conf.filter_conf[0].decimation_factor = 32;

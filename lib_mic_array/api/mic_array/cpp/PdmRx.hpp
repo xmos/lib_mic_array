@@ -333,8 +333,6 @@ namespace  mic_array {
       volatile bool shutdown = false;
       volatile bool shutdown_complete = false;
       uint32_t out_block_size; // per channel block size
-      uint32_t mic_count;
-      uint32_t in_mic_count;
       uint32_t num_phases;
 
       /**
@@ -528,15 +526,13 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
 {
   this->out_block_ptr = pdm_rx_config.out_block;
   this->out_block_size = pdm_rx_config.out_block_size;
-  this->mic_count = pdm_rx_config.num_mics;
-  this->in_mic_count = pdm_rx_config.num_mics_in;
-  this->phase = this->in_mic_count * this->out_block_size;
-  this->num_phases = this->in_mic_count * this->out_block_size;
+  this->phase = CHANNELS_IN * this->out_block_size;
+  this->num_phases = CHANNELS_IN * this->out_block_size;
 
   this->blocks[0] = pdm_rx_config.out_block_double_buf;
-  this->blocks[1] = pdm_rx_config.out_block_double_buf + (this->in_mic_count * this->out_block_size);
+  this->blocks[1] = pdm_rx_config.out_block_double_buf + (CHANNELS_IN * this->out_block_size);
 
-  for(int k = 0; k < this->mic_count; k++)
+  for(int k = 0; k < CHANNELS_OUT; k++)
     this->channel_map[k] = k;
 
   this->c_pdm_blocks = s_chan_alloc();
