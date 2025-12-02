@@ -9,15 +9,12 @@
 
 #define MAX_DECIMATION_STAGES (4)
 
+C_API_START
+
 typedef struct
 {
-#if __XC__
-    int32_t * unsafe coef;
-    int32_t * unsafe state;
-#else
     int32_t *coef;
     int32_t * state;
-#endif
     right_shift_t  shr;
     unsigned num_taps;
     unsigned decimation_factor;
@@ -30,16 +27,20 @@ typedef struct {
 }mic_array_decimator_conf_t;
 
 typedef struct {
-#if __XC__
-    uint32_t * unsafe out_block;
-    uint32_t * unsafe out_block_double_buf;
-#else
     uint32_t *out_block;
     uint32_t *out_block_double_buf;
-#endif
+    const unsigned* channel_map;
     unsigned out_block_size; // per channel pdm rx output block (input to the decimator) size
     unsigned num_mics;
     unsigned num_mics_in;
 }pdm_rx_config_t;
+
+typedef struct {
+    uint32_t mic_count;
+    mic_array_decimator_conf_t decimator_conf;
+    pdm_rx_config_t pdmrx_conf;
+}mic_array_conf_t;
+
+C_API_END
 
 #endif

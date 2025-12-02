@@ -30,6 +30,9 @@ C_API_START
 MA_C_API
 void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq);
 
+MA_C_API
+void mic_array_init_custom_filters(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);
+
 /**
  * @brief Start the mic array task
  *

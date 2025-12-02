@@ -9,11 +9,11 @@
   },
   "1mic_default": {
     "available": 524288,
-    "used": 14332,
+    "used": 14388,
     "status": "OKAY",
     "stack": 692,
-    "code": 8754,
-    "data": 4886
+    "code": 8786,
+    "data": 4910
   },
   "2mic_custom": {
     "available": 524288,
@@ -25,10 +25,10 @@
   },
   "2mic_default": {
     "available": 524288,
-    "used": 15052,
+    "used": 15108,
     "status": "OKAY",
     "stack": 692,
-    "code": 8930,
-    "data": 5430
+    "code": 8962,
+    "data": 5454
   }
 }

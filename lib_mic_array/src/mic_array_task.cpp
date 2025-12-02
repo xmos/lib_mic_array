@@ -12,7 +12,10 @@
 #include "mic_array/etc/filters_default.h"
 #include "mic_array_task_internal.hpp"
 
-TMicArray *g_mics = nullptr;
+TMicArray *g_mics = nullptr;  // Global mic array instance.
+// NOTE: g_mics must persist (remain non-null and its backing storage valid)
+// until mic_array_start() completes. mic_array_start() performs shutdown and
+// then sets g_mics back to nullptr.
 
 #ifdef __XS2A__ /* to get test_xs2_benign to compile */
 #else
@@ -30,15 +33,41 @@ void default_ma_task_start_decimator(TMicArray& mics, chanend_t c_audio_frames){
 
 void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq)
 {
-  if (g_mics == nullptr) {
-    unsigned stg2_decimation_factor = (pdm_res->pdm_freq/STAGE1_DEC_FACTOR)/output_samp_freq;
-    assert ((output_samp_freq*STAGE1_DEC_FACTOR*stg2_decimation_factor) == pdm_res->pdm_freq); // assert if it doesn't divide cleanly
-    // assert if unsupported decimation factor. (for example. when starting with a pdm_freq of 3.072MHz, supported
-    // output sampling freqs are [48000, 32000, 16000]
-    assert ((stg2_decimation_factor == 2) || (stg2_decimation_factor == 3) || (stg2_decimation_factor == 6));
-    static uint32_t g_storage[(sizeof(TMicArray)+(sizeof(uint32_t) -1 ))/(sizeof(uint32_t))];
-    create_mics_helper(g_storage, g_mics, pdm_res, channel_map, stg2_decimation_factor);
+  assert(g_mics == nullptr); // Mic array instance already initialised
+
+  unsigned stg2_decimation_factor = (pdm_res->pdm_freq/STAGE1_DEC_FACTOR)/output_samp_freq;
+  assert ((output_samp_freq*STAGE1_DEC_FACTOR*stg2_decimation_factor) == pdm_res->pdm_freq); // assert if it doesn't divide cleanly
+  // assert if unsupported decimation factor. (for example. when starting with a pdm_freq of 3.072MHz, supported
+  // output sampling freqs are [48000, 32000, 16000]
+  assert ((stg2_decimation_factor == 2) || (stg2_decimation_factor == 3) || (stg2_decimation_factor == 6));
+  static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
+  g_mics = new (mic_storage) TMicArray();
+  init_mics(g_mics, pdm_res, channel_map, stg2_decimation_factor);
+
+}
+
+void mic_array_init_custom_filters(pdm_rx_resources_t* pdm_res,
+                                         mic_array_conf_t* mic_array_conf)
+{
+  assert(pdm_res);
+  assert(mic_array_conf);
+  assert(g_mics == nullptr); // Mic array instance already initialised
+  static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
+  g_mics = new (mic_storage) TMicArray();
+  // Configure decimator with app-provided filters/state
+  g_mics->Decimator.Init_new(mic_array_conf->decimator_conf);
+
+  // Configure PDM RX with app-provided buffers/mapping
+  g_mics->PdmRx.Init_new(pdm_res->p_pdm_mics, mic_array_conf->pdmrx_conf);
+  if (mic_array_conf->pdmrx_conf.channel_map) {
+    g_mics->PdmRx.MapChannels(mic_array_conf->pdmrx_conf.channel_map);
   }
+  g_mics->PdmRx.AssertOnDroppedBlock(false);
+
+  // Configure and start clocks
+  const unsigned divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
+  mic_array_resources_configure(pdm_res, divide);
+  mic_array_pdm_clock_start(pdm_res);
 }
 
 void mic_array_start(
@@ -54,8 +83,7 @@ void mic_array_start(
     PJOB(default_ma_task_start_decimator, (*g_mics, c_frames_out)));
 #endif
 
-  shutdown_mics_helper(g_mics);
-
+  g_mics->~TMicArray();
   g_mics = nullptr;
 }
 

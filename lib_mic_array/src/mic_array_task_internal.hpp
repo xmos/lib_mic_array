@@ -129,15 +129,3 @@ inline void start_mics_with_pdm_isr(TMicArray* m, chanend_t c_frame_output) {
   m->PdmRx.UnmaskISR();
   m->ThreadEntry();
 }
-
-inline void create_mics_helper(uint32_t* storage, TMicArray*& ptr, pdm_rx_resources_t* res, const unsigned* map, unsigned stg2_dec_factor) {
-    new (storage) TMicArray;
-    ptr = reinterpret_cast<TMicArray*>(storage);
-    init_mics(ptr, res, map, stg2_dec_factor);
-}
-
-inline void shutdown_mics_helper(TMicArray*& ptr)
-{
-  ptr->~TMicArray();
-  ptr = nullptr;
-}
