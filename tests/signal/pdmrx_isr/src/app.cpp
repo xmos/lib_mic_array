@@ -25,14 +25,14 @@ void app_pdm_rx_isr_setup(
     chanend_t c_from_host)
 {
   static uint32_t pdmrx_out_block[1][MY_STAGE2_DEC_FACTOR];
-  static uint32_t __attribute__((aligned (8))) pdmrx_out_block_double_buf[2][1 * MY_STAGE2_DEC_FACTOR];
+  static uint32_t __attribute__((aligned (8))) pdmrx_in_block_double_buf[2][1 * MY_STAGE2_DEC_FACTOR];
 
-  pdm_rx_config_t pdm_rx_config;
-  pdm_rx_config.out_block_size = MY_STAGE2_DEC_FACTOR;
-  pdm_rx_config.out_block = (uint32_t*)pdmrx_out_block;
-  pdm_rx_config.out_block_double_buf = (uint32_t*)pdmrx_out_block_double_buf;
+  pdm_rx_conf_t pdm_rx_config;
+  pdm_rx_config.pdm_out_words_per_channel = MY_STAGE2_DEC_FACTOR;
+  pdm_rx_config.pdm_out_block = (uint32_t*)pdmrx_out_block;
+  pdm_rx_config.pdm_in_double_buf = (uint32_t*)pdmrx_in_block_double_buf;
 
-  my_pdm_rx.Init_new((port_t)c_from_host, pdm_rx_config);
+  my_pdm_rx.Init((port_t)c_from_host, pdm_rx_config);
   my_pdm_rx.AssertOnDroppedBlock(false);
   my_pdm_rx.InstallISR();
   my_pdm_rx.UnmaskISR();

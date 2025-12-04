@@ -82,7 +82,8 @@ the :cpp:class:`MicArray <mic_array::MicArray>`:
 
 .. note::
 
-  If the application requires custom decimation filters, refer to :ref:`custom_filters` to see how to do so.
+  If the application requires custom decimation filters but they're compatible with the :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>` implementation,
+  refer to :ref:`custom_filters` to see how to do so.
 
 Define app-callable functions
 -------------------------------

@@ -52,9 +52,16 @@ class TwoStageDecimator
       /**
        * Pointer to filter coefficients for Stage 1
        */
-      const uint32_t* filter_coef;
 
+      const uint32_t* filter_coef;
+      /**
+       * Pointer to filter state (PDM history) for stage-1 filter.
+       */
       uint32_t *pdm_history_ptr;
+
+      /**
+       * Per-mic channel filter state (PDM history) size in 32-bit words for stage-1 filter.
+       */
       unsigned pdm_history_sz;
     } stage1;
 
@@ -67,7 +74,7 @@ class TwoStageDecimator
        */
       filter_fir_s32_t filters[MIC_COUNT];
       /**
-       * Stage 2 filter stage.
+       * Stage 2 filter decimation factor.
        */
       unsigned decimation_factor;
     } stage2;
@@ -77,55 +84,18 @@ class TwoStageDecimator
     constexpr TwoStageDecimator() noexcept { }
 
     /**
-     * @brief Initialize the decimator.
+     * @brief Initialize the two-stage decimator from a configuration struct
+     * @ref mic_array_decimator_conf_t @p decimator_conf
      *
-     * Sets the stage 1 and 2 filter coefficients. The decimator must be
-     * initialized before any calls to `ProcessBlock()`.
+     * Reads stage-1 and stage-2 filter parameters from @p decimator_conf and prepares
+     * internal state:
+     * The caller must ensure all pointers inside @p decimator_conf.filter_conf[0]
+     * and @p decimator_conf.filter_conf[0] are valid and remain alive for the
+     * lifetime of the decimator.
      *
-     * `s1_filter_coef` points to a block of coefficients for the first stage
-     * decimator. This library provides coefficients for the first stage
-     * decimator; see `mic_array/etc/filters_default.h`.
-     *
-     * `s2_filter_coef` points to an array of coefficients for the second stage
-     * decimator. This library provides coefficients for the second stage
-     * decimator where the second stage decimation factor is 6; see
-     * `mic_array/etc/filters_default.h`.
-     *
-     * `s2_filter_shr` is the final right-shift applied to the stage 2 filter's
-     * accumulator prior to output. See
-     * <a href="https://github.com/xmos/lib_xcore_math">lib_xcore_math's</a>
-     * documentation of `filter_fir_s32_t` for more details.
-     *
-     * @param s1_filter_coef  @parblock
-     *        Stage 1 filter coefficients.
-     *
-     *        This points to a block of coefficients for the first stage
-     *        decimator. This library provides coefficients for the first stage
-     *        decimator. \verbatim embed:rst
-              See :c:var:`stage1_coef`.\endverbatim
-     *        @endparblock
-     * @param s2_filter_coef  @parblock
-     *        Stage 2 filter coefficients.
-     *
-     *        This points to a block of coefficients for the second stage
-     *        decimator. This library provides coefficients for the second stage
-     *        decimator. \verbatim embed:rst
-              See :c:var:`stage2_coef`.\endverbatim
-     *        @endparblock
-     * @param s2_filter_shr   @parblock
-     *        Stage 2 filter right-shift.
-     *
-     *        This is the output shift used by the second stage decimator.
-     *        \verbatim embed:rst
-              See :c:var:`stage2_shr`.\endverbatim
-     *        @endparblock
+     * @param decimator_conf Decimator pipeline configuration.
      */
-    /*void Init(
-        const uint32_t* s1_filter_coef,
-        const int32_t* s2_filter_coef,
-        const right_shift_t s2_filter_shr);*/
-
-    void Init_new(mic_array_decimator_conf_t &decimator_conf);
+    void Init(mic_array_decimator_conf_t &decimator_conf);
 
     /**
      * @brief Process one block of PDM data.
@@ -164,17 +134,17 @@ class TwoStageDecimator
 //////////////////////////////////////////////
 
 template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>::Init_new(
+void mic_array::TwoStageDecimator<MIC_COUNT>::Init(
     mic_array_decimator_conf_t &decimator_conf)
 {
   this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
   this->stage1.pdm_history_ptr = (uint32_t*)decimator_conf.filter_conf[0].state;
-  this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_size;
+  this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_words_per_channel;
 
   memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * MIC_COUNT * this->stage1.pdm_history_sz);
 
   for(int k = 0; k < MIC_COUNT; k++){
-    filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_size),
+    filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_words_per_channel),
                         decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
   }
   this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;

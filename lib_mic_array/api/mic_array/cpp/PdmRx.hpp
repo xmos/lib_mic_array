@@ -16,8 +16,8 @@
 #include "Util.hpp"
 
 // This has caused problems previously, so just catch the problems here.
-#if defined(BLOCK_SIZE) || defined(CHANNELS_IN) || defined(CHANNELS_OUT)
-# error Application must not define the following as precompiler macros: MIC_COUNT, CHANNELS_IN, CHANNELS_OUT.
+#if defined(CHANNELS_IN) || defined(CHANNELS_OUT)
+# error Application must not define the following as precompiler macros: CHANNELS_IN, CHANNELS_OUT.
 #endif
 
 using namespace std;
@@ -36,8 +36,9 @@ extern "C" {
     /**
      * Pointers to a pair of buffers used for storing captured PDM samples.
      *
-     * The buffers themselves are allocated by an instance of @ref
-     * mic_array::PdmRxService. The idea is that while the PDM rx ISR is filling
+     * The buffers themselves are allocated by the application and passed to
+     * @ref mic_array::StandardPdmRxService::Init
+     * The idea is that while the PDM rx ISR is filling
      * one buffer, the decimation thread is busy processing the contents of the
      * other buffer. If the real-time constraint is maintained, the decimation
      * thread will be finished with the contents of its buffer before the PDM rx
@@ -168,55 +169,14 @@ extern "C" {
 
 
 namespace  mic_array {
-
-
-
   /**
-   * @brief Collects PDM sample data from a port.
+   * @brief PDM rx service which collects PDM sample data from a port
+   * and uses a streaming channel to send a block of data by pointer further
+   * down the mic array pipeline.
    *
-   * Derivatives of this class template are intended to be used for the `TPdmRx`
+   * This class template is intended to be used for the `TPdmRx`
    * template parameter of @ref MicArray, where it represents the @ref
    * MicArray::PdmRx component of the mic array.
-   *
-   * An object derived from `PdmRxService` collects blocks of PDM samples from a
-   * port and makes them available to the decimation thread as the blocks are
-   * completed.
-   *
-   * `PdmRxService` is a base class using CRTP. Subclasses extend `PdmRxService`
-   * providing themselves as the template parameter `SubType`.
-   *
-   * This base class provides the logic for aggregating PDM data taken from
-   * a port into blocks, and a subclass is required to provide methods
-   * `SubType::ReadPort()`, `SubType::SendBlock()` and `SubType::GetPdmBlock()`.
-   *
-   * `SubType::ReadPort()` is responsible for reading 1 word of data from
-   * `p_pdm_mics`. See @ref StandardPdmRxService::ReadPort() as an example.
-   *
-   * `SubType::SendBlock()` is provided a block of PDM data as a pointer and is
-   * responsible for signaling that to the subsequent processing stage. See
-   * @ref StandardPdmRxService::SendBlock() as an example.
-   *
-   * `ReadPort()` and `SendBlock()` are used by `PdmRxService` itself (when
-   * running as a thread, rather than ISR).
-   *
-   * `SubType::GetPdmBlock()` responsible for receiving a block of PDM data from
-   * `SubType::SendBlock()` as a pointer, deinterleaving the buffer contents,
-   * and returning a pointer to the PDM data in the format expected by the mic
-   * array unit's decimator component. See
-   * @ref StandardPdmRxService::GetPdmBlock() as an example.
-   *
-   * `GetPdmBlock()` is called by the decimation thread. The pair of functions,
-   * `SendBlock()` and `GetPdmBlock()` facilitate inter-thread communication,
-   * `SendBlock()` being called by the transmitting end of the communication
-   * channel, and `GetPdmBlock()` being called by the receiving end.
-   *
-   * @tparam BLOCK_SIZE   Number of words of PDM data per block.
-   * @tparam SubType      Subclass of `PdmRxService` actually being used.
-   */
-
-  /**
-   * @brief PDM rx service which uses a streaming channel to send a block of
-   *        data by pointer.
    *
    * This class can run the PDM rx service either as a stand-alone thread or
    * through an interrupt.
@@ -231,9 +191,36 @@ namespace  mic_array {
    * available.
    * @endparblock
    *
+   * `StandardPdmRxService` collects blocks of PDM samples from a
+   * port and makes them available to the decimation thread as the blocks are
+   * completed.
+   *
+   * This class provides the logic for aggregating PDM data taken from
+   * a port into blocks, and provides methods
+   * `ReadPort()`, `SendBlock()` and `GetPdmBlock()`.
+   *
+   * `ReadPort()` is responsible for reading 1 word of data from
+   * `p_pdm_mics`.
+   *
+   * `SendBlock()` is provided a block of PDM data as a pointer and is
+   * responsible for signaling that to the subsequent processing stage.
+   *
+   * `ReadPort()` and `SendBlock()` are used by `StandardPdmRxService` itself (when
+   * running as a thread, rather than ISR).
+   *
+   * `GetPdmBlock()` responsible for receiving a block of PDM data from
+   * `SendBlock()` as a pointer, deinterleaving the buffer contents,
+   * and returning a pointer to the PDM data in the format expected by the mic
+   * array unit's decimator component. See
+   *
+   * `GetPdmBlock()` is called by the decimation thread. The pair of functions,
+   * `SendBlock()` and `GetPdmBlock()` facilitate inter-thread communication,
+   * `SendBlock()` being called by the transmitting end of the communication
+   * channel, and `GetPdmBlock()` being called by the receiving end.
+   *
    * @par Layouts
    * @parblock
-   * The buffer transferred by `SendBlock()` contains `CHANNELS_IN*SUBBLOCKS`
+   * The buffer transferred by `SendBlock()` contains `CHANNELS_IN * this->pdm_out_words_per_channel`
    * words of PDM data for `CHANNELS_IN` microphone channels. The words are
    * stored in reverse order of arrival. \verbatim embed:rst
      See :cpp:func:`mic_array::deinterleave_pdm_samples` for additional details
@@ -242,10 +229,11 @@ namespace  mic_array {
    * Within `GetPdmBlock()` (i.e. mic array thread) the PDM data block is
    * deinterleaved and copied to another buffer in the format required by the
    * decimator component, which is returned by `GetPdmBlock()`. This buffer
-   * contains samples for `CHANNELS_OUT` microphone channels.
+   * contains `CHANNELS_OUT * this->pdm_out_words_per_channel` words for
+   * `CHANNELS_OUT` microphone channels.
    * @endparblock
    *
-   * @par Channel Filtering
+   *    * @par Channel Filtering
    * @parblock
    * In some cases an application may be required to capture more microphone
    * channels than should actually be processed by subsequent processing stages
@@ -301,12 +289,15 @@ namespace  mic_array {
    * channel index for each output channel.
    * @endparblock
    *
+   *
    * @tparam CHANNELS_IN  The number of microphone channels to be captured by
-   *                      the port.
-   * @tparam CHANNELS_OUT The number of microphone channels to be delivered by
+   * the port. For example, if using a 4-bit port to capture 6 microphone
+   * channels in a DDR configuration (because there are no 3 or 6 pin ports)
+   * `CHANNELS_IN` should be ``8``, because that's how many must be captured,
+   * even if two of them are stripped out before passing audio frames to
+   * subsequent application stages.
+   * @tparam CHANNELS_OUT The number of output microphone channels to be delivered by
    *                      this `StandardPdmRxService` instance.
-   * @tparam SUBBLOCKS    The number of 32-sample sub-blocks to be captured for
-   *                      each microphone channel.
    */
   template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
   class StandardPdmRxService
@@ -332,7 +323,7 @@ namespace  mic_array {
       uint32_t* blocks[2];
       volatile bool shutdown = false;
       volatile bool shutdown_complete = false;
-      uint32_t out_block_size; // per channel block size
+      uint32_t pdm_out_words_per_channel; // number of 32-sample subblocks per channel
       uint32_t num_phases;
 
       /**
@@ -351,10 +342,9 @@ namespace  mic_array {
        */
       unsigned channel_map[CHANNELS_OUT];
 
-      uint32_t *out_block_ptr;
+      uint32_t *pdm_out_block_ptr;
 
       volatile bool isr_used = false;
-      std::atomic<unsigned> pending_blocks{0};
 
     public:
 
@@ -373,7 +363,23 @@ namespace  mic_array {
        */
       void SendBlock(uint32_t *block);
 
-      void Init_new(port_t p_pdm_mics, pdm_rx_config_t &pdm_rx_config);
+      /**
+       * @brief Initialize the PDM RX service.
+       *
+       * Sets the input port and binds application-provided buffers from @ref pdm_rx_conf_t @p pdm_rx_config.
+       *
+       * Requirements:
+       * - @p pdm_rx_config.pdm_in_double_buf must be sized
+       *   2 * CHANNELS_IN * @p pdm_rx_config.pdm_out_words_per_channel words and remain valid
+       *   for the lifetime of the service.
+       * - @p pdm_rx_config.pdm_out_block must be sized
+       *   CHANNELS_OUT * @p pdm_rx_config.pdm_out_words_per_channel words and remain valid
+       *   for the lifetime of the service.
+       *
+       * @param p_pdm_mics     Port from which PDM samples are captured.
+       * @param pdm_rx_config  PDM RX configuration
+       */
+      void Init(port_t p_pdm_mics, pdm_rx_conf_t &pdm_rx_config);
 
       /**
        * @brief Set the input-output mapping for all output channels.
@@ -467,7 +473,7 @@ namespace  mic_array {
 
 
 //////////////////////////////////////////////
-//              PdmRxService                //
+//          StandardPdmRxService            //
 //////////////////////////////////////////////
 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
@@ -499,10 +505,6 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
   this->shutdown_complete = true;
 }
 
-//////////////////////////////////////////////
-//          StandardPdmRxService            //
-//////////////////////////////////////////////
-
 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 uint32_t mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
@@ -522,15 +524,15 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
-    ::Init_new(port_t p_pdm_mics, pdm_rx_config_t &pdm_rx_config)
+    ::Init(port_t p_pdm_mics, pdm_rx_conf_t &pdm_rx_config)
 {
-  this->out_block_ptr = pdm_rx_config.out_block;
-  this->out_block_size = pdm_rx_config.out_block_size;
-  this->phase = CHANNELS_IN * this->out_block_size;
-  this->num_phases = CHANNELS_IN * this->out_block_size;
+  this->pdm_out_block_ptr = pdm_rx_config.pdm_out_block;
+  this->pdm_out_words_per_channel = pdm_rx_config.pdm_out_words_per_channel;
+  this->phase = CHANNELS_IN * this->pdm_out_words_per_channel;
+  this->num_phases = CHANNELS_IN * this->pdm_out_words_per_channel;
 
-  this->blocks[0] = pdm_rx_config.out_block_double_buf;
-  this->blocks[1] = pdm_rx_config.out_block_double_buf + (CHANNELS_IN * this->out_block_size);
+  this->blocks[0] = pdm_rx_config.pdm_in_double_buf;
+  this->blocks[1] = pdm_rx_config.pdm_in_double_buf + (CHANNELS_IN * this->pdm_out_words_per_channel);
 
   for(int k = 0; k < CHANNELS_OUT; k++)
     this->channel_map[k] = k;
@@ -566,8 +568,8 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
   pdm_rx_isr_context.c_pdm_data = this->c_pdm_blocks.end_a;
   pdm_rx_isr_context.pdm_buffer[0] = this->blocks[0];
   pdm_rx_isr_context.pdm_buffer[1] = this->blocks[1];
-  pdm_rx_isr_context.phase_reset = (CHANNELS_IN * this->out_block_size) -1;
-  pdm_rx_isr_context.phase = (CHANNELS_IN * this->out_block_size) - 1;
+  pdm_rx_isr_context.phase_reset = (CHANNELS_IN * this->pdm_out_words_per_channel) -1;
+  pdm_rx_isr_context.phase = (CHANNELS_IN * this->pdm_out_words_per_channel) - 1;
 
   enable_pdm_rx_isr(this->p_pdm_mics);
 }
@@ -600,18 +602,18 @@ uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
 
 
   uint32_t* full_block = (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
-  mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, this->out_block_size);
+  mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, this->pdm_out_words_per_channel);
 
   uint32_t (*block)[CHANNELS_IN] = (uint32_t (*)[CHANNELS_IN]) full_block;
   uint32_t *out_ptr;
   for(int ch = 0; ch < CHANNELS_OUT; ch++) {
-    out_ptr = this->out_block_ptr + (ch * this->out_block_size);
-    for(int sb = 0; sb < this->out_block_size; sb++) {
+    out_ptr = this->pdm_out_block_ptr + (ch * this->pdm_out_words_per_channel);
+    for(int sb = 0; sb < this->pdm_out_words_per_channel; sb++) {
       unsigned d = this->channel_map[ch];
-      out_ptr[sb] = block[this->out_block_size - 1 - sb][d];
+      out_ptr[sb] = block[this->pdm_out_words_per_channel - 1 - sb][d];
     }
   }
-  return this->out_block_ptr;
+  return this->pdm_out_block_ptr;
 }
 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>

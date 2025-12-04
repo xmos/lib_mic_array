@@ -10,7 +10,7 @@
 #include "mic_array/frame_transfer.h"
 #include "mic_array/shutdown.h"
 #include "mic_array/setup.h"
-#include "mic_array/decimation_filter_conf.h"
+#include "mic_array/mic_array_conf_struct.h"
 #include "mic_array/mic_array_task.h"
 #include "mic_array/mic_array_conf_full.h"
 

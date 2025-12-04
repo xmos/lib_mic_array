@@ -38,12 +38,11 @@ union UPdmRx_out_block_double_buf {
   uint32_t __attribute__((aligned (8))) out_block_double_buf_df_2[2][MIC_ARRAY_CONFIG_MIC_IN_COUNT * 2];
 };
 
-
 extern TMicArray* g_mics;
 
 UStg2_filter_state stg2_filter_state_mem;
 UPdmRx_out_block pdm_rx_out_block;
-UPdmRx_out_block_double_buf __attribute__((aligned (8))) pdm_rx_out_block_double_buf;
+UPdmRx_out_block_double_buf __attribute__((aligned (8))) pdm_rx_out_block_double_buf; // deinterleave() functions expect dword alignment
 
 inline const uint32_t* stage_1_filter(unsigned stg2_dec_factor) {
   // stg2 decimation factor also seems to affect the stage1 filter used
@@ -80,27 +79,36 @@ inline void init_mics_default_filter(TMicArray* m, pdm_rx_resources_t* pdm_res, 
   static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
   mic_array_decimator_conf_t decimator_conf;
   memset(&decimator_conf, 0, sizeof(decimator_conf));
-  decimator_conf.filter_conf[0].coef = (int32_t*)stage_1_filter(stg2_dec_factor);
-  decimator_conf.filter_conf[0].num_taps = 256;
-  decimator_conf.filter_conf[0].decimation_factor = 32;
-  decimator_conf.filter_conf[0].state = (int32_t*)stg1_filter_state;
-  decimator_conf.filter_conf[0].state_size = 8;
+  mic_array_filter_conf_t filter_conf[2] = {{0}};
 
-  decimator_conf.filter_conf[1].coef = (int32_t*)stage_2_filter(stg2_dec_factor);
-  decimator_conf.filter_conf[1].decimation_factor = stg2_dec_factor;
-  decimator_conf.filter_conf[1].num_taps = stage_2_num_taps(stg2_dec_factor);
-  decimator_conf.filter_conf[1].shr = stage_2_shift(stg2_dec_factor);
-  decimator_conf.filter_conf[1].state_size = decimator_conf.filter_conf[1].num_taps;
-  decimator_conf.filter_conf[1].state = stage_2_state_memory(stg2_dec_factor);
+  // decimator
+  decimator_conf.filter_conf = &filter_conf[0];
+  decimator_conf.num_filter_stages = 2;
+  //filter stage 1
+  filter_conf[0].coef = (int32_t*)stage_1_filter(stg2_dec_factor);
+  filter_conf[0].num_taps = 256;
+  filter_conf[0].decimation_factor = 32;
+  filter_conf[0].shr = 0;
+  filter_conf[0].state_words_per_channel = filter_conf[0].num_taps/32;
+  filter_conf[0].state = (int32_t*)stg1_filter_state;
 
-  m->Decimator.Init_new(decimator_conf);
+  // filter stage 2
+  filter_conf[1].coef = (int32_t*)stage_2_filter(stg2_dec_factor);
+  filter_conf[1].num_taps = stage_2_num_taps(stg2_dec_factor);
+  filter_conf[1].decimation_factor = stg2_dec_factor;
+  filter_conf[1].shr = stage_2_shift(stg2_dec_factor);
+  filter_conf[1].state_words_per_channel = decimator_conf.filter_conf[1].num_taps;
+  filter_conf[1].state = stage_2_state_memory(stg2_dec_factor);
 
-  pdm_rx_config_t pdm_rx_config;
-  pdm_rx_config.out_block_size = stg2_dec_factor;
-  pdm_rx_config.out_block = get_pdm_rx_out_block(stg2_dec_factor);
-  pdm_rx_config.out_block_double_buf = get_pdm_rx_out_block_double_buf(stg2_dec_factor);
+  m->Decimator.Init(decimator_conf);
 
-  m->PdmRx.Init_new(pdm_res->p_pdm_mics, pdm_rx_config);
+  pdm_rx_conf_t pdm_rx_config;
+  pdm_rx_config.pdm_out_words_per_channel = stg2_dec_factor;
+  pdm_rx_config.pdm_out_block = get_pdm_rx_out_block(stg2_dec_factor);
+  pdm_rx_config.pdm_in_double_buf = get_pdm_rx_out_block_double_buf(stg2_dec_factor);
+
+
+  m->PdmRx.Init(pdm_res->p_pdm_mics, pdm_rx_config);
 
   if(channel_map) {
       m->PdmRx.MapChannels(channel_map);

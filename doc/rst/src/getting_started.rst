@@ -302,10 +302,13 @@ following constraints:
 
 - Fixed supported output sampling rates:
 
-  Only **16 kHz**, **32 kHz**, and **48 kHz** are supported.
-  This is because the default decimation factors provided as part of the
+  Only **16 kHz**, **32 kHz**, and **48 kHz** output sampling rates are supported.
+  This is because the default decimation filters provided as part of the
   library (see :ref:`default_filters`) are designed for a small set of decimation
-  factors and they assume a fixed input PDM frequency of **3.072 MHz**
+  factors and they assume a fixed input PDM frequency of **3.072 MHz**. See :ref:`custom_filters`
+  and :ref:`mic_array_example_custom_filter` for using custom filters for the mic array
+  (provided they are compatible with the :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>`
+  implementation)
 
 - Only one mic array instance:
 
@@ -325,11 +328,13 @@ following constraints:
 
 - Memory usage:
 
-  The default API incurs an additional ~6 KiB (code + data) compared to a custom
+  The default API incurs an additional ~3 KiB (code + data) compared to a custom
   instantiation of :cpp:class:`MicArray <mic_array::MicArray>` object.
   This overhead is primarily from wrapper code and inclusion of all
   provided filter coefficient sets, even when only a subset is used (see
   :ref:`mic_array_memory_usage`). For memory‑constrained systems a custom
   configuration might be preferable.
 
-For custom usage refer to the advanced use methods described in :ref:`mic_array_adv_use_methods`
+For custom usage involving creating a :cpp:class:`MicArray <mic_array::MicArray>`
+object with potentially custom implementations of the component classes,
+refer to the advanced use methods described in :ref:`mic_array_adv_use_methods`

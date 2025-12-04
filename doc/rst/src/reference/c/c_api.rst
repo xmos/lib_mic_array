@@ -5,6 +5,7 @@ C API Reference
 .. toctree::
     :maxdepth: 1
 
+    mic_array_conf_struct.rst
     mic_array_default_model
     filters_default
     pdm_resources

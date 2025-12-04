@@ -46,7 +46,7 @@ void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, un
 
 }
 
-void mic_array_init_custom_filters(pdm_rx_resources_t* pdm_res,
+void mic_array_init_custom_filter(pdm_rx_resources_t* pdm_res,
                                          mic_array_conf_t* mic_array_conf)
 {
   assert(pdm_res);
@@ -55,10 +55,10 @@ void mic_array_init_custom_filters(pdm_rx_resources_t* pdm_res,
   static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
   g_mics = new (mic_storage) TMicArray();
   // Configure decimator with app-provided filters/state
-  g_mics->Decimator.Init_new(mic_array_conf->decimator_conf);
+  g_mics->Decimator.Init(mic_array_conf->decimator_conf);
 
   // Configure PDM RX with app-provided buffers/mapping
-  g_mics->PdmRx.Init_new(pdm_res->p_pdm_mics, mic_array_conf->pdmrx_conf);
+  g_mics->PdmRx.Init(pdm_res->p_pdm_mics, mic_array_conf->pdmrx_conf);
   if (mic_array_conf->pdmrx_conf.channel_map) {
     g_mics->PdmRx.MapChannels(mic_array_conf->pdmrx_conf.channel_map);
   }

@@ -1,34 +1,34 @@
 {
   "1mic_custom": {
     "available": 524288,
-    "used": 11500,
+    "used": 11252,
     "status": "OKAY",
-    "stack": 644,
-    "code": 8230,
-    "data": 2626
+    "stack": 572,
+    "code": 8070,
+    "data": 2610
   },
   "1mic_default": {
     "available": 524288,
-    "used": 14388,
+    "used": 14180,
     "status": "OKAY",
-    "stack": 692,
-    "code": 8786,
-    "data": 4910
+    "stack": 628,
+    "code": 8658,
+    "data": 4894
   },
   "2mic_custom": {
     "available": 524288,
-    "used": 12116,
+    "used": 11972,
     "status": "OKAY",
-    "stack": 644,
-    "code": 8358,
-    "data": 3114
+    "stack": 580,
+    "code": 8294,
+    "data": 3098
   },
   "2mic_default": {
     "available": 524288,
-    "used": 15108,
+    "used": 14972,
     "status": "OKAY",
-    "stack": 692,
-    "code": 8962,
-    "data": 5454
+    "stack": 636,
+    "code": 8898,
+    "data": 5438
   }
 }
