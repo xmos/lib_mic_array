@@ -66,10 +66,14 @@ class MicArraySharedBase:
 
   def filter(self, filter_pkl_file):
     # load the default filters from the pkl file.
-    s1_filter, s2_filter = filters.load(filter_pkl_file)
+    stg_filters = filters.load(filter_pkl_file)
 
-    if self.debug_print_filters:
-      self.print_two_stage_filter(s1_filter, s2_filter)
+    assert len(stg_filters) in [2, 3], f"Invalid number of filter stages: {len(stg_filters)}"
 
-    return filters.TwoStageFilter(s1_filter, s2_filter)
+    if self.debug_print_filters and (len(stg_filters) == 2):
+      self.print_two_stage_filter(stg_filters[0], stg_filters[1])
 
+    if len(stg_filters) == 2:
+      return filters.TwoStageFilter(stg_filters[0], stg_filters[1])
+    else:
+      return filters.ThreeStageFilter(stg_filters[0], stg_filters[1], stg_filters[2])

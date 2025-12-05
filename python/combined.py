@@ -34,8 +34,8 @@ if __name__ == "__main__":
     with open(out_path, "w") as f:
       header_utils.print_header(args, [sys.stdout, f])
       stage1.main(args.coef_pkl_file, prefix=args.file_prefix, outstreams=[sys.stdout, f])
-      stage2.main(args.coef_pkl_file, prefix=args.file_prefix, outstreams=[sys.stdout, f])
-      header_utils.print_footer([sys.stdout, f])
+      num_fir_stages = stage2.main(args.coef_pkl_file, prefix=args.file_prefix, outstreams=[sys.stdout, f])
+      header_utils.print_footer(num_fir_stages+1, [sys.stdout, f])
   else:
     stage1.main(args.coef_pkl_file, outstreams=[sys.stdout])
-    stage2.main(args.coef_pkl_file, outstreams=[sys.stdout])
+    num_fir_stages = stage2.main(args.coef_pkl_file, outstreams=[sys.stdout])

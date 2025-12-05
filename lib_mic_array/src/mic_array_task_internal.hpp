@@ -19,6 +19,22 @@ using TMicArray =  mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
                                                       MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
                                                       mic_array::ChannelFrameTransmitter>>;
 
+using TMicArray_3stg_decimator =  mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
+                        mic_array::ThreeStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
+                        mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
+                                                        MIC_ARRAY_CONFIG_MIC_COUNT>,
+                        // std::conditional uses USE_DCOE to determine which
+                        // sample filter is used.
+                        typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
+                                            mic_array::DcoeSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>,
+                                            mic_array::NopSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>>::type,
+                        mic_array::FrameOutputHandler<MIC_ARRAY_CONFIG_MIC_COUNT,
+                                                      MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
+                                                      mic_array::ChannelFrameTransmitter>>;
+union UAnyMicArray {
+    TMicArray m_2stg;
+    TMicArray_3stg_decimator m_3stg;
+};
 
 union UStg2_filter_state {
   int32_t filter_state_df_6[MIC_ARRAY_CONFIG_MIC_COUNT][STAGE2_TAP_COUNT];

@@ -8,6 +8,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../../examples/deps.cmake)
 
 set(APP_HW_TARGET       XK-EVK-XU316)
 
+set_property(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" PROPERTY CMAKE_CONFIGURE_DEPENDS
+             "${CMAKE_CURRENT_LIST_DIR}/test_params.json")
+
 # Get JSON lists
 file(READ ${CMAKE_CURRENT_LIST_DIR}/test_params.json JSON_CONTENT)
 
@@ -56,13 +59,20 @@ foreach(l RANGE 0 ${NUM_SAMP_FREQ})
             COMMAND ${CMAKE_COMMAND} -E echo "Generating ${GEN_HDR} from ${PKL_FILE}"
             COMMAND python3 "${XMOS_SANDBOX_DIR}/lib_mic_array/python/combined.py"
                     "${PKL_FILE}" -fp "custom_filter" -fd "${AUTOGEN_OUT_DIR}"
-            DEPENDS "${PKL_FILE}" "${XMOS_SANDBOX_DIR}/lib_mic_array/python/combined.py"
+            DEPENDS "${PKL_FILE}" "${XMOS_SANDBOX_DIR}/lib_mic_array/python/combined.py" "${CMAKE_CURRENT_LIST_DIR}/test_params.json"
             WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
             COMMENT "Auto-generating custom_filter.h for ${PKL_FILE}"
             VERBATIM)
 
         # Tie the generation to a per-config target so it runs before build
         add_custom_target(gen_custom_filter DEPENDS "${GEN_HDR}")
+        set(USE_CUSTOM_FILT 1)
+        set(APP_SAMP_FREQ 0)
+        set(samp_freq_str "customfs") # configs ending with _customfs correspond to the pkl file
+    else()
+        set(USE_CUSTOM_FILT 0)
+        set(APP_SAMP_FREQ ${SAMP_FREQ})
+        set(samp_freq_str "${SAMP_FREQ}fs")
     endif()
 
     foreach(i RANGE 0 ${NUM_N_MICS})
@@ -71,16 +81,7 @@ foreach(l RANGE 0 ${NUM_SAMP_FREQ})
             string(JSON FRAME_SIZE GET ${FRAME_SIZE_LIST} ${j})
             foreach(k RANGE 0 ${NUM_USE_ISR})
                 string(JSON USE_ISR GET ${USE_ISR_LIST} ${k})
-                if (SAMP_FREQ MATCHES "\\.pkl$")
-                    set(USE_CUSTOM_FILT 1)
-                    set(APP_SAMP_FREQ 0)
-                    set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr_customfs")
-                else()
-                    set(USE_CUSTOM_FILT 0)
-                    set(APP_SAMP_FREQ ${SAMP_FREQ})
-                    set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr_${SAMP_FREQ}fs")
-                endif()
-
+                set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr_${samp_freq_str}")
 
                 message(${CONFIG})
                 set(APP_COMPILER_FLAGS_${CONFIG}    -O2

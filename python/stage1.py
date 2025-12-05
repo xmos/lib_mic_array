@@ -26,16 +26,17 @@ Refer to python/README.rst for more details.
 
 def main(coef_pkl_file, prefix="custom_filt", outstreams=[sys.stdout]):
 
-  stage1, _ = filters.load(coef_pkl_file)
+  stage_filters = filters.load(coef_pkl_file)
+  assert len(stage_filters)
 
   out = header_utils.Tee(*outstreams)
 
   # get the byte array representing the binary matrix
-  s1_coef_words = stage1.ToXCoreCoefArray()
+  s1_coef_words = stage_filters[0].ToXCoreCoefArray()
 
   print("\n", file=out)
-  print(f"#define {prefix.upper()}_STG1_DECIMATION_FACTOR   {stage1.DecimationFactor}", file=out)
-  print(f"#define {prefix.upper()}_STG1_TAP_COUNT           {stage1.TapCount}", file=out)
+  print(f"#define {prefix.upper()}_STG1_DECIMATION_FACTOR   {stage_filters[0].DecimationFactor}", file=out)
+  print(f"#define {prefix.upper()}_STG1_TAP_COUNT           {stage_filters[0].TapCount}", file=out)
   print(f"#define {prefix.upper()}_STG1_SHR                 0 /*shr not relevant for stage 1*/", file=out)
 
   print("\n", file=out)

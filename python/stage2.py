@@ -26,25 +26,29 @@ Refer to python/README.rst for more details and examples.
 
 def main(coef_pkl_file, prefix="custom_filt", outstreams=[sys.stdout]):
 
-  _, stage2 = filters.load(coef_pkl_file)
+  stage_filters = filters.load(coef_pkl_file)
 
   out = header_utils.Tee(*outstreams)
-  print("\n", file=out)
-  print(f"#define {prefix.upper()}_STG2_DECIMATION_FACTOR   {stage2.DecimationFactor}", file=out)
-  print(f"#define {prefix.upper()}_STG2_TAP_COUNT           {stage2.TapCount}", file=out)
-  print(f"#define {prefix.upper()}_STG2_SHR                 {stage2.Shr}", file=out)
-  num_coefs = len(stage2.Coef)
-  initial_count = (num_coefs//4) * 4
-  print("\n", file=out)
-  print(f"int32_t {prefix}_stg2_coef[{stage2.TapCount}] = {{", file=out)
-  for i in range(0,initial_count,4): # print 4 coefs per row
-    s = ", ".join( [hex(x) for x in stage2.Coef[i:i+4]] )
-    print(s,end=',\n', file=out)
+  for i, stage in enumerate(stage_filters):
+    if i == 0:
+      continue
+    print("\n", file=out)
+    print(f"#define {prefix.upper()}_STG{i+1}_DECIMATION_FACTOR   {stage.DecimationFactor}", file=out)
+    print(f"#define {prefix.upper()}_STG{i+1}_TAP_COUNT           {stage.TapCount}", file=out)
+    print(f"#define {prefix.upper()}_STG{i+1}_SHR                 {stage.Shr}", file=out)
+    num_coefs = len(stage.Coef)
+    initial_count = (num_coefs//4) * 4
+    print("\n", file=out)
+    print(f"int32_t {prefix}_stg{i+1}_coef[{stage.TapCount}] = {{", file=out)
+    for i in range(0,initial_count,4): # print 4 coefs per row
+      s = ", ".join( [hex(x) for x in stage.Coef[i:i+4]] )
+      print(s,end=',\n', file=out)
 
-  if initial_count != num_coefs:
-    print(", ".join( [hex(x) for x in stage2.Coef[initial_count:]] ), file=out)
+    if initial_count != num_coefs:
+      print(", ".join( [hex(x) for x in stage.Coef[initial_count:]] ), file=out)
 
-  print("};", file=out)
+    print("};", file=out)
+  return len(stage_filters) - 1
 
 
 if __name__ == "__main__":

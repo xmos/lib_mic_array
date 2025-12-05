@@ -80,7 +80,8 @@ class Test_BasicMicArray(MicArraySharedBase):
 
     # Number of PDM samples (per channel) required to make the mic array
     # output a single frame
-    samp_per_frame = 32 * filter.s2.DecimationFactor * frame_size
+    stg1_output_words_per_frame = int(filter.DecimationFactor/filter.s1.DecimationFactor)
+    samp_per_frame = 32 * stg1_output_words_per_frame * frame_size
 
     # Total PDM samples (per channel)
     samp_total = samp_per_frame * frames

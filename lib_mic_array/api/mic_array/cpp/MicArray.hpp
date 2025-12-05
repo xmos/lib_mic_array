@@ -12,6 +12,7 @@
 
 #include "PdmRx.hpp"
 #include "Decimator.hpp"
+#include "ThreeStageDecimator.hpp"
 #include "SampleFilter.hpp"
 #include "OutputHandler.hpp"
 
