@@ -1,22 +1,34 @@
 # Copyright 2022-2025 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-import pickle as pkl
-import numpy as np
 from mic_array.util import *
 import matplotlib.pyplot as plt
-import argparse
 import sys
 from pathlib import Path
 
 import mic_array.filters as filters
-from header_utils import *
+import header_utils
+
+"""
+Emit C header content for the stage-2 decimator (PCM FIR stage).
+
+This script loads a .pkl filter file, quantises and formats the stage2 coefficients to
+the XCORE DUT expected format and prints the coefficient array and the filter params #defines.
+
+Usage:
+  python stage2.py <coef_pkl_file> -fp <prefix> [-fd <out_dir>]
+
+If -fp is provided, a header <out_dir>/<prefix>.h is written and also echoed
+to stdout. If -fp is omitted, content is printed to stdout only.
+
+Refer to python/README.rst for more details and examples.
+"""
 
 def main(coef_pkl_file, prefix="custom_filt", outstreams=[sys.stdout]):
 
   _, stage2 = filters.load(coef_pkl_file)
 
-  out = Tee(*outstreams)
+  out = header_utils.Tee(*outstreams)
   print("\n", file=out)
   print(f"#define {prefix.upper()}_STG2_DECIMATION_FACTOR   {stage2.DecimationFactor}", file=out)
   print(f"#define {prefix.upper()}_STG2_TAP_COUNT           {stage2.TapCount}", file=out)
@@ -36,7 +48,7 @@ def main(coef_pkl_file, prefix="custom_filt", outstreams=[sys.stdout]):
 
 
 if __name__ == "__main__":
-  parser = build_parser("stage2")
+  parser = header_utils.build_parser("stage2")
   args = parser.parse_args()
   print(f"stage2.py: coef_pkl_file = {args.coef_pkl_file}, file_prefix = {args.file_prefix}")
 
@@ -45,8 +57,8 @@ if __name__ == "__main__":
     out_path = Path(args.file_dir) / f"{args.file_prefix}.h"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
-      print_header(args, [sys.stdout, f])
+      header_utils.print_header(args, [sys.stdout, f])
       main(args.coef_pkl_file, prefix=args.file_prefix, outstreams=[sys.stdout, f])
-      print_footer([sys.stdout, f])
+      header_utils.print_footer([sys.stdout, f])
   else:
     main(args.coef_pkl_file, outstreams=[sys.stdout])

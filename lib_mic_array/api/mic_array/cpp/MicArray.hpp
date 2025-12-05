@@ -32,8 +32,6 @@ namespace  mic_array {
   /**
    * @brief Represents the microphone array component of an application.
    *
-   * \verbatim embed:rst
-     Like many classes in this library, `FrameOutputHandler` uses the :ref:`crtp`.\endverbatim
    *
    * @tparam MIC_COUNT Number of microphone output channels from the the mic array component
    * @tparam TDecimator     Type for the decimator. See @ref Decimator.
@@ -93,8 +91,6 @@ namespace  mic_array {
        * The size and formatting of the PDM block expected by the decimator
        * depends on its particular implementation.
        *
-       * A concrete class based on the @ref mic_array::TwoStageDecimator class
-       * template is used in the @ref prefab::BasicMicArray prefab.
        */
       TDecimator Decimator;
 
@@ -128,10 +124,6 @@ namespace  mic_array {
        * filtering, they are separate components of the `MicArray` because they
        * are conceptually independent.
        *
-       * A concrete class based on either the @ref DcoeSampleFilter class
-       * template or the @ref NopSampleFilter class template is used in the
-       * @ref prefab::BasicMicArray prefab, depending on the
-       * `USE_DCOE` parameter of that class template.
        */
       TSampleFilter SampleFilter;
 
@@ -159,8 +151,6 @@ namespace  mic_array {
        * constraint - it must be ready to pull the next block of PDM data while
        * it is available.
        *
-       * A concrete class based on the @ref FrameOutputHandler class template is
-       * used in the @ref prefab::BasicMicArray prefab.
        */
       TOutputHandler OutputHandler;
 

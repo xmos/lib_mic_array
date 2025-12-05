@@ -64,9 +64,6 @@ namespace  mic_array {
    *
    * @tparam FrameTransmitter @parblock
    * The concrete type of the @ref FrameTx component of this class.
-   * \verbatim embed:rst
-     Like many classes in this library, `FrameOutputHandler` uses the :ref:`crtp`.
-     \endverbatim
    * @endparblock
    *
    * @tparam FRAME_COUNT @parblock
@@ -105,7 +102,7 @@ namespace  mic_array {
        * @brief `FrameTransmitter` used to transmit frames to the
        *        next stage for processing.
        *
-       * `FrameTransmitter` is the CRTP type template parameter used in this
+       * `FrameTransmitter` is the template, template parameter used in this
        * class to control how frames of audio data are communicated with
        * subsequent pipeline stages.
        *

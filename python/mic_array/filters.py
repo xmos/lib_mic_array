@@ -218,36 +218,29 @@ class TwoStageFilter(object):
     return self.s2.FilterInt32(s1_output)
 
 
-
-
 def load(coef_file: str):
-
+  filters = []
   with open(coef_file, "rb") as pkl_file:
     # Split the pickled data into the stage1 and stage2 values
-    stage1, stage2 = pkl.load(pkl_file)
-
-    stage1_coef, stage1_dec_factor = stage1
-    stage2_coef, stage2_dec_factor = stage2
-
-    print(f"Stage 1 Decimation Factor: {stage1_dec_factor}")
-    print(f"Stage 1 Tap Count: {stage1_coef.shape[0]}")
-
-    print(f"Stage 2 Decimation Factor: {stage2_dec_factor}")
-    print(f"Stage 2 Tap Count: {stage2_coef.shape[0]}")
+    stages = pkl.load(pkl_file)
+    for index, stage in enumerate(stages):
+      if index == 0:
+        stage1_coef, stage1_dec_factor = stage
+        print(f"Stage 1 Decimation Factor: {stage1_dec_factor}")
+        print(f"Stage 1 Tap Count: {stage1_coef.shape[0]}")
+        # If necessary, pad out stage 1 coefficients with zeros to be 256
+        if stage1_coef.shape[0] < 256:
+          stage1_coef = np.pad(stage1_coef, (0,256-stage1_coef.shape[0]))
+        # print(stage1_coef)
+        assert(len(stage1_coef) == 256)
+        s1_filter = Stage1Filter(stage1_coef, stage1_dec_factor)
+        filters.append(s1_filter)
+      else:
+        fir_stage_coef, fir_stage_dec_factor = stage
+        print(f"Stage {index+1} Decimation Factor: {fir_stage_dec_factor}")
+        print(f"Stage {index+1} Tap Count: {fir_stage_coef.shape[0]}")
+        fir_filter = Stage2Filter(fir_stage_coef, fir_stage_dec_factor)
+        filters.append(fir_filter)
     print("")
 
-    # If necessary, pad out stage 1 coefficients with zeros to be 256
-    if stage1_coef.shape[0] < 256:
-      stage1_coef = np.pad(stage1_coef, (0,256-stage1_coef.shape[0]))
-      # print(stage1_coef)
-
-    assert(len(stage1_coef) == 256)
-
-    # print(stage1_coef)
-
-  s1_filter = Stage1Filter(stage1_coef, stage1_dec_factor)
-  s2_filter = Stage2Filter(stage2_coef, stage2_dec_factor)
-  return s1_filter, s2_filter
-
-
-
+  return filters # return list of filters

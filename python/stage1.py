@@ -3,19 +3,32 @@
 
 import numpy as np
 from mic_array.util import *
-import argparse
 import sys
 from pathlib import Path
 
 import mic_array.filters as filters
-from header_utils import *
+import header_utils
 
+"""
+Emit C header content for the stage-1 decimator (PDM front-end).
+
+This script loads a .pkl filter file, quantises and formats the stage1 coefficients to
+the XCORE DUT expected format and prints the coefficient array and the filter params #defines.
+
+Usage:
+  python stage1.py <coef_pkl_file> -fp <prefix> [-fd <out_dir>]
+
+If -fp is provided, a header <out_dir>/<prefix>.h is written and also echoed
+to stdout. If -fp is omitted, content is printed to stdout only.
+
+Refer to python/README.rst for more details.
+"""
 
 def main(coef_pkl_file, prefix="custom_filt", outstreams=[sys.stdout]):
 
   stage1, _ = filters.load(coef_pkl_file)
 
-  out = Tee(*outstreams)
+  out = header_utils.Tee(*outstreams)
 
   # get the byte array representing the binary matrix
   s1_coef_words = stage1.ToXCoreCoefArray()
@@ -36,7 +49,7 @@ def main(coef_pkl_file, prefix="custom_filt", outstreams=[sys.stdout]):
 
 
 if __name__ == "__main__":
-  parser = build_parser("stage1")
+  parser = header_utils.build_parser("stage1")
   args = parser.parse_args()
   print(f"stage1.py: coef_pkl_file = {args.coef_pkl_file}, file_prefix = {args.file_prefix}")
 
@@ -44,9 +57,9 @@ if __name__ == "__main__":
     out_path = Path(args.file_dir) / f"{args.file_prefix}.h"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
-      print_header(args, [sys.stdout, f])
+      header_utils.print_header(args, [sys.stdout, f])
       main(args.coef_pkl_file, prefix=args.file_prefix, outstreams=[sys.stdout, f])
-      print_footer([sys.stdout, f])
+      header_utils.print_footer([sys.stdout, f])
   else:
     main(args.coef_pkl_file, outstreams=[sys.stdout])
 

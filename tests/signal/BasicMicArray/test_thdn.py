@@ -71,8 +71,7 @@ class Test_BasicMicArray(MicArraySharedBase):
       filter = self.filter(Path(__file__).parent / f"{custom_filter_file}")
       pdm_freq = 3.072e6 # The final sampling rate calculation assumes PDM freq is 3.072MHz. Hardcoding
                          # since not stored in the filter class
-      # For custom filter, figure out fs from the 2nd stage decimation factor
-      fs = int(pdm_freq / (filter.s1.DecimationFactor * filter.s2.DecimationFactor))
+      fs = int(pdm_freq / filter.DecimationFactor)
       assert fs in [16000, 32000, 48000], f"Error: fs {fs} for custom filter {custom_filter_file} not amongst the supported set [16000, 32000, 48000]"
     else:
       filter = self.filter(self.get_default_filter(fs))

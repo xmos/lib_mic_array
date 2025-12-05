@@ -84,9 +84,6 @@ void process_signal(chanend_t c_from_host)
 
   dec.Init(decimator_conf);
 
-  /*dec.Init(const_cast<uint32_t*>(test_stage1_coef),
-           test_stage2_coef, test_stage2_shr);*/
-
   // Host will tell us how many blocks it intends to send
   unsigned block_count = s_chan_in_word(c_from_host);
 

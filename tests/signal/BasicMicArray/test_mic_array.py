@@ -4,8 +4,8 @@
 ######
 # Test: BasicMicArray test
 #
-# This test is intended to ensure the BasicMicArray prefab appears to produce
-# the expected results.
+# This test is intended to ensure the mic array implementation, invoked via
+# the default and custom filter APIs appears to produce the expected results.
 #
 # This test does one thing in particular that may seem a bit suspect. Instead of
 # reading PDM data from a port, the BasicMicArray is 'tricked' into using a
