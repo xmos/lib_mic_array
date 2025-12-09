@@ -19,9 +19,9 @@ namespace  mic_array {
 
 
 /**
- * @brief First and Second Stage Decimator
+ * @brief Three Stage Decimator
  *
- * This class template represents a two stage decimator which converts a stream
+ * This class template represents a three stage decimator which converts a stream
  * of PDM samples to a lower sample rate stream of PCM samples.
  *
  * Concrete implementations of this class template are meant to be used as the
@@ -87,10 +87,10 @@ class ThreeStageDecimator
     constexpr ThreeStageDecimator() noexcept { }
 
     /**
-     * @brief Initialize the two-stage decimator from a configuration struct
+     * @brief Initialize the three-stage decimator from a configuration struct
      * @ref mic_array_decimator_conf_t @p decimator_conf
      *
-     * Reads stage-1 and stage-2 filter parameters from @p decimator_conf and prepares
+     * Reads stage-1, stage-2 and stage-3 filter parameters from @p decimator_conf and prepares
      * internal state:
      * The caller must ensure all pointers inside @p decimator_conf.filter_conf[0]
      * and @p decimator_conf.filter_conf[0] are valid and remain alive for the
@@ -104,10 +104,10 @@ class ThreeStageDecimator
      * @brief Process one block of PDM data.
      *
      * Processes a block of PDM data to produce an output sample from the
-     * second stage decimator.
+     * third stage decimator.
      *
      * `pdm_block` contains exactly enough PDM samples to produce a single
-     * output sample from the second stage decimator. The layout of `pdm_block`
+     * output sample from the third stage decimator. The layout of `pdm_block`
      * should (effectively) be:
      *
      * @code{.cpp}
@@ -115,12 +115,12 @@ class ThreeStageDecimator
      *    struct {
      *      // lower word indices are older samples.
      *      // less significant bits in a word are older samples.
-     *      uint32_t samples[S2_DEC_FACTOR];
+     *      uint32_t samples[S2_DEC_FACTOR * S3_DEC_FACTOR];
      *    } microphone[MIC_COUNT]; // mic channels are in ascending order
      *  } pdm_block;
      * @endcode
      *
-     * A single output sample from the second stage decimator is computed and
+     * A single output sample from the third stage decimator is computed and
      * written to `sample_out[]`.
      *
      * @param sample_out  Output sample vector.

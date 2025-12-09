@@ -18,7 +18,7 @@ foreach(N_MICS  1 2)
                                             -report
                                             -mcmodel=large
                                             -DAPP_NAME="MIC_ARRAY_MEASURE_MIPS_${CONFIG}"
-                                            -DAPP_SAMP_FREQ=48000
+                                            -DAPP_SAMP_FREQ=16000
                                             -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
                                             -DUSE_DEFAULT_API=${USE_DEFAULT})
 endforeach()

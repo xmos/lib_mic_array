@@ -43,14 +43,13 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
 
 #define APP_N_MICS      (MIC_ARRAY_CONFIG_MIC_COUNT)
 #define APP_USE_DC_ELIMINATION  (MIC_ARRAY_CONFIG_USE_DC_ELIMINATION)
-#if (APP_SAMP_FREQ != 48000)
-  #error "App built for 48KHz. Compile with -DAPP_SAMP_FREQ=48000"
+#if (APP_SAMP_FREQ != 16000)
+  #error "App built for 16KHz. Compile with -DAPP_SAMP_FREQ=16000"
 #endif
 
 #ifndef APP_N_MICS_IN
   #define APP_N_MICS_IN APP_N_MICS
 #endif
-#define STAGE2_DEC_FACTOR_48KHZ   2
 #define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
 #define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
 
@@ -70,33 +69,33 @@ MA_C_API
 void app_mic_array_init()
 {
   static int32_t stg1_filter_state[APP_N_MICS][8];
-  static int32_t filter_state_df_2[APP_N_MICS][MIC_ARRAY_48K_STAGE_2_TAP_COUNT];
+  static int32_t filter_state_df_2[APP_N_MICS][STAGE2_TAP_COUNT];
   mic_array_decimator_conf_t decimator_conf;
   mic_array_filter_conf_t filter_conf[2];
   memset(&decimator_conf, 0, sizeof(decimator_conf));
 
   decimator_conf.filter_conf = &filter_conf[0];
   decimator_conf.num_filter_stages = 2;
-  filter_conf[0].coef = (int32_t*)stage1_48k_coefs;
+  filter_conf[0].coef = (int32_t*)stage1_coef;
   filter_conf[0].num_taps = 256;
   filter_conf[0].decimation_factor = 32;
   filter_conf[0].state = (int32_t*)stg1_filter_state;
   filter_conf[0].state_words_per_channel = filter_conf[0].num_taps/32;
 
-  filter_conf[1].coef = (int32_t*)stage2_48k_coefs;
-  filter_conf[1].decimation_factor = STAGE2_DEC_FACTOR_48KHZ;
-  filter_conf[1].num_taps = MIC_ARRAY_48K_STAGE_2_TAP_COUNT;
-  filter_conf[1].shr = stage2_48k_shift;
+  filter_conf[1].coef = (int32_t*)stage2_coef;
+  filter_conf[1].decimation_factor = STAGE2_DEC_FACTOR;
+  filter_conf[1].num_taps = STAGE2_TAP_COUNT;
+  filter_conf[1].shr = stage2_shr;
   filter_conf[1].state_words_per_channel = decimator_conf.filter_conf[1].num_taps;
   filter_conf[1].state = (int32_t*)filter_state_df_2;
 
   mics.Decimator.Init(decimator_conf);
 
-  static uint32_t pdmrx_out_block_df_2[APP_N_MICS][STAGE2_DEC_FACTOR_48KHZ];
-  static uint32_t __attribute__((aligned (8))) pdmrx_out_block_double_buf_df_2[2][APP_N_MICS_IN * STAGE2_DEC_FACTOR_48KHZ];
+  static uint32_t pdmrx_out_block_df_2[APP_N_MICS][STAGE2_DEC_FACTOR];
+  static uint32_t __attribute__((aligned (8))) pdmrx_out_block_double_buf_df_2[2][APP_N_MICS_IN * STAGE2_DEC_FACTOR];
 
   pdm_rx_conf_t pdm_rx_config;
-  pdm_rx_config.pdm_out_words_per_channel = STAGE2_DEC_FACTOR_48KHZ;
+  pdm_rx_config.pdm_out_words_per_channel = STAGE2_DEC_FACTOR;
   pdm_rx_config.pdm_out_block = (uint32_t*)pdmrx_out_block_df_2;
   pdm_rx_config.pdm_in_double_buf = (uint32_t*)pdmrx_out_block_double_buf_df_2;
 

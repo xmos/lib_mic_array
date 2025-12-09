@@ -138,7 +138,7 @@ Table :ref:`mic_array_memory_usage` reports the memory usage of two minimal appl
 one using the :ref:`default <mic_array_default_model>` mic array API and another using a :ref:`custom <mic_array_adv_use_methods>`
 configuration created by instantiating a :cpp:class:`MicArray <mic_array::MicArray>` object.
 
-Both applications are built for **1 or 2 microphones** with a **48 kHz output sample rate**, with the other
+Both applications are built for **1 or 2 microphones** with a **16 kHz output sample rate**, with the other
 compile-time parameters set to their default values as defined in :ref:`mic_array_default_model_defines`.
 
 Memory for higher microphone counts can be extrapolated from the 1- and 2-mic numbers.
@@ -152,7 +152,7 @@ For custom usage, the data memory across different sampling rates varies dependi
 
 .. note::
 
-  The default API requires approximately 3 KiB more memory than the custom configuration.
+  The default API requires approximately 4 KiB more memory than the custom configuration.
   The additional code usage comes from the wrapper and abstraction code included in the default API.
   The increased data usage results from the inclusion of filter coefficients
   for all filters provided by the library, whereas the custom build includes only the coefficients

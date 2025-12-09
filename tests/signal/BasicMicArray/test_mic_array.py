@@ -123,10 +123,6 @@ class Test_BasicMicArray(MicArraySharedBase):
     # applied to them prior to being summed.
     result_diff = np.max(np.abs(expected - device_output))
     print(f"result_diff = {result_diff}")
-    if custom_filter_file:
-      threshold = 12 # I think this is due to the longer stage2 filter in the custom filter (good_2_stage_filter_int.pkl) used in this test
-    else:
-      threshold = 4
-
+    threshold = 12
     assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
 

@@ -96,7 +96,7 @@ Stage 2 filters
      - Right shift
    * - 16 kHz
      - 6
-     - 64
+     - 256
      - ``stage2_coef``
      - ``stage2_shr``
    * - 32 kHz

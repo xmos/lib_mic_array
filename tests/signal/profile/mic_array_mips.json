@@ -1,14 +1,14 @@
 {
-  "1mic_isr_16000fs": 13.0744,
-  "1mic_isr_32000fs": 17.2975,
-  "1mic_isr_48000fs": 21.3536,
-  "1mic_thread_16000fs": 11.6985,
-  "1mic_thread_32000fs": 15.8895,
-  "1mic_thread_48000fs": 19.9135,
-  "2mic_isr_16000fs": 26.9953,
-  "2mic_isr_32000fs": 34.5606,
-  "2mic_isr_48000fs": 41.8135,
-  "2mic_thread_16000fs": 24.5273,
-  "2mic_thread_32000fs": 32.1255,
-  "2mic_thread_48000fs": 39.3895
+  "1mic_isr_16000fs": 14.1459,
+  "1mic_isr_32000fs": 17.2336,
+  "1mic_isr_48000fs": 21.3055,
+  "1mic_thread_16000fs": 12.9298,
+  "1mic_thread_32000fs": 15.9536,
+  "1mic_thread_48000fs": 19.9614,
+  "2mic_isr_16000fs": 29.3098,
+  "2mic_isr_32000fs": 34.6215,
+  "2mic_isr_48000fs": 41.9335,
+  "2mic_thread_16000fs": 27.0056,
+  "2mic_thread_32000fs": 32.2854,
+  "2mic_thread_48000fs": 39.5335
 }

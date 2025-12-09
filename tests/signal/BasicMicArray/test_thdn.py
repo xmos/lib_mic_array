@@ -57,8 +57,8 @@ class Test_BasicMicArray(MicArraySharedBase):
     frame_size = 1
     use_isr = 1
     duration_s = 7
-    freq_hz = {16000: [300, 1000], 32000: [300, 1000], 48000: [300, 1000]}
-    thdn_threshold = {16000: [-118.0, -110.0], 32000: [-120.0, -120.0], 48000: [-108.0, -108.0]}
+    freq_hz = {16000: [300, 7000], 32000: [300, 14000], 48000: [300, 20000]}
+    thdn_threshold = {16000: [-123.0, -127.0], 32000: [-120.0, -121.0], 48000: [-108.0, -108.0]}
 
     custom_filter_file = None
     if not isinstance(fs, int): # fs must contain the name of the filter .pkl file
@@ -102,7 +102,7 @@ class Test_BasicMicArray(MicArraySharedBase):
       input_thdn = THDN(sig_sine_pcm[i], fs, fund_freq=freq_hz[fs][i])
       python_output_thdn = THDN(expected_output_float[i], fs, fund_freq=freq_hz[fs][i])
       print(f"python_output_thdn = {python_output_thdn}, input_thdn = {input_thdn}")
-      assert python_output_thdn < thdn_threshold[fs][i], f"Python output THDN {python_output_thdn} exceeds threshold {thdn_threshold[fs][i]}"
+      assert python_output_thdn < thdn_threshold[fs][i], f"At sampling rate {fs}, freq {freq_hz[fs][i]}, Python output THDN {python_output_thdn} exceeds threshold {thdn_threshold[fs][i]}"
 
     if "xcore" in platform:
       # run on xcore only when not running smoke
@@ -130,7 +130,7 @@ class Test_BasicMicArray(MicArraySharedBase):
         for i in range(len(freq_hz[fs])):
           xcore_output_thdn = THDN(device_output_float[i][int(fs/10):], fs, fund_freq=freq_hz[fs][i])
           print(f"xcore_output_thdn = {xcore_output_thdn}")
-          assert xcore_output_thdn < thdn_threshold[fs][i], f"XCORE output THDN {xcore_output_thdn} exceeds threshold {thdn_threshold[fs][i]}"
+          assert xcore_output_thdn < thdn_threshold[fs][i], f"At sampling rate {fs}, freq {freq_hz[fs][i]}, XCORE output THDN {xcore_output_thdn} exceeds threshold {thdn_threshold[fs][i]}"
 
         if self.print_output:
           print(f"Device output: {device_output}")
@@ -142,10 +142,7 @@ class Test_BasicMicArray(MicArraySharedBase):
         # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift
         # applied to them prior to being summed.
         result_diff = np.max(np.abs(expected - device_output))
-        if custom_filter_file:
-          threshold = 12
-        else:
-          threshold = 4
+        threshold = 12
         print(f"result_diff = {result_diff}")
         assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
 

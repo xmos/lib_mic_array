@@ -58,7 +58,7 @@ class MicArraySharedBase:
   def get_default_filter(self, fs):
     assert fs in [16000, 32000, 48000]
     if fs == 16000:
-      return Path(__file__).parent / "small_2_stage_filter_int.pkl"
+      return Path(__file__).parent / "good_2_stage_filter_int.pkl"
     elif fs == 32000:
       return Path(__file__).parent / "good_32k_filter_int.pkl"
     elif fs == 48000:
