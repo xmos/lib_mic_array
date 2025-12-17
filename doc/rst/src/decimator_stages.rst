@@ -4,7 +4,8 @@
 Decimation filters
 ******************
 
-The mic array unit provided by this library uses a two-stage decimation process
+The mic array unit provided by this library uses a two-stage decimation process,
+implemented in :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>`,
 to convert a high sample rate stream of (1-bit) PDM samples into a lower sample
 rate stream of (32-bit) PCM samples. This is shown in :ref:`decimator_stages_simplified`.
 
@@ -95,7 +96,7 @@ Stage 2 filters
      - Right shift
    * - 16 kHz
      - 6
-     - 64
+     - 256
      - ``stage2_coef``
      - ``stage2_shr``
    * - 32 kHz
@@ -161,14 +162,19 @@ overall combined response provides a nice flat passband.
 
    48 kHz output sampling rate filter freq response
 
-The following sections provide more details about the first and second stage decimation filters.
+The following sections provide more details about the first and second stage decimation filters,
+implemented in :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>`.
+
+.. _decimator_stage_1:
 
 Decimator stage 1
 =================
 
 For the first stage decimating FIR filter, the actual filter coefficients used
 are configurable, so an application is free to use a custom first stage filter,
-as long as the tap count is ``256``.
+as long as the tap count is ``256`` and the decimation factor is ``32``.
+
+.. _stage_1_filter_impl:
 
 Filter implementation (Stage 1)
 -------------------------------
@@ -208,6 +214,9 @@ standard coefficient array (i.e. ``int16_t filter[256] = {b[0], b[1], ... };``).
 Rather, in order to take advantage of the VPU, the coefficients must be
 rearranged bit-by-bit into a block form suitable for VPU processing.
 
+The filter state (delay line) consists of 256 one-bit PDM samples (equal to
+the number of filter taps) and requires a buffer of 8 unsigned 32-bit words for storage.
+
 Filter Conversion Script
 ------------------------
 
@@ -223,6 +232,8 @@ Decimator stage 2
 =================
 
 An application is free to supply its own second stage filter.
+
+.. _stage_2_filter_impl:
 
 Filter implementation (Stage 2)
 -------------------------------
@@ -242,67 +253,5 @@ The second stage filter uses the 32-bit FIR filter implementation from
 `lib_xcore_math <https://github.com/xmos/lib_xcore_math>`_. See
 ``xs3_filter_fir_s32()`` in that library for more implementation details.
 
-
-.. _custom_filters:
-
-Custom filters
-==============
-
-The tap count and decimation factor for the first stage decimator are fixed to ``256`` and ``32``
-respectively. These parameters cannot be changed without implementing a
-custom decimator.
-However, both the first-stage and second-stage filter coefficients may be
-replaced, and the second-stage decimation factor and tap count may be freely
-modified.
-
-.. _designing_custom_filters:
-
-Designing a custom filter
--------------------------
-
-A filter design scripts is provided at ``python/filter_design/design_filter.py``.
-This script contains functions to generate the filters that are currently provided
-as part of ``lib_mic_array`` and write them as .pkl files.
-Using these functions as a guide, the script can be extended to generate custom
-filters tailored to the application's needs.
-
-After generating a ``.pkl`` file, run the ``stage1.py`` and ``stage2.py`` helper
-scripts to quantize and format the filters into the fixed-point C arrays
-required by the library.
-
-From the ``python`` directory, run:
-
-.. code-block:: console
-
-    python filter_design/design_filter.py           # generate the filter .pkl files
-    python stage1.py <custom filter .pkl file>      # convert the .pkl file to a C style array for stage 1
-    python stage2.py <custom filter .pkl file>      # convert the .pkl file to a C style array for stage 2
-
-Both ``stage1.py`` and ``stage2.py`` print the generated coefficient arrays, tap
-counts, and (for stage 2) the required right-shift value to stdout.
-These printed arrays should be copied into a source file and included in the
-application.
-
-After generating the coefficient arrays, modify the application to use them as
-described in :ref:`using_custom_filters`.
-
-
-.. _using_custom_filters:
-
-Using custom filters
---------------------
-
-When constructing a mic array instance using the C++ API (see
-:ref:`mic_array_adv_use_methods`), the decimator’s structural parameters—such as
-tap count and decimation factor—are supplied as template arguments to the
-decimator class.
-Pointers to the filter coefficients are then passed during initialization (see
-:cpp:func:`mic_array::TwoStageDecimator::Init`).
-
-Note that both the first and second stage filters are implemented using
-fixed-point arithmetic which requires the coefficients to be presented in a
-particular format. The helper scripts ``stage1.py`` and ``stage2.py`` generate the correctly
-quantized and interleaved coefficient arrays required by the library. See the associated README for usage details.
-
-
-
+The filter state (delay line) consists of as many 32-bit samples as there are taps in the stage-2 filter,
+and requires those many 32-bit words for storage.

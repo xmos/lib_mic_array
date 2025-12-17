@@ -34,14 +34,6 @@ C_API_START
  * filter automatically.
  * @endparblock
  *
- * @par With MicArray Prefabs
- * @parblock
- * The MicArray prefab `mic_array::prefab::BasicMicArray` has a `bool` template
- * parameter `USE_DCOE` which indicates whether the
- * `mic_array::DcoeSampleFilter` should be used. If `true`, DCOE will be
- * enabled.
- * @endparblock
- *
  * @par With default API
  * @parblock
  * When using the default API, DCOE is enabled by default. To disable DCOE

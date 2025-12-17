@@ -1,6 +1,6 @@
 # Copyright 2022-2025 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
- 
+
 
 import numpy as np
 from mic_array.device_context import DeviceContext
@@ -9,7 +9,7 @@ from mic_array.pdm_signal import PdmSignal
 
 
 class MicArrayDevice(DeviceContext):
-  
+
   def __init__(self, xe_path, /, extra_xrun_args="", **kwargs):
     super().__init__(xe_path, probes=["meta_out", "data_out"], extra_xrun_args=extra_xrun_args, **kwargs)
 
@@ -28,6 +28,8 @@ class MicArrayDevice(DeviceContext):
       "s1.dec_factor": self.next_meta(),
       "s2.tap_count": self.next_meta(),
       "s2.dec_factor": self.next_meta(),
+      "s3.tap_count": self.next_meta(),
+      "s3.dec_factor": self.next_meta(),
       "frame_size": self.next_meta(),
       "use_isr" : self.next_meta()
     }
@@ -46,12 +48,13 @@ class MicArrayDevice(DeviceContext):
     # up the device. We can just read out all the output afterwards.
 
     # Note that this time we should be sending the signal in the format expected
-    # by the PDM rx service, NOT in the form expected by the decimator. That 
+    # by the PDM rx service, NOT in the form expected by the decimator. That
     # really just means the channels need to be interleaved.
     sig_bytes = signal.to_bytes_interleaved()
     self.send_bytes(sig_bytes)
 
-    sample_count = signal.len // ( 32 * self.param["s2.dec_factor"] )
+    sample_count = signal.len // ( 32 * self.param["s2.dec_factor"] * self.param["s3.dec_factor"])
+
     device_output = np.zeros((self.param["channels"], sample_count), dtype=np.int32)
 
     # Device sends output as if it had shape (sample_count, channel_count)
@@ -62,4 +65,3 @@ class MicArrayDevice(DeviceContext):
     return device_output
 
 
-  

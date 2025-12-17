@@ -224,7 +224,7 @@ def main(pkl_file):
 
 
 if __name__ == "__main__":
-    default_file = Path(__file__).parent / ".." / ".." / "tests" / "signal" / "BasicMicArray" / "default_filters.pkl"
+    default_file = Path(__file__).parent / ".." / ".." / "tests" / "signal" / "BasicMicArray" / "good_2_stage_filter_int.pkl"
     parser = argparse.ArgumentParser()
     parser.add_argument("--pkl-file", type=str, help='Path to pkl file containing first and second stage coefficients.', default=default_file)
     args = parser.parse_args()

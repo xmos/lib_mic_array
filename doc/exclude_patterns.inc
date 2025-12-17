@@ -1,6 +1,9 @@
 /build/*build*/**/*.rst
 /build/*build*/**/*.md
+**/.venv/**/*.md
+**/.venv/**/*.rst
 CHANGELOG.rst
 LICENSE.rst
 build.xcore
 tests/**/.pytest_cache/*.md
+tests/.pytest_cache/*.md

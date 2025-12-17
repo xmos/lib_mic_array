@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
-project(app_mic_array_prefab)
+project(app_custom_filter)
 
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
-set(APP_HW_TARGET           XK-VOICE-L71.xn)
+set(APP_HW_TARGET XK-VOICE-L71.xn)
 
 set(NAME_MAP thread;isr)
 foreach(N_MICS  1 2)
@@ -18,13 +18,11 @@ foreach(N_MICS  1 2)
                                             -report
                                             -mcmodel=large
                                             -DBOARD_SUPPORT_BOARD=XK_VOICE_L71
-                                            -DAPP_NAME="MIC_ARRAY_PREFAB_${CONFIG}"
-                                            -DAPP_USE_PDM_RX_ISR=${USE_ISR}
-                                            -DN_MICS=${N_MICS})
+                                            -DAPP_NAME="MIC_ARRAY_${CONFIG}"
+                                            -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
+                                            -DAPP_MIC_COUNT=${N_MICS})
     endforeach()
 endforeach()
-
-# Manually set sources as we take from the common directory too
 
 set(APP_INCLUDES    src)
 

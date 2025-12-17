@@ -18,6 +18,9 @@
 
 #include <math.h>
 
+#if APP_AUDIO_SAMPLE_RATE != 16000
+#error "App sets filters for output sampling rate 16kHz. Compile with APP_AUDIO_SAMPLE_RATE set to 16000
+#endif
 
 #define I2S_CLKBLK    XS1_CLKBLK_3
 
@@ -26,7 +29,6 @@ typedef struct {
 }ma_interface_t;
 
 ma_interface_t ma_interface;
-
 
 static int i2s_mclk_bclk_ratio(
         const unsigned audio_clock_frequency,
@@ -37,17 +39,16 @@ static int i2s_mclk_bclk_ratio(
 
 
 
-
 I2S_CALLBACK_ATTR
 void app_i2s_send(ma_interface_t* app_data,
                   size_t num_out,
                   int32_t* samples)
 {
-  int32_t frame[N_MICS];
-  ma_frame_rx(frame, app_data->c_from_mic_array, N_MICS, 1);
+  int32_t frame[MIC_ARRAY_CONFIG_MIC_COUNT];
+  ma_frame_rx(frame, app_data->c_from_mic_array, MIC_ARRAY_CONFIG_MIC_COUNT, 1);
 
   for(int c = 0; c < num_out; c++){
-    int32_t samp = frame[(N_MICS==1)?0:c] << 6;
+    int32_t samp = frame[(MIC_ARRAY_CONFIG_MIC_COUNT==1)?0:c] << 6;
     samples[c] = samp;
   }
 }
@@ -60,7 +61,8 @@ void app_i2s_init(void* app_data,
                   i2s_config_t* config)
 {
   config->mode = I2S_MODE_I2S;
-  config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(APP_AUDIO_CLOCK_FREQUENCY, APP_I2S_AUDIO_SAMPLE_RATE);
+  config->mclk_bclk_ratio =  i2s_mclk_bclk_ratio(MCLK_48,
+                                                 APP_I2S_AUDIO_SAMPLE_RATE);
 }
 
 
@@ -101,7 +103,7 @@ i2s_callback_group_t i2s_context = {
 
 
 
-void app_i2s_task( chanend_t c_from_mic_array  )
+void app_i2s_task( chanend_t c_from_mic_array )
 {
   ma_interface.c_from_mic_array = c_from_mic_array;
   i2s_context.app_data = &ma_interface;

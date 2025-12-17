@@ -21,30 +21,7 @@ class MicArraySharedBase:
       op = request.config.getoption(fs)
       self.__dict__[fs] = op
 
-  def default_filter(self, fs):
-    assert fs in [16000, 32000, 48000]
-    if fs == 16000:
-      self.DEFAULT_FILTERS_FILE = Path(__file__).parent / "default_filters.pkl"
-    elif fs == 32000:
-      self.DEFAULT_FILTERS_FILE = Path(__file__).parent / "good_32k_filter_int.pkl"
-    elif fs == 48000:
-      self.DEFAULT_FILTERS_FILE = Path(__file__).parent / "good_48k_filter_int.pkl"
-
-    # load the default filters from the pkl file.
-    with open(self.DEFAULT_FILTERS_FILE, "rb") as filt_file:
-      stage1, stage2 = pickle.load(filt_file)
-
-    s1_coef, s1_df = stage1
-    s2_coef, s2_df = stage2
-
-    # if the stage1 filter is not 256 taps, then we need to pad it out to 256
-    if len(s1_coef) < 256:
-      s1_coef = np.pad(s1_coef, (0, 256 - len(s1_coef)), 'constant')
-
-    s1_filter = filters.Stage1Filter(s1_coef, s1_df)
-    s2_filter = filters.Stage2Filter(s2_coef, s2_df)
-
-    if self.debug_print_filters:
+  def print_two_stage_filter(self, s1_filter, s2_filter):
       # Print stage1 filter
       # print stage1 as uint32 so that it is easy to compare to the device
       s1_coef_bytes = s1_filter.ToXCoreCoefArray().tobytes()
@@ -77,5 +54,26 @@ class MicArraySharedBase:
         print("  " + "  ".join(remaining_s2))
       print(f"Stage2 Filter shr: {s2_filter.Shr}")
 
-    return filters.TwoStageFilter(s1_filter, s2_filter)
 
+  def get_default_filter(self, fs):
+    assert fs in [16000, 32000, 48000]
+    if fs == 16000:
+      return Path(__file__).parent / "good_2_stage_filter_int.pkl"
+    elif fs == 32000:
+      return Path(__file__).parent / "good_32k_filter_int.pkl"
+    elif fs == 48000:
+      return Path(__file__).parent / "good_48k_filter_int.pkl"
+
+  def filter(self, filter_pkl_file):
+    # load the default filters from the pkl file.
+    stg_filters = filters.load(filter_pkl_file)
+
+    assert len(stg_filters) in [2, 3], f"Invalid number of filter stages: {len(stg_filters)}"
+
+    if self.debug_print_filters and (len(stg_filters) == 2):
+      self.print_two_stage_filter(stg_filters[0], stg_filters[1])
+
+    if len(stg_filters) == 2:
+      return filters.TwoStageFilter(stg_filters[0], stg_filters[1])
+    else:
+      return filters.ThreeStageFilter(stg_filters[0], stg_filters[1], stg_filters[2])

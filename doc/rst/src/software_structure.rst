@@ -142,42 +142,6 @@ one at a time over a channel. Another output handler implementation may collect
 samples into frames, and use a FreeRTOS queue to transfer the data to another
 thread.
 
-
-.. _crtp:
-
-Curiously recurring template pattern
-------------------------------------
-
-The C++ API of this library makes heavy use of the `Curiously Recurring Template
-Pattern <https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_
-(CRTP).
-
-Instead of providing flexibility through abstract classes or polymorphism, CRTP
-achieves flexibility through the use of class templates with type template
-parameters. As with derived classes and virtual methods, the CRTP template
-parameter must follow a contract with the class template where it implements
-one or more methods with specific names and signatures that the class template
-directly calls.
-
-There are a couple notable advantages of using CRTP over polymorphic behaviour.
-With CRTP flexibility does not generally come with the same run-time costs (in
-terms of both compute and memory) as polymorphic solutions. This is because the
-CRTP class template always knows the concrete type of any objects it uses at
-compile time. This avoids the need for run time type information or virtual
-function tables. This allows compile time optimizations can be made which may
-not be otherwise available. This in-turn allows many function calls to be
-inlined, or in some cases, entirely eliminated.
-
-Additionally, while not strictly an example of CRTP, integer template parameters
-are also heavily used in class templates. The two main advantages of this are
-that it allows objects to encapsulate their own (statically allocated) memory,
-and that it allows the compiler to make compile time loop optimizations that it
-may not otherwise be able to make.
-
-The downside to CRTP is that it tends to lead to highly verbose class type
-names, where templated classes end up with type parameter assignments are
-themselves templated classes with their own template parameters.
-
 Sub-Component initialization
 ----------------------------
 
@@ -210,22 +174,13 @@ further processing and ``Shutdown()``, which is called in the even of ``MicArray
 shutdown.
 
 Generally speaking, ``PdmRx`` will derive from the
-:cpp:class:`PdmRxService <mic_array::PdmRxService>`
-class template. ``PdmRxService`` encapsulates the logic of using an xCore
+:cpp:class:`StandardPdmRxService <mic_array::StandardPdmRxService>`
+class template. ``StandardPdmRxService`` encapsulates the logic of using an xCore
 ``port`` for capturing PDM samples one word (32 bits) at a time, and managing
 two buffers where blocks of samples are collected. It also simplifies the logic
 of running PDM RX as either an interrupt or as a stand-alone thread.
 
-``PdmRxService`` has 2 template parameters. The first is the ``BLOCK_SIZE``,
-which specifies the size of a PDM sample block (in 32-bit words). The second,
-``SubType``, is the type of the sub-class being derived from ``PdmRxService``.
-This is the CRTP (Curiously Recurring Template Pattern), which allows a base
-class to use polymorphic-like behaviours while ensuring that all types are known
-at compile-time, avoiding the drawbacks of using virtual functions.
-
-There is currently one class template which derives from ``PdmRxService``,
-called :cpp:class:`StandardPdmRxService <mic_array::StandardPdmRxService>`.
-``StandardPdmRxService`` uses a streaming channel to transfer PDM blocks to the
+It uses a streaming channel to transfer PDM blocks to the
 decimator. It also provides methods for installing an optimized ISR for PDM
 capture.
 
@@ -282,38 +237,3 @@ channel.
 The :cpp:class:`FrameOutputHandler <mic_array::FrameOutputHandler>` class
 collects samples into frames, and uses a frame transmitter to send the frames
 once they're ready.
-
-Prefabs
--------
-
-One of the drawbacks to broad use of class templates is that concrete class
-names can unfortunately become excessively verbose and confusing. For example,
-the following is the fully qualified name of a (particular) concrete
-``MicArray`` implementation:
-
-.. code-block:: c++
-
-  mic_array::MicArray<2,
-      mic_array::TwoStageDecimator<2,6,65>,
-      mic_array::StandardPdmRxService<2,2,6>,
-      mic_array::DcoeSampleFilter<2>,
-      mic_array::FrameOutputHandler<2,256,
-          mic_array::ChannelFrameTransmitter>>
-
-
-This library also provides a C++ namespace ``mic_array::prefab`` which is
-intended to simplify construction of ``MicArray`` objects where common
-configurations are needed.
-
-The :cpp:class:`BasicMicArray <mic_array::prefab::BasicMicArray>` class template
-uses the most typical component implementations, where PDM rx can be run as an
-interrupt or as a stand-alone thread, and where audio frames are transmitted to
-subsequent processing stages using a channel.
-
-To demonstrate how ``BasicMicArray`` simplifies this process, observe that the
-following ``MicArray`` type is behaviourally identical to the above:
-
-.. code-block:: c++
-
-  mic_array::prefab::BasicMicArray<2,256,true>
-

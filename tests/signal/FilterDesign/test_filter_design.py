@@ -11,7 +11,7 @@ def test_design_filter():
 
 
 def test_plot_coeffs():
-    pc.main(Path(__file__).parent / ".." / "BasicMicArray" / "default_filters.pkl")
+    pc.main(Path(__file__).parent / ".." / "BasicMicArray" / "small_2_stage_filter_int.pkl")
 
 
 if __name__ == "__main__":

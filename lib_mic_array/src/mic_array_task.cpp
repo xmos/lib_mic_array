@@ -12,143 +12,162 @@
 #include "mic_array/etc/filters_default.h"
 #include "mic_array_task_internal.hpp"
 
-TMicArray_stg2df_6* g_mics_df_6;
-TMicArray_stg2df_3* g_mics_df_3;
-TMicArray_stg2df_2* g_mics_df_2;
-MicArrayKind g_kind = NONE;
+TMicArray *g_mics = nullptr;  // Global mic array instance.
+TMicArray_3stg_decimator *g_mics_3stg = nullptr;
+bool use_3_stg_decimator = false;
+// NOTE: g_mics must persist (remain non-null and its backing storage valid)
+// until mic_array_start() completes. mic_array_start() performs shutdown and
+// then sets g_mics back to nullptr.
 
 #ifdef __XS2A__ /* to get test_xs2_benign to compile */
 #else
-// Parallel jobs for when XUA_PDM_MIC_USE_PDM_ISR == 0, run separate decimator and pdm rx tasks
-DECLARE_JOB(ma_task_start_pdm_df_6, (TMicArray_stg2df_6&));
-void ma_task_start_pdm_df_6(TMicArray_stg2df_6& mics){
-  mics.PdmRx.ThreadEntry();
-}
 
-DECLARE_JOB(ma_task_start_decimator_df_6, (TMicArray_stg2df_6&, chanend_t));
-void ma_task_start_decimator_df_6(TMicArray_stg2df_6& mics, chanend_t c_audio_frames){
-  mics.ThreadEntry();
-}
-
-DECLARE_JOB(ma_task_start_pdm_df_3, (TMicArray_stg2df_3&));
-void ma_task_start_pdm_df_3(TMicArray_stg2df_3& mics){
-  mics.PdmRx.ThreadEntry();
-}
-
-DECLARE_JOB(ma_task_start_decimator_df_3, (TMicArray_stg2df_3&, chanend_t));
-void ma_task_start_decimator_df_3(TMicArray_stg2df_3& mics, chanend_t c_audio_frames){
-  mics.ThreadEntry();
-}
-
-DECLARE_JOB(ma_task_start_pdm_df_2, (TMicArray_stg2df_2&));
-void ma_task_start_pdm_df_2(TMicArray_stg2df_2& mics){
-  mics.PdmRx.ThreadEntry();
-}
-
-DECLARE_JOB(ma_task_start_decimator_df_2, (TMicArray_stg2df_2&, chanend_t));
-void ma_task_start_decimator_df_2(TMicArray_stg2df_2& mics, chanend_t c_audio_frames){
-  mics.ThreadEntry();
-}
-
-
+////////////////////
+// Mic array init //
+////////////////////
 void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq)
 {
-  if (g_kind == NONE) {
-    unsigned stg2_decimation_factor = (pdm_res->pdm_freq/STAGE1_DEC_FACTOR)/output_samp_freq;
-    assert ((output_samp_freq*STAGE1_DEC_FACTOR*stg2_decimation_factor) == pdm_res->pdm_freq); // assert if it doesnt divide cleanly
-    // assert if unsupported decimation factor. (for example. when starting with a pdm_freq of 3.072MHz, supported
-    // output sampling freqs are [48000, 32000, 16000]
-    assert ((stg2_decimation_factor == 2) || (stg2_decimation_factor == 3) || (stg2_decimation_factor == 6));
-    static uint32_t g_storage[(sizeof(UAnyMicArray)+(sizeof(uint32_t) -1 ))/(sizeof(uint32_t))];
-    switch(stg2_decimation_factor)
-    {
-      case 6:
-        create_mics_helper<TMicArray_stg2df_6>(g_storage, g_mics_df_6, pdm_res, channel_map, stg2_decimation_factor, DF_6);
-        break;
-      case 3:
-        create_mics_helper<TMicArray_stg2df_3>(g_storage, g_mics_df_3, pdm_res, channel_map, stg2_decimation_factor, DF_3);
-        break;
-      case 2:
-        create_mics_helper<TMicArray_stg2df_2>(g_storage, g_mics_df_2, pdm_res, channel_map, stg2_decimation_factor, DF_2);
-        break;
-      default:
-        assert(0); // unsupported output_samp_freq
-        break;
-    }
+  assert(g_mics == nullptr); // Mic array instance already initialised
+
+  use_3_stg_decimator = false;
+
+  unsigned stg2_decimation_factor = (pdm_res->pdm_freq/STAGE1_DEC_FACTOR)/output_samp_freq;
+  assert ((output_samp_freq*STAGE1_DEC_FACTOR*stg2_decimation_factor) == pdm_res->pdm_freq); // assert if it doesn't divide cleanly
+  // assert if unsupported decimation factor. (for example. when starting with a pdm_freq of 3.072MHz, supported
+  // output sampling freqs are [48000, 32000, 16000]
+  assert ((stg2_decimation_factor == 2) || (stg2_decimation_factor == 3) || (stg2_decimation_factor == 6));
+  static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
+  g_mics = new (mic_storage) TMicArray();
+  init_mics_default_filter(g_mics, pdm_res, channel_map, stg2_decimation_factor);
+
+}
+
+template <typename TMics>
+static inline void init_from_conf(TMics*& mics_ptr,
+                                  uint8_t* storage,
+                                  pdm_rx_resources_t* pdm_res,
+                                  mic_array_conf_t* conf) {
+  mics_ptr = new (storage) TMics();
+  mics_ptr->Decimator.Init(conf->decimator_conf);
+  mics_ptr->PdmRx.Init(pdm_res->p_pdm_mics, conf->pdmrx_conf);
+  if (conf->pdmrx_conf.channel_map) {
+    mics_ptr->PdmRx.MapChannels(conf->pdmrx_conf.channel_map);
   }
+  mics_ptr->PdmRx.AssertOnDroppedBlock(false);
+}
+
+void mic_array_init_custom_filter(pdm_rx_resources_t* pdm_res,
+                                         mic_array_conf_t* mic_array_conf)
+{
+  assert(pdm_res);
+  assert(mic_array_conf);
+  assert(g_mics == nullptr && g_mics_3stg == nullptr);
+  static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(UAnyMicArray)];
+
+  if(mic_array_conf->decimator_conf.num_filter_stages == 2)
+  {
+    use_3_stg_decimator = false;
+    init_from_conf<TMicArray>(g_mics, mic_storage, pdm_res, mic_array_conf);
+  }
+  else if(mic_array_conf->decimator_conf.num_filter_stages == 3)
+  {
+    init_from_conf<TMicArray_3stg_decimator>(g_mics_3stg, mic_storage, pdm_res, mic_array_conf);
+    use_3_stg_decimator = true;
+  }
+  // Configure and start clocks
+  const unsigned divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
+  mic_array_resources_configure(pdm_res, divide);
+  mic_array_pdm_clock_start(pdm_res);
+}
+
+
+/////////////////////
+// Mic array start //
+/////////////////////
+
+// Parallel jobs for when XUA_PDM_MIC_USE_PDM_ISR == 0, run separate decimator and pdm rx tasks
+DECLARE_JOB(default_ma_task_start_pdm, (TMicArray&));
+void default_ma_task_start_pdm(TMicArray& mics){
+  mics.PdmRx.ThreadEntry();
+}
+
+DECLARE_JOB(default_ma_task_start_decimator, (TMicArray&, chanend_t));
+void default_ma_task_start_decimator(TMicArray& mics, chanend_t c_audio_frames){
+  mics.ThreadEntry();
+}
+
+DECLARE_JOB(default_ma_task_start_pdm_3stg, (TMicArray_3stg_decimator&));
+void default_ma_task_start_pdm_3stg(TMicArray_3stg_decimator& mics){
+  mics.PdmRx.ThreadEntry();
+}
+
+DECLARE_JOB(default_ma_task_start_decimator_3stg, (TMicArray_3stg_decimator&, chanend_t));
+void default_ma_task_start_decimator_3stg(TMicArray_3stg_decimator& mics, chanend_t c_audio_frames){
+  mics.ThreadEntry();
+}
+
+#define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
+#define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
+
+template <typename TMics>
+void start_mics_with_pdm_isr(TMics* mics_ptr, chanend_t c_frames_out)
+{
+  assert(mics_ptr != nullptr);
+  CLEAR_KEDI();
+  mics_ptr->OutputHandler.FrameTx.SetChannel(c_frames_out);
+  mics_ptr->PdmRx.AssertOnDroppedBlock(false);
+  mics_ptr->PdmRx.InstallISR();
+  mics_ptr->PdmRx.UnmaskISR();
+  mics_ptr->ThreadEntry();
 }
 
 void mic_array_start(
     chanend_t c_frames_out)
 {
-  switch (g_kind) {
-    case DF_6:
 #if MIC_ARRAY_CONFIG_USE_PDM_ISR
-      start_mics_with_pdm_isr(g_mics_df_6, c_frames_out);
+  if (use_3_stg_decimator) {
+    start_mics_with_pdm_isr<TMicArray_3stg_decimator>(g_mics_3stg, c_frames_out);
+  }
+  else {
+    start_mics_with_pdm_isr<TMicArray>(g_mics, c_frames_out);
+  }
 #else
-    g_mics_df_6->OutputHandler.FrameTx.SetChannel(c_frames_out);
+  if (use_3_stg_decimator) {
+    assert(g_mics_3stg != nullptr); // Attempting to start mic_array before initialising it
+    g_mics_3stg->OutputHandler.FrameTx.SetChannel(c_frames_out);
     PAR_JOBS(
-      PJOB(ma_task_start_pdm_df_6, (*g_mics_df_6)),
-      PJOB(ma_task_start_decimator_df_6, (*g_mics_df_6, c_frames_out)));
-#endif
-      break;
-    case DF_3:
-#if MIC_ARRAY_CONFIG_USE_PDM_ISR
-      start_mics_with_pdm_isr(g_mics_df_3, c_frames_out);
-#else
-      g_mics_df_3->OutputHandler.FrameTx.SetChannel(c_frames_out);
-      PAR_JOBS(
-        PJOB(ma_task_start_pdm_df_3, (*g_mics_df_3)),
-        PJOB(ma_task_start_decimator_df_3, (*g_mics_df_3, c_frames_out)));
-#endif
-      break;
-    case DF_2:
-#if MIC_ARRAY_CONFIG_USE_PDM_ISR
-      start_mics_with_pdm_isr(g_mics_df_2, c_frames_out);
-#else
-      g_mics_df_2->OutputHandler.FrameTx.SetChannel(c_frames_out);
-      PAR_JOBS(
-        PJOB(ma_task_start_pdm_df_2, (*g_mics_df_2)),
-        PJOB(ma_task_start_decimator_df_2, (*g_mics_df_2, c_frames_out)));
-#endif
-      break;
-    case NONE:
-        assert(0); // Attempting to start mic_array before initialising it
-        break;
+      PJOB(default_ma_task_start_pdm_3stg, (*g_mics_3stg)),
+      PJOB(default_ma_task_start_decimator_3stg, (*g_mics_3stg, c_frames_out)));
   }
-  // call destructors etc before exiting
-  switch (g_kind) {
-    case DF_6:
-      shutdown_mics_helper<TMicArray_stg2df_6>(g_mics_df_6);
-      break;
-    case DF_3:
-      shutdown_mics_helper<TMicArray_stg2df_3>(g_mics_df_3);
-      break;
-    case DF_2:
-      shutdown_mics_helper<TMicArray_stg2df_2>(g_mics_df_2);
-      break;
-    case NONE:
-      assert(0); // Attempting to shutdown mic_array before initialising it
+  else
+  {
+    g_mics->OutputHandler.FrameTx.SetChannel(c_frames_out);
+    PAR_JOBS(
+      PJOB(default_ma_task_start_pdm, (*g_mics)),
+      PJOB(default_ma_task_start_decimator, (*g_mics, c_frames_out)));
   }
-  g_kind = NONE;
+#endif
+  // shutdown
+  if (use_3_stg_decimator) {
+    g_mics_3stg->~TMicArray_3stg_decimator();
+    g_mics_3stg = nullptr;
+  }
+  else {
+    g_mics->~TMicArray();
+    g_mics = nullptr;
+  }
 }
-
 // Override pdm data port. Only used in tests where a chanend is used as a 'port' for input pdm data.
 void _mic_array_override_pdm_port(chanend_t c_pdm)
 {
-  switch (g_kind) {
-    case DF_6:
-      g_mics_df_6->PdmRx.SetPort((port_t)c_pdm);
-      break;
-    case DF_3:
-      g_mics_df_3->PdmRx.SetPort((port_t)c_pdm);
-      break;
-    case DF_2:
-      g_mics_df_2->PdmRx.SetPort((port_t)c_pdm);
-      break;
-    case NONE:
-      assert(0); // Attempting to shutdown mic_array before initialising it
+  if (use_3_stg_decimator) {
+    assert(g_mics_3stg != nullptr);
+    g_mics_3stg->PdmRx.SetPort((port_t)c_pdm);
+  } else {
+    assert(g_mics != nullptr);
+    g_mics->PdmRx.SetPort((port_t)c_pdm);
   }
-
 }
+
+
 #endif

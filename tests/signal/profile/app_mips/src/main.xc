@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#if USE_CUSTOM_FILTER
+#include "custom_filter.h"
+#endif
 
 #include "app_config.h"
 #include "mips.h"
@@ -26,6 +29,52 @@ on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_a =      XS1_CLKBLK_1;
 on tile[PORT_PDM_CLK_TILE_NUM] : clock clk_b =      XS1_CLKBLK_2;
 
 unsafe{
+
+#if USE_CUSTOM_FILTER
+void init_mic_conf(mic_array_conf_t &mic_array_conf, mic_array_filter_conf_t (&filter_conf)[NUM_DECIMATION_STAGES], unsigned *channel_map)
+{
+  static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
+  static int32_t stg2_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][CUSTOM_FILTER_STG2_TAP_COUNT];
+  memset(&mic_array_conf, 0, sizeof(mic_array_conf_t));
+
+  //decimator
+  mic_array_conf.decimator_conf.filter_conf = &filter_conf[0];
+  mic_array_conf.decimator_conf.num_filter_stages = NUM_DECIMATION_STAGES;
+  // stage 1
+  filter_conf[0].coef = (int32_t*)custom_filter_stg1_coef;
+  filter_conf[0].num_taps = CUSTOM_FILTER_STG1_TAP_COUNT;
+  filter_conf[0].decimation_factor = CUSTOM_FILTER_STG1_DECIMATION_FACTOR;
+  filter_conf[0].state = (int32_t*)stg1_filter_state;
+  filter_conf[0].shr = CUSTOM_FILTER_STG1_SHR;
+  filter_conf[0].state_words_per_channel = filter_conf[0].num_taps/32;
+  // stage 2
+  filter_conf[1].coef = (int32_t*)custom_filter_stg2_coef;
+  filter_conf[1].num_taps = CUSTOM_FILTER_STG2_TAP_COUNT;
+  filter_conf[1].decimation_factor = CUSTOM_FILTER_STG2_DECIMATION_FACTOR;
+  filter_conf[1].state = (int32_t*)stg2_filter_state;
+  filter_conf[1].shr = CUSTOM_FILTER_STG2_SHR;
+  filter_conf[1].state_words_per_channel = CUSTOM_FILTER_STG2_TAP_COUNT;
+  // stage 3
+#if (NUM_DECIMATION_STAGES==3)
+  static int32_t stg3_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][CUSTOM_FILTER_STG3_TAP_COUNT];
+  filter_conf[2].coef = (int32_t*)custom_filter_stg3_coef;
+  filter_conf[2].num_taps = CUSTOM_FILTER_STG3_TAP_COUNT;
+  filter_conf[2].decimation_factor = CUSTOM_FILTER_STG3_DECIMATION_FACTOR;
+  filter_conf[2].state = (int32_t*)stg3_filter_state;
+  filter_conf[2].shr = CUSTOM_FILTER_STG3_SHR;
+  filter_conf[2].state_words_per_channel = CUSTOM_FILTER_STG3_TAP_COUNT;
+#else
+  #define CUSTOM_FILTER_STG3_DECIMATION_FACTOR (1) /*for PDM RX block size calculation below to work for both 2 and 3 stage filter*/
+#endif
+  // pdm rx
+  static uint32_t pdmrx_out_block[MIC_ARRAY_CONFIG_MIC_COUNT][CUSTOM_FILTER_STG2_DECIMATION_FACTOR * CUSTOM_FILTER_STG3_DECIMATION_FACTOR];
+  static uint32_t __attribute__((aligned(8))) pdmrx_out_block_double_buf[2][MIC_ARRAY_CONFIG_MIC_COUNT * CUSTOM_FILTER_STG2_DECIMATION_FACTOR * CUSTOM_FILTER_STG3_DECIMATION_FACTOR];
+  mic_array_conf.pdmrx_conf.pdm_out_words_per_channel = CUSTOM_FILTER_STG2_DECIMATION_FACTOR * CUSTOM_FILTER_STG3_DECIMATION_FACTOR;
+  mic_array_conf.pdmrx_conf.pdm_out_block = (uint32_t*)pdmrx_out_block;
+  mic_array_conf.pdmrx_conf.pdm_in_double_buf = (uint32_t*)pdmrx_out_block_double_buf;
+  mic_array_conf.pdmrx_conf.channel_map = channel_map;
+}
+#endif
 
 static void eat_audio_frames_task(
     chanend c_from_decimator,
@@ -76,7 +125,14 @@ int main() {
 #endif
 
       // Initialize the mic array
-      mic_array_init(&pdm_res, null, APP_SAMP_FREQ);
+#if !USE_CUSTOM_FILTER
+  mic_array_init(&pdm_res, NULL, APP_SAMP_FREQ);
+#else
+  mic_array_conf_t mic_array_conf;
+  mic_array_filter_conf_t filter_conf[NUM_DECIMATION_STAGES];
+  init_mic_conf(mic_array_conf, filter_conf, NULL);
+  mic_array_init_custom_filter(&pdm_res, &mic_array_conf);
+#endif
 
       par {
         mic_array_start((chanend_t) c_audio_frames);

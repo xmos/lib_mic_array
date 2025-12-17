@@ -15,24 +15,13 @@
 # error Application must not define the following as precompiler macros: MIC_COUNT, S2_DEC_FACTOR.
 #endif
 
-
 namespace  mic_array {
 
-/**
- * @brief Rotate 8-word buffer 1 word up.
- *
- * Each word `buff[k]` is moved to `buff[(k+1)%8]`.
- *
- * @param buff  Word buffer to be rotated.
- */
-static inline
-void shift_buffer(uint32_t* buff);
-
 
 /**
- * @brief First and Second Stage Decimator
+ * @brief Three Stage Decimator
  *
- * This class template represents a two stage decimator which converts a stream
+ * This class template represents a three stage decimator which converts a stream
  * of PDM samples to a lower sample rate stream of PCM samples.
  *
  * Concrete implementations of this class template are meant to be used as the
@@ -41,7 +30,7 @@ void shift_buffer(uint32_t* buff);
  * @tparam MIC_COUNT      Number of microphone channels.
  */
 template <unsigned MIC_COUNT>
-class TwoStageDecimator
+class ThreeStageDecimator
 {
   private:
 
@@ -79,18 +68,32 @@ class TwoStageDecimator
       unsigned decimation_factor;
     } stage2;
 
+    /**
+     * Stage 3 decimation configuration and state.
+     */
+    struct {
+      /**
+       * Stage 3 FIR filters
+       */
+      filter_fir_s32_t filters[MIC_COUNT];
+      /**
+       * Stage 3 filter decimation factor.
+       */
+      unsigned decimation_factor;
+    } stage3;
+
   public:
 
-    constexpr TwoStageDecimator() noexcept { }
+    constexpr ThreeStageDecimator() noexcept { }
 
     /**
-     * @brief Initialize the two-stage decimator from a configuration struct
+     * @brief Initialize the three-stage decimator from a configuration struct
      * @ref mic_array_decimator_conf_t @p decimator_conf
      *
-     * Reads stage-1 and stage-2 filter parameters from @p decimator_conf and prepares
+     * Reads stage-1, stage-2 and stage-3 filter parameters from @p decimator_conf and prepares
      * internal state:
      * The caller must ensure all pointers inside @p decimator_conf.filter_conf[0]
-     * and @p decimator_conf.filter_conf[0] are valid and persist for the
+     * and @p decimator_conf.filter_conf[0] are valid and remain alive for the
      * lifetime of the decimator.
      *
      * @param decimator_conf Decimator pipeline configuration.
@@ -101,10 +104,10 @@ class TwoStageDecimator
      * @brief Process one block of PDM data.
      *
      * Processes a block of PDM data to produce an output sample from the
-     * second stage decimator.
+     * third stage decimator.
      *
      * `pdm_block` contains exactly enough PDM samples to produce a single
-     * output sample from the second stage decimator. The layout of `pdm_block`
+     * output sample from the third stage decimator. The layout of `pdm_block`
      * should (effectively) be:
      *
      * @code{.cpp}
@@ -112,12 +115,12 @@ class TwoStageDecimator
      *    struct {
      *      // lower word indices are older samples.
      *      // less significant bits in a word are older samples.
-     *      uint32_t samples[S2_DEC_FACTOR];
+     *      uint32_t samples[S2_DEC_FACTOR * S3_DEC_FACTOR];
      *    } microphone[MIC_COUNT]; // mic channels are in ascending order
      *  } pdm_block;
      * @endcode
      *
-     * A single output sample from the second stage decimator is computed and
+     * A single output sample from the third stage decimator is computed and
      * written to `sample_out[]`.
      *
      * @param sample_out  Output sample vector.
@@ -126,7 +129,7 @@ class TwoStageDecimator
     void ProcessBlock(
         int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block);
-  };
+};
 }
 
 //////////////////////////////////////////////
@@ -134,7 +137,7 @@ class TwoStageDecimator
 //////////////////////////////////////////////
 
 template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>::Init(
+void mic_array::ThreeStageDecimator<MIC_COUNT>::Init(
     mic_array_decimator_conf_t &decimator_conf)
 {
   this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
@@ -148,38 +151,49 @@ void mic_array::TwoStageDecimator<MIC_COUNT>::Init(
                         decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
   }
   this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;
+
+  for(int k = 0; k < MIC_COUNT; k++){
+    filter_fir_s32_init(&this->stage3.filters[k], decimator_conf.filter_conf[2].state + (k * decimator_conf.filter_conf[2].state_words_per_channel),
+                        decimator_conf.filter_conf[2].num_taps, decimator_conf.filter_conf[2].coef, decimator_conf.filter_conf[2].shr);
+  }
+  this->stage3.decimation_factor = decimator_conf.filter_conf[2].decimation_factor;
 }
 
 
 template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>
+void mic_array::ThreeStageDecimator<MIC_COUNT>
     ::ProcessBlock(
         int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block)
 {
+  unsigned stage1_output_words = this->stage2.decimation_factor * this->stage3.decimation_factor;
   for(unsigned mic = 0; mic < MIC_COUNT; mic++){
     uint32_t* hist = this->stage1.pdm_history_ptr + (mic * this->stage1.pdm_history_sz);
+    uint32_t* mic_base = pdm_block + (mic * stage1_output_words);
+    int count2 = this->stage2.decimation_factor - 1;
+    int count3 = this->stage3.decimation_factor - 1;
+    for(unsigned k = 0; k < stage1_output_words; k++)
+    {
+      hist[0] = mic_base[k];
 
-    for(unsigned k = 0; k < this->stage2.decimation_factor; k++){
-      hist[0] = *(pdm_block + (mic*this->stage2.decimation_factor + k));
       int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
       shift_buffer(hist);
 
-      if(k < (this->stage2.decimation_factor-1)){
+      if(count2) {
         filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
-      } else {
-        sample_out[mic] = filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
+        count2 -= 1;
+        continue;
+      }
+      int32_t streamB_sample = filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
+      count2 = this->stage2.decimation_factor - 1;
+      if(count3) {
+        filter_fir_s32_add_sample(&this->stage3.filters[mic], streamB_sample);
+        count3 -= 1;
+      }
+      else {
+        sample_out[mic] = filter_fir_s32(&this->stage3.filters[mic], streamB_sample);
+        count3 = this->stage3.decimation_factor - 1;
       }
     }
   }
 }
-
-
-static inline
-void mic_array::shift_buffer(uint32_t* buff)
-{
-  uint32_t* src = &buff[-1];
-  asm volatile("vldd %0[0]; vstd %1[0];" :: "r"(src), "r"(buff) : "memory" );
-}
-
-

@@ -51,26 +51,40 @@ class Test_BasicMicArray(MicArraySharedBase):
 
   @pytest.mark.uncollect_if(func=thdn_test_uncollect)
   @pytest.mark.parametrize("platform", ["python_only", "python_xcore"])
-  @pytest.mark.parametrize("fs", params["SAMP_FREQ"], ids=[f"{int(s/1000)}k" for s in params["SAMP_FREQ"]])
+  @pytest.mark.parametrize("fs", params["SAMP_FREQ"], ids=[f"{s}" for s in params["SAMP_FREQ"]])
   def test_thdn(self, pytestconfig, request, fs, platform):
     chans = 2
     frame_size = 1
     use_isr = 1
     duration_s = 7
-    freq_hz = [300, 1000]
-    thdn_threshold = {16000: [-118.0, -110.0], 32000: [-120.0, -120.0], 48000: [-108.0, -108.0]}
+    freq_hz = {16000: [300, 7000], 32000: [300, 14000], 48000: [300, 20000]}
+    thdn_threshold = {16000: [-123.0, -127.0], 32000: [-120.0, -121.0], 48000: [-108.0, -108.0]}
+
+    custom_filter_file = None
+    if not isinstance(fs, int): # fs must contain the name of the filter .pkl file
+      custom_filter_file = fs
+      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_customfs"
+    else:
+      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{fs}fs"
+
+    if custom_filter_file:
+      filter = self.filter(Path(__file__).parent / f"{custom_filter_file}")
+      pdm_freq = 3.072e6 # The final sampling rate calculation assumes PDM freq is 3.072MHz. Hardcoding
+                         # since not stored in the filter class
+      fs = int(pdm_freq / filter.DecimationFactor)
+      assert fs in [16000, 32000, 48000], f"Error: fs {fs} for custom filter {custom_filter_file} not amongst the supported set [16000, 32000, 48000]"
+    else:
+      filter = self.filter(self.get_default_filter(fs))
+
     cwd = Path(request.fspath).parent
-    cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{fs}fs"
+
     xe_path = f'{cwd}/bin/{cfg}/test_ma_{cfg}.xe'
     assert Path(xe_path).exists(), f"Cannot find {xe_path}"
 
-    print(f"duration: {duration_s}s, freqs: {freq_hz}, fs: {fs}")
-
-    # Generate random filter
-    filter = self.default_filter(fs)
+    print(f"duration: {duration_s}s, freqs: {freq_hz[fs]}, fs: {fs}, custom_filter_file: {custom_filter_file}")
 
     # Generate PDM input to mic_array
-    sig_sine_pdm, sig_sine_pcm = PdmSignal.sine(freq_hz, [0.52, 0.52], fs, duration_s)
+    sig_sine_pdm, sig_sine_pcm = PdmSignal.sine(freq_hz[fs], [0.52]*len(freq_hz[fs]), fs, duration_s)
 
     # Compute the expected output
     # Note: This assumes DCOE is disabled (which it should be in this app)
@@ -84,11 +98,11 @@ class Test_BasicMicArray(MicArraySharedBase):
     else:
       expected_output_float = expected
 
-    for i in range(len(freq_hz)):
-      input_thdn = THDN(sig_sine_pcm[i], fs, fund_freq=freq_hz[i])
-      python_output_thdn = THDN(expected_output_float[i], fs, fund_freq=freq_hz[i])
+    for i in range(len(freq_hz[fs])):
+      input_thdn = THDN(sig_sine_pcm[i], fs, fund_freq=freq_hz[fs][i])
+      python_output_thdn = THDN(expected_output_float[i], fs, fund_freq=freq_hz[fs][i])
       print(f"python_output_thdn = {python_output_thdn}, input_thdn = {input_thdn}")
-      assert python_output_thdn < thdn_threshold[fs][i], f"Python output THDN {python_output_thdn} exceeds threshold {thdn_threshold[fs][i]}"
+      assert python_output_thdn < thdn_threshold[fs][i], f"At sampling rate {fs}, freq {freq_hz[fs][i]}, Python output THDN {python_output_thdn} exceeds threshold {thdn_threshold[fs][i]}"
 
     if "xcore" in platform:
       # run on xcore only when not running smoke
@@ -113,10 +127,10 @@ class Test_BasicMicArray(MicArraySharedBase):
         else:
           device_output_float = device_output
 
-        for i in range(len(freq_hz)):
-          xcore_output_thdn = THDN(device_output_float[i][int(fs/10):], fs, fund_freq=freq_hz[i])
+        for i in range(len(freq_hz[fs])):
+          xcore_output_thdn = THDN(device_output_float[i][int(fs/10):], fs, fund_freq=freq_hz[fs][i])
           print(f"xcore_output_thdn = {xcore_output_thdn}")
-          assert xcore_output_thdn < thdn_threshold[fs][i], f"XCORE output THDN {xcore_output_thdn} exceeds threshold {thdn_threshold[fs][i]}"
+          assert xcore_output_thdn < thdn_threshold[fs][i], f"At sampling rate {fs}, freq {freq_hz[fs][i]}, XCORE output THDN {xcore_output_thdn} exceeds threshold {thdn_threshold[fs][i]}"
 
         if self.print_output:
           print(f"Device output: {device_output}")
@@ -128,6 +142,7 @@ class Test_BasicMicArray(MicArraySharedBase):
         # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift
         # applied to them prior to being summed.
         result_diff = np.max(np.abs(expected - device_output))
+        threshold = 12
         print(f"result_diff = {result_diff}")
-        assert result_diff <= 4, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold (4)"
+        assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
 

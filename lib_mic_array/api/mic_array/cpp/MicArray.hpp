@@ -12,6 +12,7 @@
 
 #include "PdmRx.hpp"
 #include "Decimator.hpp"
+#include "ThreeStageDecimator.hpp"
 #include "SampleFilter.hpp"
 #include "OutputHandler.hpp"
 
@@ -32,18 +33,8 @@ namespace  mic_array {
   /**
    * @brief Represents the microphone array component of an application.
    *
-   * \verbatim embed:rst
-     Like many classes in this library, `FrameOutputHandler` uses the :ref:`crtp`.\endverbatim
    *
-   * @tparam MIC_COUNT @parblock
-   * The number of microphones to be *captured* by the `MicArray`'s `PdmRx`
-   * component. For example, if using a 4-bit port to capture 6 microphone
-   * channels in a DDR configuration (because there are no 3 or 6 pin ports)
-   * `MIC_COUNT` should be ``8``, because that's how many must be captured,
-   * even if two of them are stripped out before passing audio frames to
-   * subsequent application stages.
-   * @endparblock
-   *
+   * @tparam MIC_COUNT      Number of microphone output channels from the the mic array component
    * @tparam TDecimator     Type for the decimator. See @ref Decimator.
    * @tparam TPdmRx         Type for the PDM rx service used. See @ref PdmRx.
    * @tparam TSampleFilter  Type for the output filter used. See @ref SampleFilter.
@@ -59,13 +50,6 @@ namespace  mic_array {
   {
 
     public:
-
-      /**
-       * @brief Number of microphone channels.
-       */
-      static constexpr unsigned MicCount = MIC_COUNT;
-
-
       /**
        * @brief The PDM rx service.
        *
@@ -99,7 +83,7 @@ namespace  mic_array {
        * @code{.cpp}
        * void ProcessBlock(
        *     int32_t sample_out[MIC_COUNT],
-       *     uint32_t pdm_block[BLOCK_SIZE]);
+       *     uint32_t *pdm_block);
        * @endcode
        *
        * `ProcessBlock()` takes a block of PDM samples via its `pdm_block`
@@ -108,8 +92,6 @@ namespace  mic_array {
        * The size and formatting of the PDM block expected by the decimator
        * depends on its particular implementation.
        *
-       * A concrete class based on the @ref mic_array::TwoStageDecimator class
-       * template is used in the @ref prefab::BasicMicArray prefab.
        */
       TDecimator Decimator;
 
@@ -143,10 +125,6 @@ namespace  mic_array {
        * filtering, they are separate components of the `MicArray` because they
        * are conceptually independent.
        *
-       * A concrete class based on either the @ref DcoeSampleFilter class
-       * template or the @ref NopSampleFilter class template is used in the
-       * @ref prefab::BasicMicArray prefab, depending on the
-       * `USE_DCOE` parameter of that class template.
        */
       TSampleFilter SampleFilter;
 
@@ -174,8 +152,6 @@ namespace  mic_array {
        * constraint - it must be ready to pull the next block of PDM data while
        * it is available.
        *
-       * A concrete class based on the @ref FrameOutputHandler class template is
-       * used in the @ref prefab::BasicMicArray prefab.
        */
       TOutputHandler OutputHandler;
 

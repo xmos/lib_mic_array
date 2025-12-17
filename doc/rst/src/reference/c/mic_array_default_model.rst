@@ -1,6 +1,6 @@
 
-Default model for using the mic_array
--------------------------------------
+Using the mic_array - default model or with custom filters
+----------------------------------------------------------
 
 .. _mic_array_default_model_defines:
 
@@ -23,8 +23,12 @@ Function definitions (mic_array_task.h)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The header file ``mic_array_task.h`` contains the function API declarations that the application
-needs to call to initialise and start a mic array instance when using the default model.
+needs to call to initialise and start a mic array instance when using the default model
+(:c:func:`mic_array_init` and :c:func:`mic_array_start`) or when using custom filter
+(:c:func:`mic_array_init_custom_filter` and :c:func:`mic_array_start`).
 
 .. doxygenfunction:: mic_array_init
 
 .. doxygenfunction:: mic_array_start
+
+.. doxygenfunction:: mic_array_init_custom_filter

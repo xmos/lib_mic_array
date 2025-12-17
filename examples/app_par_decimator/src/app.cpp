@@ -51,8 +51,7 @@ using TMicArray = mic_array::MicArray<APP_N_MICS,
                                               STAGE2_DEC_FACTOR_48KHZ,
                                               MIC_ARRAY_48K_STAGE_2_TAP_COUNT>,
                           mic_array::StandardPdmRxService<APP_N_MICS_IN,
-                                                          APP_N_MICS,
-                                                          STAGE2_DEC_FACTOR_48KHZ>,
+                                                          APP_N_MICS>,
                           typename std::conditional<APP_USE_DC_ELIMINATION,
                                               mic_array::DcoeSampleFilter<APP_N_MICS>,
                                               mic_array::NopSampleFilter<APP_N_MICS>>::type,
@@ -65,7 +64,17 @@ MA_C_API
 void app_mic_array_init()
 {
   mics.Decimator.Init((uint32_t*) stage1_48k_coefs, stage2_48k_coefs, stage2_48k_shift);
-  mics.PdmRx.Init(pdm_res.p_pdm_mics);
+
+  static uint32_t pdmrx_out_block_df_2[APP_N_MICS][STAGE2_DEC_FACTOR_48KHZ];
+  static uint32_t __attribute__((aligned (8))) pdmrx_out_block_double_buf_df_2[2][APP_N_MICS_IN * STAGE2_DEC_FACTOR_48KHZ];
+
+  pdm_rx_conf_t pdm_rx_config;
+  pdm_rx_config.pdm_out_words_per_channel = STAGE2_DEC_FACTOR_48KHZ;
+  pdm_rx_config.pdm_out_block = (uint32_t*)pdmrx_out_block_df_2;
+  pdm_rx_config.pdm_in_double_buf = (uint32_t*)pdmrx_out_block_double_buf_df_2;
+
+  mics.PdmRx.Init(pdm_res.p_pdm_mics, pdm_rx_config);
+
   mic_array_resources_configure(&pdm_res, MCLK_DIVIDER);
   mic_array_pdm_clock_start(&pdm_res);
 }

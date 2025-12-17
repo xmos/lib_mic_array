@@ -4,16 +4,18 @@ lib_mic_array change log
 UNRELEASED
 ----------
 
-  * FIXED: PDM RX ISR deadlock bug
-  * REMOVED: Vanilla API and configuration
   * ADDED: A new API to replace vanilla that is the default recommended way
     of using the mic array.
   * ADDED: Support for mic array shutdown which causes the mic arry thread(s)
     to return.
   * ADDED: Test for mic array shutdown
+  * ADDED: API to support initialising the mic array with custom decimation
+    filters
   * CHANGED: BasicMicArray tests to test the default API
   * CHANGED: app_measure_mips example to run the default API
   * CHANGED: Documentation improvements
+  * FIXED: PDM RX ISR deadlock bug
+  * REMOVED: Vanilla API and configuration
 
 5.5.0
 -----

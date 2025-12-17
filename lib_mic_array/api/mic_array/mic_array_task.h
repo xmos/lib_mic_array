@@ -20,7 +20,7 @@ C_API_START
  * is not created (when running in thread context) so the received PDM samples are
  * ignored.
  *
- * @param pdm_res     Pointer to the pdm_rx_resources_t struct contianing hardware resources
+ * @param pdm_res     Pointer to the pdm_rx_resources_t struct containing hardware resources
  *                    required by the mic array module.
  * @param channel_map Array containing MIC_ARRAY_CONFIG_MIC_IN_COUNT to MIC_ARRAY_CONFIG_MIC_COUNT mapping.
  *                    array dimension should be MIC_ARRAY_CONFIG_MIC_COUNT, and the i<sup>th</sup> entry is the
@@ -29,6 +29,29 @@ C_API_START
  */
 MA_C_API
 void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq);
+
+/**
+ * @brief Initialize the mic array using application-supplied decimation filter and PDM RX buffers.
+ *
+ * All memory referenced by @p mic_array_conf must be allocated and owned by the
+ * caller and must remain valid for the lifetime of the mic array task, i.e., until
+ * @ref mic_array_start returns. This excludes the @ref mic_array_conf_t structure
+ * itself and the @ref mic_array_decimator_conf_t::filter_conf array, which may reside on the caller’s stack.
+ *
+ * After successful initialization, the PDM clock is configured and started, but
+ * no threads/ISRs are running until mic_array_start() is called.
+ *
+ * @param pdm_res         Pointer to hardware resources used by the mic array module
+ *                        (ports, clocks, and chanends).
+ * @param mic_array_conf  Pointer to top-level configuration that bundles the decimator
+ *                        pipeline configuration (@ref mic_array_decimator_conf_t) and
+ *                        the PDM RX configuration (@ref pdm_rx_conf_t).
+ *
+ * @note The caller owns the buffers referenced by @p mic_array_conf and must ensure
+ *       correct sizing and required alignment of these buffers.
+ */
+MA_C_API
+void mic_array_init_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);
 
 /**
  * @brief Start the mic array task

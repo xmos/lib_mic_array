@@ -213,41 +213,64 @@ class TwoStageFilter(object):
   def DecimationFactor(self):
     return self.s1.DecimationFactor * self.s2.DecimationFactor
 
+  @property
+  def NumStages(self):
+    return 2
+
   def Filter(self, pdm_signal: np.ndarray) -> np.ndarray:
     s1_output = self.s1.FilterInt16(pdm_signal)
     return self.s2.FilterInt32(s1_output)
 
+class ThreeStageFilter(object):
 
+  def __init__(self, s1_filter: Stage1Filter, s2_filter: Stage2Filter, s3_filter: Stage2Filter):
+    self.s1 = s1_filter
+    self.s2 = s2_filter
+    self.s3 = s3_filter
+
+  @property
+  def DecimationFactor(self):
+    return self.s1.DecimationFactor * self.s2.DecimationFactor * self.s3.DecimationFactor
+
+  @property
+  def NumStages(self):
+    return 3
+
+  def Filter(self, pdm_signal: np.ndarray) -> np.ndarray:
+    s1_output = self.s1.FilterInt16(pdm_signal)
+    s2_output = self.s2.FilterInt32(s1_output)
+    return self.s3.FilterInt32(s2_output)
 
 
 def load(coef_file: str):
-
+  filters = []
   with open(coef_file, "rb") as pkl_file:
     # Split the pickled data into the stage1 and stage2 values
-    stage1, stage2 = pkl.load(pkl_file)
-
-    stage1_coef, stage1_dec_factor = stage1
-    stage2_coef, stage2_dec_factor = stage2
-
-    print(f"Stage 1 Decimation Factor: {stage1_dec_factor}")
-    print(f"Stage 1 Tap Count: {stage1_coef.shape[0]}")
-
-    print(f"Stage 2 Decimation Factor: {stage2_dec_factor}")
-    print(f"Stage 2 Tap Count: {stage2_coef.shape[0]}")
+    stages = pkl.load(pkl_file)
+    for index, stage in enumerate(stages):
+      if index == 0:
+        stage1_coef, stage1_dec_factor = stage
+        print(f"Stage 1 Decimation Factor: {stage1_dec_factor}")
+        print(f"Stage 1 Tap Count: {stage1_coef.shape[0]}")
+        # If necessary, pad out stage 1 coefficients with zeros to be 256
+        if stage1_coef.shape[0] < 256:
+          stage1_coef = np.pad(stage1_coef, (0,256-stage1_coef.shape[0]))
+        # print(stage1_coef)
+        assert(len(stage1_coef) == 256)
+        s1_filter = Stage1Filter(stage1_coef, stage1_dec_factor)
+        filters.append(s1_filter)
+      else:
+        fir_stage_coef, fir_stage_dec_factor = stage
+        # zero pad the fir filters coef such that the tap count is a multiple of 8
+        '''
+        if fir_stage_coef.shape[0] % 8:
+          pad_count = (int((fir_stage_coef.shape[0]+7)/8)*8) - fir_stage_coef.shape[0]
+          fir_stage_coef = np.pad(fir_stage_coef, (0,pad_count))
+        '''
+        print(f"Stage {index+1} Decimation Factor: {fir_stage_dec_factor}")
+        print(f"Stage {index+1} Tap Count: {fir_stage_coef.shape[0]}")
+        fir_filter = Stage2Filter(fir_stage_coef, fir_stage_dec_factor)
+        filters.append(fir_filter)
     print("")
 
-    # If necessary, pad out stage 1 coefficients with zeros to be 256
-    if stage1_coef.shape[0] < 256:
-      stage1_coef = np.pad(stage1_coef, (0,256-stage1_coef.shape[0]))
-      # print(stage1_coef)
-
-    assert(len(stage1_coef) == 256)
-
-    # print(stage1_coef)
-
-  s1_filter = Stage1Filter(stage1_coef, stage1_dec_factor)
-  s2_filter = Stage2Filter(stage2_coef, stage2_dec_factor)
-  return s1_filter, s2_filter
-
-
-
+  return filters # return list of filters
