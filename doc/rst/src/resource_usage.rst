@@ -152,9 +152,9 @@ For custom usage, the data memory across different sampling rates varies dependi
 
 .. note::
 
-  The default API requires approximately 4 KiB more memory than the custom configuration.
-  The additional code usage comes from the wrapper and abstraction code included in the default API.
-  The increased data usage results from the inclusion of filter coefficients
+  The default API requires more memory than the custom configuration.
+  The additional code memory comes from the wrapper and abstraction code included in the default API.
+  The increased data memory results from the inclusion of filter coefficients
   for all filters provided by the library, whereas the custom build includes only the coefficients
   required by the specific MicArray instance.
 

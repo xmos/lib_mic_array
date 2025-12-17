@@ -328,7 +328,7 @@ following constraints:
 
 - Memory usage:
 
-  The default API incurs an additional ~3 KiB (code + data) compared to a custom
+  The default API incurs an additional memory overhead compared to a custom
   instantiation of :cpp:class:`MicArray <mic_array::MicArray>` object.
   This overhead is primarily from wrapper code and inclusion of all
   provided filter coefficient sets, even when only a subset is used (see

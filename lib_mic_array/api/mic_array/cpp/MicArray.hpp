@@ -34,7 +34,7 @@ namespace  mic_array {
    * @brief Represents the microphone array component of an application.
    *
    *
-   * @tparam MIC_COUNT Number of microphone output channels from the the mic array component
+   * @tparam MIC_COUNT      Number of microphone output channels from the the mic array component
    * @tparam TDecimator     Type for the decimator. See @ref Decimator.
    * @tparam TPdmRx         Type for the PDM rx service used. See @ref PdmRx.
    * @tparam TSampleFilter  Type for the output filter used. See @ref SampleFilter.

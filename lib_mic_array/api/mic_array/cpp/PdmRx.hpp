@@ -208,7 +208,7 @@ namespace  mic_array {
    * `ReadPort()` and `SendBlock()` are used by `StandardPdmRxService` itself (when
    * running as a thread, rather than ISR).
    *
-   * `GetPdmBlock()` responsible for receiving a block of PDM data from
+   * `GetPdmBlock()` is responsible for receiving a block of PDM data from
    * `SendBlock()` as a pointer, deinterleaving the buffer contents,
    * and returning a pointer to the PDM data in the format expected by the mic
    * array unit's decimator component. See
@@ -528,11 +528,12 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
 {
   this->pdm_out_block_ptr = pdm_rx_config.pdm_out_block;
   this->pdm_out_words_per_channel = pdm_rx_config.pdm_out_words_per_channel;
-  this->phase = CHANNELS_IN * this->pdm_out_words_per_channel;
   this->num_phases = CHANNELS_IN * this->pdm_out_words_per_channel;
+  this->phase = this->num_phases;
+
 
   this->blocks[0] = pdm_rx_config.pdm_in_double_buf;
-  this->blocks[1] = pdm_rx_config.pdm_in_double_buf + (CHANNELS_IN * this->pdm_out_words_per_channel);
+  this->blocks[1] = pdm_rx_config.pdm_in_double_buf + this->num_phases;
 
   for(int k = 0; k < CHANNELS_OUT; k++)
     this->channel_map[k] = k;
@@ -568,8 +569,8 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
   pdm_rx_isr_context.c_pdm_data = this->c_pdm_blocks.end_a;
   pdm_rx_isr_context.pdm_buffer[0] = this->blocks[0];
   pdm_rx_isr_context.pdm_buffer[1] = this->blocks[1];
-  pdm_rx_isr_context.phase_reset = (CHANNELS_IN * this->pdm_out_words_per_channel) -1;
-  pdm_rx_isr_context.phase = (CHANNELS_IN * this->pdm_out_words_per_channel) - 1;
+  pdm_rx_isr_context.phase_reset = this->num_phases - 1;
+  pdm_rx_isr_context.phase = this->num_phases - 1;
 
   enable_pdm_rx_isr(this->p_pdm_mics);
 }

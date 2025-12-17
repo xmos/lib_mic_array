@@ -24,11 +24,12 @@ Run ``python <stage1/stage2/combined>.py --help`` for more information.
 Example
 ^^^^^^^
 
-The following is an example of running ``stage1.py``.
+The following is an example of running ``stage1.py`` from the repo root.
 
 .. code::
 
-  lib_mic_array\python>python stage1.py filter_design\good_2_stage_filter_int.pkl
+  cd python
+  python stage1.py filter_design/good_2_stage_filter_int.pkl
   Stage 1 Decimation Factor: 32
   Stage 1 Tap Count: 125
   Stage 2 Decimation Factor: 6
@@ -68,11 +69,12 @@ The values in the array may appear to have little relation to those directly in 
 ``.pkl`` file because the implementation of the first stage filter requires the
 coefficients to be reordered in a bit-wise manner for run-time optimization.
 
-The following is an example of ``stage2.py`` being run with the same input file.
+The following is an example of ``stage2.py`` being run with the same input file. From the repo root, run:
 
 .. code::
 
-  lib_mic_array\python>python stage2.py filter_design\good_2_stage_filter_int.pkl
+  cd python
+  python stage2.py filter_design/good_2_stage_filter_int.pkl
   Stage 1 Decimation Factor: 32
   Stage 1 Tap Count: 125
   Stage 2 Decimation Factor: 6
@@ -154,16 +156,17 @@ The following is an example of ``stage2.py`` being run with the same input file.
 
 Similar output is produced.
 
-The simplest way to use these coefficients in an application is to run something like:
+The simplest way to use these coefficients in an application is to run this from the repo root:
 
 .. code::
 
-  lib_mic_array\python>python combined.py filter_design\good_2_stage_filter_int.pkl --file-prefix custom_filter
+  cd python
+  python combined.py filter_design/good_2_stage_filter_int.pkl --file-prefix custom_filter
 
 and include the generated ``custom_filter.h`` file in the application.
 
 
-Input pkl File
+Input pkl file
 ^^^^^^^^^^^^^^
 
 ``stage1.py`` and ``stage2.py`` load the contents of the supplied ``.pkl`` file
@@ -187,10 +190,9 @@ coefficients should be ``np.int16`` (signed 16-bit integers) and stage2 filter
 coeffiients should be ``np.int32`` (signed 32-bit integers). Further, the first
 stage filter currently only supports a decimation factor of ``32``.
 
-Using Custom Coefficients in an Application
+Using custom coefficients in an application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The application should use the mic array custom filter API (``mic_array_init_custom_filter``) when including
 a custom filter that is not part of the default filter provided by the library.
 Refer to ``app_custom_filter`` for an example of using the custom filter API.
-

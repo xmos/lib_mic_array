@@ -105,4 +105,7 @@ int32_t good_2_stage_filter_stg2_coef[256] = {
 -0x517d3, -0x396a4, -0x19c13, 0x34fc,
 0x16e3b, 0x1e848, 0x1bc68, 0x12cbd,
 };
+
+#define NUM_DECIMATION_STAGES  (2)
+
 #endif

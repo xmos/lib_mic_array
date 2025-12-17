@@ -93,7 +93,10 @@ typedef struct {
      * @brief PDM RX output block (input to the decimator) for all microphones.
      * @details
      * Packed PDM samples as 32-bit words. The layout is a contiguous buffer
-     * sized `output_mic_count * pdm_out_words_per_channel` 32-bit words.
+     * sized `output_mic_count * pdm_out_words_per_channel` 32-bit words, arranged as
+     * [output_mic_count][pdm_out_words_per_channel].
+     * In the `pdm_out_words_per_channel` 32-bit words, lower indexed words represent older samples.
+     * Within a 32-bit word the less significant bits are older samples.
      * Typically contains enough PDM words to produce one PCM sample per microphone
      * after decimation.
      *
@@ -105,7 +108,7 @@ typedef struct {
      * @details
      * Packed PDM input samples as 32-bit words.
      * The layout is a contiguous buffer of size `2 * input_mic_count * pdm_out_words_per_channel`
-     * 32-bit words.
+     * 32-bit words, arranged as [2][input_mic_count][pdm_out_words_per_channel].
      * The buffer is double buffered such that one buffer is processed by the
      * decimator while the other is filled by the PDM RX service.
      *
