@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <assert.h>
 #include "xk_voice_l71/board.h"
 #include "app_config.h"
 #include "mic_array.h"

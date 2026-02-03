@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+#include <xcore/assert.h>
 #include <stdarg.h>
 
 #include "unity_fixture.h"
@@ -85,11 +85,11 @@ TEST(deinterleave16, case1)
     for(int k = 0; k < CHAN_COUNT; k++){
       uint32_t vals[CHAN_COUNT] = {0};
 
-      // only set the bits in the higher address words, which correspond to 
+      // only set the bits in the higher address words, which correspond to
       // earlier samples.
       for(int n = CHAN_COUNT - p_vals[p]; n < CHAN_COUNT; n++)
         vals[n] = 0x00010001 << k;
-      
+
       // printf("\n\n");
       // printf("Before:\n");
       // for(int n = 0; n < CHAN_COUNT/2; n++)

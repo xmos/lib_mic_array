@@ -5,8 +5,8 @@
 #include <xcore/channel_streaming.h>
 #include <xcore/interrupt.h>
 #include <xcore/parallel.h>
+#include <xcore/assert.h>
 #include <platform.h>
-#include <assert.h>
 
 #include "mic_array.h"
 #include "mic_array/etc/filters_default.h"
@@ -19,9 +19,7 @@ bool use_3_stg_decimator = false;
 // until mic_array_start() completes. mic_array_start() performs shutdown and
 // then sets g_mics back to nullptr.
 
-#ifdef __XS2A__ /* to get test_xs2_benign to compile */
-#else
-
+#ifdef __XS3A__
 ////////////////////
 // Mic array init //
 ////////////////////
@@ -168,6 +166,4 @@ void _mic_array_override_pdm_port(chanend_t c_pdm)
     g_mics->PdmRx.SetPort((port_t)c_pdm);
   }
 }
-
-
 #endif

@@ -1,7 +1,6 @@
-VERSION = 5.5.0
+VERSION = 6.0.0
 
-DEPENDENT_MODULES = lib_xcore_math(>=2.4.0) \
-                    lib_xassert(>=4.3.2)
+DEPENDENT_MODULES = lib_xcore_math(>=2.4.0)
 
 MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -Os
 

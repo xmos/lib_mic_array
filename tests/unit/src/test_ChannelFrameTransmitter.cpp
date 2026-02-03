@@ -5,12 +5,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <stdarg.h>
 
 #include <xcore/thread.h>
 #include <xcore/channel.h>
 #include <xcore/channel_transaction.h>
+#include <xcore/assert.h>
 
 #include "unity_fixture.h"
 

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+#include <xcore/assert.h>
 #include <stdarg.h>
 
 #include "unity_fixture.h"
@@ -38,7 +38,7 @@ TEST_TEAR_DOWN(deinterleave_pdm_samples) {}
 
 
 template <unsigned CHAN_COUNT, unsigned BLOCKS>
-void interleave_pdm_samples(uint32_t test_vect[], 
+void interleave_pdm_samples(uint32_t test_vect[],
                             uint32_t expected[BLOCKS][CHAN_COUNT],
                             const uint32_t orig[CHAN_COUNT][BLOCKS])
 {
@@ -52,7 +52,7 @@ void interleave_pdm_samples(uint32_t test_vect[],
   }
 
   for(int i = CHAN_COUNT*BLOCKS-1; i >= 0; i--){
-    
+
     uint32_t& vect_word = test_vect[i];
     const unsigned b = BLOCKS - 1 - (i/CHAN_COUNT);
 
@@ -69,7 +69,7 @@ void interleave_pdm_samples(uint32_t test_vect[],
 }
 
 extern "C" {
-  
+
 TEST(deinterleave_pdm_samples, interleave)
 {
   if(1) {
@@ -107,7 +107,7 @@ TEST(deinterleave_pdm_samples, interleave)
     TEST_ASSERT_EQUAL_UINT32_ARRAY(&exp_expected[0][0], &expected[0][0], WORD_COUNT);
     TEST_ASSERT_EQUAL_UINT32_ARRAY(&exp_test_vect[0][0], &test_vect[0][0], WORD_COUNT);
   }
-  
+
   if(1) {
     constexpr unsigned CHAN_COUNT = 1;
     constexpr unsigned BLOCKS = 2;
@@ -173,7 +173,7 @@ void test_deinterleave_pdm_samples()
 
     mic_array::deinterleave_pdm_samples<CHAN_COUNT>(&test_vect[0][0], BLOCKS);
 
-    TEST_ASSERT_EQUAL_UINT32_ARRAY(&expected[0][0], &test_vect[0][0], 
+    TEST_ASSERT_EQUAL_UINT32_ARRAY(&expected[0][0], &test_vect[0][0],
                                     CHAN_COUNT * BLOCKS);
   }
 }

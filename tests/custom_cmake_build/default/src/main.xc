@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #define MIC_COUNT   MIC_ARRAY_CONFIG_MIC_COUNT
 #define FRAME_SIZE  MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME

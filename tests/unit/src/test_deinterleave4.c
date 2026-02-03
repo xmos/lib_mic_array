@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+#include <xcore/assert.h>
 #include <stdarg.h>
 
 #include "unity_fixture.h"
@@ -28,20 +28,20 @@ static char details1[200];
 static char details2[200];
 
 static
-void set_test_details(const uint32_t expected[CHAN_COUNT], 
+void set_test_details(const uint32_t expected[CHAN_COUNT],
                       const uint32_t test_vect[CHAN_COUNT])
 {
-  sprintf(details1, "Expected: 0x%08X, 0x%08X, 0x%08X, 0x%08X", 
+  sprintf(details1, "Expected: 0x%08X, 0x%08X, 0x%08X, 0x%08X",
     (unsigned) expected[0], (unsigned) expected[1],
     (unsigned) expected[2], (unsigned) expected[3]);
-  sprintf(details2, "Test Inputs: 0x%08X, 0x%08X, 0x%08X, 0x%08X", 
+  sprintf(details2, "Test Inputs: 0x%08X, 0x%08X, 0x%08X, 0x%08X",
     (unsigned) test_vect[0], (unsigned) test_vect[1],
     (unsigned) test_vect[2], (unsigned) test_vect[3]);
   UNITY_SET_DETAILS(details1, details2);
 }
 
-static 
-void interleave4(uint32_t res[CHAN_COUNT], 
+static
+void interleave4(uint32_t res[CHAN_COUNT],
                  const uint32_t orig[CHAN_COUNT])
 {
   uint32_t mic[CHAN_COUNT];
@@ -88,7 +88,7 @@ TEST(deinterleave4, case0)
 
 TEST(deinterleave4, case1)
 {
-    
+
   srand(0x343467);
 
   uint32_t expected[CHAN_COUNT];

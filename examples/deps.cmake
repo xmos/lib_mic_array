@@ -14,5 +14,4 @@ endif()
 
 set(APP_DEPENDENT_MODULES   "lib_mic_array"
                             "i2s"
-                            "lib_xassert"
-                            "lib_board_support(develop)")
+                            "lib_board_support(1.5.0)")

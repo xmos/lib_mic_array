@@ -5,9 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <stdarg.h>
-
+#include <xcore/assert.h>
 #include "unity_fixture.h"
 
 #include "mic_array/dc_elimination.h"
@@ -38,14 +37,14 @@ void test_dcoe_filter()
 
   dcoe_chan_state_t states[CHANS];
   int32_t input[CHANS];
-  
+
   double f_states[CHANS];
 
   dcoe_state_init(states, CHANS);
   for(int k = 0; k < CHANS; k++) f_states[k] = 0.0;
 
   for(int r = 0; r < ITER_COUNT; r++){
-    
+
     int32_t output[CHANS];
     double f_output[CHANS];
     int32_t expected[CHANS];
@@ -68,12 +67,12 @@ void test_dcoe_filter()
     // can improve the test cases later.
     for(int k = 0; k < CHANS; k++)
       f_states[k] = states[k].prev_y >> 32;
-    
+
   }
 }
 
 extern "C" {
-  
+
 TEST(dcoe_filter, states1)  { test_dcoe_filter<1,1000>(); }
 TEST(dcoe_filter, states4)  { test_dcoe_filter<4,1000>(); }
 TEST(dcoe_filter, states8)  { test_dcoe_filter<8,1000>(); }

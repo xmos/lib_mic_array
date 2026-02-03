@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+#include <xcore/assert.h>
 #include <stdarg.h>
 
 #include "unity_fixture.h"
@@ -27,7 +27,7 @@ TEST_TEAR_DOWN(dcoe_state_init) {}
 
 
 extern "C" {
-  
+
 /**
  * Currently initialization is just zeroing out the states.
  */
