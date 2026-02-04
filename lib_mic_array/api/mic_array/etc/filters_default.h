@@ -15,10 +15,8 @@ C_API_START
  * @brief Macro indicating Stage 1 Decimation Factor
  *
  * This is the ratio of input sample rate to output sample rate for the first
- * filter stage.
+ * filter stage. This value is fixed, even when using custom filter coefficients.
  *
- * @note In version 5.0 of lib_mic_array, this value is fixed (even if you
- * choose not to use the default filter coefficients).
  */
 #define STAGE1_DEC_FACTOR   32
 
@@ -26,9 +24,8 @@ C_API_START
  * @brief Macro indicating Stage 1 Filter Tap Count
  *
  * This is the number of filter taps in the first stage filter.
+ * This value is fixed, even when using custom filter coefficients.
  *
- * @note In version 5.0 of lib_mic_array, this value is fixed (even if you
- * choose not to use the default filter coefficients).
  */
 #define STAGE1_TAP_COUNT    256
 

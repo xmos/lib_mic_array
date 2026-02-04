@@ -4,8 +4,8 @@
 #pragma once
 
 /**
- * The `<xcore/>` headers cannot be safely included from XC files, but 
- * several of the types defined in those headers need to be available in XC. 
+ * The `<xcore/>` headers cannot be safely included from XC files, but
+ * several of the types defined in those headers need to be available in XC.
  * This header is a work-around which defines those types for XC but includes
  * them for C or CPP files.
  */
@@ -22,7 +22,7 @@ extern "C" {
     unsigned end_a;
     unsigned end_b;
   } streaming_channel_t;
-  
+
   typedef struct {
     unsigned end_a;
     unsigned end_b;
