@@ -3,19 +3,20 @@
 Introduction
 ************
 
-``lib_mic_array`` is a library for interfacing with one or more PDM microphones
-on an XMOS device.
+``lib_mic_array`` provides microphone array processing support on XMOS devices.
+It interfaces with one or more PDM (Pulse Density Modulation) microphones, capturing and converting their
+output into high-quality PCM audio suitable for downstream voice and audio
+processing pipelines.
 
-Version 5.0 of this library has been redesigned from scratch to leverage the
-`Vector unit in the XMOS XS3 architecture <https://www.xmos.com/documentation/XM-014007-PS/html/doc/rst/xs3-arch-inst.html#vector-unit>`_.
+PDM microphones produce a high-rate, 1-bit digital bitstream. The library
+captures these PDM streams on the device and performs the required filtering
+and decimation to produce 32-bit PCM audio samples.
 
-See :ref:`using_mic_array` to get started.
+For high level description of mic array processing and the library capabilities, refer to :ref:`overview`.
+To get started with using the library, see :ref:`using_mic_array` and :ref:`examples`.
+
 
 .. note::
 
-  Version 5.0 does not currently support XS2 or XS1 devices. Please use version 4.5.0 if you need support for these devices: https://github.com/xmos/lib_mic_array/releases/tag/v4.5.0
-
-
-Find the latest version of ``lib_mic_array`` on `GitHub
-<https://github.com/xmos/lib_mic_array>`_.
+  From Version 5.0 onwards, the library does not support XS2 or XS1 devices. Please use version 4.5.0 if you need support for these devices: https://github.com/xmos/lib_mic_array/releases/tag/v4.5.0
 

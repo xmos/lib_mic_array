@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+#include <xcore/assert.h>
 #include <stdarg.h>
 
 #include "unity_fixture.h"
@@ -48,7 +48,7 @@ void test_DcoeSampleFilter()
 
   TestDcoeSampleFilter<CHANS> filter;
   int32_t input[CHANS];
-  
+
   double f_states[CHANS];
 
   filter.Init();
@@ -56,7 +56,7 @@ void test_DcoeSampleFilter()
   for(int k = 0; k < CHANS; k++) f_states[k] = 0.0;
 
   for(int r = 0; r < ITER_COUNT; r++){
-    
+
     double f_output[CHANS];
     int32_t expected[CHANS];
 
@@ -78,12 +78,12 @@ void test_DcoeSampleFilter()
     // can improve the test cases later.
     for(int k = 0; k < CHANS; k++)
       f_states[k] = filter.GetState(k).prev_y >> 32;
-    
+
   }
 }
 
 extern "C" {
-  
+
 TEST(DcoeSampleFilter, states1)  { test_DcoeSampleFilter<1,1000>(); }
 TEST(DcoeSampleFilter, states4)  { test_DcoeSampleFilter<4,1000>(); }
 TEST(DcoeSampleFilter, states8)  { test_DcoeSampleFilter<8,1000>(); }

@@ -45,30 +45,35 @@ void mic_array_resources_configure(
   port_clear_buffer(pdm_res->p_pdm_mics);
 }
 
+static inline
+void mic_array_inpw8(const port_t p_pdm_mics)
+{
+  uint32_t tmp;
+  asm volatile("inpw %0, res[%1], 8" : "=r"(tmp)
+                    : "r" (p_pdm_mics));
+}
 
 void mic_array_pdm_clock_start(
     pdm_rx_resources_t* pdm_res)
 {
   if( pdm_res->clock_b != 0 ) {
-    uint32_t tmp;
-    
+
     port_clear_buffer(pdm_res->p_pdm_mics);
-    
+
     /* start the faster capture clock */
     clock_start(pdm_res->clock_b);
 
     /* wait for a rising edge on the capture clock */
-    // (this ensures the rising edges of the two 
+    // (this ensures the rising edges of the two
     //  clocks are not in phase)
-    asm volatile("inpw %0, res[%1], 8" : "=r"(tmp) 
-                    : "r" (pdm_res->p_pdm_mics));
+    mic_array_inpw8(pdm_res->p_pdm_mics);
 
     /* start the slower output clock */
     clock_start(pdm_res->clock_a);
   } else {
     // You'd think that we could move the `clock_start(pdm_res->clock_a)` to be
-    //  after the if..else block instead of duplicating it. But no, if I try 
-    //  that, the compiler screws something up and the output audio is all 
+    //  after the if..else block instead of duplicating it. But no, if I try
+    //  that, the compiler screws something up and the output audio is all
     //  messed up.
     clock_start(pdm_res->clock_a);
   }

@@ -20,12 +20,15 @@ C_API_START
  * is not created (when running in thread context) so the received PDM samples are
  * ignored.
  *
- * @param pdm_res     Pointer to the pdm_rx_resources_t struct containing hardware resources
- *                    required by the mic array module.
- * @param channel_map Array containing MIC_ARRAY_CONFIG_MIC_IN_COUNT to MIC_ARRAY_CONFIG_MIC_COUNT mapping.
- *                    array dimension should be MIC_ARRAY_CONFIG_MIC_COUNT, and the i<sup>th</sup> entry is the
- *                    input pdm pin index mapped to mic array output index i
- * @param output_samp_freq output PCM sampling frequency (supported values are 16, 32 and 48KHz)
+ * @param pdm_res           Pointer to the pdm_rx_resources_t struct containing hardware resources
+ *                          required by the mic array module.
+ * @param channel_map       Optional mapping from PDM input pin to mic-array output channel index.
+ *                          - Array size: MIC_ARRAY_CONFIG_MIC_COUNT
+ *                          - channel_map[i] is the PDM pin index that should feed mic output channel i.
+ *                          - If channel_map is NULL, a default 1:1 mapping is used: PDM pin i -> mic output channel i.
+ *                          - Valid values for channel_map[i] are in [0, MIC_ARRAY_CONFIG_MIC_IN_COUNT-1].
+ * @param output_samp_freq  Target sampling rate (in Hz) for the decimated PCM output stream
+ *                          Supported values: 16000, 32000, 48000 (Hz).
  */
 MA_C_API
 void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq);

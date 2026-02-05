@@ -3,7 +3,7 @@
 lib_name: lib_mic_array
 project: '{{lib_name}}'
 title: '{{lib_name}}: PDM microphone array library'
-version: 5.5.0
+version: 6.0.0
 
 documentation:
   exclude_patterns_path: doc/exclude_patterns.inc

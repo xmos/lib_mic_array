@@ -1,12 +1,12 @@
 lib_mic_array change log
 ========================
 
-UNRELEASED
-----------
+6.0.0
+-----
 
-  * ADDED: A new API to replace vanilla that is the default recommended way
-    of using the mic array.
-  * ADDED: Support for mic array shutdown which causes the mic arry thread(s)
+  * ADDED: A new API to replace vanilla that is the default recommended way of
+    using the mic array.
+  * ADDED: Support for mic array shutdown which causes the mic array thread(s)
     to return.
   * ADDED: Test for mic array shutdown
   * ADDED: API to support initialising the mic array with custom decimation
@@ -14,8 +14,11 @@ UNRELEASED
   * CHANGED: BasicMicArray tests to test the default API
   * CHANGED: app_measure_mips example to run the default API
   * CHANGED: Documentation improvements
+  * CHANGED: replaced assert.h with xcore/assert.h
   * FIXED: PDM RX ISR deadlock bug
   * REMOVED: Vanilla API and configuration
+  * REMOVED: Prefab API
+  * REMOVED: lib_xassert dependency
 
 5.5.0
 -----

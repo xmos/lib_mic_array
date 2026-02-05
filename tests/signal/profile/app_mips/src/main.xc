@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #if USE_CUSTOM_FILTER
 #include "custom_filter.h"
 #endif
