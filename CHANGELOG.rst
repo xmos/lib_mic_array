@@ -18,7 +18,6 @@ lib_mic_array change log
   * FIXED: PDM RX ISR deadlock bug
   * REMOVED: Vanilla API and configuration
   * REMOVED: Prefab API
-  * REMOVED: lib_xassert dependency
 
 5.5.0
 -----
