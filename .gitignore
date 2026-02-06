@@ -40,7 +40,6 @@ examples/AN00218_app_hires_DAS_fixed/doc/pdf/AN00218.pdf
 **/*.local.*
 **/*.local.*/
 
-
 # Unit test runners
 **/runners/*
 
@@ -49,3 +48,6 @@ examples/AN00218_app_hires_DAS_fixed/doc/pdf/AN00218.pdf
 .waf-*/
 build/
 build.xcore
+
+# Python cache information
+lib_mic_array.egg-info
