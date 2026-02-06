@@ -32,11 +32,10 @@ extern "C" {
 
 #else //__XC__
 
-#include <xs1_user.h>
+//#include <xs1_user.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/channel.h>
 #include <xcore/clock.h>
 #include <xcore/port.h>
 
 #endif //__XC__
-
