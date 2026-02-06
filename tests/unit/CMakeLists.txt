@@ -16,6 +16,6 @@ set(APP_COMPILER_FLAGS              -O2
                                     -Wno-unknown-pragmas
                                     -Wno-format
                                     -fxscope
-                                    )
+                                    -DUNITY_INCLUDE_CONFIG_H=1)
 
 XMOS_REGISTER_APP()
