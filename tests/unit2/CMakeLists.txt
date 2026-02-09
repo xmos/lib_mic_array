@@ -9,7 +9,7 @@ set(APP_INCLUDES src)
 set(APP_DEPENDENT_MODULES "lib_mic_array" "lib_unity(2.5.2)")
 set(APP_COMPILER_FLAGS              -Os
                                     -g
-                                    -fxscope
-                                    )
+                                    -fxscope)
 
+set(APP_BUILD_ARCH xs3a)
 XMOS_REGISTER_APP()
