@@ -52,9 +52,9 @@ deinterleave2:
 .type FUNCTION_NAME,@function
 FUNCTION_NAME:
     xm.entsp NSTACK_BYTES
-    xm.ldd    x12, x11, 0(x10)
-    xm.unzip  x12, x11, 0   
-    xm.std    x11, x12, 0(x10)
+    xm.ldd    a1, a2, 0(a0)    
+    xm.unzip  a1, a2, 0         //Note: unzip swaps output positions
+    xm.std    a2, a1, 0(a0)
     xm.retsp NSTACK_BYTES
 
 .size FUNCTION_NAME, . -FUNCTION_NAME

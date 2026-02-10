@@ -121,7 +121,7 @@ pipeline {
         } // parallel
     }  // stage 'Build'
 
-    stage('Test') {
+    stage('Test XS3') {
       parallel {
         stage('XCommon build ') {
           agent {
@@ -251,6 +251,14 @@ pipeline {
         } // stage('HW tests')
       } // parallel
     } // stage('Test')
+    
+    stage('Test VX4') {
+      dir("${REPO_NAME}/tests/unit") {
+        xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_SLIPGATE_VERSION)
+        sh "xsim bin/tests-unit.xe"
+      }
+    }
+    
     stage('🚀 Release') {
       when {
         expression { triggerRelease.isReleasable() }
