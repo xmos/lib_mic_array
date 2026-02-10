@@ -237,10 +237,7 @@ pipeline {
                   archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true
                 }
               }
-            } // stage('Run tests')
-
-            // VX4 Slipgate tests
-            
+            } // stage('Run tests')            
 
           } // stages
           post {
@@ -257,8 +254,13 @@ pipeline {
         xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_SLIPGATE_VERSION)
         sh "xsim bin/tests-unit.xe"
       }
+      post {
+        cleanup {
+          xcoreCleanSandbox()
+        }
+      }
     }
-    
+
     stage('🚀 Release') {
       when {
         expression { triggerRelease.isReleasable() }
