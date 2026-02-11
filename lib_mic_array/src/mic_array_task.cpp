@@ -104,7 +104,12 @@ void default_ma_task_start_decimator_3stg(TMicArray_3stg_decimator& mics, chanen
   mics.ThreadEntry();
 }
 
+#if defined(__XS3A__)
 #define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
+#else
+#define CLRSR(c)                ((void)0)
+#warning "CLRSR not defined for this architecture."
+#endif
 #define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
 
 template <typename TMics>
