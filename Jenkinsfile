@@ -256,8 +256,8 @@ pipeline {
           dir(REPO_NAME){
             checkoutScmShallow()
             dir("tests/unit") {
-              xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_SLIPGATE_VERSION)
-              withTools(params.TOOLS_SLIPGATE_VERSION) {sh "xsim bin/tests-unit.xe"}
+              xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
+              withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
             }
           }
         }
