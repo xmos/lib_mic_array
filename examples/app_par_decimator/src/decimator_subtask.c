@@ -116,6 +116,8 @@ void decimator_subtask(
 static inline
 void shift_buffer(uint32_t* buff)
 {
+  #if defined(__XS3A__)
   uint32_t* src = &buff[-1];
   asm volatile("vldd %0[0]; vstd %1[0];" :: "r"(src), "r"(buff) : "memory" );
+  #endif // __XS3A__
 }

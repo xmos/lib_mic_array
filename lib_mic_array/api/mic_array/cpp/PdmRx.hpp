@@ -155,6 +155,7 @@ extern "C" {
   void enable_pdm_rx_isr(
       const port_t p_pdm_mics)
   {
+    #if defined(__XS3A__)
     asm volatile(
       "setc res[%0], %1       \n"
       "ldap r11, pdm_rx_isr   \n"
@@ -163,6 +164,7 @@ extern "C" {
         :
         : "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT)
         : "r11" );
+    #endif // __XS3A__
   }
 
 }

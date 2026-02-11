@@ -48,9 +48,11 @@ void mic_array_resources_configure(
 static inline
 void mic_array_inpw8(const port_t p_pdm_mics)
 {
+  #if defined(__XS3A__)
   uint32_t tmp;
   asm volatile("inpw %0, res[%1], 8" : "=r"(tmp)
                     : "r" (p_pdm_mics));
+  #endif // __XS3A__
 }
 
 void mic_array_pdm_clock_start(

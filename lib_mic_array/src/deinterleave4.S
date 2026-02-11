@@ -1,6 +1,8 @@
 // Copyright 2022-2026 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
+#if defined(__XS3A__)
+
 #define NSTACKWORDS   2
 
 .text
@@ -81,3 +83,5 @@ deinterleave4:
 
 
 .size deinterleave4, .L_end - deinterleave4
+
+#endif // __XS3A__
