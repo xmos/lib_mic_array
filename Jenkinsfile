@@ -247,6 +247,11 @@ pipeline {
           }
         } // stage('HW tests')
       } // parallel
+      post {
+        cleanup {
+          xcoreCleanSandbox()
+        }
+      } //post
     } // stage('Test')
     
     stage('Test VX4') {
