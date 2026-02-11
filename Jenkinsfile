@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@v0.44.0') _
+@Library('xmos_jenkins_shared_library@0.45.0') _
 
 getApproval()
 pipeline {
@@ -11,6 +11,11 @@ pipeline {
       name: 'TOOLS_VERSION',
       defaultValue: '15.3.1',
       description: 'The XTC tools version'
+    )
+    string(
+      name: 'TOOLS_VX4_VERSION',
+      defaultValue: '-j --repo arch_vx_slipgate -b master -a XTC 112',
+      description: 'The XTC Slipgate tools version'
     )
     string(
       name: 'XMOSDOC_VERSION',
@@ -116,7 +121,7 @@ pipeline {
         } // parallel
     }  // stage 'Build'
 
-    stage('Test') {
+    stage('Test XS3') {
       parallel {
         stage('XCommon build ') {
           agent {
@@ -232,7 +237,8 @@ pipeline {
                   archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true
                 }
               }
-            } // stage('Run tests')
+            } // stage('Run tests')            
+
           } // stages
           post {
             cleanup {
@@ -242,6 +248,19 @@ pipeline {
         } // stage('HW tests')
       } // parallel
     } // stage('Test')
+    
+    stage('Test VX4') {
+      dir("${REPO_NAME}/tests/unit") {
+        xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_SLIPGATE_VERSION)
+        sh "xsim bin/tests-unit.xe"
+      }
+      post {
+        cleanup {
+          xcoreCleanSandbox()
+        }
+      }
+    }
+
     stage('🚀 Release') {
       when {
         expression { triggerRelease.isReleasable() }
