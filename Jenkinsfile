@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@0.45.0') _
+@Library('xmos_jenkins_shared_library@v0.45.0') _
 
 getApproval()
 pipeline {
