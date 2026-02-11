@@ -250,18 +250,24 @@ pipeline {
     } // stage('Test')
     
     stage('Test VX4') {
-      steps {
-      dir("${REPO_NAME}/tests/unit") {
-        xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_SLIPGATE_VERSION)
-        sh "xsim bin/tests-unit.xe"
-      }
-      post {
-        cleanup {
-          xcoreCleanSandbox()
+        agent {label "x86_64 && linux"}
+        steps {
+          println "Stage running on ${env.NODE_NAME}"
+          dir(REPO_NAME){
+            checkoutScmShallow()
+            dir("tests/unit") {
+              xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_SLIPGATE_VERSION)
+              withTools(params.TOOLS_SLIPGATE_VERSION) {sh "xsim bin/tests-unit.xe"}
+            }
+          }
         }
-      }
-      }
-    }
+        post {
+          cleanup {
+            xcoreCleanSandbox()
+          }
+        } //post
+    } // stage('Test VX4')
+
 
     stage('🚀 Release') {
       when {
