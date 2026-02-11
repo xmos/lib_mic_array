@@ -5,11 +5,6 @@
 #include <xscope.h>
 
 #include "unity_fixture.h"
-#include "unity_helper.h"
-
-#if defined(__riscv_xxcore)
-STACKFUNCTION(UnityTestRunner, 1024);
-#endif
 
 int main(int argc, const char* argv[])
 {
