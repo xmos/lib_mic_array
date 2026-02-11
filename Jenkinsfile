@@ -250,6 +250,7 @@ pipeline {
     } // stage('Test')
     
     stage('Test VX4') {
+      steps {
       dir("${REPO_NAME}/tests/unit") {
         xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_SLIPGATE_VERSION)
         sh "xsim bin/tests-unit.xe"
@@ -258,6 +259,7 @@ pipeline {
         cleanup {
           xcoreCleanSandbox()
         }
+      }
       }
     }
 
