@@ -32,10 +32,6 @@ else() # vx4
     set(APP_COMPILER_FLAGS  
                                     -Os 
                                     -g
-                                    -Wfptrgroup
-                                    -ffunction-sections
-                                    -fdata-sections
-                                    -Wl,--gc-sections
                                     )
 endif()
 

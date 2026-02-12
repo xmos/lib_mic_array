@@ -24,7 +24,7 @@ int main(int argc, const char* argv[])
   // RUN_TEST_GROUP(FrameOutputHandler);
 
   RUN_TEST_GROUP(deinterleave2);
-  // RUN_TEST_GROUP(deinterleave4);
+  RUN_TEST_GROUP(deinterleave4);
   // RUN_TEST_GROUP(deinterleave8);
   // RUN_TEST_GROUP(deinterleave16);
 

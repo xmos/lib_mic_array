@@ -85,3 +85,39 @@ deinterleave4:
 .size deinterleave4, .L_end - deinterleave4
 
 #endif // __XS3A__
+
+#if defined(__VX4A__) || defined(__VX4B__)
+
+#define FUNCTION_NAME deinterleave4
+#define NSTACK_WORDS  4 
+#define NSTACK_BYTES  (NSTACK_WORDS*4) // minimum
+
+//Note: on vx4 unzip swaps output positions
+
+.p2align 1
+.globl FUNCTION_NAME
+.type FUNCTION_NAME,@function
+FUNCTION_NAME:
+    xm.entsp NSTACK_BYTES
+    // load 4 words
+    xm.stdsp  s2, s3, 0*8
+    xm.ldd    a1, a2, 8(a0)
+    xm.ldd    s2, s3, 0(a0)
+    // deinterleave both registers
+    xm.unzip  a1, a2, 1
+    xm.unzip  s2, s3, 1    
+    xm.unzip  a1, s2, 0
+    xm.unzip  a2, s3, 0 
+    // store back
+    xm.std s2, a1, 0(a0)
+    xm.std s3, a2, 8(a0)
+    xm.lddsp  s2, s3, 0*8
+    xm.retsp NSTACK_BYTES
+
+.size FUNCTION_NAME, . -FUNCTION_NAME
+.resource_const FUNCTION_NAME, "stack_frame_bytes", NSTACK_BYTES
+.resource_list_empty FUNCTION_NAME, "callees"
+.resource_list_empty FUNCTION_NAME, "tail_callees"
+.resource_list_empty FUNCTION_NAME, "parallel_callees"
+
+#endif // __VX4A__ || __VX4B__
