@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@develop') _
+@Library('xmos_jenkins_shared_library@v0.45.0') _
 
 getApproval()
 pipeline {
@@ -13,15 +13,15 @@ pipeline {
       description: 'The XTC tools version'
     )
     string(
+      name: 'XMOSDOC_VERSION',
+      defaultValue: 'v8.0.1',
+      description: 'The xmosdoc version'
+    )
+    string(
       name: 'TOOLS_VX4_VERSION',
       defaultValue: '-j --repo arch_vx_slipgate -b master -a XTC 112',
       description: 'The XTC Slipgate tools version'
     )
-    string(
-      name: 'XMOSDOC_VERSION',
-      defaultValue: 'v8.0.1',
-      description: 'The xmosdoc version')
-
     string(
       name: 'INFR_APPS_VERSION',
       defaultValue: 'v3.3.0',
@@ -120,6 +120,25 @@ pipeline {
           } // stage('Tests build')
         } // parallel
     }  // stage 'Build'
+
+    stage('Test VX4') {
+        agent {label "x86_64 && linux"}
+        steps {
+          println "Stage running on ${env.NODE_NAME}"
+          dir(REPO_NAME){
+            checkoutScmShallow()
+            dir("tests/unit") {
+              xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
+              withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
+            }
+          }
+        }
+        post {
+          cleanup {
+            xcoreCleanSandbox()
+          }
+        } //post
+    } // stage('Test VX4')
 
     stage('Test XS3') {
       parallel {
@@ -237,8 +256,7 @@ pipeline {
                   archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true
                 }
               }
-            } // stage('Run tests')            
-
+            } // stage('Run tests')
           } // stages
           post {
             cleanup {
@@ -247,32 +265,7 @@ pipeline {
           }
         } // stage('HW tests')
       } // parallel
-      post {
-        cleanup {
-          xcoreCleanSandbox()
-        }
-      } //post
     } // stage('Test')
-    
-    stage('Test VX4') {
-        agent {label "x86_64 && linux"}
-        steps {
-          println "Stage running on ${env.NODE_NAME}"
-          dir(REPO_NAME){
-            checkoutScmShallow()
-            dir("tests/unit") {
-              xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
-              withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
-            }
-          }
-        }
-        post {
-          cleanup {
-            xcoreCleanSandbox()
-          }
-        } //post
-    } // stage('Test VX4')
-
 
     stage('🚀 Release') {
       when {
