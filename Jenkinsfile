@@ -142,30 +142,7 @@ pipeline {
 
     stage('Test XS3') {
       parallel {
-        stage('XCommon build ') {
-          agent {
-            label "x86_64 && linux"
-          }
-          steps {
-            println "Stage running on ${env.NODE_NAME}"
-            dir(REPO_NAME){
-              checkoutScmShallow()
-              dir("tests") {
-                withTools(params.TOOLS_VERSION) {
-                  sh 'cmake -B build -G "Unix Makefiles"'
-                  // Note no -C build so builds the xcommon Makefile
-                  sh "xmake all -j 16"
-                }
-                archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
-              }
-            }
-          }
-          post {
-            cleanup {
-              xcoreCleanSandbox()
-            }
-          } //post
-        } // stage('XCommon build')
+        
         stage('Custom CMake build') {
           agent {
             label "x86_64 && linux"
@@ -186,6 +163,7 @@ pipeline {
             }
           }
         } // stage('Custom CMake build')
+
         stage('HW tests') {
           agent {
             label 'xcore.ai'
