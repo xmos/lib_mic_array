@@ -144,7 +144,7 @@ pipeline {
     
     stage('Tests') {
       parallel {
-        stage('XS3 tests') {
+        stage('XS3 Tests') {
           agent {
             label 'xcore.ai'
           }
@@ -218,7 +218,25 @@ pipeline {
               xcoreCleanSandbox()
             }
           }
-        } // stage('HW tests')
+        } // XS3 Tests
+
+        stage('VX4 Tests') {
+          agent {label "x86_64 && linux"}
+          steps {
+            println "Stage running on ${env.NODE_NAME}"
+            dir(REPO_NAME){
+              checkoutScmShallow()
+              dir("tests/unit") {
+                xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
+                withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
+                } // dir("tests/unit")
+            } // dir(REPO_NAME)
+          } // steps
+          post {
+            cleanup {xcoreCleanSandbox()}
+          } //post
+        } // VX4 Tests
+      
       } // parallel
     } // stage('Tests')
 
