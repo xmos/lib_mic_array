@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+UNRELEASED
+----------
+
+ * DEPRECATED: Removed XCommon support. 
+
 6.0.0
 -----
 

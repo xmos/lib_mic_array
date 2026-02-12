@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@v0.44.0') _
+@Library('xmos_jenkins_shared_library@v0.45.0') _
 
 getApproval()
 pipeline {
@@ -116,53 +116,30 @@ pipeline {
         } // parallel
     }  // stage 'Build'
 
-    stage('Test') {
+    stage('Custom CMake build test') {
+      agent {
+        label "x86_64 && linux"
+      }
+      steps {
+        sh "git clone git@github.com:xmos/xmos_cmake_toolchain.git --branch v1.0.0"
+        dir(REPO_NAME) {
+          checkoutScmShallow()
+          withTools(params.TOOLS_VERSION) {
+            sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
+            sh "cd build.xcore && make all -j 16"
+          }
+        }
+      }
+      post {
+        cleanup {
+          xcoreCleanSandbox()
+        }
+      }
+    } // stage('Custom CMake build')
+    
+    stage('Tests') {
       parallel {
-        stage('XCommon build ') {
-          agent {
-            label "x86_64 && linux"
-          }
-          steps {
-            println "Stage running on ${env.NODE_NAME}"
-            dir(REPO_NAME){
-              checkoutScmShallow()
-              dir("tests") {
-                withTools(params.TOOLS_VERSION) {
-                  sh 'cmake -B build -G "Unix Makefiles"'
-                  // Note no -C build so builds the xcommon Makefile
-                  sh "xmake all -j 16"
-                }
-                archiveArtifacts artifacts: "**/*.xe", allowEmptyArchive: true
-              }
-            }
-          }
-          post {
-            cleanup {
-              xcoreCleanSandbox()
-            }
-          } //post
-        } // stage('XCommon build')
-        stage('Custom CMake build') {
-          agent {
-            label "x86_64 && linux"
-          }
-          steps {
-            sh "git clone git@github.com:xmos/xmos_cmake_toolchain.git --branch v1.0.0"
-            dir(REPO_NAME) {
-              checkoutScmShallow()
-              withTools(params.TOOLS_VERSION) {
-                sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
-                sh "cd build.xcore && make all -j 16"
-              }
-            }
-          }
-          post {
-            cleanup {
-              xcoreCleanSandbox()
-            }
-          }
-        } // stage('Custom CMake build')
-        stage('HW tests') {
+        stage('XS3 tests') {
           agent {
             label 'xcore.ai'
           }
@@ -184,8 +161,6 @@ pipeline {
                 dir("${REPO_NAME}/tests") {
                   withTools(params.TOOLS_VERSION) {
                     withVenv {
-                      // Use xtagctl to reset the relevent adapters first, if attached, to be safe.
-                      // sh "xtagctl reset_all XVF3800_INT XVF3600_USB"
 
                       // This ensures a project for XS2 can be built and runs OK
                       sh "xsim test_xs2_benign/bin/xs2.xe"
@@ -217,7 +192,6 @@ pipeline {
                             }
                           }
                       }
-
                       dir("signal/TwoStageDecimator") {
                           runPytest('-v --numprocesses=1')
                       }
@@ -241,7 +215,8 @@ pipeline {
           }
         } // stage('HW tests')
       } // parallel
-    } // stage('Test')
+    } // stage('Tests')
+
     stage('🚀 Release') {
       when {
         expression { triggerRelease.isReleasable() }
@@ -249,6 +224,6 @@ pipeline {
       steps {
         triggerRelease()
       }
-    }
+    } // Release stage
   } // stages
 } // pipeline
