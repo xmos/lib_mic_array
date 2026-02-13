@@ -184,4 +184,4 @@ FUNCTION_NAME:
 .resource_list_empty FUNCTION_NAME, "tail_callees"
 .resource_list_empty FUNCTION_NAME, "parallel_callees"
 
-#endif
+#endif // __VX4A__ || __VX4B__
