@@ -14,7 +14,7 @@ else()
     set(__XS3__ OFF) # VX4
 endif()
 
-
+# Target specific compiler flags
 if(__XS3__)  # xs3
     set(APP_HW_TARGET               XK-EVK-XU316)
     set(APP_COMPILER_FLAGS          -O2
@@ -32,7 +32,7 @@ else() # vx4
     set(APP_COMPILER_FLAGS  
                                     -Os 
                                     -g
-                                    )
+                                    -DUNITY_INCLUDE_CONFIG_H=1)
 endif()
 
 XMOS_REGISTER_APP()
