@@ -143,3 +143,29 @@ deinterleave16:
 .size deinterleave16, .L_end - deinterleave16
 
 #endif // __XS3A__
+
+#if defined(__VX4A__) || defined(__VX4B__)
+
+#define FUNCTION_NAME deinterleave16
+#define NSTACK_WORDS  4 
+#define NSTACK_BYTES  (NSTACK_WORDS*4)
+
+// Note: ldd and std are reversed in vx4
+
+.p2align 1
+.globl FUNCTION_NAME
+.type FUNCTION_NAME,@function
+FUNCTION_NAME:
+    xm.entsp NSTACK_BYTES
+    xm.stdsp  s2, s3, 0*8
+    //TODO
+    xm.lddsp  s2, s3, 0*8
+    xm.retsp  NSTACK_BYTES
+
+.size FUNCTION_NAME, . -FUNCTION_NAME
+.resource_const FUNCTION_NAME, "stack_frame_bytes", NSTACK_BYTES
+.resource_list_empty FUNCTION_NAME, "callees"
+.resource_list_empty FUNCTION_NAME, "tail_callees"
+.resource_list_empty FUNCTION_NAME, "parallel_callees"
+
+#endif
