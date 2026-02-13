@@ -47,14 +47,16 @@ deinterleave2:
 #define FUNCTION_NAME deinterleave2
 #define NSTACK_BYTES  16 // minimum
 
+// Note: ldd and std are reversed in vx4
+
 .p2align 1
 .globl FUNCTION_NAME
 .type FUNCTION_NAME,@function
 FUNCTION_NAME:
     xm.entsp NSTACK_BYTES
-    xm.ldd    a1, a2, 0(a0)    
-    xm.unzip  a1, a2, 0         //Note: unzip swaps output positions
-    xm.std    a2, a1, 0(a0)
+    xm.ldd    a2, a1, 0(a0)    
+    xm.unzip  a2, a1, 0
+    xm.std    a1, a2, 0(a0)
     xm.retsp NSTACK_BYTES
 
 .size FUNCTION_NAME, . -FUNCTION_NAME

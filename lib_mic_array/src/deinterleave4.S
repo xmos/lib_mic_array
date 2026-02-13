@@ -90,29 +90,39 @@ deinterleave4:
 
 #define FUNCTION_NAME deinterleave4
 #define NSTACK_WORDS  4 
-#define NSTACK_BYTES  (NSTACK_WORDS*4) // minimum
+#define NSTACK_BYTES  (NSTACK_WORDS*4)
 
-//Note: on vx4 unzip swaps output positions
+#define   x   a0
+#define   a   a1
+#define   b   a2
+#define   c   s2
+#define   d   s3
+
+// Note: ldd and std are reversed in vx4
 
 .p2align 1
 .globl FUNCTION_NAME
 .type FUNCTION_NAME,@function
 FUNCTION_NAME:
     xm.entsp NSTACK_BYTES
-    // load 4 words
     xm.stdsp  s2, s3, 0*8
-    xm.lddi   a1, a2, 8(a0)
-    xm.lddi   s2, s3, 0(a0)
-    // deinterleave both registers
-    xm.unzip  a1, a2, 1
-    xm.unzip  s2, s3, 1    
-    xm.unzip  a1, s2, 0
-    xm.unzip  a2, s3, 0 
-    // store back
-    xm.stdi   s2, a1, 0(a0)
-    xm.stdi   s3, a2, 8(a0)
+    
+    // Save and Load
+    xm.ldd    b, a, 8(a0)   
+    xm.ldd    d, c, 0(a0)   
+    
+    // Deinterleave
+    xm.unzip b, a, 1
+    xm.unzip d, c, 1
+    xm.unzip c, a, 0
+    xm.unzip d, b, 0
+    
+    // Store and Restore regs
+    xm.std    a, c, 0(a0)
+    xm.std    b, d, 8(a0)
+    
     xm.lddsp  s2, s3, 0*8
-    xm.retsp NSTACK_BYTES
+    xm.retsp  NSTACK_BYTES
 
 .size FUNCTION_NAME, . -FUNCTION_NAME
 .resource_const FUNCTION_NAME, "stack_frame_bytes", NSTACK_BYTES
@@ -120,4 +130,4 @@ FUNCTION_NAME:
 .resource_list_empty FUNCTION_NAME, "tail_callees"
 .resource_list_empty FUNCTION_NAME, "parallel_callees"
 
-#endif // __VX4A__ || __VX4B__
+#endif

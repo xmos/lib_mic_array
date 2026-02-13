@@ -222,16 +222,16 @@ pipeline {
             stage("Checkout and Build") {
               steps {
               dir(REPO_NAME){
-                dir("tests/unit") {
                 checkoutScmShallow()
-                xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
+                dir("tests/unit") {
+                  xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
               }}}
-            }
+            } // stage("Checkout and Build")
             stage('Run tests') {
               steps {
               dir("tests/unit") {
                 withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
-            }}}
+            }}} // stage('Run tests')
           } // stages
           post {
             cleanup {xcoreCleanSandbox()}
