@@ -229,9 +229,10 @@ pipeline {
             } // stage("Checkout and Build")
             stage('Run tests') {
               steps {
+              dir(REPO_NAME){    
               dir("tests/unit") {
                 withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
-            }}} // stage('Run tests')
+              }}}} // stage('Run tests')
           } // stages
           post {
             cleanup {xcoreCleanSandbox()}
