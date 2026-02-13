@@ -220,14 +220,18 @@ pipeline {
           agent {label "x86_64 && linux"}
           stages {
             stage("Checkout and Build") {
+              steps {
               dir(REPO_NAME){
+                dir("tests/unit") {
                 checkoutScmShallow()
                 xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
-              }
+              }}}
             }
             stage('Run tests') {
-              withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
-            }
+              steps {
+              dir("tests/unit") {
+                withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
+            }}}
           } // stages
           post {
             cleanup {xcoreCleanSandbox()}

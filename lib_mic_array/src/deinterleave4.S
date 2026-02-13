@@ -101,16 +101,16 @@ FUNCTION_NAME:
     xm.entsp NSTACK_BYTES
     // load 4 words
     xm.stdsp  s2, s3, 0*8
-    xm.ldd    a1, a2, 8(a0)
-    xm.ldd    s2, s3, 0(a0)
+    xm.lddi   a1, a2, 8(a0)
+    xm.lddi   s2, s3, 0(a0)
     // deinterleave both registers
     xm.unzip  a1, a2, 1
     xm.unzip  s2, s3, 1    
     xm.unzip  a1, s2, 0
     xm.unzip  a2, s3, 0 
     // store back
-    xm.std s2, a1, 0(a0)
-    xm.std s3, a2, 8(a0)
+    xm.stdi   s2, a1, 0(a0)
+    xm.stdi   s3, a2, 8(a0)
     xm.lddsp  s2, s3, 0*8
     xm.retsp NSTACK_BYTES
 
