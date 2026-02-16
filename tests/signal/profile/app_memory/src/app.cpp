@@ -51,15 +51,11 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
   #define APP_N_MICS_IN APP_N_MICS
 #endif
 
-static inline
-void CLEAR_KEDI()
-{
-  #if defined(__XS3A__)
-  asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
-  #else
-  #warning "CLEAR_KEDI not defined for this architecture."
-  #endif
-}
+#if defined(__XS3A__)
+#define CLEAR_KEDI() asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
+#else
+#warning "CLEAR_KEDI not defined for this architecture."
+#endif
 
 using TMicArray = mic_array::MicArray<APP_N_MICS,
                           mic_array::TwoStageDecimator<APP_N_MICS>,

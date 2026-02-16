@@ -104,15 +104,11 @@ void default_ma_task_start_decimator_3stg(TMicArray_3stg_decimator& mics, chanen
   mics.ThreadEntry();
 }
 
-static inline
-void CLEAR_KEDI()
-{
-  #if defined(__XS3A__)
-  asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
-  #else
-  #warning "CLEAR_KEDI not defined for this architecture."
-  #endif
-}
+#if defined(__XS3A__)
+#define CLEAR_KEDI() asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
+#else
+#warning "CLEAR_KEDI not defined for this architecture."
+#endif
 
 template <typename TMics>
 void start_mics_with_pdm_isr(TMics* mics_ptr, chanend_t c_frames_out)
