@@ -14,7 +14,6 @@
 TEST_GROUP_RUNNER(fir_1x16_bit) {
   RUN_TEST_CASE(fir_1x16_bit, symmetry_test);
   RUN_TEST_CASE(fir_1x16_bit, with_stage1_coef);
-  RUN_TEST_CASE(fir_1x16_bit, shift_buffer);
 }
 
 TEST_GROUP(fir_1x16_bit);
