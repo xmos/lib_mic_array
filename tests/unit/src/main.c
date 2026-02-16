@@ -14,20 +14,21 @@ int main(int argc, const char* argv[])
 
   printf("\n\n");
 
-  // RUN_TEST_GROUP(dcoe_state_init);
-  // RUN_TEST_GROUP(dcoe_filter);
-  // RUN_TEST_GROUP(DcoeSampleFilter);
+  RUN_TEST_GROUP(dcoe_state_init);
+  RUN_TEST_GROUP(dcoe_filter);
+  RUN_TEST_GROUP(DcoeSampleFilter);
 
-  // RUN_TEST_GROUP(ma_frame_tx_rx);
-  // RUN_TEST_GROUP(ma_frame_tx_rx_transpose);
-  // RUN_TEST_GROUP(ChannelFrameTransmitter);
-  // RUN_TEST_GROUP(FrameOutputHandler);
+  RUN_TEST_GROUP(ma_frame_tx_rx);
+  RUN_TEST_GROUP(ma_frame_tx_rx_transpose);
+  RUN_TEST_GROUP(ChannelFrameTransmitter);
+  RUN_TEST_GROUP(FrameOutputHandler);
 
-  // RUN_TEST_GROUP(deinterleave2);
-  // RUN_TEST_GROUP(deinterleave4);
-  // RUN_TEST_GROUP(deinterleave8);
+  RUN_TEST_GROUP(deinterleave2);
+  RUN_TEST_GROUP(deinterleave4);
+  RUN_TEST_GROUP(deinterleave8);
   RUN_TEST_GROUP(deinterleave16);
   RUN_TEST_GROUP(deinterleave_pdm_samples);
-  // RUN_TEST_GROUP(fir_1x16_bit);
+  RUN_TEST_GROUP(fir_1x16_bit);
+  
   return UNITY_END();
 }
