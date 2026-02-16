@@ -97,9 +97,9 @@ macc_coeffs:
 .type FUNCTION_NAME,@function
 FUNCTION_NAME:
     { li a3, 32                   ; xm.entsp NSTACK_BYTES}
-    { slli t3, a3, 3              ; xm.vclrdr  }
-    { xm.nop                         ; xm.vsetc t3}
-    { xm.nop                         ; xm.vldc a0}    
+    { slli t3, a3, 3              ; xm.vclrdr}
+    { xm.nop                      ; xm.vsetc t3}
+    { xm.nop                      ; xm.vldc a0}    
     { add a1, a1, a3              ; xm.vlmaccrb a1}
     { add a1, a1, a3              ; xm.vlmaccrb a1}
     { add a1, a1, a3              ; xm.vlmaccrb a1}
@@ -116,15 +116,19 @@ FUNCTION_NAME:
     { add a1, a1, a3              ; xm.vlmaccrb a1}
     { add a1, a1, a3              ; xm.vlmaccrb a1}
     { addi t3,sp, 0               ; xm.vlmaccrb a1}
-    { xm.nop                         ; xm.vstr t3}
-    { xm.nop                         ; xm.vclrdr}
-    { xm.ldap t3, macc_coeffs     ; xm.vldc t3}
-    { addi a2,sp, 0               ; xm.vlmaccr0 t3}
-    { addi a2, a2, 4              ; xm.vstr a2} 
-    { xm.nop                         ; xm.vstd a2}
-    xm.lddsp a0,a1,0
-    xm.zip a1,a0,4
-    { xm.retsp NSTACK_BYTES      ; slli a0, a0, 8}
+    //TODO Below we could save max of 2 cycles?
+    xm.vstr     t3
+    { xm.vclrdr;  addi    a2, sp, 0}
+    xm.vldc     t3  
+    xm.ldap     t3, macc_coeffs
+    xm.vlmaccr0 t3 
+    xm.vlmaccr1 t3
+    { addi      a2, a2, 4          ; xm.vstr a2}
+    xm.vstd     a2
+    xm.lddsp    a0, a1, 0
+    xm.zip      a1, a0, 4
+    slli a0, a0, 8
+    xm.retsp NSTACK_BYTES
 
 // The order of these coefficients tells us that whatever gets VLMACCR1'ed last is going to be multiplied by
 //  the largest coefficient. Thus, if the bipolar coefficient matrix B[,] has shape 16x32, then B[0,:] must
