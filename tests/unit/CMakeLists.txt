@@ -32,6 +32,7 @@ else() # vx4
     set(APP_COMPILER_FLAGS  
                                     -Os 
                                     -g
+                                    -Wno-fptrgroup
                                     -DUNITY_INCLUDE_CONFIG_H=1)
 endif()
 

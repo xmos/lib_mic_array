@@ -53,7 +53,7 @@ void mic_array_inpw8(const port_t p_pdm_mics)
   asm volatile("inpw %0, res[%1], 8" : "=r"(tmp)
                     : "r" (p_pdm_mics));
   #elif defined(__VX4B__)
-  asm volatile("xm.inpm %0, %1, 8": "=r"(tmp): "r"(p_pdm_mics));
+  asm volatile("xm.inpw %0, %1, 8": "=r"(tmp): "r"(p_pdm_mics));
   #else
   #warning "mic_array_inpw8 not supported yet on this architecture."
   (void) tmp;
