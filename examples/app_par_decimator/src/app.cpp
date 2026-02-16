@@ -43,8 +43,16 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
   #define APP_N_MICS_IN APP_N_MICS
 #endif
 #define STAGE2_DEC_FACTOR_48KHZ   2
-#define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
-#define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
+
+static inline
+void CLEAR_KEDI()
+{
+  #if defined(__XS3A__)
+  asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
+  #else
+  #warning "CLEAR_KEDI not defined for this architecture."
+  #endif
+}
 
 using TMicArray = mic_array::MicArray<APP_N_MICS,
                           par_mic_array::MyTwoStageDecimator<APP_N_MICS,
@@ -109,4 +117,3 @@ void app_mic_array_task(chanend_t c_frames_out)
     );
 #endif
 }
-

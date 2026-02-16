@@ -165,8 +165,10 @@ extern "C" {
         : "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT)
         : "r11" );
     #endif // __XS3A__
+    #else
+    #warning "PDM rx ISR not supported yet on this architecture."  
+    #endif
   }
-
 }
 
 

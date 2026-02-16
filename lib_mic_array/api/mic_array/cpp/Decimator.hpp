@@ -181,5 +181,12 @@ void mic_array::shift_buffer(uint32_t* buff)
   #if defined(__XS3A__)
   uint32_t* src = &buff[-1];
   asm volatile("vldd %0[0]; vstd %1[0];" :: "r"(src), "r"(buff) : "memory" );
-  #endif // __XS3A__
+  #elif defined(__VX4B__)
+  uint32_t* src = &buff[-1];
+  asm volatile("xm.vldd %0; xm.vstd %1;" :: "r"(src), "r"(buff) : "memory" );
+  #else // C fallback
+  for (unsigned k = 7; k > 0; k--) {
+    buff[k] = buff[k-1];
+  }
+  #endif
 }

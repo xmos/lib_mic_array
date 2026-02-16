@@ -102,7 +102,7 @@ deinterleave16:
   std f, b, x[6]
   std h, d, x[7]
 
-
+  // part2
   ldd a, b, x[0]
   ldd c, d, x[4]
   unzip b, d, 0
@@ -147,19 +147,117 @@ deinterleave16:
 #if defined(__VX4A__) || defined(__VX4B__)
 
 #define FUNCTION_NAME deinterleave16
-#define NSTACK_WORDS  4 
+#define NSTACK_WORDS  8 
 #define NSTACK_BYTES  (NSTACK_WORDS*4)
+
+#define   x   a0
+#define   a   a1
+#define   b   a2
+
+#define   c   s2
+#define   d   s3
+#define   e   s4
+#define   f   s5
+#define   g   s6
+#define   h   s7
 
 // Note: ldd and std are reversed in vx4
 
-.p2align 1
+.p2align 4
 .globl FUNCTION_NAME
 .type FUNCTION_NAME,@function
 FUNCTION_NAME:
+    // save regs
     xm.entsp NSTACK_BYTES
-    xm.stdsp  s2, s3, 0*8
-    //TODO
-    xm.lddsp  s2, s3, 0*8
+    xm.stdsp  s3,s2,0
+    xm.stdsp  s5,s4,8
+    xm.stdsp  s7,s6,16
+
+    // Lower half
+    xm.ldd b, a, (8*3)(x)
+    xm.ldd d, c, (8*2)(x)
+    xm.ldd f, e, (8*1)(x)
+    xm.ldd h, g, (8*0)(x)
+
+    xm.unzip b, a, 2
+    xm.unzip d, c, 2
+    xm.unzip f, e, 2
+    xm.unzip h, g, 2
+
+    xm.unzip c, a, 1
+    xm.unzip d, b, 1
+    xm.unzip g, e, 1
+    xm.unzip h, f, 1
+
+    xm.unzip e, a, 0
+    xm.unzip f, b, 0
+    xm.unzip g, c, 0
+    xm.unzip h, d, 0
+
+    xm.std a, e, (8*0)(x)
+    xm.std c, g, (8*1)(x)
+    xm.std b, f, (8*2)(x)
+    xm.std d, h, (8*3)(x)
+
+    // Upper half
+    xm.ldd b, a, (8*7)(x)
+    xm.ldd d, c, (8*6)(x)
+    xm.ldd f, e, (8*5)(x)
+    xm.ldd h, g, (8*4)(x)
+
+    xm.unzip b, a, 2
+    xm.unzip d, c, 2
+    xm.unzip f, e, 2
+    xm.unzip h, g, 2
+
+    xm.unzip c, a, 1
+    xm.unzip d, b, 1
+    xm.unzip g, e, 1
+    xm.unzip h, f, 1
+
+    xm.unzip e, a, 0
+    xm.unzip f, b, 0
+    xm.unzip g, c, 0
+    xm.unzip h, d, 0
+
+    xm.std a, e, (8*4)(x)
+    xm.std c, g, (8*5)(x)
+    xm.std b, f, (8*6)(x)
+    xm.std d, h, (8*7)(x)
+
+    // part2
+    xm.ldd b, a, (8*0)(x)
+    xm.ldd d, c, (8*4)(x)
+    xm.unzip b, d, 0
+    xm.unzip a, c, 0
+    xm.std b, a, (8*4)(x)
+    xm.std d, c, (8*0)(x)
+
+    xm.ldd b, a, (8*1)(x)
+    xm.ldd d, c, (8*5)(x)
+    xm.unzip b, d, 0
+    xm.unzip a, c, 0
+    xm.std b, a, (8*5)(x)
+    xm.std d, c, (8*1)(x)
+
+    xm.ldd b, a, (8*2)(x)
+    xm.ldd d, c, (8*6)(x)
+    xm.unzip b, d, 0
+    xm.unzip a, c, 0
+    xm.std b, a, (8*6)(x)
+    xm.std d, c, (8*2)(x)
+
+    xm.ldd b, a, (8*3)(x)
+    xm.ldd d, c, (8*7)(x)
+    xm.unzip b, d, 0
+    xm.unzip a, c, 0
+    xm.std b, a, (8*7)(x)
+    xm.std d, c, (8*3)(x)
+
+    // restore regs
+    xm.lddsp  s3,s2,0
+    xm.lddsp  s5,s4,8
+    xm.lddsp  s7,s6,16
     xm.retsp  NSTACK_BYTES
 
 .size FUNCTION_NAME, . -FUNCTION_NAME
