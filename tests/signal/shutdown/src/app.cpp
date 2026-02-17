@@ -339,10 +339,9 @@ void main_tile_1()
         PJOB(app_mic, (c_pdm_in.end_b, c_frames_out.end_a)),
         PJOB(app_mic_interface, (c_sync.end_b, c_frames_out.end_b))
     );
-
-    // chan_free(c_frames_out);
-    // chan_free(c_sync);
-    // s_chan_free(c_pdm_in);
+    chan_free(c_frames_out);
+    chan_free(c_sync);
+    s_chan_free(c_pdm_in);
 }
 
 void main_tile_0()
