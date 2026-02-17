@@ -10,19 +10,16 @@
 #include <platform.h>
 
 extern "C" {
-  void user_mic(chanend c_mic_audio);
-  void user_audio(chanend c_mic_audio);
+  void main_tile_0();
+  void main_tile_1();
 }
 
 int main(void)
 {
-  // Channel declarations
-  chan c_mic_audio;
-
   // Initialize parallel tasks  
   par{
-    on tile[1]: user_mic(c_mic_audio);                         
-    on tile[1]: user_audio(c_mic_audio);             
+    on tile[0]: main_tile_0();                         
+    on tile[1]: main_tile_1();             
   }
   return 0;
 }

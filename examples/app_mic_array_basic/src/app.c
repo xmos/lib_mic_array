@@ -6,6 +6,8 @@
 
 #include <platform.h>
 #include <xcore/chanend.h>
+#include <xcore/channel.h>
+#include <xcore/parallel.h>
 
 #include "mic_array.h"
 #include "device_pll_ctrl.h"
@@ -26,6 +28,9 @@
 #define APP_N_FRAMES (APP_OUT_FREQ_HZ * APP_SAMPLE_SECONDS / APP_N_SAMPLES)
 #define APP_BUFF_SIZE (APP_N_FRAMES * APP_N_SAMPLES)
 #define APP_FILENAME ("mic_array_output.bin")
+
+DECLARE_JOB(user_mic, (chanend_t));
+DECLARE_JOB(user_audio, (chanend_t));
 
 static pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
     MIC_ARRAY_CONFIG_PORT_MCLK,
@@ -64,6 +69,21 @@ void user_audio(chanend_t c_mic_audio)
     assert(f != NULL);
     fwrite(tmp_buff, sizeof(int32_t), APP_BUFF_SIZE, f);
     fclose(f);
+    ma_shutdown(c_mic_audio);
     printf("Done\n");
-    exit(0);
+}
+
+void main_tile_1(){
+    channel_t c_mic_audio = chan_alloc();
+    // Parallel Jobs
+    PAR_JOBS(
+        PJOB(user_mic, (c_mic_audio.end_a)),
+        PJOB(user_audio, (c_mic_audio.end_b))
+    );
+    chan_free(c_mic_audio);
+}
+
+void main_tile_0(){
+    // intentionally left empty
+    return;
 }
