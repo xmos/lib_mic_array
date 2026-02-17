@@ -15,7 +15,8 @@
 
 TEST_GROUP_RUNNER(fir_1x16_bit) {
   RUN_TEST_CASE(fir_1x16_bit, symmetry_test);
-  RUN_TEST_CASE(fir_1x16_bit, with_stage1_coef);
+  RUN_TEST_CASE(fir_1x16_bit, single_val);
+  RUN_TEST_CASE(fir_1x16_bit, random_test);
 }
 
 TEST_GROUP(fir_1x16_bit);
@@ -42,7 +43,7 @@ TEST(fir_1x16_bit, symmetry_test)
 }
 
 // Test zero signal with known inputs/outputs
-TEST(fir_1x16_bit, with_stage1_coef)
+TEST(fir_1x16_bit, single_val)
 {
   const int expected_result = 268435456; 
   const unsigned max_cycles = 35;
@@ -58,4 +59,44 @@ TEST(fir_1x16_bit, with_stage1_coef)
 
   TEST_ASSERT_EQUAL_INT(expected_result, result);
   TEST_ASSERT_LESS_OR_EQUAL(max_cycles, elapsed);
+}
+
+TEST(fir_1x16_bit, random_test)
+{
+  #define n_vpu 16
+  #define sig_len (n_vpu * 20)
+  #define PRINT_OUT (1)
+
+  const int sig_exp[n_vpu] = {
+    -58529792,34287616,70240256,17392640,52816384,
+    -51980800,54905856,40349696,-60945408,14667776,
+    -3800064,33825280,-1670656,879616,-23246848,-11620864,
+  };
+
+  uint32_t sig_in[sig_len] = {0};
+  int sig_out[n_vpu] = {0};
+
+  // seed
+  srand(12345);
+  for (unsigned i = 0; i < sig_len; i++)
+  {
+    sig_in[i] = rand() & 0xFFFFFFFF; // Random 32-bit word
+  }
+
+  // Using real stage 1 coefficients
+  for (unsigned i = 0; i < n_vpu; i++)
+  {
+    uint32_t *sig_ptr = &sig_in[i * 20]; // 20 words per VPU block
+    sig_out[i] = fir_1x16_bit(sig_ptr, stage1_coef);
+  }
+
+  #if PRINT_OUT
+  printf("\nExpected vs Actual:\n");
+  for (unsigned i = 0; i < n_vpu; i++)
+  {
+    printf("sig_out[%u] = %d, sig_exp = %d\n", i, sig_out[i], sig_exp[i]);
+  }
+  #endif
+
+  TEST_ASSERT_EQUAL_INT_ARRAY(sig_exp, sig_out, n_vpu);
 }

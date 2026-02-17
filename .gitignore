@@ -52,3 +52,4 @@ build.xcore
 # Python cache information
 lib_mic_array.egg-info
 examples/app_mic_array_basic/output.wav
+examples/app_mic_array_basic/mic_array_output.bin
