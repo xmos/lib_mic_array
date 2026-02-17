@@ -98,7 +98,7 @@ PDM RX configurations before calling
 
 - Populate the decimator pipeline configuration
   (:c:type:`mic_array_decimator_conf_t`) and the PDM RX configuration
-  (:c:type:`pdm_rx_config_t`) structures.
+  (:c:type:`pdm_rx_conf_t`) structures.
 
 .. note::
 

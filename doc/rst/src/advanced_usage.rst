@@ -77,7 +77,7 @@ the :cpp:class:`MicArray <mic_array::MicArray>`:
 
 .. note::
 
-  The ``examples/app_par_decimator`` example demonstrates replacing the standard decimator class with a
+  The ``examples/app_par_decimator`` example demonstrates replacing the provided decimator class with a
   custom multi-threaded decimator.
 
 .. note::

@@ -90,7 +90,7 @@ class TwoStageDecimator
      * Reads stage-1 and stage-2 filter parameters from @p decimator_conf and prepares
      * internal state:
      * The caller must ensure all pointers inside @p decimator_conf.filter_conf[0]
-     * and @p decimator_conf.filter_conf[0] are valid and persist for the
+     * and @p decimator_conf.filter_conf[1] are valid and persist for the
      * lifetime of the decimator.
      *
      * @param decimator_conf Decimator pipeline configuration.
