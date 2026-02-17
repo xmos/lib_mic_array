@@ -8,9 +8,23 @@
 #include <xcore/channel.h>
 #include <xcore/hwtimer.h>
 #include <xcore/channel_streaming.h>
+#include <xcore/select.h>
+#include <xcore/parallel.h>
+
 #include "app.h"
 #include "mic_array/mic_array_conf_full.h"
 #include <print.h>
+
+DECLARE_JOB(app_controller, (chanend_t, chanend_t));
+DECLARE_JOB(app_mic, (chanend_t, chanend_t));
+DECLARE_JOB(app_mic_interface, (chanend_t, chanend_t));
+
+static inline 
+void hwtimer_delay_ticks(unsigned ticks){
+  hwtimer_t tmr = hwtimer_alloc();
+  hwtimer_delay(tmr, ticks);
+  hwtimer_free(tmr);
+}
 
 /**
  * @brief Triggers an assertion if the test exceeds a timeout period.
@@ -68,7 +82,7 @@ static inline void send_pdm_frame(chanend_t c, int samples, unsigned delay)
     for(int i=0; i<samples; i++)
     {
         s_chan_out_word(c, i);
-        delay_ticks(delay);
+        hwtimer_delay_ticks(delay);
     }
 }
 
@@ -212,13 +226,13 @@ void app_mic(chanend_t c_pdm_in, chanend_t c_frames_out)
         // Note: this is only test specific where we use a channel pretending to be a port to send in pdm.
         // In reality pdm data is received over a port and doesn't cause anything to block when the mic_array shuts down
         int temp;
-        delay_ticks(inter_sample_delay*2); // add some delay to account for delay in send_pdm_frame to allow us to be behind send_pdm_frame
+        hwtimer_delay_ticks(inter_sample_delay*2); // add some delay to account for delay in send_pdm_frame to allow us to be behind send_pdm_frame
         SELECT_RES(CASE_THEN(c_pdm_in, drain_incoming_pdm),
                  DEFAULT_THEN(empty))
         {
             drain_incoming_pdm:
                 temp = s_chan_in_word(c_pdm_in);
-                delay_ticks(inter_sample_delay*2);
+                hwtimer_delay_ticks(inter_sample_delay*2);
                 (void)temp;
                 SELECT_CONTINUE_NO_RESET;
 
@@ -311,4 +325,27 @@ void app_controller(chanend_t c_pdm_in, chanend_t c_sync)
     test_schan_partially_full(c_pdm_in, c_sync, &fs_config);
 
     printf("PASS\n");
+    exit(0);
+}
+
+void main_tile_1()
+{
+    channel_t c_frames_out = chan_alloc();
+    channel_t c_sync = chan_alloc();
+    streaming_channel_t c_pdm_in = s_chan_alloc();
+
+    PAR_JOBS(
+        PJOB(app_controller, (c_pdm_in.end_a, c_sync.end_a)),
+        PJOB(app_mic, (c_pdm_in.end_b, c_frames_out.end_a)),
+        PJOB(app_mic_interface, (c_sync.end_b, c_frames_out.end_b))
+    );
+
+    // chan_free(c_frames_out);
+    // chan_free(c_sync);
+    // s_chan_free(c_pdm_in);
+}
+
+void main_tile_0()
+{
+    assert_when_timeout();
 }
