@@ -113,7 +113,7 @@ Stage 2 filters
 Filter characteristics
 ----------------------
 
-This sections provides characteristics of the filters provided as part of ``lib_mic_array``.
+This section provides characteristics of the filters provided as part of ``lib_mic_array``.
 
 16 kHz output PCM sampling rate filter
 --------------------------------------
