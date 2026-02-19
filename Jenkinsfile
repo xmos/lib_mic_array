@@ -217,7 +217,7 @@ pipeline {
         } // XS3 Tests
 
         stage('VX4 Tests') {
-          agent {label "x86_64 && linux"}
+          agent {label "vx4"}
           stages {
             stage("Checkout and Build") {
               steps {
@@ -231,7 +231,7 @@ pipeline {
               steps {
               dir(REPO_NAME){    
               dir("tests/unit") {
-                withTools(params.TOOLS_VX4_VERSION) {sh "xsim bin/tests-unit.xe"}
+                withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
               }}}} // stage('Run tests')
           } // stages
           post {
