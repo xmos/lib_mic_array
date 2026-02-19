@@ -4,7 +4,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#if defined (__XS3A__)
 #include <platform.h>
+#elif defined (__VX4B__)
+#include <netmain.h>
+#endif
+
 #include <xcore/chanend.h>
 #include <xcore/channel.h>
 #include <xcore/parallel.h>
@@ -15,9 +20,9 @@
 // -------------------- Frecuency and Port definitions --------------------
 #define MIC_ARRAY_CONFIG_MCLK_FREQ (24576000)
 #define MIC_ARRAY_CONFIG_PDM_FREQ (3072000)
-#define MIC_ARRAY_CONFIG_PORT_MCLK XS1_PORT_1D       /* X0D11, J14 - Pin 15, '11' */
-#define MIC_ARRAY_CONFIG_PORT_PDM_CLK PORT_MIC_CLK   /* X0D00, J14 - Pin 2, '00' */
-#define MIC_ARRAY_CONFIG_PORT_PDM_DATA PORT_MIC_DATA /* X0D14..X0D21 | J14 - Pin 3,5,12,14 and Pin 6,7,10,11 */
+#define MIC_ARRAY_CONFIG_PORT_MCLK XS1_PORT_1D
+#define MIC_ARRAY_CONFIG_PORT_PDM_CLK XS1_PORT_1G   /* X1D22 */
+#define MIC_ARRAY_CONFIG_PORT_PDM_DATA XS1_PORT_1F  /* X1D13 */
 #define MIC_ARRAY_CONFIG_CLOCK_BLOCK_A XS1_CLKBLK_2
 // ------------------------------------------------------------
 
@@ -87,3 +92,8 @@ void main_tile_0(){
     // intentionally left empty
     return;
 }
+
+NETWORK_MAIN(
+  TILE_MAIN(main_tile_1, 1, ()),
+  TILE_MAIN(main_tile_0, 0, ())
+)
