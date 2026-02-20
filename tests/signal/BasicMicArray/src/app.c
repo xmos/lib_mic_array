@@ -16,6 +16,7 @@
 #include <xscope.h>
 
 #include "mic_array.h"
+#include "app_config.h"
 
 #if USE_CUSTOM_FILTER
 #include "custom_filter.h"
