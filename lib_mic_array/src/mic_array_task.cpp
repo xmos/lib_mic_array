@@ -19,7 +19,7 @@ bool use_3_stg_decimator = false;
 // until mic_array_start() completes. mic_array_start() performs shutdown and
 // then sets g_mics back to nullptr.
 
-#if defined(__XS3A__) || defined(__VX4B__)
+#if defined (__XS3A__) || defined (__VX4B__)
 ////////////////////
 // Mic array init //
 ////////////////////
@@ -106,6 +106,10 @@ void default_ma_task_start_decimator_3stg(TMicArray_3stg_decimator& mics, chanen
 
 #if defined(__XS3A__)
 #define CLEAR_KEDI() asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
+#elif defined(__VX4B__)
+// VX4 processors do not have a dual-issue mode due to VLIW instructions.
+// Remove any definition of CLEAR_KEDI so any acciddental use of it will be caught at compile time.
+#undef CLEAR_KEDI
 #else
 #warning "CLEAR_KEDI not defined for this architecture."
 #endif
@@ -114,7 +118,11 @@ template <typename TMics>
 void start_mics_with_pdm_isr(TMics* mics_ptr, chanend_t c_frames_out)
 {
   assert(mics_ptr != nullptr);
-  CLEAR_KEDI();
+
+  #if defined(__XS3A__)
+  CLEAR_KEDI(); // Disable dual-issue mode on XS3A processors.  VX4 processors do not have a dual-issue mode.
+  #endif
+
   mics_ptr->OutputHandler.FrameTx.SetChannel(c_frames_out);
   mics_ptr->PdmRx.AssertOnDroppedBlock(false);
   mics_ptr->PdmRx.InstallISR();
@@ -147,7 +155,7 @@ void mic_array_start(
       PJOB(default_ma_task_start_pdm, (*g_mics)),
       PJOB(default_ma_task_start_decimator, (*g_mics, c_frames_out)));
   }
-#endif
+#endif // MIC_ARRAY_CONFIG_USE_PDM_ISR
   // shutdown
   if (use_3_stg_decimator) {
     g_mics_3stg->~TMicArray_3stg_decimator();
@@ -158,6 +166,7 @@ void mic_array_start(
     g_mics = nullptr;
   }
 }
+
 // Override pdm data port. Only used in tests where a chanend is used as a 'port' for input pdm data.
 void _mic_array_override_pdm_port(chanend_t c_pdm)
 {
@@ -176,4 +185,4 @@ extern "C" void _mic_array_override_pdm_port_c(chanend_t c_pdm)
   _mic_array_override_pdm_port(c_pdm);
 }
 
-#endif // __XS3A__ or __VX4B__
+#endif // __XS3A__ || __VX4B__
