@@ -7,3 +7,4 @@ LICENSE.rst
 build.xcore
 tests/**/.pytest_cache/*.md
 tests/.pytest_cache/*.md
+**/app_mic_array_basic/*.md

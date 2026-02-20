@@ -4,9 +4,26 @@ project(test_ma)
 
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../../../examples/deps.cmake)
+set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
-set(APP_HW_TARGET       XK-EVK-XU316)
+# conditional depending on target
+if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
+    set(APP_HW_TARGET       XK-EVK-XU316)
+    set(COMMON_COMPILER_FLAGS  -O2
+                                -g
+                                -report
+                                -mcmodel=large
+                                -Wno-xcore-fptrgroup
+                                -Wno-unknown-pragmas
+                                -Wno-format)
+
+else() # VX4
+    set(APP_HW_TARGET       XK-EVK-XU416)
+    set(COMMON_COMPILER_FLAGS   -Os
+                                -g
+                                -Wno-fptrgroup
+                                -Wno-format)
+endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" PROPERTY CMAKE_CONFIGURE_DEPENDS
              "${CMAKE_CURRENT_LIST_DIR}/test_params.json")
@@ -84,13 +101,7 @@ foreach(l RANGE 0 ${NUM_SAMP_FREQ})
                 set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr_${samp_freq_str}")
 
                 message(${CONFIG})
-                set(APP_COMPILER_FLAGS_${CONFIG}    -O2
-                                                    -g
-                                                    -report
-                                                    -mcmodel=large
-                                                    -Wno-xcore-fptrgroup
-                                                    -Wno-unknown-pragmas
-                                                    -Wno-format
+                set(APP_COMPILER_FLAGS_${CONFIG}    ${COMMON_COMPILER_FLAGS}
                                                     -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
                                                     -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=${FRAME_SIZE}
                                                     -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
@@ -113,4 +124,3 @@ foreach(target ${APP_BUILD_TARGETS})
         add_dependencies(${target} gen_custom_filter)
     endif()
 endforeach()
-

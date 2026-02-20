@@ -19,7 +19,7 @@ bool use_3_stg_decimator = false;
 // until mic_array_start() completes. mic_array_start() performs shutdown and
 // then sets g_mics back to nullptr.
 
-#ifdef __XS3A__
+#if defined(__XS3A__) || defined(__VX4B__)
 ////////////////////
 // Mic array init //
 ////////////////////
@@ -105,12 +105,10 @@ void default_ma_task_start_decimator_3stg(TMicArray_3stg_decimator& mics, chanen
 }
 
 #if defined(__XS3A__)
-#define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
+#define CLEAR_KEDI() asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
 #else
-#define CLRSR(c)                ((void)0)
-#warning "CLRSR not defined for this architecture."
+#define CLEAR_KEDI() ((void)0) // not defined in !xs3a
 #endif
-#define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
 
 template <typename TMics>
 void start_mics_with_pdm_isr(TMics* mics_ptr, chanend_t c_frames_out)
@@ -171,4 +169,11 @@ void _mic_array_override_pdm_port(chanend_t c_pdm)
     g_mics->PdmRx.SetPort((port_t)c_pdm);
   }
 }
-#endif
+
+// C wrapper
+extern "C" void _mic_array_override_pdm_port_c(chanend_t c_pdm)
+{
+  _mic_array_override_pdm_port(c_pdm);
+}
+
+#endif // __XS3A__ or __VX4B__
