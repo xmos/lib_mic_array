@@ -4,7 +4,7 @@ project(test_ma)
 
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../../../examples/deps.cmake)
+set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
 set(APP_HW_TARGET       XK-EVK-XU316)
 
@@ -113,4 +113,3 @@ foreach(target ${APP_BUILD_TARGETS})
         add_dependencies(${target} gen_custom_filter)
     endif()
 endforeach()
-
