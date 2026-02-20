@@ -170,7 +170,7 @@ it into blocks, and passing it along so that it can be decimated.
 
 The ``MicArray`` class requires only that ``PdmRx`` implement ``GetPdmBlock()``,
 a blocking call that returns a pointer to a block of PDM data which is ready for
-further processing and ``Shutdown()``, which is called in the even of ``MicArray``
+further processing and ``Shutdown()``, which is called in the event of ``MicArray``
 shutdown.
 
 Generally speaking, ``PdmRx`` will derive from the

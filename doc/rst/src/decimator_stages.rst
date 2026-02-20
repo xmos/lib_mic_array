@@ -54,7 +54,7 @@ using a 16 kHz output decimator.
 Increasing the output sample rate to 32 kHz using the same length filters will increase
 processor usage per channel to approximately 13 MIPS rising to 15.6 MIPS for 48 kHz.
 
-Increasing the filer lengths to 148 and 96 for stages 1 and 2 respectively at 48 kHz
+Increasing the filter lengths to 148 and 96 for stages 1 and 2 respectively at 48 kHz
 will increase processor usage per channel to around 20 MIPS.
 
 
@@ -113,8 +113,7 @@ Stage 2 filters
 Filter characteristics
 ----------------------
 
-This sections provides filters characteristics of the filters provided as part of
-``lib_mic_array``.
+This section provides characteristics of the filters provided as part of ``lib_mic_array``.
 
 16 kHz output PCM sampling rate filter
 --------------------------------------
@@ -254,4 +253,4 @@ The second stage filter uses the 32-bit FIR filter implementation from
 ``xs3_filter_fir_s32()`` in that library for more implementation details.
 
 The filter state (delay line) consists of as many 32-bit samples as there are taps in the stage-2 filter,
-and requires those many 32-bit words for storage.
+and requires that many 32-bit words for storage.

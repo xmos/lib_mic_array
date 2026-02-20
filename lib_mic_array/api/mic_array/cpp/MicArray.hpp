@@ -88,7 +88,7 @@ namespace  mic_array {
        *
        * `ProcessBlock()` takes a block of PDM samples via its `pdm_block`
        * parameter, applies the appropriate decimation logic, and outputs a
-       * single (multi-channel) sample sample via its `sample_out` parameter.
+       * single (multi-channel) sample via its `sample_out` parameter.
        * The size and formatting of the PDM block expected by the decimator
        * depends on its particular implementation.
        *
@@ -147,7 +147,7 @@ namespace  mic_array {
        *
        * `OutputSample()` is called exactly once for each mic array output
        * sample. `OutputSample()` may block if necessary until the subsequent
-       * processing stage ready to receive new data. However, the decimator
+       * processing stage is ready to receive new data. However, the decimator
        * thread (in which `OutputSample()` is called) as a whole has a real-time
        * constraint - it must be ready to pull the next block of PDM data while
        * it is available.

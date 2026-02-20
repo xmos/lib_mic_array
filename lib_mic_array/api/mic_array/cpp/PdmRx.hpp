@@ -214,7 +214,7 @@ namespace  mic_array {
    * `GetPdmBlock()` is responsible for receiving a block of PDM data from
    * `SendBlock()` as a pointer, deinterleaving the buffer contents,
    * and returning a pointer to the PDM data in the format expected by the mic
-   * array unit's decimator component. See
+   * array unit's decimator component.
    *
    * `GetPdmBlock()` is called by the decimation thread. The pair of functions,
    * `SendBlock()` and `GetPdmBlock()` facilitate inter-thread communication,
