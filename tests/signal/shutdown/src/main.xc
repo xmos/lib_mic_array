@@ -5,30 +5,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <platform.h>
-#include <xscope.h>
-#include <print.h>
 #include <xs1.h>
+#include <platform.h>
+
 #include "app.h"
 
-unsafe {
 int main()
 {
-  chan c_frames_out, c_sync;
-  streaming chan c_pdm_in;
   par {
-    on tile[1]: {
-        par {
-            {
-                app_controller((chanend_t)c_pdm_in, (chanend_t)c_sync);
-                exit(0);
-            }
-            app_mic((chanend_t)c_pdm_in, (chanend_t)c_frames_out);
-            app_mic_interface((chanend_t)c_sync, (chanend_t)c_frames_out);
-            assert_when_timeout(); // to keep the app from hanging indefinitely
-        }
-    }
+    on tile[0]: main_tile_0();
+    on tile[1]: main_tile_1();
   }
   return 0;
-}
 }

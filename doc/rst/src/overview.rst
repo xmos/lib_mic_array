@@ -135,7 +135,7 @@ the second stage decimator.
 
 The resulting sample is vector-valued (one element per channel) and has a sample
 time corresponding to ``32*K`` PDM clock periods. Using the reference filters
-and a 3.072 MHz PDM clock, his corresponds to an output sampling rate of
+and a 3.072 MHz PDM clock, this corresponds to an output sampling rate of
 16 kHz, 32 kHz, or 48 kHz.
 
 See :ref:`decimator_stages` for further details.

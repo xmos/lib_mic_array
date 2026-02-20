@@ -20,4 +20,10 @@ void app_mic_interface(chanend_t c_sync, chanend_t c_frames_out);
 MA_C_API
 void assert_when_timeout();
 
+MA_C_API
+void main_tile_0();
+
+MA_C_API
+void main_tile_1();
+
 C_API_END
