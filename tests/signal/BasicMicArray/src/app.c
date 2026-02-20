@@ -1,29 +1,50 @@
 // Copyright 2022-2026 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-#include <iostream>
-#include <fstream>
-#include <cstdio>
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include <print.h>
-#include <string.h>
 #include <platform.h>
-
+#include <xcore/select.h>
+#include <xcore/parallel.h>
+#include <xcore/chanend.h>
 #include <xcore/channel.h>
 #include <xcore/hwtimer.h>
 #include <xcore/channel_streaming.h>
-
-extern "C" {
-#include "xscope.h"
-}
+#include <xscope.h>
 
 #include "mic_array.h"
 
-#include "app.h"
+/*
+BasicMicArray test app.
+
+Validates mic array signal path without real PDM hardware. Host PC sends PDM data via xscope into a streaming channel, injected into the PDM RX service using _mic_array_override_pdm_port().
+
+Runs three threads in parallel:
+  - app_mic: initializes/runs mic array decimator, receives PDM words from host, outputs audio frames.
+  - app_output_task: reports filter config metadata to host, receives frames, pushes to FIFO to decouple xscope backpressure.
+  - app_fifo_to_xscope_task: drains FIFO, streams audio samples to host via xscope.
+
+Host sends PDM words with 15 µs delay to avoid overrunning decimator. Zero-length packets signal commands (0 = resume, 1 = terminate, 2 = print filters).
+
+Supports default/custom decimation filters (2 or 3 stage), controlled by USE_CUSTOM_FILTER and NUM_DECIMATION_STAGES. For 2-stage, stg3_decimation_factor is set to 1 for consistent block size.
+*/
+
 #if USE_CUSTOM_FILTER
 #include "custom_filter.h"
 #endif
+
+#define BUFF_SIZE    (256)
+
+typedef chanend_t streaming_chanend_t;
+
+DECLARE_JOB(app_output_task, (chanend_t, chanend_t));
+DECLARE_JOB(app_fifo_to_xscope_task, (chanend_t));
+DECLARE_JOB(app_mic, (chanend_t, chanend_t));
+DECLARE_JOB(host_words_to_app, (chanend_t, streaming_chanend_t));
+
 
 typedef struct {
   unsigned stg1_tap_count;
@@ -39,14 +60,24 @@ typedef struct {
   int32_t *stg3_coef_ptr;
 }filt_config_t;
 
-static void get_filter_config(unsigned fs, filt_config_t *cfg) {
+// ------------------------------- HELPER FUNCTIONS -------------------------------
+
+static inline
+void hwtimer_delay_microseconds(unsigned delay) {
+  hwtimer_t tmr = hwtimer_alloc();
+  hwtimer_delay(tmr, delay * XS1_TIMER_MHZ);
+  hwtimer_free(tmr);
+}
+
+static 
+void get_filter_config(unsigned fs, filt_config_t *cfg) {
 #if !USE_CUSTOM_FILTER
   cfg->stg1_tap_count = 256;
   cfg->stg1_decimation_factor = 32;
 
   cfg->stg3_tap_count = 0;
   cfg->stg3_decimation_factor = 1; // set as 1 to not mess up blocksize calculation at the host end for 2 stage decimator
-  cfg->stg3_coef_ptr = nullptr;
+  cfg->stg3_coef_ptr = NULL;
   cfg->stg3_shr = 0;
   if(fs == 16000) {
     cfg->stg2_tap_count = STAGE2_TAP_COUNT;
@@ -91,7 +122,102 @@ static void get_filter_config(unsigned fs, filt_config_t *cfg) {
 #endif
 }
 
-extern void _mic_array_override_pdm_port(chanend_t c_pdm);
+static inline
+void app_print_filters()
+{
+  filt_config_t filt_cfg;
+  get_filter_config(APP_SAMP_FREQ, &filt_cfg);
+
+  unsigned stg1_tap_words = filt_cfg.stg1_tap_count / 2;
+
+
+  printf("stage1 filter length: %d 16bit coefs -> %d 32b words\n", stg1_tap_words*2, stg1_tap_words);
+  int initial_list = stg1_tap_words/4;
+  printf("stage1_coef = [\n");
+  for(int a = 0; a < initial_list; a++){
+    printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
+      filt_cfg.stg1_coef_ptr[a*4+0], filt_cfg.stg1_coef_ptr[a*4+1],
+      filt_cfg.stg1_coef_ptr[a*4+2], filt_cfg.stg1_coef_ptr[a*4+3]);
+  }
+  for(int a = initial_list*4; a < stg1_tap_words; a++){
+    printf("0x%08X, ", filt_cfg.stg1_coef_ptr[a]);
+  }
+  printf("]\n");
+
+  printf("stage2 filter length: %d\n", filt_cfg.stg2_tap_count);
+  printf("stage2_coef = [\n");
+  initial_list = filt_cfg.stg2_tap_count/4;
+  for(int a = 0; a < initial_list; a++){
+    printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
+      filt_cfg.stg2_coef_ptr[4*a+0], filt_cfg.stg2_coef_ptr[4*a+1],
+      filt_cfg.stg2_coef_ptr[4*a+2], filt_cfg.stg2_coef_ptr[4*a+3]);
+  }
+  for(int a = initial_list*4; a < filt_cfg.stg2_tap_count; a++){
+    printf("0x%08X, ", filt_cfg.stg2_coef_ptr[a]);
+  }
+  printf("]\n");
+
+  printf("stage2_shr = %d\n", filt_cfg.stg2_shr);
+}
+
+static inline
+void cmd_print_msg(unsigned i){
+    const char* msg[4] = {
+        "[CMD] Resume data loop.\n",
+        "[CMD] Terminate application.\n",
+        "[CMD] Print Filters.\n",
+        "[CMD] Unknown command.\n"
+    };
+    printf("%s\n", msg[i]);
+}
+
+static inline
+void cmd_perform_action(unsigned cmd){
+    switch(cmd){
+        case 0:  break;
+        case 1:  exit(0); break;
+        case 2:  app_print_filters(); break;
+        default: assert(0); break;
+    }
+}
+
+static inline
+void cmd_loop(chanend_t c_from_host)
+{
+  char cmd_buff[BUFF_SIZE];
+  int pp;
+  SELECT_RES(
+    CASE_THEN(c_from_host, c_from_host_handler)
+  )
+  c_from_host_handler:{
+    xscope_data_from_host(c_from_host, &cmd_buff[0], &pp);
+    assert((pp-1) == 4);
+    uint32_t cmd = ((uint32_t*)(void*) &cmd_buff[0])[0];
+    cmd_print_msg(cmd);
+    cmd_perform_action(cmd);
+    continue;
+  }
+}
+
+static inline
+int send_words_to_app(streaming_chanend_t c_to_app, char* buff, int buff_lvl)
+{
+  int* next_word = (int*)(void*) &buff[0];
+  while(buff_lvl >= sizeof(int)){
+    s_chan_out_word(c_to_app, next_word[0]);
+    next_word++;
+    buff_lvl -= sizeof(int);
+    hwtimer_delay_microseconds(15);
+  }
+  if(buff_lvl) 
+  {
+    memmove(&buff[0], &next_word[0], buff_lvl);
+  }
+  return buff_lvl;
+}
+
+
+extern void _mic_array_override_pdm_port_c(chanend_t c_pdm);
 
 // We'll be using a fairly standard mic array setup here, with one big
 // exception. Instead of feeding the PDM rx service with a port, we're going
@@ -110,7 +236,7 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
                                 XS1_CLKBLK_1);
 
 #if USE_CUSTOM_FILTER
-void init_mic_conf(mic_array_conf_t &mic_array_conf, mic_array_filter_conf_t (&filter_conf)[NUM_DECIMATION_STAGES], unsigned *channel_map)
+static void init_mic_conf(mic_array_conf_t &mic_array_conf, mic_array_filter_conf_t (&filter_conf)[NUM_DECIMATION_STAGES], unsigned *channel_map)
 {
   static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
   static int32_t stg2_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][CUSTOM_FILTER_STG2_TAP_COUNT];
@@ -155,6 +281,9 @@ void init_mic_conf(mic_array_conf_t &mic_array_conf, mic_array_filter_conf_t (&f
 }
 #endif
 
+
+// ------------------------------- THREADS -------------------------------
+
 void app_mic(
     chanend_t c_pdm_in,
     chanend_t c_frames_out) //non-streaming
@@ -167,7 +296,7 @@ void app_mic(
   init_mic_conf(mic_array_conf, filter_conf, NULL);
   mic_array_init_custom_filter(&pdm_res, &mic_array_conf);
 #endif
-  _mic_array_override_pdm_port((port_t)c_pdm_in); // get pdm input from channel instead of port.
+  _mic_array_override_pdm_port_c((port_t)c_pdm_in); // get pdm input from channel instead of port.
                                                   // mic_array_init() calls mic_array_resources_configure which would crash
                                                   // if a chanend were to be passed instead of a port for the pdm data port, so
                                                   // this overriding has to be done only after calling mic_array_init()
@@ -219,6 +348,7 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
   }
 }
 
+
 void app_fifo_to_xscope_task(chanend_t c_fifo)
 {
     while(1){
@@ -235,40 +365,46 @@ void app_fifo_to_xscope_task(chanend_t c_fifo)
 }
 
 
-
-void app_print_filters()
+void host_words_to_app(chanend_t c_from_host, streaming_chanend_t c_to_app)
 {
-  filt_config_t filt_cfg;
-  get_filter_config(APP_SAMP_FREQ, &filt_cfg);
+  xscope_connect_data_from_host(c_from_host);
 
-  unsigned stg1_tap_words = filt_cfg.stg1_tap_count / 2;
+  char buff[100*BUFF_SIZE+3];
+  int buff_lvl = 0;
+  int dd = 0;
+
+  SELECT_RES(
+    CASE_THEN(c_from_host, c_from_host_handler)
+  ){
+  c_from_host_handler:{
+    xscope_data_from_host(c_from_host, &buff[0], &dd);
+    dd--;
+        buff_lvl += dd;
+        if(dd == 0) {
+            cmd_loop(c_from_host);
+        }
+        else {
+            buff_lvl = send_words_to_app(c_to_app, buff, buff_lvl);
+        }
+    continue;
+  }}
+}
 
 
-  printf("stage1 filter length: %d 16bit coefs -> %d 32b words\n", stg1_tap_words*2, stg1_tap_words);
-  int initial_list = stg1_tap_words/4;
-  printf("stage1_coef = [\n");
-  for(int a = 0; a < initial_list; a++){
-    printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
-      filt_cfg.stg1_coef_ptr[a*4+0], filt_cfg.stg1_coef_ptr[a*4+1],
-      filt_cfg.stg1_coef_ptr[a*4+2], filt_cfg.stg1_coef_ptr[a*4+3]);
-  }
-  for(int a = initial_list*4; a < stg1_tap_words; a++){
-    printf("0x%08X, ", filt_cfg.stg1_coef_ptr[a]);
-  }
-  printf("]\n");
-
-  printf("stage2 filter length: %d\n", filt_cfg.stg2_tap_count);
-  printf("stage2_coef = [\n");
-  initial_list = filt_cfg.stg2_tap_count/4;
-  for(int a = 0; a < initial_list; a++){
-    printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
-      filt_cfg.stg2_coef_ptr[4*a+0], filt_cfg.stg2_coef_ptr[4*a+1],
-      filt_cfg.stg2_coef_ptr[4*a+2], filt_cfg.stg2_coef_ptr[4*a+3]);
-  }
-  for(int a = initial_list*4; a < filt_cfg.stg2_tap_count; a++){
-    printf("0x%08X, ", filt_cfg.stg2_coef_ptr[a]);
-  }
-  printf("]\n");
-
-  printf("stage2_shr = %d\n", filt_cfg.stg2_shr);
+int main(){
+  channel_t c_frames = chan_alloc();
+  channel_t c_fifo = chan_alloc();
+  chanend_t xscope_chan = chanend_alloc(); // tools will start the other channel end
+  streaming_channel_t c_to_app = s_chan_alloc();
+  
+  PAR_JOBS(
+    PJOB(app_mic, (c_to_app.end_a, c_frames.end_a)),
+    PJOB(app_output_task, (c_frames.end_b, c_fifo.end_a)),
+    PJOB(app_fifo_to_xscope_task, (c_fifo.end_b)),
+    PJOB(host_words_to_app, (xscope_chan, c_to_app.end_b))
+  );
+  s_chan_free(c_to_app);
+  chan_free(c_frames);
+  chan_free(c_fifo);
+  return 0;
 }

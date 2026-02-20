@@ -19,7 +19,7 @@ bool use_3_stg_decimator = false;
 // until mic_array_start() completes. mic_array_start() performs shutdown and
 // then sets g_mics back to nullptr.
 
-#ifdef __XS3A__
+#if !defined(__XS2A__)
 ////////////////////
 // Mic array init //
 ////////////////////
@@ -160,6 +160,7 @@ void mic_array_start(
     g_mics = nullptr;
   }
 }
+
 // Override pdm data port. Only used in tests where a chanend is used as a 'port' for input pdm data.
 void _mic_array_override_pdm_port(chanend_t c_pdm)
 {
@@ -171,4 +172,11 @@ void _mic_array_override_pdm_port(chanend_t c_pdm)
     g_mics->PdmRx.SetPort((port_t)c_pdm);
   }
 }
-#endif
+
+// C wrapper
+extern "C" void _mic_array_override_pdm_port_c(chanend_t c_pdm)
+{
+  _mic_array_override_pdm_port(c_pdm);
+}
+
+#endif // !defined(__XS2A__)
