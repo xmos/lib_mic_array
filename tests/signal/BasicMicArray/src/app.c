@@ -16,12 +16,21 @@
 #include <xscope.h>
 
 #include "mic_array.h"
+#include "app_config.h"
 
 #if USE_CUSTOM_FILTER
 #include "custom_filter.h"
 #endif
 
-#define BUFF_SIZE    (256)
+#ifndef META_OUT
+#define META_OUT (0)
+#endif
+
+#ifndef DATA_OUT
+#define DATA_OUT (1)
+#endif
+
+#define BUFF_SIZE (256)
 
 typedef chanend_t streaming_chanend_t;
 

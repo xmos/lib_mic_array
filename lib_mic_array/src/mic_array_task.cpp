@@ -111,7 +111,7 @@ void default_ma_task_start_decimator_3stg(TMicArray_3stg_decimator& mics, chanen
 // Remove any definition of CLEAR_KEDI so any acciddental use of it will be caught at compile time.
 #undef CLEAR_KEDI
 #else
-#warning "CLEAR_KEDI not defined for this architecture."
+#define CLEAR_KEDI() ((void)0) // not defined in !xs3a
 #endif
 
 template <typename TMics>
