@@ -119,7 +119,7 @@ void mic_array_initialise()
 
     // Initialise the mic array
 #if !USE_CUSTOM_FILTER
-    mic_array_init(pdm_res, NULL, APP_SAMP_FREQ);
+    mic_array_init(&pdm_res, NULL, APP_SAMP_FREQ);
 #else
     mic_array_conf_t mic_array_conf;
     mic_array_filter_conf_t filter_conf[NUM_DECIMATION_STAGES];
