@@ -379,9 +379,14 @@ void host_words_to_app(chanend_t c_from_host, streaming_chanend_t c_to_app)
 int main(){
   channel_t c_frames = chan_alloc();
   channel_t c_fifo = chan_alloc();
-  chanend_t xscope_chan = chanend_alloc(); // tools will start the other channel end
   streaming_channel_t c_to_app = s_chan_alloc();
-  
+
+  // xscope init note: only one channel end is needed
+  // the second one and the xscope service will be 
+  // automatically started and routed by the tools
+  chanend_t xscope_chan = chanend_alloc();
+  xscope_mode_lossless();
+
   PAR_JOBS(
     PJOB(app_mic, (c_to_app.end_a, c_frames.end_a)),
     PJOB(app_output_task, (c_frames.end_b, c_fifo.end_a)),
