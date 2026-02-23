@@ -150,6 +150,7 @@ int main_tile_1(chanend_t c_audio_frames)
         PJOB(burn_mips, ()),
         PJOB(burn_mips, ()),
         PJOB(burn_mips, ()),
+        PJOB(burn_mips, ()),
         PJOB(count_mips, ()),
         PJOB(print_mips, (MIC_ARRAY_CONFIG_USE_PDM_ISR))
     );
