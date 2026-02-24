@@ -19,7 +19,7 @@ bool use_3_stg_decimator = false;
 // until mic_array_start() completes. mic_array_start() performs shutdown and
 // then sets g_mics back to nullptr.
 
-#if defined(__XS3A__) || defined(__VX4B__)
+#if !defined(__XS2A__)
 ////////////////////
 // Mic array init //
 ////////////////////
@@ -176,4 +176,4 @@ extern "C" void _mic_array_override_pdm_port_c(chanend_t c_pdm)
   _mic_array_override_pdm_port(c_pdm);
 }
 
-#endif // __XS3A__ or __VX4B__
+#endif // !defined(__XS2A__)
