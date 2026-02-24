@@ -18,7 +18,7 @@ static bool s_use_3_stg_decimator = false;
 // until mic_array_start() completes. mic_array_start() performs shutdown and
 // then sets s_mics or s_mics_3stg back to nullptr.
 
-#if defined (__XS3A__) || defined (__VX4B__)
+#if !defined (__XS2A__)
 /////////////////////////////
 // Static variable getters //
 /////////////////////////////
@@ -216,4 +216,4 @@ void _mic_array_override_pdm_port_c(chanend_t c_pdm)
   _mic_array_override_pdm_port(c_pdm);
 }
 
-#endif // __XS3A__ || __VX4B__
+#endif // !defined(__XS2A__)
