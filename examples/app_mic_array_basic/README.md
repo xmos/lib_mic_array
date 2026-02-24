@@ -1,3 +1,5 @@
+:orphan:
+
 # Basic Mic Array Example
 
 ## Hardware Required
