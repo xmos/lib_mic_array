@@ -129,4 +129,18 @@ FUNCTION_NAME:
 .resource_list_empty FUNCTION_NAME, "tail_callees"
 .resource_list_empty FUNCTION_NAME, "parallel_callees"
 
+.section .data.pdm_rx_isr_context, "aw"
+.p2align 1
+.globl pdm_rx_isr_context
+
+pdm_rx_isr_context:
+  .word  0 // .L_port
+  .word  0 // .L_buffA
+  .word  0 // .L_buffB
+  .word  0 // .L_phase1
+  .word  0 // .L_phase1_reset
+  .word  0 // .L_c_out
+  .word  0 // .L_credit
+  .word -1 // .L_missed_blocks
+
 #endif // __VX4A__ || __VX4B__
