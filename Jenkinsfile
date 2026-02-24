@@ -226,10 +226,10 @@ pipeline {
                 dir("tests") {
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
-                    dir("tests/unit") {
+                    dir("unit") {
                       xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
                     }
-                    dir ("tests/signal/BasicMicArray") {
+                    dir ("signal/BasicMicArray") {
                       xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
                     }
                   } // withVenv
