@@ -130,6 +130,12 @@ FUNCTION_NAME:
     slli a0, a0, 8
     xm.retsp NSTACK_BYTES
 
+.size FUNCTION_NAME, . -FUNCTION_NAME
+.resource_const FUNCTION_NAME, "stack_frame_bytes", NSTACK_BYTES
+.resource_list_empty FUNCTION_NAME, "callees"
+.resource_list_empty FUNCTION_NAME, "tail_callees"
+.resource_list_empty FUNCTION_NAME, "parallel_callees"
+
 // The order of these coefficients tells us that whatever gets VLMACCR1'ed last is going to be multiplied by
 //  the largest coefficient. Thus, if the bipolar coefficient matrix B[,] has shape 16x32, then B[0,:] must
 //  correspond to the LEAST significant bits of each coefficient
