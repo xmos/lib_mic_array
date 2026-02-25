@@ -223,16 +223,19 @@ pipeline {
               steps {
               dir(REPO_NAME){
                 checkoutScmShallow()
-                dir("tests/unit") {
-                  xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
-                }
-                dir ("tests/signal/BasicMicArray") {
+                dir("tests") {
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
-                    xcoreBuild(buildTool: "xmake", toolsVersion: params.TOOLS_VX4_VERSION)
-                  }
-                }
-              }}
+                    dir("unit") {
+                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                    }
+                    dir ("signal/BasicMicArray") {
+                      // xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                    }
+                  } // withVenv
+                } // dir("tests")
+              } // dir(REPO_NAME)
+              } // steps
             } // stage("Checkout and Build")
             stage('Run tests') {
               steps {
