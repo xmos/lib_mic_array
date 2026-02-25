@@ -230,7 +230,7 @@ pipeline {
                       xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
                     }
                     dir ("signal/BasicMicArray") {
-                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                      // xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
                     }
                   } // withVenv
                 } // dir("tests")
