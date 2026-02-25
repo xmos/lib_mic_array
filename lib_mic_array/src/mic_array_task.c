@@ -52,8 +52,8 @@ void default_ma_task_start_pdm(void)
   start_pdm_task();
 }
 
-DECLARE_JOB(default_ma_task_start_decimator, (chanend_t));
-void default_ma_task_start_decimator(chanend_t c_audio_frames)
+DECLARE_JOB(default_ma_task_start_decimator, (void));
+void default_ma_task_start_decimator(void)
 {
   start_decimator_task();
 }
@@ -64,8 +64,8 @@ void default_ma_task_start_pdm_3stg(void)
   start_pdm_task_3stg();
 }
 
-DECLARE_JOB(default_ma_task_start_decimator_3stg, (chanend_t));
-void default_ma_task_start_decimator_3stg(chanend_t c_audio_frames)
+DECLARE_JOB(default_ma_task_start_decimator_3stg, (void));
+void default_ma_task_start_decimator_3stg(void)
 {
   start_decimator_task_3stg();
 }
