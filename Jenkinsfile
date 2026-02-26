@@ -15,8 +15,13 @@ pipeline {
     string(
       name: 'XMOSDOC_VERSION',
       defaultValue: 'v8.0.1',
-      description: 'The xmosdoc version')
-
+      description: 'The xmosdoc version'
+    )
+    string(
+      name: 'TOOLS_VX4_VERSION',
+      defaultValue: '-j --repo arch_vx_slipgate -b master -a XTC 112',
+      description: 'The XTC Slipgate tools version'
+    )
     string(
       name: 'INFR_APPS_VERSION',
       defaultValue: 'v3.3.0',
@@ -139,10 +144,8 @@ pipeline {
     
     stage('Tests') {
       parallel {
-        stage('XS3 tests') {
-          agent {
-            label 'xcore.ai'
-          }
+        stage('XS3 Tests') {
+          agent {label 'xcore.ai'}
           stages {
             stage("Checkout and Build") {
               steps {
@@ -209,11 +212,43 @@ pipeline {
             } // stage('Run tests')
           } // stages
           post {
-            cleanup {
-              xcoreCleanSandbox()
-            }
-          }
-        } // stage('HW tests')
+            cleanup {xcoreCleanSandbox()}
+          } // post
+        } // XS3 Tests
+
+        stage('VX4 Tests') {
+          agent {label "vx4"}
+          stages {
+            stage("Checkout and Build") {
+              steps {
+              dir(REPO_NAME){
+                checkoutScmShallow()
+                dir("tests") {
+                  createVenv(reqFile: "requirements.txt")
+                  withVenv {
+                    dir("unit") {
+                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                    }
+                    dir ("signal/BasicMicArray") {
+                      // xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                    }
+                  } // withVenv
+                } // dir("tests")
+              } // dir(REPO_NAME)
+              } // steps
+            } // stage("Checkout and Build")
+            stage('Run tests') {
+              steps {
+              dir(REPO_NAME){    
+              dir("tests/unit") {
+                withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
+              }}}} // stage('Run tests')
+          } // stages
+          post {
+            cleanup {xcoreCleanSandbox()}
+          } //post
+        } // VX4 Tests
+      
       } // parallel
     } // stage('Tests')
 

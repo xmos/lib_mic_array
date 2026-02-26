@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <xcore/channel_streaming.h>
 #include <xcore/interrupt.h>
-#include <xcore/parallel.h>
 #include <xcore/assert.h>
 #include <platform.h>
 
@@ -12,40 +11,86 @@
 #include "mic_array/etc/filters_default.h"
 #include "mic_array_task_internal.hpp"
 
-TMicArray *g_mics = nullptr;  // Global mic array instance.
-TMicArray_3stg_decimator *g_mics_3stg = nullptr;
-bool use_3_stg_decimator = false;
-// NOTE: g_mics must persist (remain non-null and its backing storage valid)
+static TMicArray *s_mics = nullptr;
+static TMicArray_3stg_decimator *s_mics_3stg = nullptr;
+static bool s_use_3_stg_decimator = false;
+// NOTE: s_mics or s_mics_3stg must persist (remain non-null with its backing storage valid)
 // until mic_array_start() completes. mic_array_start() performs shutdown and
-// then sets g_mics back to nullptr.
+// then sets s_mics or s_mics_3stg back to nullptr.
 
-#if !defined(__XS2A__)
+#if !defined (__XS2A__)
+/////////////////////////////
+// Static variable getters //
+/////////////////////////////
+bool get_decimator_stg_count(void)
+{
+  return s_use_3_stg_decimator;
+}
+
 ////////////////////
 // Mic array init //
 ////////////////////
-void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq)
+void init_mics_default_filter(pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor)
 {
-  assert(g_mics == nullptr); // Mic array instance already initialised
+  static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
+  mic_array_decimator_conf_t decimator_conf;
+  memset(&decimator_conf, 0, sizeof(decimator_conf));
+  mic_array_filter_conf_t filter_conf[2] = {{0}};
 
-  use_3_stg_decimator = false;
+  // decimator
+  decimator_conf.filter_conf = &filter_conf[0];
+  decimator_conf.num_filter_stages = 2;
+  //filter stage 1
+  filter_conf[0].coef = (int32_t*)stage_1_filter(stg2_dec_factor);
+  filter_conf[0].num_taps = 256;
+  filter_conf[0].decimation_factor = 32;
+  filter_conf[0].shr = 0;
+  filter_conf[0].state_words_per_channel = filter_conf[0].num_taps/32;
+  filter_conf[0].state = (int32_t*)stg1_filter_state;
 
-  unsigned stg2_decimation_factor = (pdm_res->pdm_freq/STAGE1_DEC_FACTOR)/output_samp_freq;
-  assert ((output_samp_freq*STAGE1_DEC_FACTOR*stg2_decimation_factor) == pdm_res->pdm_freq); // assert if it doesn't divide cleanly
-  // assert if unsupported decimation factor. (for example. when starting with a pdm_freq of 3.072MHz, supported
-  // output sampling freqs are [48000, 32000, 16000]
-  assert ((stg2_decimation_factor == 2) || (stg2_decimation_factor == 3) || (stg2_decimation_factor == 6));
-  static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
-  g_mics = new (mic_storage) TMicArray();
-  init_mics_default_filter(g_mics, pdm_res, channel_map, stg2_decimation_factor);
+  // filter stage 2
+  filter_conf[1].coef = (int32_t*)stage_2_filter(stg2_dec_factor);
+  filter_conf[1].num_taps = stage_2_num_taps(stg2_dec_factor);
+  filter_conf[1].decimation_factor = stg2_dec_factor;
+  filter_conf[1].shr = stage_2_shift(stg2_dec_factor);
+  filter_conf[1].state_words_per_channel = decimator_conf.filter_conf[1].num_taps;
+  filter_conf[1].state = stage_2_state_memory(stg2_dec_factor);
 
+  s_mics->Decimator.Init(decimator_conf);
+
+  pdm_rx_conf_t pdm_rx_config;
+  pdm_rx_config.pdm_out_words_per_channel = stg2_dec_factor;
+  pdm_rx_config.pdm_out_block = get_pdm_rx_out_block(stg2_dec_factor);
+  pdm_rx_config.pdm_in_double_buf = get_pdm_rx_out_block_double_buf(stg2_dec_factor);
+
+  s_mics->PdmRx.Init(pdm_res->p_pdm_mics, pdm_rx_config);
+
+  if(channel_map) {
+      s_mics->PdmRx.MapChannels(channel_map);
+  }
+
+  int divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
+  mic_array_resources_configure(pdm_res, divide);
+  mic_array_pdm_clock_start(pdm_res);
+}
+
+void init_mic_array_storage(bool use_3_stg_decimator)
+{
+  assert(s_mics == nullptr && s_mics_3stg == nullptr); // Mic array instance already initialised
+
+  s_use_3_stg_decimator = use_3_stg_decimator;
+  if(s_use_3_stg_decimator) {
+    static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray_3stg_decimator)];
+    s_mics_3stg = new (mic_storage) TMicArray_3stg_decimator();
+  } else {
+    static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
+     s_mics = new (mic_storage) TMicArray();
+  }
 }
 
 template <typename TMics>
-static inline void init_from_conf(TMics*& mics_ptr,
-                                  uint8_t* storage,
-                                  pdm_rx_resources_t* pdm_res,
-                                  mic_array_conf_t* conf) {
-  mics_ptr = new (storage) TMics();
+static inline void init_from_conf(TMics*& mics_ptr, pdm_rx_resources_t* pdm_res, mic_array_conf_t* conf)
+{
   mics_ptr->Decimator.Init(conf->decimator_conf);
   mics_ptr->PdmRx.Init(pdm_res->p_pdm_mics, conf->pdmrx_conf);
   if (conf->pdmrx_conf.channel_map) {
@@ -54,69 +99,64 @@ static inline void init_from_conf(TMics*& mics_ptr,
   mics_ptr->PdmRx.AssertOnDroppedBlock(false);
 }
 
-void mic_array_init_custom_filter(pdm_rx_resources_t* pdm_res,
-                                         mic_array_conf_t* mic_array_conf)
+void init_mics_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
 {
-  assert(pdm_res);
-  assert(mic_array_conf);
-  assert(g_mics == nullptr && g_mics_3stg == nullptr);
-  static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(UAnyMicArray)];
-
-  if(mic_array_conf->decimator_conf.num_filter_stages == 2)
-  {
-    use_3_stg_decimator = false;
-    init_from_conf<TMicArray>(g_mics, mic_storage, pdm_res, mic_array_conf);
+  if(mic_array_conf->decimator_conf.num_filter_stages == 2) {
+    init_from_conf<TMicArray>(s_mics, pdm_res, mic_array_conf);
+  } else if(mic_array_conf->decimator_conf.num_filter_stages == 3) {
+    init_from_conf<TMicArray_3stg_decimator>(s_mics_3stg, pdm_res, mic_array_conf);
+  } else {
+    assert(false && "Unsupported number of filter stages in mic_array_conf");
   }
-  else if(mic_array_conf->decimator_conf.num_filter_stages == 3)
-  {
-    init_from_conf<TMicArray_3stg_decimator>(g_mics_3stg, mic_storage, pdm_res, mic_array_conf);
-    use_3_stg_decimator = true;
-  }
-  // Configure and start clocks
-  const unsigned divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
-  mic_array_resources_configure(pdm_res, divide);
-  mic_array_pdm_clock_start(pdm_res);
 }
 
 
 /////////////////////
 // Mic array start //
 /////////////////////
-
-// Parallel jobs for when XUA_PDM_MIC_USE_PDM_ISR == 0, run separate decimator and pdm rx tasks
-DECLARE_JOB(default_ma_task_start_pdm, (TMicArray&));
-void default_ma_task_start_pdm(TMicArray& mics){
-  mics.PdmRx.ThreadEntry();
+void set_output_channel(chanend_t c_frames_out)
+{
+  if (s_use_3_stg_decimator) {
+    assert(s_mics_3stg != nullptr);
+    s_mics_3stg->OutputHandler.FrameTx.SetChannel(c_frames_out);
+  } else {
+    assert(s_mics != nullptr);
+    s_mics->OutputHandler.FrameTx.SetChannel(c_frames_out);
+  }
 }
 
-DECLARE_JOB(default_ma_task_start_decimator, (TMicArray&, chanend_t));
-void default_ma_task_start_decimator(TMicArray& mics, chanend_t c_audio_frames){
-  mics.ThreadEntry();
-}
+void shutdown_mic_array(void)
+{
+  if (s_use_3_stg_decimator) {
+    s_mics_3stg->~TMicArray_3stg_decimator();
+  }
+  else {
+    s_mics->~TMicArray();
+  }
 
-DECLARE_JOB(default_ma_task_start_pdm_3stg, (TMicArray_3stg_decimator&));
-void default_ma_task_start_pdm_3stg(TMicArray_3stg_decimator& mics){
-  mics.PdmRx.ThreadEntry();
-}
-
-DECLARE_JOB(default_ma_task_start_decimator_3stg, (TMicArray_3stg_decimator&, chanend_t));
-void default_ma_task_start_decimator_3stg(TMicArray_3stg_decimator& mics, chanend_t c_audio_frames){
-  mics.ThreadEntry();
+  s_mics_3stg = nullptr;
+  s_mics = nullptr;
 }
 
 #if defined(__XS3A__)
-#define CLRSR(c)                asm volatile("clrsr %0" : : "n"(c));
+#define CLEAR_KEDI() asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
+#elif defined(__VX4B__)
+// VX4 processors do not have a dual-issue mode due to VLIW instructions.
+// Remove any definition of CLEAR_KEDI so any acciddental use of it will be caught at compile time.
+#undef CLEAR_KEDI
 #else
-#define CLRSR(c)                ((void)0)
-#warning "CLRSR not defined for this architecture."
+#undef CLEAR_KEDI // Catch at compile time if attempting to use CLEAR_KEDI on unsupported architectures.
 #endif
-#define CLEAR_KEDI()            CLRSR(XS1_SR_KEDI_MASK)
 
 template <typename TMics>
 void start_mics_with_pdm_isr(TMics* mics_ptr, chanend_t c_frames_out)
 {
   assert(mics_ptr != nullptr);
-  CLEAR_KEDI();
+
+  #if defined(__XS3A__)
+  CLEAR_KEDI(); // Disable dual-issue mode on XS3A processors.  VX4 processors do not have a dual-issue mode.
+  #endif
+
   mics_ptr->OutputHandler.FrameTx.SetChannel(c_frames_out);
   mics_ptr->PdmRx.AssertOnDroppedBlock(false);
   mics_ptr->PdmRx.InstallISR();
@@ -124,56 +164,54 @@ void start_mics_with_pdm_isr(TMics* mics_ptr, chanend_t c_frames_out)
   mics_ptr->ThreadEntry();
 }
 
-void mic_array_start(
-    chanend_t c_frames_out)
+void start_mic_array_pdm_isr(chanend_t c_frames_out)
 {
 #if MIC_ARRAY_CONFIG_USE_PDM_ISR
-  if (use_3_stg_decimator) {
-    start_mics_with_pdm_isr<TMicArray_3stg_decimator>(g_mics_3stg, c_frames_out);
+  if (s_use_3_stg_decimator) {
+    start_mics_with_pdm_isr<TMicArray_3stg_decimator>(s_mics_3stg, c_frames_out);
   }
   else {
-    start_mics_with_pdm_isr<TMicArray>(g_mics, c_frames_out);
-  }
-#else
-  if (use_3_stg_decimator) {
-    assert(g_mics_3stg != nullptr); // Attempting to start mic_array before initialising it
-    g_mics_3stg->OutputHandler.FrameTx.SetChannel(c_frames_out);
-    PAR_JOBS(
-      PJOB(default_ma_task_start_pdm_3stg, (*g_mics_3stg)),
-      PJOB(default_ma_task_start_decimator_3stg, (*g_mics_3stg, c_frames_out)));
-  }
-  else
-  {
-    g_mics->OutputHandler.FrameTx.SetChannel(c_frames_out);
-    PAR_JOBS(
-      PJOB(default_ma_task_start_pdm, (*g_mics)),
-      PJOB(default_ma_task_start_decimator, (*g_mics, c_frames_out)));
+    start_mics_with_pdm_isr<TMicArray>(s_mics, c_frames_out);
   }
 #endif
-  // shutdown
-  if (use_3_stg_decimator) {
-    g_mics_3stg->~TMicArray_3stg_decimator();
-    g_mics_3stg = nullptr;
-  }
-  else {
-    g_mics->~TMicArray();
-    g_mics = nullptr;
-  }
 }
+
+// Helper functions for starting separate tasks
+void start_pdm_task(void)
+{
+  s_mics->PdmRx.ThreadEntry();
+}
+
+void start_decimator_task(void)
+{
+  s_mics->ThreadEntry();
+}
+
+void start_pdm_task_3stg(void)
+{
+  s_mics_3stg->PdmRx.ThreadEntry();
+}
+
+void start_decimator_task_3stg(void)
+{
+  s_mics_3stg->ThreadEntry();
+}
+
 // Override pdm data port. Only used in tests where a chanend is used as a 'port' for input pdm data.
 void _mic_array_override_pdm_port(chanend_t c_pdm)
 {
-  if (use_3_stg_decimator) {
-    assert(g_mics_3stg != nullptr);
-    g_mics_3stg->PdmRx.SetPort((port_t)c_pdm);
+  if (s_use_3_stg_decimator) {
+    assert(s_mics_3stg != nullptr);
+    s_mics_3stg->PdmRx.SetPort((port_t)c_pdm);
   } else {
-    assert(g_mics != nullptr);
-    g_mics->PdmRx.SetPort((port_t)c_pdm);
+    assert(s_mics != nullptr);
+    s_mics->PdmRx.SetPort((port_t)c_pdm);
   }
 }
 
 // C wrapper
-extern "C" void _mic_array_override_pdm_port_c(chanend_t c_pdm)
+MA_C_API
+void _mic_array_override_pdm_port_c(chanend_t c_pdm)
 {
   _mic_array_override_pdm_port(c_pdm);
 }

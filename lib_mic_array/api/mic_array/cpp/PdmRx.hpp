@@ -164,9 +164,10 @@ extern "C" {
         :
         : "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT)
         : "r11" );
-    #endif // __XS3A__
+    #else
+    #warning "PDM rx ISR not supported yet on this architecture."  
+    #endif
   }
-
 }
 
 
@@ -637,15 +638,19 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     // The block we just read could be a buffered block due to streaming channel
     // so we need to explicitly wait for PdmRx thread to exit since
     // we can't be draining blocks while PdmRx is still running.
+    puts("0\n");
     while(!this->shutdown_complete) {
       continue;
     }
+    puts("1\n");
     // Now that we're sure that PdmRx thread has exited, drain any pending blocks
-    SELECT_RES(CASE_THEN(this->c_pdm_blocks.end_b, rx_pending_block),
+    chanend_t c_pdm_blocks_end_b = this->c_pdm_blocks.end_b;
+    SELECT_RES(CASE_THEN(c_pdm_blocks_end_b, rx_pending_block),
                  DEFAULT_THEN(empty))
     {
       rx_pending_block:
         pdm_samples = GetPdmBlock();
+        puts("2\n");
         SELECT_CONTINUE_NO_RESET;
 
       empty:

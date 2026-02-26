@@ -115,3 +115,73 @@ deinterleave8:
 .size deinterleave8, .L_end - deinterleave8
 
 #endif // __XS3A__
+
+
+#if defined(__VX4A__) || defined(__VX4B__)
+
+#define FUNCTION_NAME deinterleave8
+#define NSTACK_WORDS  8 
+#define NSTACK_BYTES  (NSTACK_WORDS*4)
+
+// Note: ldd and std are reversed in vx4
+
+#define   x   a0
+#define   a   a1
+#define   b   a2
+
+#define   c   s2
+#define   d   s3
+#define   e   s4
+#define   f   s5
+#define   g   s6
+#define   h   s7
+
+.p2align 1
+.globl FUNCTION_NAME
+.type FUNCTION_NAME,@function
+FUNCTION_NAME:
+  // save regs
+  xm.entsp NSTACK_BYTES
+  xm.stdsp  c, d, 0*8
+  xm.stdsp  e, f, 1*8
+  xm.stdsp  g, h, 2*8
+
+  // deinterleave
+  xm.ldd b, a, 24(x)
+  xm.ldd d, c, 16(x)
+  xm.ldd f, e, 8(x)
+  xm.ldd h, g, 0(x)
+
+  xm.unzip b, a, 2
+  xm.unzip d, c, 2
+  xm.unzip f, e, 2
+  xm.unzip h, g, 2
+
+  xm.unzip c, a, 1
+  xm.unzip d, b, 1
+  xm.unzip g, e, 1
+  xm.unzip h, f, 1
+
+  xm.unzip e, a, 0
+  xm.unzip f, b, 0
+  xm.unzip g, c, 0
+  xm.unzip h, d, 0
+
+  xm.std a, e, 0(a0)
+  xm.std c, g, 8(a0)
+  xm.std b, f, 16(a0)
+  xm.std d, h, 24(a0)
+
+  // restore regs
+  xm.lddsp  c, d, 0*8
+  xm.lddsp  e, f, 1*8
+  xm.lddsp  g, h, 2*8
+  xm.retsp  NSTACK_BYTES
+
+.size FUNCTION_NAME, . -FUNCTION_NAME
+.resource_const FUNCTION_NAME, "stack_frame_bytes", NSTACK_BYTES
+.resource_list_empty FUNCTION_NAME, "callees"
+.resource_list_empty FUNCTION_NAME, "tail_callees"
+.resource_list_empty FUNCTION_NAME, "parallel_callees"
+
+#endif // __VX4A__ || __VX4B__
