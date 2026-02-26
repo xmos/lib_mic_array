@@ -50,6 +50,9 @@ void device_pll_init(void)
     uint32_t DEVICE_PLL_DIV_0 = 0x00000000;
     DEVICE_PLL_DIV_0 = VX_APP_CLK_DIV_ENABLE_SET(DEVICE_PLL_DIV_0, 1);
     DEVICE_PLL_DIV_0 = VX_APP_CLK_DIV_VALUE_SET(DEVICE_PLL_DIV_0, 4);
+
+    // FRAC
+    uint32_t DEVICE_PLL_FRAC_NOM = 0x80000104;
     
     // print reg values
     printf("PLL CTL VAL: 0x%08lX\n", DEVICE_PLL_CTL_VAL);
