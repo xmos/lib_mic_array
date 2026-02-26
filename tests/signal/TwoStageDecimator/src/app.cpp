@@ -1,16 +1,21 @@
 // Copyright 2020-2026 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-#include <iostream>
-#include <fstream>
 #include <cstdio>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 
+#include <platform.h>
+#include <xcore/select.h>
+#include <xcore/parallel.h>
+#include <xcore/chanend.h>
 #include <xcore/channel.h>
+#include <xcore/hwtimer.h>
 #include <xcore/channel_streaming.h>
 
 extern "C" {
-#include "xscope.h"
+#include <xscope.h>
 }
 
 #include "mic_array.h"
@@ -25,12 +30,20 @@ extern "C" {
 # error S2_DEC_FACT must be defined.
 #endif
 
+#define BUFF_SIZE    256
+
+typedef chanend_t streaming_chanend_t;
+
 // Will be loaded from file
 static uint32_t test_stage1_coef[128];
 
 static int32_t test_stage2_coef[S2_TAPS];
 static right_shift_t test_stage2_shr;
 
+DECLARE_JOB(run, (chanend_t));
+DECLARE_JOB(host_words_to_app, (chanend_t, streaming_chanend_t));
+
+// ------------------------------- HELPER FUNCTIONS -------------------------------
 
 void load_stage1(chanend_t c_from_host)
 {
@@ -101,7 +114,6 @@ void process_signal(chanend_t c_from_host)
   printf("Finished processing PDM signal.\n");
 }
 
-extern "C"
 void run(chanend_t c_from_host)
 {
   // Tell the host script what parameters are currently being used
@@ -115,4 +127,61 @@ void run(chanend_t c_from_host)
   load_stage2(c_from_host);
 
   process_signal(c_from_host);
+}
+
+
+void host_words_to_app(chanend_t c_from_host, streaming_chanend_t c_to_app)
+{
+  xscope_connect_data_from_host(c_from_host);
+
+  // +3 is for any partial word at the end of the read
+  char buff[BUFF_SIZE+3];
+  int buff_lvl = 0;
+
+  SELECT_RES(
+    CASE_THEN(c_from_host, c_from_host_handler)
+  ){
+  c_from_host_handler:{
+    int dd;
+    xscope_data_from_host(c_from_host, &buff[0], &dd);
+    dd--; // last byte is always 0 (for some reason)
+    buff_lvl += dd;
+    
+    // Send all (complete) words to app
+    int* next_word = ((int*)(void*) &buff[0]);
+    while(buff_lvl >= sizeof(int)){
+      s_chan_out_word(c_to_app, next_word[0]);
+      next_word++;
+      buff_lvl -= sizeof(int);
+    }
+
+    // if there's 1-3 bytes left move it to the front.
+    if(buff_lvl) {
+      memmove(&buff[0], &next_word[0], buff_lvl);
+    }
+
+    continue;
+  }}
+}
+
+
+int main()
+{
+  streaming_channel_t c_to_app = s_chan_alloc();
+  
+  // xscope init note: only one channel end is needed
+  // the second one and the xscope service will be
+  // automatically started and routed by the tools
+  chanend_t xscope_chan = chanend_alloc();
+  xscope_mode_lossless();
+
+  PAR_JOBS(
+    PJOB(host_words_to_app, (xscope_chan, c_to_app.end_a)),
+    PJOB(run, (c_to_app.end_b))
+  );
+  
+  s_chan_free(c_to_app);
+  
+  printf("Done.\n");
+  return 0;
 }
