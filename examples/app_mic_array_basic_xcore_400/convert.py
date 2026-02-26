@@ -22,6 +22,6 @@ if __name__ == "__main__":
         input_file="mic_array_output.bin",
         output_file="output.wav",
         num_channels=1,
-        sample_rate=16000,
+        sample_rate=12000,
         bits_per_sample=32
     )

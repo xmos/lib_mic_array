@@ -1,6 +1,7 @@
 // Copyright 2026 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
+#include <stdio.h>
 #include <assert.h>
 
 #include <print.h>
@@ -12,94 +13,6 @@
 
 #include "device_pll_ctrl.h"
 
-typedef enum { BYPASS = 1, NO_BYPASS = 0 } bypass_t;
-typedef enum { RESET = 1, NO_RESET = 0 } reset_t;
-typedef enum { LOCK = 0, NO_LOCK = 1 } pll_lock_t;
-typedef enum { ENABLED = 1, DISABLED = 0 } enable_t;
-typedef enum { RCOSC = 1, XTAL = 0 } refclk_t;
-
-static
-void secondary_pll_compute_freq(
-    float *out_freq,
-    const float in_freq,
-    const unsigned in_div,
-    const unsigned fb_mult,
-    const unsigned out_div)
-{
-    // Check ranges
-    assert(in_div < 64);
-    assert(out_div < 8);
-    assert(fb_mult < 8192);
-    
-    // Calculate VCO frequency
-    float f_out = in_freq;
-    f_out *= (1.0f / (in_div + 1)); // Divider
-    f_out *= ((fb_mult + 1) / 2.0f); // Multiplier
-    f_out *= (1.0f / (out_div + 1)); // Output divider
-    f_out /= 2.0f; // MIPI always halves frecuency
-    out_freq[0] = f_out;
-}
-
-static
-void secondary_pll_configure_freq(
-    unsigned in_div,   //  input divider value
-    unsigned fb_div,   //  feedback divider value
-    unsigned out_div,  //  output divider value
-    reset_t       reset,    //  reset after frequency change
-    pll_lock_t    lock,     //  cut the clock until PLL locked
-    bypass_t      bypass,   //  go into bypass mode
-    enable_t      enable    //  Enable the PLL
-) {
-    xsystem_tile_id_t tileid = get_local_tile_id();
-    xsystem_success_t val = 0;
-    unsigned ctrl_val = 0;
-    unsigned reset_val = 0;
-
-    // set control
-    ctrl_val = (in_div << XS1_SS_PLL_CTL_INPUT_DIVISOR_SHIFT) |
-        (fb_div << XS1_SS_PLL_CTL_FEEDBACK_MUL_SHIFT) |
-        (out_div << XS1_SS_PLL_CTL_POST_DIVISOR_SHIFT) |
-        (lock << XS1_SS_PLL_CTL_NLOCK_SHIFT) |
-        (bypass << XS1_PLL1_BYPASS_SHIFT) |
-        (!enable << XS1_SS_PLL_CTL_DISABLE_SHIFT);
-
-    
-    val = sswitch_reg_try_write(tileid, XS1_SSB_CSR_PLL1_CTRL_NUM, 0);
-    val = sswitch_reg_try_write(tileid, XS1_SSB_CSR_PLL1_CTRL_NUM, ctrl_val);
-    assert(val);
-
-    // set reset
-    reset_val = (reset << XS1_SS_PLL_CTL_NRESET_SHIFT);
-    val = sswitch_reg_try_write(tileid, XS1_SSB_CSR_SOFT_RESET_CTRL_NUM, reset_val);
-    assert(val);
-}
-
-static
-void configure_secondary_pll_200MHz(){
-    float in_freq = 24.0;   // XTAL frequency
-    float in_div  = 3.0;    // Input divisor
-    float fb_mult = 300.0;  // Feedback multiplier
-    float out_div = 2.0;    // Output divisor
-    float out_freq = 0.0;
-    secondary_pll_compute_freq(&out_freq, in_freq, in_div, fb_mult, out_div);
-    printf("Configuring secondary PLL for %.2f MHz\n", out_freq);
-    secondary_pll_configure_freq(in_div, fb_mult, out_div, NO_RESET, LOCK, NO_BYPASS, ENABLED);
-}
-
-static
-void configure_secondary_pll_24576000_Hz(){
-    float in_freq = 24.0;  // XTAL frequency
-    float in_div  = -1;    // TODO
-    float fb_mult = -1;    // TODO
-    float out_div = -1;    // TODO
-    float out_freq = 0;    // RETURN VALUE
-    secondary_pll_compute_freq(&out_freq, in_freq, in_div, fb_mult, out_div);
-    printf("Configuring secondary PLL for %.2f MHz\n", out_freq);
-    secondary_pll_configure_freq(in_div, fb_mult, out_div, NO_RESET, LOCK, NO_BYPASS, ENABLED);
-}
-
-// -----------------------------------------
-
 static 
 void delay_1ms(){
     hwtimer_t tmr = hwtimer_alloc();
@@ -108,25 +21,43 @@ void delay_1ms(){
     hwtimer_free(tmr);
 }
 
+/*
+ * PLL1 Control Register Fields:
+ *
+ * PLL1_R_DIVIDER      - Input divisor value.
+ * PLL1_F_MULTIPLIER   - Feedback multiplier value.
+ * PLL1_OD_DIVIDER     - Output divider value.
+ * PLL1_DISABLE        - Disable the PLL when this is 1.
+ * PLL1_BYPASS         - When set to 1 the PLL will be bypassed.
+ * PLL1_NLOCK          - If set to 1 the chip will not wait for the PLL to relock.
+ */
+
 void device_pll_init(void)
 {
-    xsystem_success_t ret = 1;
+    printf("Initializing PLL\n");
     xsystem_tile_id_t tileid = get_local_tile_id();
 
-    uint32_t regaddr = 0x00000000;
-    uint32_t wdata = 0x00000000;
-    const unsigned DEVICE_PLL_DIV_0 = 0x80000004;
-    
-    // disable PLL1
-    regaddr = XS1_SSB_CSR_PLL1_CTRL_NUM;
-    wdata = XS1_SS_PLL_CTL_DISABLE_SET(wdata, 1);
-    ret |= sswitch_reg_try_write(tileid, regaddr, wdata);
-    
-    // delay 1ms
-    delay_1ms();
+    // PLL CTL
+    uint32_t DEVICE_PLL_CTL_VAL = 0x00000000;
+    DEVICE_PLL_CTL_VAL = VX_PLL1_R_DIVIDER_SET(DEVICE_PLL_CTL_VAL, 0); // input divider = 1, 24 -> 24 MHz
+    DEVICE_PLL_CTL_VAL = VX_PLL1_F_MULTIPLIER_SET(DEVICE_PLL_CTL_VAL, 101); // feedback multiplier 
+    DEVICE_PLL_CTL_VAL = VX_PLL1_OD_DIVIDER_SET(DEVICE_PLL_CTL_VAL, 4); // output divider 
+    DEVICE_PLL_CTL_VAL = VX_PLL1_DISABLE_SET(DEVICE_PLL_CTL_VAL, 0); // enable PLL
+    DEVICE_PLL_CTL_VAL = VX_PLL1_BYPASS_SET(DEVICE_PLL_CTL_VAL, 0); // no bypass
+    DEVICE_PLL_CTL_VAL = VX_PLL1_NLOCK_SET(DEVICE_PLL_CTL_VAL, 0); // wait for PLL lock
 
-    // write PLL config
-    configure_secondary_pll_24576000_Hz();
+    // APP DIVIDER
+    uint32_t DEVICE_PLL_DIV_0 = 0x00000000;
+    DEVICE_PLL_DIV_0 = VX_APP_CLK_DIV_ENABLE_SET(DEVICE_PLL_DIV_0, 1);
+    DEVICE_PLL_DIV_0 = VX_APP_CLK_DIV_VALUE_SET(DEVICE_PLL_DIV_0, 4);
+    
+    // print reg values
+    printf("PLL CTL VAL: 0x%08lX\n", DEVICE_PLL_CTL_VAL);
+    printf("PLL DIV VAL: 0x%08lX\n", DEVICE_PLL_DIV_0);
+    printf("PLL FRAC_NOM: 0x%08lX\n", DEVICE_PLL_FRAC_NOM);
 
-    assert(ret);
+    // CONFIGURE
+    sswitch_reg_try_write(tileid, VX_SSB_CSR_PLL1_CTRL_NUM, DEVICE_PLL_CTL_VAL);
+    sswitch_reg_try_write(tileid, VX_SSB_CSR_PLL1_FRACN_CTRL_NUM, DEVICE_PLL_FRAC_NOM);
+    sswitch_reg_try_write(tileid, VX_SSB_CSR_APP_CLK1_DIV_NUM, DEVICE_PLL_DIV_0);
 }
