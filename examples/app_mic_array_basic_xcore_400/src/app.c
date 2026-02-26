@@ -14,15 +14,16 @@
 #include <xcore/channel.h>
 #include <xcore/parallel.h>
 
+#include "app_config.h"
 #include "mic_array.h"
 #include "device_pll_ctrl.h"
 
 // -------------------- Frecuency and Port definitions --------------------
 #define MIC_ARRAY_CONFIG_MCLK_FREQ (24576000)
 #define MIC_ARRAY_CONFIG_PDM_FREQ (3072000)
-#define MIC_ARRAY_CONFIG_PORT_MCLK XS1_PORT_1D
-#define MIC_ARRAY_CONFIG_PORT_PDM_CLK XS1_PORT_1G   /* X1D22 */
-#define MIC_ARRAY_CONFIG_PORT_PDM_DATA XS1_PORT_1F  /* X1D13 */
+#define MIC_ARRAY_CONFIG_PORT_MCLK PORT_MCLK_IN
+#define MIC_ARRAY_CONFIG_PORT_PDM_CLK PORT_PDM_CLK   /* X1D22 */
+#define MIC_ARRAY_CONFIG_PORT_PDM_DATA PORT_PDM_DATA  /* X1D13 */
 #define MIC_ARRAY_CONFIG_CLOCK_BLOCK_A XS1_CLKBLK_2
 // ------------------------------------------------------------
 
