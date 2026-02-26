@@ -8,6 +8,9 @@
 #include "device_pll_ctrl.h"
 
 
+#define DEVICE_PLL_CTL_VAL   0x0A019803 // Valid for all fractional values
+#define DEVICE_PLL_FRAC_NOM  0x800095F9 // 24.576000 MHz
+
 void device_pll_init(void)
 {
     unsigned tileid = get_local_tile_id();

@@ -53,6 +53,10 @@ void device_pll_init(void)
 
     // FRAC
     uint32_t DEVICE_PLL_FRAC_NOM = 0x80000104;
+
+    // Mux 
+    uint32_t DEVICE_PLL_MUX_VAL = \
+        (1 << VX_APP_CLK1_MUX_BIT_SHIFT) | (1 << VX_APP_CLK_IN_PHASE_BIT_SHIFT);
     
     // print reg values
     printf("PLL CTL VAL: 0x%08lX\n", DEVICE_PLL_CTL_VAL);
@@ -60,6 +64,8 @@ void device_pll_init(void)
     printf("PLL FRAC_NOM: 0x%08lX\n", DEVICE_PLL_FRAC_NOM);
 
     // CONFIGURE
+    sswitch_reg_try_write(tileid, VX_SSB_CSR_PLL1_CTRL_NUM, VX_PLL1_DISABLE_SET(0, 0));
+    sswitch_reg_try_write(tileid, VX_SSB_CSR_CLK_SWITCH_CTRL_NUM, DEVICE_PLL_MUX_VAL);
     sswitch_reg_try_write(tileid, VX_SSB_CSR_PLL1_CTRL_NUM, DEVICE_PLL_CTL_VAL);
     sswitch_reg_try_write(tileid, VX_SSB_CSR_PLL1_FRACN_CTRL_NUM, DEVICE_PLL_FRAC_NOM);
     sswitch_reg_try_write(tileid, VX_SSB_CSR_APP_CLK1_DIV_NUM, DEVICE_PLL_DIV_0);

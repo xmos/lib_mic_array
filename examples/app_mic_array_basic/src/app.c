@@ -5,16 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <platform.h>
 #include <xcore/chanend.h>
 #include <xcore/channel.h>
 #include <xcore/parallel.h>
 
+#include "app_config.h"
 #include "mic_array.h"
 #include "device_pll_ctrl.h"
 #include "small_768k_to_12k_filter.h"
-
-#include "app_config.h"
 
 #define APP_FILENAME ("mic_array_output.bin")
 
@@ -28,8 +26,6 @@ static pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
     MIC_ARRAY_CONFIG_MCLK_FREQ,
     MIC_ARRAY_CONFIG_PDM_FREQ,
     MIC_ARRAY_CONFIG_CLOCK_BLOCK_A);
-
-
 
 void init_mic_conf(mic_array_conf_t *mic_array_conf, mic_array_filter_conf_t filter_conf[2], unsigned *channel_map)
 {
@@ -87,7 +83,7 @@ void user_audio(chanend_t c_mic_audio)
         buff_ptr += APP_N_SAMPLES;
         for (unsigned i = 0; i < APP_N_SAMPLES; i++)
         {
-            tmp_buff[i] <<= 6;
+            tmp_buff[i] <<= 10;
         }
     }
 

@@ -5,7 +5,6 @@ import numpy as np
 import wave
 import soundfile as sf
 
-APP_OUT_FREQ_HZ = 12000  # 4KHz
 
 def convert_to_wav(
     input_file, output_file, num_channels=1, sample_rate=16000, bits_per_sample=32
@@ -23,6 +22,6 @@ if __name__ == "__main__":
         input_file="mic_array_output.bin",
         output_file="output.wav",
         num_channels=1,
-        sample_rate=APP_OUT_FREQ_HZ,
+        sample_rate=12000,
         bits_per_sample=32
     )

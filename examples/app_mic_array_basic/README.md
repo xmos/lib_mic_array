@@ -2,7 +2,7 @@
 
 ## Hardware Required
 
-- **XK-EVK-XU316-AIV.XN**
+- **XMS0016**
 
 ## Compile
 
