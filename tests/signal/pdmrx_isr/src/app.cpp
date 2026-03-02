@@ -5,14 +5,13 @@
 #include <fstream>
 #include <cstdio>
 #include <cstring>
-#include <print.h>
 #include <string.h>
 
 #include <xcore/select.h>
 #include <xcore/channel.h>
 #include <xcore/hwtimer.h>
 #include <xcore/channel_streaming.h>
-#include "xassert.h"
+#include <xcore/assert.h>
 #include "mic_array.h"
 #include "app.h"
 
@@ -90,7 +89,7 @@ void test()
     s_chan_out_word(c, frame++);
 
     pdm_samples = my_pdm_rx.GetPdmBlock();
-    printf("Received block %d\n", *pdm_samples);
+    printf("Received block %lu\n", *pdm_samples);
 
     s_chan_out_word(c, frame++);
   }
@@ -109,7 +108,7 @@ void assert_when_timeout()
     CASE_THEN(t, timer_handler))
   {
     timer_handler:
-      assert(0 && msg("Error: test timed out due to deadlock"));
+      xassert(0 && "Error: test timed out due to deadlock");
       break;
   }
 

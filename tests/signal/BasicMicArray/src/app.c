@@ -24,6 +24,14 @@
 
 #define BUFF_SIZE (256)
 
+#ifndef META_OUT
+#define META_OUT (0)
+#endif
+
+#ifndef DATA_OUT
+#define DATA_OUT (1)
+#endif
+
 typedef chanend_t streaming_chanend_t;
 
 DECLARE_JOB(app_output_task, (chanend_t, chanend_t));
