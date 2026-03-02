@@ -10,8 +10,9 @@
 #include <xcore/select.h>
 #include <xcore/channel.h>
 #include <xcore/hwtimer.h>
-#include <xcore/channel_streaming.h>
 #include <xcore/assert.h>
+#include <xcore/channel_streaming.h>
+
 #include "mic_array.h"
 #include "app.h"
 
@@ -111,6 +112,5 @@ void assert_when_timeout()
       xassert(0 && "Error: test timed out due to deadlock");
       break;
   }
-
   hwtimer_free(t);
 }

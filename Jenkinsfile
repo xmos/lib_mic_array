@@ -230,7 +230,7 @@ pipeline {
                       xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
                     }
                     dir ("signal/BasicMicArray") {
-                      // xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
                     }
                   } // withVenv
                 } // dir("tests")
@@ -242,6 +242,9 @@ pipeline {
               dir(REPO_NAME){    
               dir("tests/unit") {
                 withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
+              }
+              dir("tests/signal/BasicMicArray") {
+                withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "0_isr"'}
               }
               
               }}} // stage('Run tests')

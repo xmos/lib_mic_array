@@ -105,35 +105,23 @@ pdm_rx_isr:
     kret
 .L_func_end:
 .cc_bottom pdm_rx_isr.function
-
 .global pdm_rx_isr
 
 #endif //defined(__XS3A__)
 
 #if defined(__VX4A__) || defined(__VX4B__)
 
+//TODO: This function is not verified. 
+
+#define STRUCT_NAME   pdm_rx_isr_context
 #define FUNCTION_NAME pdm_rx_isr
-#define NSTACK_BYTES  16 // minimum
+#define NSTACK_WORDS  8 
+#define NSTACK_BYTES  (NSTACK_WORDS*4)
 
+.section .data.STRUCT_NAME, "aw"
 .p2align 1
-.globl FUNCTION_NAME
-.type FUNCTION_NAME,@function
-FUNCTION_NAME:
-    xm.entsp NSTACK_BYTES
-    unimp //TODO unimplemented
-    xm.retsp NSTACK_BYTES
-
-.size FUNCTION_NAME, . -FUNCTION_NAME
-.resource_const FUNCTION_NAME, "stack_frame_bytes", NSTACK_BYTES
-.resource_list_empty FUNCTION_NAME, "callees"
-.resource_list_empty FUNCTION_NAME, "tail_callees"
-.resource_list_empty FUNCTION_NAME, "parallel_callees"
-
-.section .data.pdm_rx_isr_context, "aw"
-.p2align 1
-.globl pdm_rx_isr_context
-
-pdm_rx_isr_context:
+.globl STRUCT_NAME
+STRUCT_NAME:
   .word  0 // .L_port
   .word  0 // .L_buffA
   .word  0 // .L_buffB
@@ -142,5 +130,102 @@ pdm_rx_isr_context:
   .word  0 // .L_c_out
   .word  0 // .L_credit
   .word -1 // .L_missed_blocks
+
+.section .text
+.p2align 4
+.globl FUNCTION_NAME
+.type FUNCTION_NAME,@function
+FUNCTION_NAME:
+    unimp //TODO - this function is not verified and may contain errors, so prevent it from being accidentally used without review
+    addi sp, sp, -16
+    sw   s2, 0(sp)
+    sw   s3, 4(sp)
+    sw   s4, 8(sp)
+    sw   s5, 12(sp)
+
+    // Load base address of context
+    la   s0, pdm_rx_isr_context
+
+    // Read PDM port (offset 0)
+    lw   s2, 0(s0)
+    xm.in s2, s2
+
+    // Store sample into active buffer
+    lw   s5, 4(s0)          // .L_buffA at offset 4
+    lw   s4, 12(s0)         // .L_phase1 at offset 12
+    xm.stw s2, s4(s5)
+
+    // Emit buffer if phase reached zero
+    beqz s4, .L_emit
+
+    // Decrement phase counter
+    addi s4, s4, -1
+    sw   s4, 12(s0)         // Store back to .L_phase1
+
+    // Restore context and return
+    lw   s2, 0(sp)
+    lw   s3, 4(sp)
+    lw   s4, 8(sp)
+    lw   s5, 12(sp)
+    addi sp, sp, 16
+    csrr t5, xm.smtval
+    csrw mtval, t5
+    mret
+
+.L_emit:
+    // Reset phase counter
+    lw   s2, 16(s0)         // .L_phase1_reset at offset 16
+    sw   s2, 12(s0)         // Store to .L_phase1
+
+    // Swap PDM buffers
+    lw   s2, 8(s0)          // .L_buffB at offset 8
+    sw   s2, 4(s0)          // Store to .L_buffA
+    sw   s5, 8(s0)          // Store to .L_buffB
+
+    // Check transmit credit
+    lw   s2, 24(s0)         // .L_credit at offset 24
+    bnez s2, .L_has_credit
+
+.L_no_credit:
+    // Undo buffer swap
+    lw   s2, 4(s0)          // .L_buffA
+    sw   s2, 8(s0)          // .L_buffB
+    lw   s2, 8(s0)          // restored .L_buffB
+    sw   s2, 4(s0)          // .L_buffA
+
+    // Increment missed block counter
+    lw   s2, 28(s0)         // .L_missed_blocks at offset 28
+    xm.not    s5, s2
+    xm.assert s5
+    addi s2, s2, 1
+    sw   s2, 28(s0)
+    tail .L_finish
+
+.L_has_credit:
+    // Consume credit and send buffer
+    addi s2, s2, -1
+    sw   s2, 24(s0)         // Store back to .L_credit
+    lw   s2, 20(s0)         // .L_c_out at offset 20
+    xm.out s2, s5
+
+.L_finish:
+    // Restore context and exit ISR
+    lw   s2, 0(sp)
+    lw   s3, 4(sp)
+    lw   s4, 8(sp)
+    lw   s5, 12(sp)
+    addi sp, sp, 16
+    csrr t5, xm.smtval
+    csrw mtval, t5
+    mret
+
+.L_func_end:
+
+.size FUNCTION_NAME, . -FUNCTION_NAME
+.resource_const FUNCTION_NAME, "stack_frame_bytes", NSTACK_BYTES
+.resource_list_empty FUNCTION_NAME, "callees"
+.resource_list_empty FUNCTION_NAME, "tail_callees"
+.resource_list_empty FUNCTION_NAME, "parallel_callees"
+
 
 #endif // __VX4A__ || __VX4B__

@@ -5,12 +5,12 @@ project(tests_signal_pdmrx_isr)
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 
 set(APP_DEPENDENT_MODULES   "lib_mic_array")
-set(APP_COMPILER_FLAGS  -O3
+set(APP_COMPILER_FLAGS  -Os
                         -g
                         -report
-                        -DXASSERT_ENABLE_ASSERTIONS=1
-                        -DXASSERT_ENABLE_DEBUG=1
-                        -DXASSERT_ENABLE_LINE_NUMBERS=1)
+                        -DLIBXCORE_XASSERT_IS_ASSERT
+                        -DMIC_ARRAY_CONFIG_USE_PDM_ISR=1
+                        )
 
 if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
 set(APP_HW_TARGET       XK-EVK-XU316)
