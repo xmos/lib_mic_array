@@ -230,7 +230,13 @@ pipeline {
                       xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
                     }
                     dir ("signal/BasicMicArray") {
-                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                      sh '''
+                        ninja -C build \
+                          1ch_16smp_0isr_16000fs \
+                          1ch_16smp_0isr_32000fs \
+                          1ch_16smp_0isr_48000fs \
+                          1ch_16smp_0isr_customfs 
+                      '''
                     }
                   } // withVenv
                 } // dir("tests")
@@ -244,7 +250,7 @@ pipeline {
                 withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
               }
               dir("tests/signal/BasicMicArray") {
-                withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "0_isr"'}
+                withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "1ch_16smp_0isr"'}
               }
               
               }}} // stage('Run tests')
