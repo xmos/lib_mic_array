@@ -231,11 +231,12 @@ pipeline {
                     }
                     dir ("signal/BasicMicArray") {
                       sh '''
+                        cmake -G Ninja -B build
                         ninja -C build \
                           1ch_16smp_0isr_16000fs \
                           1ch_16smp_0isr_32000fs \
                           1ch_16smp_0isr_48000fs \
-                          1ch_16smp_0isr_customfs 
+                          1ch_16smp_0isr_customfs -j8
                       '''
                     }
                   } // withVenv
