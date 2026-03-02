@@ -21,6 +21,7 @@ else() # VX4
     set(APP_HW_TARGET       XK-EVK-XU416)
     set(COMMON_COMPILER_FLAGS   -Os
                                 -g
+                                -lxc
                                 -Wno-fptrgroup
                                 -Wno-format)
 endif()

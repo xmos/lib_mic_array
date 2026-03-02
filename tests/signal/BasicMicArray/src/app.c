@@ -22,14 +22,6 @@
 #include "custom_filter.h"
 #endif
 
-#ifndef META_OUT
-#define META_OUT (0)
-#endif
-
-#ifndef DATA_OUT
-#define DATA_OUT (1)
-#endif
-
 #define BUFF_SIZE (256)
 
 typedef chanend_t streaming_chanend_t;
