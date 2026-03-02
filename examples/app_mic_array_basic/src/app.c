@@ -5,9 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <xscope.h>
 #include <xcore/chanend.h>
 #include <xcore/channel.h>
 #include <xcore/parallel.h>
+#include <xcore/hwtimer.h>
 
 #include "app_config.h"
 #include "mic_array.h"
@@ -81,10 +83,6 @@ void user_audio(chanend_t c_mic_audio)
     {
         ma_frame_rx(buff_ptr, (chanend_t)c_mic_audio, MIC_ARRAY_CONFIG_MIC_COUNT, APP_N_SAMPLES);
         buff_ptr += APP_N_SAMPLES;
-        for (unsigned i = 0; i < APP_N_SAMPLES; i++)
-        {
-            tmp_buff[i] <<= 10;
-        }
     }
 
     // write samples to a binary file
@@ -99,6 +97,8 @@ void user_audio(chanend_t c_mic_audio)
 
 void main_tile_1(){
     channel_t c_mic_audio = chan_alloc();
+    xscope_mode_lossless();
+    
     // Parallel Jobs
     PAR_JOBS(
         PJOB(user_mic, (c_mic_audio.end_a)),
