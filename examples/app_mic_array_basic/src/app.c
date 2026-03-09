@@ -64,7 +64,7 @@ void init_mic_conf(mic_array_conf_t *mic_array_conf, mic_array_filter_conf_t fil
 
 void user_mic(chanend_t c_mic_audio)
 {
-    printf("Mic Init\n");
+    printf("mic init\n");
     device_pll_init();
     unsigned channel_map[1] = {0};
     mic_array_conf_t mic_array_conf;
@@ -79,11 +79,42 @@ void user_audio(chanend_t c_mic_audio)
     int32_t WORD_ALIGNED tmp_buff[APP_BUFF_SIZE] = {0};
     int32_t *buff_ptr = &tmp_buff[0];
     unsigned frame_counter = APP_N_FRAMES;
+
+    hwtimer_t tmr = hwtimer_alloc();
+    unsigned t0 = 0, t1 = 0;
+    unsigned t2 = 0, t3 = 0;
+    uint64_t num = 0;
+    uint64_t den = 0;
+
+    printf("mic start\n");
+    t2 = hwtimer_get_time(tmr);
     while (frame_counter--)
     {
+        t0 = hwtimer_get_time(tmr);
         ma_frame_rx(buff_ptr, (chanend_t)c_mic_audio, MIC_ARRAY_CONFIG_MIC_COUNT, APP_N_SAMPLES);
         buff_ptr += APP_N_SAMPLES;
+        t1 = hwtimer_get_time(tmr);
+        num += (t1 - t0);
+        den += 1;
     }
+    t3 = hwtimer_get_time(tmr);
+    printf("mic end\n");
+
+    // Profile the average time taken per frame
+    float tilef = 600.0;
+    float ref = tilef / (5.0 + 1.0);
+    float avg = (float)num / (float)den;
+    float total = (float)(t3 - t2);
+    float avg_us =  avg / ref;
+    float total_us = total / ref;
+
+    printf("Tile freq: %.2f MHz\n", tilef);
+    printf("Reference freq: %.2f MHz\n", ref);
+    printf("ma_frame_rx avg: %.2f ticks\n", avg);
+    printf("ma_frame_rx avg: %.2f us\n", avg_us);
+    printf("total ticks: %.2f\n", total);
+    printf("total us: %.2f us\n", total_us);
+
 
     // write samples to a binary file
     printf("Writing output to %s\n", APP_FILENAME);
