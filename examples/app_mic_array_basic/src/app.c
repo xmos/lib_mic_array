@@ -76,7 +76,7 @@ void user_mic(chanend_t c_mic_audio)
 
 void user_audio(chanend_t c_mic_audio)
 {
-    int32_t WORD_ALIGNED tmp_buff[APP_BUFF_SIZE] = {0};
+    static int32_t WORD_ALIGNED tmp_buff[APP_BUFF_SIZE] = {0};
     int32_t *buff_ptr = &tmp_buff[0];
     unsigned frame_counter = APP_N_FRAMES;
 

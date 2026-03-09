@@ -50,6 +50,12 @@ math(EXPR NUM_FRAME_SIZE "${NUM_FRAME_SIZE} - 1")
 math(EXPR NUM_USE_ISR "${NUM_USE_ISR} - 1")
 math(EXPR NUM_SAMP_FREQ "${NUM_SAMP_FREQ} - 1")
 
+# Remove ISR if vx4 as it's not supported
+ if (APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+    set(USE_ISR_LIST "[0]")
+    set(NUM_USE_ISR 0)
+endif()
+
 # Count how many SAMP_FREQ entries are custom (.pkl)
 set(CUSTOM_PKL_COUNT 0)
 foreach(idx RANGE 0 ${NUM_SAMP_FREQ})

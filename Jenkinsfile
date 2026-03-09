@@ -254,7 +254,7 @@ pipeline {
                 withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
               }
               dir("signal/BasicMicArray") {
-                withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "0_isr-16frame-1n"'}
+                withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "0_isr"'}
               }
               } // withVenv
               }}} // stage('Run tests')
