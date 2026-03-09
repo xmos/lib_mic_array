@@ -101,20 +101,25 @@ void user_audio(chanend_t c_mic_audio)
     printf("mic end\n");
 
     // Profile the average time taken per frame
-    float tilef = 600.0;
-    float ref = tilef / (5.0 + 1.0);
+    const float ma_expected = (float)(APP_N_SAMPLES) / (float)(APP_OUT_FREQ_HZ);
+    const float tilef = 600.0;
+    const float ref = tilef / (5.0 + 1.0);
+
     float avg = (float)num / (float)den;
     float total = (float)(t3 - t2);
     float avg_us =  avg / ref;
     float total_us = total / ref;
+    float ma_exp_us = ma_expected * 1e6;
+    float perc_err = ((avg_us - ma_exp_us) / ma_exp_us) * 100.0;
 
     printf("Tile freq: %.2f MHz\n", tilef);
     printf("Reference freq: %.2f MHz\n", ref);
     printf("ma_frame_rx avg: %.2f ticks\n", avg);
     printf("ma_frame_rx avg: %.2f us\n", avg_us);
+    printf("ma_frame_rx expected: %.2f us\n", ma_exp_us);
+    printf("ma_frame_rx error: %.2f %%\n", perc_err);
     printf("total ticks: %.2f\n", total);
     printf("total us: %.2f us\n", total_us);
-
 
     // write samples to a binary file
     printf("Writing output to %s\n", APP_FILENAME);
