@@ -248,14 +248,15 @@ pipeline {
             } // stage("Checkout and Build")
             stage('Run tests') {
               steps {
-              dir(REPO_NAME){    
+              dir(REPO_NAME){
+              withVenv {    
               dir("tests/unit") {
                 withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
               }
               dir("tests/signal/BasicMicArray") {
-                withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "1ch_16smp_0isr"'}
+                withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "0_isr-16frame-1n"'}
               }
-              
+              } // withVenv
               }}} // stage('Run tests')
           } // stages
           post {
