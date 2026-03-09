@@ -230,7 +230,12 @@ pipeline {
                       xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
                     }
                     dir ("signal/BasicMicArray") {
-                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                      withTools(params.TOOLS_VX4_VERSION){
+                      sh '''
+                        cmake -G Ninja -B build
+                        ninja -C build -j8
+                      '''
+                      }
                     }
                   } // withVenv
                 } // dir("tests")
