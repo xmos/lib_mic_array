@@ -61,4 +61,13 @@
 # define MIC_ARRAY_CONFIG_USE_DC_ELIMINATION    (1)
 #endif
 
+/** @brief Enable Low power mode of the mic array.
+ * In low power mode, only a single stage decimator is run.
+ * Note that PDM RX is still expected to output 2 samples to the decimator
+ * Default: 0
+*/
+#ifndef MIC_ARRAY_CONFIG_LOW_POWER
+# define MIC_ARRAY_CONFIG_LOW_POWER    (0)
+#endif
+
 #endif // _MIC_ARRAY_CONF_DEFAULT_H_

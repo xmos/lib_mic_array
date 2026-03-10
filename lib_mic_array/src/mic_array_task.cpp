@@ -32,6 +32,8 @@ bool get_decimator_stg_count(void)
 ////////////////////
 void init_mics_default_filter(pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor)
 {
+  assert(MIC_ARRAY_CONFIG_LOW_POWER == 0);
+
   static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
   mic_array_decimator_conf_t decimator_conf;
   memset(&decimator_conf, 0, sizeof(decimator_conf));
@@ -102,8 +104,13 @@ static inline void init_from_conf(TMics*& mics_ptr, pdm_rx_resources_t* pdm_res,
 void init_mics_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
 {
   if(mic_array_conf->decimator_conf.num_filter_stages == 2) {
+    if(MIC_ARRAY_CONFIG_LOW_POWER) {
+      assert(mic_array_conf->pdmrx_conf.pdm_out_words_per_channel == 2);
+      assert(MIC_ARRAY_CONFIG_MIC_COUNT == 1);
+    }
     init_from_conf<TMicArray>(s_mics, pdm_res, mic_array_conf);
   } else if(mic_array_conf->decimator_conf.num_filter_stages == 3) {
+    assert(MIC_ARRAY_CONFIG_LOW_POWER == 0);
     init_from_conf<TMicArray_3stg_decimator>(s_mics_3stg, pdm_res, mic_array_conf);
   } else {
     assert(false && "Unsupported number of filter stages in mic_array_conf");
@@ -184,7 +191,11 @@ void start_pdm_task(void)
 
 void start_decimator_task(void)
 {
+#if MIC_ARRAY_CONFIG_LOW_POWER
+  s_mics->ThreadEntryLowPower();
+#else
   s_mics->ThreadEntry();
+#endif
 }
 
 void start_pdm_task_3stg(void)

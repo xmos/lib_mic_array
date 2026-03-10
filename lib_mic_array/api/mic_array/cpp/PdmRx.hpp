@@ -165,7 +165,7 @@ extern "C" {
         : "r"(p_pdm_mics), "r"(XS1_SETC_IE_MODE_INTERRUPT)
         : "r11" );
     #else
-    #warning "PDM rx ISR not supported yet on this architecture."  
+    #warning "PDM rx ISR not supported yet on this architecture."
     #endif
   }
 }
@@ -596,6 +596,7 @@ template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::GetPdmBlock()
 {
+#if !MIC_ARRAY_CONFIG_LOW_POWER
   // Has to be in a critical section to avoid race conditions with ISR.
   interrupt_mask_all();
   // Limiting credit to 1 prevents the ISR from attempting to enqueue an additional block
@@ -603,7 +604,7 @@ uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
   // and s_chan_in_word()), thereby avoiding deadlock.
   pdm_rx_isr_context.credit = 1;
   interrupt_unmask_all();
-
+#endif
 
   uint32_t* full_block = (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
   mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, this->pdm_out_words_per_channel);

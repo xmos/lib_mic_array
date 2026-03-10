@@ -126,6 +126,10 @@ class TwoStageDecimator
     void ProcessBlock(
         int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block);
+
+    void ProcessBlockSingleStage(
+        int32_t sample_out[2][MIC_COUNT],
+        uint32_t *pdm_block);
   };
 }
 
@@ -172,6 +176,24 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
       }
     }
   }
+}
+
+
+template <unsigned MIC_COUNT>
+void mic_array::TwoStageDecimator<MIC_COUNT>
+    ::ProcessBlockSingleStage(
+        int32_t sample_out[2][MIC_COUNT],
+        uint32_t *pdm_block)
+{
+  uint32_t* hist = this->stage1.pdm_history_ptr;
+
+  hist[0] = pdm_block[0];
+  sample_out[0][0] = fir_1x16_bit(hist, this->stage1.filter_coef);
+  shift_buffer(hist);
+
+  hist[0] = pdm_block[1];
+  sample_out[1][0] = fir_1x16_bit(hist, this->stage1.filter_coef);
+  shift_buffer(hist);
 }
 
 

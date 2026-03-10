@@ -19,7 +19,7 @@ pipeline {
     )
     string(
       name: 'TOOLS_VX4_VERSION',
-      defaultValue: '-j --repo arch_vx_slipgate -b master -a XTC 112',
+      defaultValue: '-j --repo arch_vx_slipgate -b master -a XTC 116',
       description: 'The XTC Slipgate tools version'
     )
     string(
@@ -141,7 +141,7 @@ pipeline {
         }
       }
     } // stage('Custom CMake build')
-    
+
     stage('Tests') {
       parallel {
         stage('XS3 Tests') {
@@ -259,7 +259,7 @@ pipeline {
             cleanup {xcoreCleanSandbox()}
           } //post
         } // VX4 Tests
-      
+
       } // parallel
     } // stage('Tests')
 
