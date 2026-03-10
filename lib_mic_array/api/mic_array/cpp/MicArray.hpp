@@ -177,6 +177,8 @@ namespace  mic_array {
        * OutputHandler.
        */
       void ThreadEntry();
+
+      void ThreadEntryLowPower();
   };
 
 }
@@ -202,6 +204,30 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
     Decimator.ProcessBlock(sample_out, pdm_samples);
     SampleFilter.Filter(sample_out);
     shutdown = OutputHandler.OutputSample(sample_out);
+  }
+  PdmRx.Shutdown();
+  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
+                                    // ma_shutdown() will now return
+  return;
+}
+
+template <unsigned MIC_COUNT,
+          class TDecimator,
+          class TPdmRx,
+          class TSampleFilter,
+          class TOutputHandler>
+void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
+                                   TSampleFilter,
+                                   TOutputHandler>::ThreadEntryLowPower()
+{
+  int32_t sample_out[2][MIC_COUNT] = {{0}};
+  volatile bool shutdown = false;
+
+  while(!shutdown){
+    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlockSingleStage(sample_out, pdm_samples);
+    shutdown = OutputHandler.OutputSample(sample_out[0]);
+    shutdown = OutputHandler.OutputSample(sample_out[1]);
   }
   PdmRx.Shutdown();
   OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
