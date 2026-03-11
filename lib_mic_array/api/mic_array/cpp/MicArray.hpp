@@ -274,9 +274,11 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
     shutdown = OutputHandler.OutputSample(sample_out);
   }
   PdmRx.Shutdown();
+  // drain incoming sample from decimator_stg2_task
+  sample_out[0] = chanend_in_word(Decimator.c_decimator);
   // shutdown decimator_stg2_task
   chanend_out_control_token(Decimator.c_decimator, XS1_CT_END);
-  chan_free(Decimator.c_decimator);
+  chanend_check_control_token(Decimator.c_decimator, XS1_CT_END);
   OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
                                     // ma_shutdown() will now return
   return;

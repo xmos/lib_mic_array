@@ -30,4 +30,6 @@ void decimator_stg2_task(chanend_t c_decimator, filter_fir_s32_t *filters, const
             continue;
         }
     }
+    chanend_check_control_token(c_decimator, XS1_CT_END);
+    chanend_out_control_token(c_decimator, XS1_CT_END);
 }
