@@ -95,6 +95,7 @@ void mic_array_start(chanend_t c_frames_out)
       PJOB(default_ma_task_start_decimator, (c_decimator.end_a)),
       PJOB(default_ma_task_decimator_stg2, (c_decimator.end_b))
     );
+    chan_free(c_decimator);
 #else
     PAR_JOBS(
       PJOB(default_ma_task_start_pdm, ()),
