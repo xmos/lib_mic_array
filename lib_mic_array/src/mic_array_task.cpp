@@ -189,13 +189,25 @@ void start_pdm_task(void)
   s_mics->PdmRx.ThreadEntry();
 }
 
-void start_decimator_task(void)
+void start_decimator_task(chanend_t c_decimator)
 {
 #if MIC_ARRAY_CONFIG_LOW_POWER
-  s_mics->ThreadEntryLowPower();
+#if MIC_ARRAY_CONFIG_ENABLE_DECIMATOR_STG2_TASK
+  s_mics->Decimator.c_decimator = c_decimator;
+  s_mics->ThreadEntryLowPower_2StgDecimator();
+#else
+  s_mics->ThreadEntryLowPower_1StgDecimator();
+#endif
 #else
   s_mics->ThreadEntry();
 #endif
+}
+
+void start_decimator_stg2_task(chanend_t c_decimator)
+{
+  filter_fir_s32_t *filters = s_mics->Decimator.stage2.filters;
+  unsigned decimation_factor = s_mics->Decimator.stage2.decimation_factor;
+  decimator_stg2_task(c_decimator, filters, decimation_factor);
 }
 
 void start_pdm_task_3stg(void)
