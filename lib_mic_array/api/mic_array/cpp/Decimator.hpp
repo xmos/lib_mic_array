@@ -65,6 +65,10 @@ class TwoStageDecimator
       unsigned pdm_history_sz;
     } stage1;
 
+  public:
+    chanend_t c_decimator;
+    constexpr TwoStageDecimator() noexcept { }
+
     /**
      * Stage 2 decimation configuration and state.
      */
@@ -78,10 +82,6 @@ class TwoStageDecimator
        */
       unsigned decimation_factor;
     } stage2;
-
-  public:
-
-    constexpr TwoStageDecimator() noexcept { }
 
     /**
      * @brief Initialize the two-stage decimator from a configuration struct
@@ -127,8 +127,33 @@ class TwoStageDecimator
         int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block);
 
+    /**
+     * @brief Process a single mic, 2 sample PDM block using only the 1st stage decimation filters
+     *
+     * Consumes two PDM words from `pdm_block` and runs the
+     * stage-1 FIR twice. Two output samples are written to
+     * `sample_out[0]` and `sample_out[1]`. This path is used in low-power
+     * configurations where only the stage-1 filter is active.
+     *
+     * @param sample_out  Output sample vector with two consecutive samples.
+     * @param pdm_block   PDM data to be processed (two words).
+     */
     void ProcessBlockSingleStage(
         int32_t sample_out[2][MIC_COUNT],
+        uint32_t *pdm_block);
+
+    /**
+     * @brief Process a single mic, 2 sample PDM block using 1st and 2nd stage decimation filters
+     * where the 2nd stage filter runs in a different thread.
+     *
+     * This path is used in low-power
+     * configurations where both 1st and 2nd stage filters are active.
+     *
+     * @param sample_out  Output sample vector (one sample).
+     * @param pdm_block   PDM data to be processed (two words).
+     */
+    void ProcessBlockParTwoStage(
+        int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block);
   };
 }
@@ -193,6 +218,25 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
 
   hist[0] = pdm_block[1];
   sample_out[1][0] = fir_1x16_bit(hist, this->stage1.filter_coef);
+  shift_buffer(hist);
+}
+
+template <unsigned MIC_COUNT>
+void mic_array::TwoStageDecimator<MIC_COUNT>
+    ::ProcessBlockParTwoStage(
+        int32_t sample_out[MIC_COUNT],
+        uint32_t *pdm_block)
+{
+  uint32_t* hist = this->stage1.pdm_history_ptr;
+  sample_out[0] = chanend_in_word(c_decimator);
+  hist[0] = pdm_block[0];
+  int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
+  chanend_out_word(this->c_decimator, streamA_sample);
+  shift_buffer(hist);
+
+  hist[0] = pdm_block[1];
+  streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
+  chanend_out_word(this->c_decimator, streamA_sample);
   shift_buffer(hist);
 }
 

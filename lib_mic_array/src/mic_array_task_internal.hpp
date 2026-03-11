@@ -106,7 +106,10 @@ MA_C_API
 void shutdown_mic_array(void);
 
 MA_C_API
-void start_decimator_task(void);
+void start_decimator_task(chanend_t c_decimator);
+
+MA_C_API
+void start_decimator_stg2_task(chanend_t c_decimator);
 
 MA_C_API
 void start_decimator_task_3stg(void);

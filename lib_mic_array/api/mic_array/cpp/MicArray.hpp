@@ -178,7 +178,28 @@ namespace  mic_array {
        */
       void ThreadEntry();
 
-      void ThreadEntryLowPower();
+      /**
+       * @brief Entry point for the low-power single-stage decimation thread.
+       *
+       * This function loops, collecting PDM
+       * blocks from @ref PdmRx and running the single-stage decimator. Each
+       * block produces two output samples which are delivered sequentially
+       * through @ref OutputHandler. On shutdown it calls @ref PdmRx::Shutdown()
+       * and then completes the output shutdown handshake.
+       */
+      void ThreadEntryLowPower_1StgDecimator();
+
+      /**
+       * @brief Entry point for the low-power two-stage decimation thread.
+       *
+       * This function loops indefinitely, collecting PDM
+       * blocks from @ref PdmRx and running the parallel two-stage decimator.
+       * Each block produces one output sample which is delivered through @ref
+       * OutputHandler. On shutdown it stops the stage-2 decimator task via the
+       * `Decimator.c_decimator` channel, calls @ref PdmRx::Shutdown(), and then
+       * completes the output shutdown handshake.
+       */
+      void ThreadEntryLowPower_2StgDecimator();
   };
 
 }
@@ -218,7 +239,7 @@ template <unsigned MIC_COUNT,
           class TOutputHandler>
 void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                    TSampleFilter,
-                                   TOutputHandler>::ThreadEntryLowPower()
+                                   TOutputHandler>::ThreadEntryLowPower_1StgDecimator()
 {
   int32_t sample_out[2][MIC_COUNT] = {{0}};
   volatile bool shutdown = false;
@@ -230,6 +251,32 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
     shutdown = OutputHandler.OutputSample(sample_out[1]);
   }
   PdmRx.Shutdown();
+  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
+                                    // ma_shutdown() will now return
+  return;
+}
+
+template <unsigned MIC_COUNT,
+          class TDecimator,
+          class TPdmRx,
+          class TSampleFilter,
+          class TOutputHandler>
+void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
+                                   TSampleFilter,
+                                   TOutputHandler>::ThreadEntryLowPower_2StgDecimator()
+{
+  int32_t sample_out[MIC_COUNT] = {{0}};
+  volatile bool shutdown = false;
+
+  while(!shutdown){
+    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlockParTwoStage(sample_out, pdm_samples);
+    shutdown = OutputHandler.OutputSample(sample_out);
+  }
+  PdmRx.Shutdown();
+  // shutdown decimator_stg2_task
+  chanend_out_control_token(Decimator.c_decimator, XS1_CT_END);
+  chan_free(Decimator.c_decimator);
   OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
                                     // ma_shutdown() will now return
   return;
