@@ -124,6 +124,27 @@ endforeach()
 
 set(APP_INCLUDES src ${AUTOGEN_OUT_DIR})
 
+set(APP_COMPILER_FLAGS_lp_1stg_decimator       ${COMMON_COMPILER_FLAGS}
+                                                -DMIC_ARRAY_CONFIG_USE_PDM_ISR=0
+                                                -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=2
+                                                -DMIC_ARRAY_CONFIG_MIC_COUNT=1
+                                                -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
+                                                -DAPP_SAMP_FREQ=24000
+                                                -DUSE_CUSTOM_FILTER=0
+                                                -DMIC_ARRAY_CONFIG_LOW_POWER=1
+                                                )
+
+set(APP_COMPILER_FLAGS_lp_2stg_decimator       ${COMMON_COMPILER_FLAGS}
+                                                -DMIC_ARRAY_CONFIG_USE_PDM_ISR=0
+                                                -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=1
+                                                -DMIC_ARRAY_CONFIG_MIC_COUNT=1
+                                                -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
+                                                -DAPP_SAMP_FREQ=12000
+                                                -DUSE_CUSTOM_FILTER=0
+                                                -DMIC_ARRAY_CONFIG_LOW_POWER=1
+                                                -DMIC_ARRAY_CONFIG_ENABLE_DECIMATOR_STG2_TASK=1
+                                                )
+
 XMOS_REGISTER_APP()
 
 foreach(target ${APP_BUILD_TARGETS})
