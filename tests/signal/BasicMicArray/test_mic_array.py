@@ -126,3 +126,70 @@ class Test_BasicMicArray(MicArraySharedBase):
     threshold = 12
     assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
 
+
+  @pytest.mark.parametrize("decimator_stgs", [1, 2], ids=["1stg", "2stg"])
+  def test_BasicMicArrayLowPower(self, request, decimator_stgs):
+    cwd = Path(request.fspath).parent
+    filter = self.filter(Path(__file__).parent / "small_768k_to_12k_filter_int.pkl")
+
+    stg1_output_words_per_frame = int(filter.DecimationFactor / filter.s1.DecimationFactor)
+    assert stg1_output_words_per_frame == 2
+
+    samp_per_frame = 32
+    frames = request.config.getoption("frames")
+
+    # --- num decimator stages dependent behaviour ---
+    stg1_only = (decimator_stgs == 1)
+    samp_total = samp_per_frame * frames * (2 if stg1_only else 1)
+    device_output_delay_samps = 0 if stg1_only else 1
+    sample_override = frames * 2 if stg1_only else None
+    output_frame_size = 2 if stg1_only else 1
+    # -------------------------------------------------
+
+    sig = PdmSignal.random(1, samp_total)
+
+    expected = filter.Filter(sig.signal, stg1_only=stg1_only)
+
+    if self.print_output:
+      print(f"Expected output: {expected}")
+
+    cfg = f"lp_{decimator_stgs}stg_decimator"
+    xe_path = f"{cwd}/bin/{cfg}/test_ma_{cfg}.xe"
+    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+
+    with MicArrayDevice(
+      xe_path,
+      quiet_xgdb=not self.print_xgdb,
+      extra_xrun_args="--id 0"
+    ) as dev:
+
+      assert dev.param["channels"] == 1
+      assert dev.param["s1.dec_factor"] == filter.s1.DecimationFactor
+      assert dev.param["s1.tap_count"] == filter.s1.TapCount
+      assert dev.param["s2.dec_factor"] == filter.s2.DecimationFactor
+      assert dev.param["s2.tap_count"] == filter.s2.TapCount
+      assert dev.param["frame_size"] == output_frame_size
+      assert dev.param["use_isr"] == 0
+
+      if self.debug_print_filters:
+        dev.send_command(DevCommand.PRINT_FILTERS.value)
+
+      device_output = dev.process_signal(sig, sample_count_override=sample_override)
+
+      if self.print_output:
+        print(f"Device output: {device_output}")
+
+      dev.send_command(DevCommand.TERMINATE.value)
+
+    end = -device_output_delay_samps or None
+    start = device_output_delay_samps
+
+    result_diff = np.max(np.abs(expected[:, :end] - device_output[:, start:]))
+
+    print(f"result_diff = {result_diff}")
+
+    threshold = 12
+    assert result_diff <= threshold, (
+      f"max diff between python and xcore mic array output ({result_diff}) "
+      f"exceeds threshold ({threshold})"
+    )

@@ -41,7 +41,7 @@ class MicArrayDevice(DeviceContext):
     # Then, send the command ID
     self.send_word(cmd_id)
 
-  def process_signal(self, signal: PdmSignal):
+  def process_signal(self, signal: PdmSignal, sample_count_override=None):
 
     # First, send the entire signal to the device. Any output it sends over the
     # data probe will get queued up by our parent class, so that it doesn't back
@@ -53,7 +53,10 @@ class MicArrayDevice(DeviceContext):
     sig_bytes = signal.to_bytes_interleaved()
     self.send_bytes(sig_bytes)
 
-    sample_count = signal.len // ( 32 * self.param["s2.dec_factor"] * self.param["s3.dec_factor"])
+    if sample_count_override:
+      sample_count = sample_count_override
+    else:
+      sample_count = signal.len // ( 32 * self.param["s2.dec_factor"] * self.param["s3.dec_factor"])
 
     device_output = np.zeros((self.param["channels"], sample_count), dtype=np.int32)
 
