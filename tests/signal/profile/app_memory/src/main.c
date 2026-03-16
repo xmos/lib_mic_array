@@ -16,9 +16,6 @@
 #include "app.h"
 #endif
 
-extern void app_mic_array_init();
-extern void app_mic_array_task(chanend_t c_frames_out);
-
 static inline void mic_array_init_1_mic(void)
 {
       pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
