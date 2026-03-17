@@ -63,6 +63,8 @@ class TwoStageDecimator
        * Per-mic channel filter state (PDM history) size in 32-bit words for stage-1 filter.
        */
       unsigned pdm_history_sz;
+
+      unsigned pdm_out_words_per_mic;
     } stage1;
 
   public:
@@ -95,7 +97,7 @@ class TwoStageDecimator
      *
      * @param decimator_conf Decimator pipeline configuration.
      */
-    void Init(mic_array_decimator_conf_t &decimator_conf);
+    void Init(mic_array_decimator_conf_t &decimator_conf, unsigned pdm_out_words_per_mic);
 
     /**
      * @brief Process one block of PDM data.
@@ -139,22 +141,9 @@ class TwoStageDecimator
      * @param pdm_block   PDM data to be processed (two words).
      */
     void ProcessBlockSingleStage(
-        int32_t sample_out[2][MIC_COUNT],
+        int32_t *sample_out,
         uint32_t *pdm_block);
 
-    /**
-     * @brief Process a single mic, 2 sample PDM block using 1st and 2nd stage decimation filters
-     * where the 2nd stage filter runs in a different thread.
-     *
-     * This path is used in low-power
-     * configurations where both 1st and 2nd stage filters are active.
-     *
-     * @param sample_out  Output sample vector (one sample).
-     * @param pdm_block   PDM data to be processed (two words).
-     */
-    void ProcessBlockParTwoStage(
-        int32_t sample_out[MIC_COUNT],
-        uint32_t *pdm_block);
   };
 }
 
@@ -163,20 +152,25 @@ class TwoStageDecimator
 //////////////////////////////////////////////
 
 template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>::Init(
-    mic_array_decimator_conf_t &decimator_conf)
+void mic_array::TwoStageDecimator<MIC_COUNT>
+    ::Init(
+        mic_array_decimator_conf_t &decimator_conf,
+        unsigned pdm_out_words_per_mic)
 {
   this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
   this->stage1.pdm_history_ptr = (uint32_t*)decimator_conf.filter_conf[0].state;
   this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_words_per_channel;
+  this->stage1.pdm_out_words_per_mic = pdm_out_words_per_mic;
 
   memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * MIC_COUNT * this->stage1.pdm_history_sz);
 
-  for(int k = 0; k < MIC_COUNT; k++){
-    filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_words_per_channel),
-                        decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
+  if(decimator_conf.num_filter_stages == 2) {
+    for(int k = 0; k < MIC_COUNT; k++){
+      filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_words_per_channel),
+                          decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
+    }
+    this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;
   }
-  this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;
 }
 
 
@@ -207,39 +201,16 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
 template <unsigned MIC_COUNT>
 void mic_array::TwoStageDecimator<MIC_COUNT>
     ::ProcessBlockSingleStage(
-        int32_t sample_out[2][MIC_COUNT],
+        int32_t *sample_out,
         uint32_t *pdm_block)
 {
   uint32_t* hist = this->stage1.pdm_history_ptr;
-
-  hist[0] = pdm_block[0];
-  sample_out[0][0] = fir_1x16_bit(hist, this->stage1.filter_coef);
-  shift_buffer(hist);
-
-  hist[0] = pdm_block[1];
-  sample_out[1][0] = fir_1x16_bit(hist, this->stage1.filter_coef);
-  shift_buffer(hist);
+  for(unsigned k = 0; k < this->stage1.pdm_out_words_per_mic; k++) {
+    hist[0] = pdm_block[k];
+    sample_out[k] = fir_1x16_bit(hist, this->stage1.filter_coef);
+    shift_buffer(hist);
+  }
 }
-
-template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>
-    ::ProcessBlockParTwoStage(
-        int32_t sample_out[MIC_COUNT],
-        uint32_t *pdm_block)
-{
-  uint32_t* hist = this->stage1.pdm_history_ptr;
-  sample_out[0] = chanend_in_word(c_decimator);
-  hist[0] = pdm_block[0];
-  int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
-  chanend_out_word(this->c_decimator, streamA_sample);
-  shift_buffer(hist);
-
-  hist[0] = pdm_block[1];
-  streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
-  chanend_out_word(this->c_decimator, streamA_sample);
-  shift_buffer(hist);
-}
-
 
 static inline
 void mic_array::shift_buffer(uint32_t* buff)

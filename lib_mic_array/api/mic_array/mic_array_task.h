@@ -56,6 +56,8 @@ void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, un
 MA_C_API
 void mic_array_init_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);
 
+MA_C_API
+void mic_array_init_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);
 /**
  * @brief Start the mic array task
  *

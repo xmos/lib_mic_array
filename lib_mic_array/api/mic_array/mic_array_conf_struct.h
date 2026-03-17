@@ -136,6 +136,9 @@ typedef struct {
      * stage decimation filter's decimation factor (in case of a 2 stage decimator).
      */
     unsigned pdm_out_words_per_channel; // per channel pdm rx output block (input to the decimator) size
+
+    unsigned num_channels_in;
+    unsigned num_channels_out;
 }pdm_rx_conf_t;
 
 
