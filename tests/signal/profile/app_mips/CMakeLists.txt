@@ -67,6 +67,9 @@ foreach(SAMP_FREQ   16000 32000 48000 "good_3_stage_filter_int.pkl")
 endforeach()
 
 set(APP_INCLUDES    src src/mips/ ${AUTOGEN_OUT_DIR})
+set(APP_C_SRCS  src/app.c)
+
+
 
 XMOS_REGISTER_APP()
 
