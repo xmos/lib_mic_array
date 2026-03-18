@@ -8,7 +8,7 @@ pipeline {
 
   parameters {
     string(
-      name: 'TOOLS_VERSION',
+      name: 'TOOLS_XS3_VERSION',
       defaultValue: '15.3.1',
       description: 'The XTC tools version'
     )
@@ -129,7 +129,7 @@ pipeline {
         sh "git clone git@github.com:xmos/xmos_cmake_toolchain.git --branch v1.0.0"
         dir(REPO_NAME) {
           checkoutScmShallow()
-          withTools(params.TOOLS_VERSION) {
+          withTools(params.TOOLS_XS3_VERSION) {
             sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
             sh "cd build.xcore && make all -j 16"
           }
@@ -162,7 +162,7 @@ pipeline {
             stage('Run tests') {
               steps {
                 dir("${REPO_NAME}/tests") {
-                  withTools(params.TOOLS_VERSION) {
+                  withTools(params.TOOLS_XS3_VERSION) {
                     withVenv {
 
                       // This ensures a project for XS2 can be built and runs OK
@@ -231,10 +231,7 @@ pipeline {
                     }
                     dir ("signal/BasicMicArray") {
                       withTools(params.TOOLS_VX4_VERSION){
-                      sh '''
-                        cmake -G Ninja -B build
-                        ninja -C build -j8
-                      '''
+                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION, jobs:8)
                       }
                     }
                   } // withVenv
