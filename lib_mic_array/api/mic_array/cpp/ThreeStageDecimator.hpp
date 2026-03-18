@@ -52,6 +52,8 @@ class ThreeStageDecimator
        * Per-mic channel filter state (PDM history) size in 32-bit words for stage-1 filter.
        */
       unsigned pdm_history_sz;
+
+      unsigned pdm_out_words_per_mic;
     } stage1;
 
     /**
@@ -98,7 +100,7 @@ class ThreeStageDecimator
      *
      * @param decimator_conf Decimator pipeline configuration.
      */
-    void Init(mic_array_decimator_conf_t &decimator_conf);
+    void Init(mic_array_decimator_conf_t &decimator_conf, unsigned pdm_out_words_per_mic);
 
     /**
      * @brief Process one block of PDM data.
@@ -137,12 +139,15 @@ class ThreeStageDecimator
 //////////////////////////////////////////////
 
 template <unsigned MIC_COUNT>
-void mic_array::ThreeStageDecimator<MIC_COUNT>::Init(
-    mic_array_decimator_conf_t &decimator_conf)
+void mic_array::ThreeStageDecimator<MIC_COUNT>
+    ::Init(
+        mic_array_decimator_conf_t &decimator_conf,
+        unsigned pdm_out_words_per_mic)
 {
   this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
   this->stage1.pdm_history_ptr = (uint32_t*)decimator_conf.filter_conf[0].state;
   this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_words_per_channel;
+  this->stage1.pdm_out_words_per_mic = pdm_out_words_per_mic;
 
   memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * MIC_COUNT * this->stage1.pdm_history_sz);
 

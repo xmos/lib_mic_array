@@ -326,8 +326,9 @@ namespace  mic_array {
       uint32_t* blocks[2];
       volatile bool shutdown = false;
       volatile bool shutdown_complete = false;
-      uint32_t pdm_out_words_per_channel; // number of 32-sample subblocks per channel
       uint32_t num_phases;
+      uint32_t num_channels_in;
+      uint32_t num_channels_out;
 
       /**
        * @brief Streaming channel over which PDM blocks are sent.
@@ -350,21 +351,6 @@ namespace  mic_array {
       volatile bool isr_used = false;
 
     public:
-
-      /**
-       * @brief Read a word of PDM data from the port.
-       *
-       * @return A `uint32_t` containing 32 PDM samples. If `MIC_COUNT >= 2` the
-       *         samples from each port will be interleaved together.
-       */
-      uint32_t ReadPort();
-
-      /**
-       * @brief Send a block of PDM data to a listener.
-       *
-       * @param block   PDM data to send.
-       */
-      void SendBlock(uint32_t *block);
 
       /**
        * @brief Initialize the PDM RX service.
@@ -442,6 +428,8 @@ namespace  mic_array {
        */
       uint32_t* GetPdmBlock();
 
+      uint32_t* GetPdmBlockLowPowerOneMic();
+
       /**
        * @brief Set whether dropped PDM samples should cause an assertion.
        *
@@ -466,8 +454,9 @@ namespace  mic_array {
        * every iteration.
        */
       void ThreadEntry();
-  };
 
+      uint32_t pdm_out_words_per_channel; // number of 32-sample subblocks per channel
+    };
 }
 
 //////////////////////////////////////////////
@@ -489,7 +478,7 @@ template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
 {
   while(1){
-    this->blocks[0][--phase] =  this->ReadPort();
+    this->blocks[0][--phase] =  port_in(this->p_pdm_mics);
 
     if(!phase){
       this->phase = this->num_phases;
@@ -497,7 +486,7 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
       this->blocks[0] = this->blocks[1];
       this->blocks[1] = ready_block;
 
-      this->SendBlock(ready_block);
+      s_chan_out_word(this->c_pdm_blocks.end_a, reinterpret_cast<uint32_t>(ready_block));
       // Check for shutdown only after sending a block so we know there's atleast one pending block at the time of shutdown
       if(this->shutdown)
       {
@@ -510,28 +499,14 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
 
 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
-uint32_t mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
-    ::ReadPort()
-{
-  return port_in(this->p_pdm_mics);
-}
-
-
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
-void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
-    ::SendBlock(uint32_t *block)
-{
-  s_chan_out_word(this->c_pdm_blocks.end_a,
-                  reinterpret_cast<uint32_t>( &block[0] ));
-}
-
-template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::Init(port_t p_pdm_mics, pdm_rx_conf_t &pdm_rx_config)
 {
+  this->num_channels_in = pdm_rx_config.num_channels_in;
+  this->num_channels_out = pdm_rx_config.num_channels_out;
   this->pdm_out_block_ptr = pdm_rx_config.pdm_out_block;
   this->pdm_out_words_per_channel = pdm_rx_config.pdm_out_words_per_channel;
-  this->num_phases = CHANNELS_IN * this->pdm_out_words_per_channel;
+  this->num_phases = this->num_channels_in * this->pdm_out_words_per_channel;
   this->phase = this->num_phases;
 
 
@@ -596,15 +571,15 @@ template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     ::GetPdmBlock()
 {
-#if !MIC_ARRAY_CONFIG_LOW_POWER
-  // Has to be in a critical section to avoid race conditions with ISR.
-  interrupt_mask_all();
-  // Limiting credit to 1 prevents the ISR from attempting to enqueue an additional block
-  // while two buffers are already occupied (which would happen if the ISR gets triggered between interrupt_unmask_all()
-  // and s_chan_in_word()), thereby avoiding deadlock.
-  pdm_rx_isr_context.credit = 1;
-  interrupt_unmask_all();
-#endif
+  if(this->isr_used) {
+    // Has to be in a critical section to avoid race conditions with ISR.
+    interrupt_mask_all();
+    // Limiting credit to 1 prevents the ISR from attempting to enqueue an additional block
+    // while two buffers are already occupied (which would happen if the ISR gets triggered between interrupt_unmask_all()
+    // and s_chan_in_word()), thereby avoiding deadlock.
+    pdm_rx_isr_context.credit = 1;
+    interrupt_unmask_all();
+  }
 
   uint32_t* full_block = (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
   mic_array::deinterleave_pdm_samples<CHANNELS_IN>(full_block, this->pdm_out_words_per_channel);
@@ -620,6 +595,36 @@ uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
   }
   return this->pdm_out_block_ptr;
 }
+
+template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
+uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
+    ::GetPdmBlockLowPowerOneMic()
+{
+  if(this->isr_used) {
+    // Has to be in a critical section to avoid race conditions with ISR.
+    interrupt_mask_all();
+    // Limiting credit to 1 prevents the ISR from attempting to enqueue an additional block
+    // while two buffers are already occupied (which would happen if the ISR gets triggered between interrupt_unmask_all()
+    // and s_chan_in_word()), thereby avoiding deadlock.
+    pdm_rx_isr_context.credit = 1;
+    interrupt_unmask_all();
+  }
+
+  uint32_t* full_block = (uint32_t*) s_chan_in_word(this->c_pdm_blocks.end_b);
+  mic_array::deinterleave_pdm_samples<1>(full_block, this->pdm_out_words_per_channel);
+
+  uint32_t (*block)[1] = (uint32_t (*)[1]) full_block;
+  uint32_t *out_ptr;
+  for(int ch = 0; ch < 1; ch++) {
+    out_ptr = this->pdm_out_block_ptr + (ch * this->pdm_out_words_per_channel);
+    for(int sb = 0; sb < this->pdm_out_words_per_channel; sb++) {
+      unsigned d = this->channel_map[ch];
+      out_ptr[sb] = block[this->pdm_out_words_per_channel - 1 - sb][d];
+    }
+  }
+  return this->pdm_out_block_ptr;
+}
+
 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>

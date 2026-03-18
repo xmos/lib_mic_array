@@ -41,6 +41,21 @@ void mic_array_init_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t*
   mic_array_pdm_clock_start(pdm_res);
 }
 
+void mic_array_init_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
+{
+  assert(pdm_res);
+  assert(mic_array_conf);
+  assert(mic_array_conf->decimator_conf.num_filter_stages == 1);
+
+  init_mic_array_storage(mic_array_conf->decimator_conf.num_filter_stages == 3);
+  init_mics_custom_filter_1mic_1stg_decimator(pdm_res, mic_array_conf);
+
+  // Configure and start clocks
+  const unsigned divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
+  mic_array_resources_configure(pdm_res, divide);
+  mic_array_pdm_clock_start(pdm_res);
+}
+
 /////////////////////
 // Mic array start //
 /////////////////////
@@ -52,16 +67,10 @@ void default_ma_task_start_pdm(void)
   start_pdm_task();
 }
 
-DECLARE_JOB(default_ma_task_start_decimator, (chanend_t));
-void default_ma_task_start_decimator(chanend_t c_decimator)
+DECLARE_JOB(default_ma_task_start_decimator, (void));
+void default_ma_task_start_decimator()
 {
-  start_decimator_task(c_decimator);
-}
-
-DECLARE_JOB(default_ma_task_decimator_stg2, (chanend_t));
-void default_ma_task_decimator_stg2(chanend_t c_decimator)
-{
-  start_decimator_stg2_task(c_decimator);
+  start_decimator_task();
 }
 
 DECLARE_JOB(default_ma_task_start_pdm_3stg, (void));
@@ -88,19 +97,9 @@ void mic_array_start(chanend_t c_frames_out)
       PJOB(default_ma_task_start_pdm_3stg, ()),
       PJOB(default_ma_task_start_decimator_3stg, ()));
   } else {
-#if (MIC_ARRAY_CONFIG_LOW_POWER && MIC_ARRAY_CONFIG_ENABLE_DECIMATOR_STG2_TASK)
-    channel_t c_decimator = chan_alloc();
     PAR_JOBS(
       PJOB(default_ma_task_start_pdm, ()),
-      PJOB(default_ma_task_start_decimator, (c_decimator.end_a)),
-      PJOB(default_ma_task_decimator_stg2, (c_decimator.end_b))
-    );
-    chan_free(c_decimator);
-#else
-    PAR_JOBS(
-      PJOB(default_ma_task_start_pdm, ()),
-      PJOB(default_ma_task_start_decimator, (0)));
-#endif
+      PJOB(default_ma_task_start_decimator, ()));
   }
 #endif // MIC_ARRAY_CONFIG_USE_PDM_ISR
   shutdown_mic_array();

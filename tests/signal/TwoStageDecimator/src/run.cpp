@@ -82,7 +82,7 @@ void process_signal(chanend_t c_from_host)
   filter_conf[1].state_words_per_channel = filter_conf[1].num_taps;
   filter_conf[1].state = (int32_t*)stg2_filter_state;
 
-  dec.Init(decimator_conf);
+  dec.Init(decimator_conf, S2_DEC_FACT);
 
   // Host will tell us how many blocks it intends to send
   unsigned block_count = s_chan_in_word(c_from_host);
