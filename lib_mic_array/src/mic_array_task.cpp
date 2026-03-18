@@ -14,6 +14,7 @@
 static TMicArray *s_mics = nullptr;
 static TMicArray_3stg_decimator *s_mics_3stg = nullptr;
 static bool s_use_3_stg_decimator = false;
+static bool s_run_1mic_1stg_decimator = false;
 // NOTE: s_mics or s_mics_3stg must persist (remain non-null with its backing storage valid)
 // until mic_array_start() completes. mic_array_start() performs shutdown and
 // then sets s_mics or s_mics_3stg back to nullptr.
@@ -32,8 +33,6 @@ bool get_decimator_stg_count(void)
 ////////////////////
 void init_mics_default_filter(pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor)
 {
-  assert(MIC_ARRAY_CONFIG_LOW_POWER == 0);
-
   static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
   mic_array_decimator_conf_t decimator_conf;
   memset(&decimator_conf, 0, sizeof(decimator_conf));
@@ -58,12 +57,14 @@ void init_mics_default_filter(pdm_rx_resources_t* pdm_res, const unsigned* chann
   filter_conf[1].state_words_per_channel = decimator_conf.filter_conf[1].num_taps;
   filter_conf[1].state = stage_2_state_memory(stg2_dec_factor);
 
-  s_mics->Decimator.Init(decimator_conf);
-
   pdm_rx_conf_t pdm_rx_config;
   pdm_rx_config.pdm_out_words_per_channel = stg2_dec_factor;
   pdm_rx_config.pdm_out_block = get_pdm_rx_out_block(stg2_dec_factor);
   pdm_rx_config.pdm_in_double_buf = get_pdm_rx_out_block_double_buf(stg2_dec_factor);
+  pdm_rx_config.num_channels_in = MIC_ARRAY_CONFIG_MIC_IN_COUNT;
+  pdm_rx_config.num_channels_out = MIC_ARRAY_CONFIG_MIC_COUNT;
+
+  s_mics->Decimator.Init(decimator_conf, pdm_rx_config.pdm_out_words_per_channel);
 
   s_mics->PdmRx.Init(pdm_res->p_pdm_mics, pdm_rx_config);
 
@@ -93,7 +94,7 @@ void init_mic_array_storage(bool use_3_stg_decimator)
 template <typename TMics>
 static inline void init_from_conf(TMics*& mics_ptr, pdm_rx_resources_t* pdm_res, mic_array_conf_t* conf)
 {
-  mics_ptr->Decimator.Init(conf->decimator_conf);
+  mics_ptr->Decimator.Init(conf->decimator_conf, conf->pdmrx_conf.pdm_out_words_per_channel);
   mics_ptr->PdmRx.Init(pdm_res->p_pdm_mics, conf->pdmrx_conf);
   if (conf->pdmrx_conf.channel_map) {
     mics_ptr->PdmRx.MapChannels(conf->pdmrx_conf.channel_map);
@@ -103,20 +104,21 @@ static inline void init_from_conf(TMics*& mics_ptr, pdm_rx_resources_t* pdm_res,
 
 void init_mics_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
 {
-  if(mic_array_conf->decimator_conf.num_filter_stages == 2) {
-    if(MIC_ARRAY_CONFIG_LOW_POWER) {
-      assert(mic_array_conf->pdmrx_conf.pdm_out_words_per_channel == 2);
-      assert(MIC_ARRAY_CONFIG_MIC_COUNT == 1);
-    }
+  if((mic_array_conf->decimator_conf.num_filter_stages == 1) || (mic_array_conf->decimator_conf.num_filter_stages == 2)) {
     init_from_conf<TMicArray>(s_mics, pdm_res, mic_array_conf);
   } else if(mic_array_conf->decimator_conf.num_filter_stages == 3) {
-    assert(MIC_ARRAY_CONFIG_LOW_POWER == 0);
     init_from_conf<TMicArray_3stg_decimator>(s_mics_3stg, pdm_res, mic_array_conf);
   } else {
     assert(false && "Unsupported number of filter stages in mic_array_conf");
   }
 }
 
+void init_mics_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
+{
+  assert(mic_array_conf->pdmrx_conf.pdm_out_words_per_channel <= TMicArray::MAX_PDM_OUT_WORDS_PER_CHANNEL);
+  s_run_1mic_1stg_decimator = true;
+  init_mics_custom_filter(pdm_res, mic_array_conf);
+}
 
 /////////////////////
 // Mic array start //
@@ -143,6 +145,8 @@ void shutdown_mic_array(void)
 
   s_mics_3stg = nullptr;
   s_mics = nullptr;
+  s_use_3_stg_decimator = false;
+  s_run_1mic_1stg_decimator = false;
 }
 
 #if defined(__XS3A__)
@@ -189,25 +193,14 @@ void start_pdm_task(void)
   s_mics->PdmRx.ThreadEntry();
 }
 
-void start_decimator_task(chanend_t c_decimator)
+void start_decimator_task()
 {
-#if MIC_ARRAY_CONFIG_LOW_POWER
-#if MIC_ARRAY_CONFIG_ENABLE_DECIMATOR_STG2_TASK
-  s_mics->Decimator.c_decimator = c_decimator;
-  s_mics->ThreadEntryLowPower_2StgDecimator();
-#else
-  s_mics->ThreadEntryLowPower_1StgDecimator();
-#endif
-#else
-  s_mics->ThreadEntry();
-#endif
-}
-
-void start_decimator_stg2_task(chanend_t c_decimator)
-{
-  filter_fir_s32_t *filters = s_mics->Decimator.stage2.filters;
-  unsigned decimation_factor = s_mics->Decimator.stage2.decimation_factor;
-  decimator_stg2_task(c_decimator, filters, decimation_factor);
+  if(s_run_1mic_1stg_decimator) {
+    s_mics->ThreadEntryLowPower_1Mic1StgDecimator();
+  }
+  else {
+    s_mics->ThreadEntry();
+  }
 }
 
 void start_pdm_task_3stg(void)

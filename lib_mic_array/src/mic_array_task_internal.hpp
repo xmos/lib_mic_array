@@ -97,6 +97,9 @@ MA_C_API
 void init_mics_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);
 
 MA_C_API
+void init_mics_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);
+
+MA_C_API
 void init_mics_default_filter(pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor);
 
 MA_C_API
@@ -106,10 +109,7 @@ MA_C_API
 void shutdown_mic_array(void);
 
 MA_C_API
-void start_decimator_task(chanend_t c_decimator);
-
-MA_C_API
-void start_decimator_stg2_task(chanend_t c_decimator);
+void start_decimator_task();
 
 MA_C_API
 void start_decimator_task_3stg(void);

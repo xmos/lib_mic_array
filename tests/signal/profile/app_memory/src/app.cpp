@@ -93,7 +93,7 @@ void app_mic_array_init()
   filter_conf[1].state_words_per_channel = decimator_conf.filter_conf[1].num_taps;
   filter_conf[1].state = (int32_t*)filter_state_df_2;
 
-  mics.Decimator.Init(decimator_conf);
+  mics.Decimator.Init(decimator_conf, STAGE2_DEC_FACTOR);
 
   static uint32_t pdmrx_out_block_df_2[APP_N_MICS][STAGE2_DEC_FACTOR];
   static uint32_t __attribute__((aligned (8))) pdmrx_out_block_double_buf_df_2[2][APP_N_MICS_IN * STAGE2_DEC_FACTOR];
