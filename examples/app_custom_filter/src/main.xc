@@ -72,8 +72,6 @@ void init_mic_conf(mic_array_conf_t &mic_array_conf, mic_array_filter_conf_t (&f
   mic_array_conf.pdmrx_conf.pdm_out_block = (uint32_t*)pdmrx_out_block;
   mic_array_conf.pdmrx_conf.pdm_in_double_buf = (uint32_t*)pdmrx_out_block_double_buf;
   mic_array_conf.pdmrx_conf.channel_map = channel_map;
-  mic_array_conf.pdmrx_conf.num_channels_in = APP_MIC_COUNT;
-  mic_array_conf.pdmrx_conf.num_channels_out = APP_MIC_COUNT;
 }
 
 int main() {

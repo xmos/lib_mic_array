@@ -1,14 +1,14 @@
 # Copyright 2022-2026 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
- 
+
 ######
-# Test: TwoStageDecimator stage 2 test
+# Test: Decimator::ProcessBlockTwoStage stage 2 test
 #
-# This test is intended to make sure the second stage of the TwoStageDecimator
-# is producing correct results. This test relies on the assumption that the 
+# This test is intended to make sure the second stage of the Decimator::ProcessBlockTwoStage
+# is producing correct results. This test relies on the assumption that the
 # first stage decimator works correctly (all test vectors go through the first
 # stage before they get to the second stage), so technically it's looking at the
-# whole TwoStageDecimator input->output. If this test is failing but
+# whole Decimator::ProcessBlockTwoStage input->output. If this test is failing but
 # test_stage1.py works, then there is an issue in the second stage (or this test
 # is wrong).
 #
@@ -40,17 +40,17 @@ class Test_Stage2(object):
 
   @pytest.fixture(autouse=True)
   def __init_case(self, request):
-    np.set_printoptions(threshold=sys.maxsize,  
+    np.set_printoptions(threshold=sys.maxsize,
                         linewidth=80)
     self.print_out = request.config.getoption("print_output")
 
   def gen_filter(self, s2_tap_count, s2_dec_factor):
-    # This test uses a random first stage filter. No arithmetic saturation is 
+    # This test uses a random first stage filter. No arithmetic saturation is
     # possible, regardless of what we pick.
 
     s1_coef = np.round(np.ldexp((np.random.random_sample(256) - 0.5), 15)).astype(np.int16)
     s1_filter = filters.Stage1Filter(s1_coef)
-    
+
     # We'll generate a random filter for the second stage as well. We'll
     # normalize it so that we're not worried about saturating.
     s2_coef = np.random.random_sample(s2_tap_count) - 0.5
@@ -59,7 +59,7 @@ class Test_Stage2(object):
     s2_filter = filters.Stage2Filter(s2_coef, s2_dec_factor)
 
     return filters.TwoStageFilter(s1_filter, s2_filter)
-    
+
 
   @pytest.mark.parametrize("config", params["CONFIG"], ids=[str(param) for param in params["CONFIG"]])
   def test_stage2(self, request, config):
@@ -100,9 +100,9 @@ class Test_Stage2(object):
       if self.print_out: print(f"Device output: {device_output}")
 
       # The second stage filter will usually yield exactly correct results, but
-      # not always, because the 64-bit partial products of the inner product 
-      # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift 
+      # not always, because the 64-bit partial products of the inner product
+      # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift
       # applied to them prior to being summed.
       result_diff = np.max(np.abs(expected - device_output))
-      assert result_diff <= 5 # This used to be 4 but we get a very occaisonal test failure when it becomes 5. This is an acceptable relaxation of the test.
+      assert result_diff <= 5 # This used to be 4 but we get a very occasional test failure when it becomes 5. This is an acceptable relaxation of the test.
 

@@ -5,7 +5,7 @@ Decimation filters
 ******************
 
 The mic array unit provided by this library uses a two-stage decimation process,
-implemented in :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>`,
+implemented in :cpp:class:`Decimator <mic_array::Decimator>`,
 to convert a high sample rate stream of (1-bit) PDM samples into a lower sample
 rate stream of (32-bit) PCM samples. This is shown in :ref:`decimator_stages_simplified`.
 
@@ -162,7 +162,7 @@ overall combined response provides a nice flat passband.
    48 kHz output sampling rate filter freq response
 
 The following sections provide more details about the first and second stage decimation filters,
-implemented in :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>`.
+implemented in :cpp:class:`Decimator <mic_array::Decimator>`.
 
 .. _decimator_stage_1:
 

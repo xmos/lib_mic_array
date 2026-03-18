@@ -30,10 +30,11 @@ void shift_buffer(uint32_t* buff);
 
 
 /**
- * @brief First and Second Stage Decimator
+ * @brief PDM Decimator (1, 2, or 3 stage)
  *
- * This class template represents a two stage decimator which converts a stream
- * of PDM samples to a lower sample rate stream of PCM samples.
+ * This class template represents a decimator which converts a stream
+ * of PDM samples to a lower sample rate stream of PCM samples using
+ * one, two, or three cascaded FIR decimation stages.
  *
  * Concrete implementations of this class template are meant to be used as the
  * `TDecimator` template parameter in the @ref MicArray class template.
@@ -41,7 +42,7 @@ void shift_buffer(uint32_t* buff);
  * @tparam MIC_COUNT      Number of microphone channels.
  */
 template <unsigned MIC_COUNT>
-class TwoStageDecimator
+class Decimator
 {
   private:
 
@@ -68,8 +69,7 @@ class TwoStageDecimator
     } stage1;
 
   public:
-    chanend_t c_decimator;
-    constexpr TwoStageDecimator() noexcept { }
+    constexpr Decimator() noexcept { }
 
     /**
      * Stage 2 decimation configuration and state.
@@ -86,21 +86,34 @@ class TwoStageDecimator
     } stage2;
 
     /**
-     * @brief Initialize the two-stage decimator from a configuration struct
+     * Stage 3 decimation configuration and state.
+     */
+    struct {
+      /**
+       * Stage 3 FIR filters
+       */
+      filter_fir_s32_t filters[MIC_COUNT];
+      /**
+       * Stage 3 filter decimation factor.
+       */
+      unsigned decimation_factor;
+    } stage3;
+
+    /**
+    * @brief Initialize the decimator from a configuration struct
      * @ref mic_array_decimator_conf_t @p decimator_conf
      *
-     * Reads stage-1 and stage-2 filter parameters from @p decimator_conf and prepares
-     * internal state:
-     * The caller must ensure all pointers inside @p decimator_conf.filter_conf[0]
-     * and @p decimator_conf.filter_conf[1] are valid and persist for the
-     * lifetime of the decimator.
+    * Reads filter parameters for all configured stages from @p decimator_conf and prepares
+    * internal state.
+    * The caller must ensure all pointers inside @p decimator_conf.filter_conf[]
+    * are valid and persist for the lifetime of the decimator.
      *
      * @param decimator_conf Decimator pipeline configuration.
      */
     void Init(mic_array_decimator_conf_t &decimator_conf, unsigned pdm_out_words_per_mic);
 
     /**
-     * @brief Process one block of PDM data.
+     * @brief Process one block of PDM data through the 2-stage decimator.
      *
      * Processes a block of PDM data to produce an output sample from the
      * second stage decimator.
@@ -125,24 +138,41 @@ class TwoStageDecimator
      * @param sample_out  Output sample vector.
      * @param pdm_block   PDM data to be processed.
      */
-    void ProcessBlock(
+    void ProcessBlockTwoStage(
         int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block);
 
     /**
-     * @brief Process a single mic, 2 sample PDM block using only the 1st stage decimation filters
+     * @brief Process one block of PDM data through only the 1st stage decimation filter.
      *
-     * Consumes two PDM words from `pdm_block` and runs the
-     * stage-1 FIR twice. Two output samples are written to
-     * `sample_out[0]` and `sample_out[1]`. This path is used in low-power
-     * configurations where only the stage-1 filter is active.
+     * Consumes `pdm_out_words_per_mic` PDM words per microphone from `pdm_block`, runs the
+     * stage-1 FIR, and produces `pdm_out_words_per_mic` PCM output samples per microphone.
      *
-     * @param sample_out  Output sample vector with two consecutive samples.
-     * @param pdm_block   PDM data to be processed (two words).
+     * @param sample_out  Output sample array, written in [MIC_COUNT][pdm_out_words_per_mic] order.
+     * @param pdm_block   Input PDM data, read in [MIC_COUNT][pdm_out_words_per_mic] order.
      */
     void ProcessBlockSingleStage(
         int32_t *sample_out,
         uint32_t *pdm_block);
+
+    /**
+     * @brief Process one block of PDM data through the 3-stage decimator.
+     *
+     * Consumes `stage2.decimation_factor * stage3.decimation_factor` PDM words per microphone
+     * from `pdm_block`, runs the stage-1 FIR on each word, decimates through stage-2, then
+     * stage-3, and produces one PCM output sample per microphone.
+     *
+     * @param sample_out  Output sample vector, one value per microphone channel.
+     * @param pdm_block   Input PDM data, read in [MIC_COUNT][stage2.decimation_factor * stage3.decimation_factor] order.
+     */
+    void ProcessBlockThreeStage(
+        int32_t sample_out[MIC_COUNT],
+        uint32_t *pdm_block);
+
+    /** Number of active decimation stages (1, 2, or 3). Set by @ref Init from
+     *  `decimator_conf.num_filter_stages`. Determines which ProcessBlock variant
+     *  should be called. */
+    unsigned num_stages;
 
   };
 }
@@ -152,11 +182,12 @@ class TwoStageDecimator
 //////////////////////////////////////////////
 
 template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>
+void mic_array::Decimator<MIC_COUNT>
     ::Init(
         mic_array_decimator_conf_t &decimator_conf,
         unsigned pdm_out_words_per_mic)
 {
+  this->num_stages = decimator_conf.num_filter_stages;
   this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
   this->stage1.pdm_history_ptr = (uint32_t*)decimator_conf.filter_conf[0].state;
   this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_words_per_channel;
@@ -164,19 +195,27 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
 
   memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * MIC_COUNT * this->stage1.pdm_history_sz);
 
-  if(decimator_conf.num_filter_stages == 2) {
+  if(decimator_conf.num_filter_stages >= 2) {
     for(int k = 0; k < MIC_COUNT; k++){
       filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_words_per_channel),
                           decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
     }
     this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;
   }
+
+  if(decimator_conf.num_filter_stages == 3) {
+    for(int k = 0; k < MIC_COUNT; k++){
+      filter_fir_s32_init(&this->stage3.filters[k], decimator_conf.filter_conf[2].state + (k * decimator_conf.filter_conf[2].state_words_per_channel),
+                          decimator_conf.filter_conf[2].num_taps, decimator_conf.filter_conf[2].coef, decimator_conf.filter_conf[2].shr);
+    }
+    this->stage3.decimation_factor = decimator_conf.filter_conf[2].decimation_factor;
+  }
 }
 
 
 template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>
-    ::ProcessBlock(
+void mic_array::Decimator<MIC_COUNT>
+    ::ProcessBlockTwoStage(
         int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block)
 {
@@ -197,18 +236,59 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
   }
 }
 
+template <unsigned MIC_COUNT>
+void mic_array::Decimator<MIC_COUNT>
+    ::ProcessBlockThreeStage(
+        int32_t sample_out[MIC_COUNT],
+        uint32_t *pdm_block)
+{
+  unsigned stage1_output_words = this->stage2.decimation_factor * this->stage3.decimation_factor;
+  for(unsigned mic = 0; mic < MIC_COUNT; mic++){
+    uint32_t* hist = this->stage1.pdm_history_ptr + (mic * this->stage1.pdm_history_sz);
+    uint32_t* mic_base = pdm_block + (mic * stage1_output_words);
+    int count2 = this->stage2.decimation_factor - 1;
+    int count3 = this->stage3.decimation_factor - 1;
+    for(unsigned k = 0; k < stage1_output_words; k++)
+    {
+      hist[0] = mic_base[k];
+
+      int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
+      shift_buffer(hist);
+
+      if(count2) {
+        filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
+        count2 -= 1;
+        continue;
+      }
+      int32_t streamB_sample = filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
+      count2 = this->stage2.decimation_factor - 1;
+      if(count3) {
+        filter_fir_s32_add_sample(&this->stage3.filters[mic], streamB_sample);
+        count3 -= 1;
+      }
+      else {
+        sample_out[mic] = filter_fir_s32(&this->stage3.filters[mic], streamB_sample);
+        count3 = this->stage3.decimation_factor - 1;
+      }
+    }
+  }
+}
 
 template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>
+void mic_array::Decimator<MIC_COUNT>
     ::ProcessBlockSingleStage(
         int32_t *sample_out,
         uint32_t *pdm_block)
 {
-  uint32_t* hist = this->stage1.pdm_history_ptr;
-  for(unsigned k = 0; k < this->stage1.pdm_out_words_per_mic; k++) {
-    hist[0] = pdm_block[k];
-    sample_out[k] = fir_1x16_bit(hist, this->stage1.filter_coef);
-    shift_buffer(hist);
+  // pdm_block expected to be in [MIC_COUNT][stage1.pdm_out_words_per_mic] format
+  // sample_out is also updated in [MIC_COUNT][stage1.pdm_out_words_per_mic] format
+  for(unsigned mic = 0; mic < MIC_COUNT; mic++) {
+    uint32_t* hist = this->stage1.pdm_history_ptr + (mic * this->stage1.pdm_history_sz);
+    for(unsigned k = 0; k < this->stage1.pdm_out_words_per_mic; k++) {
+      hist[0] = *pdm_block++;
+      *sample_out++ = fir_1x16_bit(hist, this->stage1.filter_coef);
+      shift_buffer(hist);
+    }
   }
 }
 

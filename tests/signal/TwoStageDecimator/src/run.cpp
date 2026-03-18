@@ -56,7 +56,7 @@ void process_signal(chanend_t c_from_host)
 {
   constexpr unsigned BLOCK_WORDS = CHAN_COUNT * S2_DEC_FACT;
 
-  using TDecimator = mic_array::TwoStageDecimator<CHAN_COUNT>;
+  using TDecimator = mic_array::Decimator<CHAN_COUNT>;
 
   TDecimator dec;
   static int32_t stg1_filter_state[CHAN_COUNT][8];
@@ -93,7 +93,7 @@ void process_signal(chanend_t c_from_host)
   printf("Processing %u blocks of PDM samples..\n", block_count);
   for(int k = 0; k < block_count; k++){
     s_chan_in_buf_word(c_from_host, &buffer[0], BLOCK_WORDS);
-    dec.ProcessBlock(sample_out, buffer);
+    dec.ProcessBlockTwoStage(sample_out, buffer);
     for(int c = 0; c < CHAN_COUNT; c++){
       xscope_int(DATA_OUT, sample_out[c]);
     }

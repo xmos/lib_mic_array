@@ -55,7 +55,7 @@ the :cpp:class:`MicArray <mic_array::MicArray>`:
 .. code-block:: c++
 
   using TMicArray = mic_array::MicArray<APP_N_MICS,
-                          mic_array::TwoStageDecimator<APP_N_MICS,
+                          mic_array::Decimator<APP_N_MICS,
                                               STAGE2_DEC_FACTOR_48KHZ,
                                               MIC_ARRAY_48K_STAGE_2_TAP_COUNT>,
                           mic_array::StandardPdmRxService<APP_N_MICS_IN,
@@ -70,7 +70,7 @@ the :cpp:class:`MicArray <mic_array::MicArray>`:
 
   TMicArray mics;
 
-- ``TwoStageDecimator``, ``StandardPdmRxService``, ``DcoeSampleFilter``,
+- ``Decimator``, ``StandardPdmRxService``, ``DcoeSampleFilter``,
   and ``FrameOutputHandler`` can all be replaced with custom classes if needed.
 
 - Any custom class must implement the same interface expected by :cpp:class:`MicArray <mic_array::MicArray>`.
@@ -82,7 +82,7 @@ the :cpp:class:`MicArray <mic_array::MicArray>`:
 
 .. note::
 
-  If the application requires custom decimation filters but they're compatible with the :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>` implementation,
+  If the application requires custom decimation filters but they're compatible with the :cpp:class:`Decimator <mic_array::Decimator>` implementation,
   refer to :ref:`custom_filters` to see how to do so.
 
 Define app-callable functions

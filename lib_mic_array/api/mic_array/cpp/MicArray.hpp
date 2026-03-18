@@ -13,7 +13,6 @@
 
 #include "PdmRx.hpp"
 #include "Decimator.hpp"
-#include "ThreeStageDecimator.hpp"
 #include "SampleFilter.hpp"
 #include "OutputHandler.hpp"
 
@@ -49,6 +48,11 @@ namespace  mic_array {
             class TOutputHandler>
   class MicArray
   {
+
+    private:
+      void ThreadEntryOneStage();
+      void ThreadEntryTwoStage();
+      void ThreadEntryThreeStage();
 
     public:
       /**
@@ -198,6 +202,32 @@ namespace  mic_array {
 //////////////////////////////////////////////
 // Template function implementations below. //
 //////////////////////////////////////////////
+template <unsigned MIC_COUNT,
+          class TDecimator,
+          class TPdmRx,
+          class TSampleFilter,
+          class TOutputHandler>
+void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
+                                   TSampleFilter,
+                                   TOutputHandler>::ThreadEntryOneStage()
+{
+  volatile bool shutdown = false;
+  chanend_t c_frame_out = OutputHandler.FrameTx.GetChannel();
+  unsigned pdm_out_words_per_channel = PdmRx.pdm_out_words_per_channel;
+  int32_t sample_out[MIC_COUNT * MAX_PDM_OUT_WORDS_PER_CHANNEL];
+
+  while(!shutdown){
+    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlockSingleStage(sample_out, pdm_samples);
+    shutdown = ma_frame_tx(c_frame_out,
+                        reinterpret_cast<int32_t*>(sample_out),
+                        MIC_COUNT, pdm_out_words_per_channel);
+  }
+  PdmRx.Shutdown();
+  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
+                                    // ma_shutdown() will now return
+  return;
+}
 
 template <unsigned MIC_COUNT,
           class TDecimator,
@@ -206,14 +236,14 @@ template <unsigned MIC_COUNT,
           class TOutputHandler>
 void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                    TSampleFilter,
-                                   TOutputHandler>::ThreadEntry()
+                                   TOutputHandler>::ThreadEntryTwoStage()
 {
   int32_t sample_out[MIC_COUNT] = {0};
   volatile bool shutdown = false;
 
   while(!shutdown){
     uint32_t *pdm_samples = PdmRx.GetPdmBlock();
-    Decimator.ProcessBlock(sample_out, pdm_samples);
+    Decimator.ProcessBlockTwoStage(sample_out, pdm_samples);
     SampleFilter.Filter(sample_out);
     shutdown = OutputHandler.OutputSample(sample_out);
   }
@@ -230,22 +260,41 @@ template <unsigned MIC_COUNT,
           class TOutputHandler>
 void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                    TSampleFilter,
-                                   TOutputHandler>::ThreadEntryLowPower_1Mic1StgDecimator()
+                                   TOutputHandler>::ThreadEntryThreeStage()
 {
+  int32_t sample_out[MIC_COUNT] = {0};
   volatile bool shutdown = false;
-  chanend_t c_frame_out = OutputHandler.FrameTx.GetChannel();
-  unsigned pdm_out_words_per_channel = PdmRx.pdm_out_words_per_channel;
-  int32_t sample_out[MAX_PDM_OUT_WORDS_PER_CHANNEL];
 
   while(!shutdown){
-    uint32_t *pdm_samples = PdmRx.GetPdmBlockLowPowerOneMic();
-    Decimator.ProcessBlockSingleStage(sample_out, pdm_samples);
-    shutdown = ma_frame_tx(c_frame_out,
-                        reinterpret_cast<int32_t*>(sample_out),
-                        1, pdm_out_words_per_channel);
+    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlockThreeStage(sample_out, pdm_samples);
+    SampleFilter.Filter(sample_out);
+    shutdown = OutputHandler.OutputSample(sample_out);
   }
   PdmRx.Shutdown();
   OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
                                     // ma_shutdown() will now return
   return;
+
+}
+
+
+template <unsigned MIC_COUNT,
+          class TDecimator,
+          class TPdmRx,
+          class TSampleFilter,
+          class TOutputHandler>
+void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
+                                   TSampleFilter,
+                                   TOutputHandler>::ThreadEntry()
+{
+  if(Decimator.num_stages == 1) {
+    ThreadEntryOneStage();
+  }
+  else if(Decimator.num_stages == 2) {
+    ThreadEntryTwoStage();
+  }
+  else {
+    ThreadEntryThreeStage();
+  }
 }

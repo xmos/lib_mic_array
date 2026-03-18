@@ -63,9 +63,9 @@ class Test_BasicMicArray(MicArraySharedBase):
     custom_filter_file = None
     if not isinstance(fs, int): # fs must contain the name of the filter .pkl file
       custom_filter_file = fs
-      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_customfs"
+      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_0mo_customfs"
     else:
-      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{fs}fs"
+      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_0mo_{fs}fs"
 
     if custom_filter_file:
       filter = self.filter(Path(__file__).parent / f"{custom_filter_file}")
@@ -148,7 +148,7 @@ class Test_BasicMicArray(MicArraySharedBase):
 
 
 
-  def thdn_test_lowpower_uncollect(config, platform, decimator_stgs, test_freq):
+  def thdn_test_OneStageFilter_uncollect(config, platform, decimator_stgs):
     level = config.getoption("level")
     if level == "smoke":
       if "xcore" in platform:
@@ -161,20 +161,22 @@ class Test_BasicMicArray(MicArraySharedBase):
       return x.astype(np.float64) / np.iinfo(x.dtype).max
     return x
 
-  @pytest.mark.uncollect_if(func=thdn_test_lowpower_uncollect)
+  @pytest.mark.uncollect_if(func=thdn_test_OneStageFilter_uncollect)
   @pytest.mark.parametrize("platform", ["python_only", "python_xcore"])
   @pytest.mark.parametrize("decimator_stgs", [1], ids=["1stg"])
-  @pytest.mark.parametrize("test_freq", [300, 5000], ids=["300hz", "5000hz"])
-  def test_thdn_lowpower(self, pytestconfig, request, platform, decimator_stgs, test_freq):
+  def test_thdn_OneStageFilter(self, pytestconfig, request, platform, decimator_stgs):
+    """Validate THD+N of the 1-stage filter path (768 kHz PDM -> 24 kHz PCM first stage decimator).
+
+    Uses `small_768k_to_12k_filter_int.pkl` with only stage-1 decimation active.
+    Tests a 2-channel 2-tone input and checks both Python reference and xcore outputs
+    against per-tone THD+N thresholds. Also verifies sample-level diff between
+    Python and xcore integer outputs within a fixed tolerance.
+    """
     duration_s = 2 # running reduced duration. See https://github.com/xmos/lib_mic_array/issues/289
     pdm_freq = 768_000
-
-    thdn_threshold = {
-      (12000, 300): -111.0,
-      (12000, 5000): -105.0,
-      (24000, 300): -79.0,
-      (24000, 5000): -76.0,
-    }
+    chans = 2
+    freq_hz = [300, 5000]
+    thdn_threshold = [-79.0, -76.0]
 
     cwd = Path(request.fspath).parent
     filter = self.filter(Path(__file__).parent / "small_768k_to_12k_filter_int.pkl")
@@ -189,17 +191,17 @@ class Test_BasicMicArray(MicArraySharedBase):
     print(f"decimator_stgs = {decimator_stgs}, fs = {fs}")
     # -------------------------------------------------
 
-    cfg = f"lp_{decimator_stgs}stg_decimator"
+    cfg = f"{decimator_stgs}stg_filter"
     xe_path = f"{cwd}/bin/{cfg}/test_ma_{cfg}.xe"
     assert Path(xe_path).exists(), f"Cannot find {xe_path}"
 
-    print(f"Test frequency {test_freq}\n")
+    print(f"Test frequencies {freq_hz}\n")
 
     # Generate PDM input
     # Test one freq at a time since low-power mic array is mono
     sig_sine_pdm, sig_sine_pcm = PdmSignal.sine(
-      [test_freq],
-      [0.52],
+      freq_hz,
+      [0.52]*len(freq_hz),
       fs,
       duration_s,
       fs_pdm=pdm_freq
@@ -211,34 +213,23 @@ class Test_BasicMicArray(MicArraySharedBase):
     if self.print_output:
       print(f"Expected output: {expected}")
 
-    print(f"Expected output shape: {expected.shape}")
-
     expected_output_float = self.to_float_array(expected)
 
-    input_thdn = THDN(sig_sine_pcm[0], fs, fund_freq=test_freq)
-    python_output_thdn = THDN(expected_output_float[0], fs, fund_freq=test_freq)
-
-    threshold = thdn_threshold[(fs, test_freq)]
-
-    print(
-      f"test_freq {test_freq}, "
-      f"python_output_thdn = {python_output_thdn}, "
-      f"input_thdn = {input_thdn}"
-    )
-
-    assert python_output_thdn < threshold, (
-      f"At sampling rate {fs}, test_freq {test_freq}, "
-      f"Python output THDN {python_output_thdn} exceeds threshold {threshold}"
-    )
+    for i in range(len(freq_hz)):
+      input_thdn = THDN(sig_sine_pcm[i], fs, fund_freq=freq_hz[i])
+      python_output_thdn = THDN(expected_output_float[i], fs, fund_freq=freq_hz[i])
+      print(f"At fundamental freq {freq_hz[i]}, samp freq {fs}: python_output_thdn = {python_output_thdn}, input_thdn = {input_thdn}")
+      assert python_output_thdn < thdn_threshold[i], (
+          f"At sampling rate {fs}, freq {freq_hz[i]}, "
+          f"Python output THDN {python_output_thdn} exceeds threshold {thdn_threshold[i]}"
+      )
 
     if "xcore" in platform:
       print("Running xcore")
       with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb, extra_xrun_args="--id 0") as dev:
-        assert dev.param["channels"] == 1
+        assert dev.param["channels"] == chans
         assert dev.param["s1.dec_factor"] == filter.s1.DecimationFactor
         assert dev.param["s1.tap_count"] == filter.s1.TapCount
-        assert dev.param["s2.dec_factor"] == filter.s2.DecimationFactor
-        assert dev.param["s2.tap_count"] == filter.s2.TapCount
         assert dev.param["frame_size"] == output_frame_size
         assert dev.param["use_isr"] == 0
 
@@ -251,18 +242,10 @@ class Test_BasicMicArray(MicArraySharedBase):
 
         device_output_float = self.to_float_array(device_output)
 
-        xcore_output_thdn = THDN(device_output_float[0][int(fs/10):], fs, fund_freq=test_freq)
-
-        print(
-          f"test_freq {test_freq}, "
-          f"xcore_output_thdn = {xcore_output_thdn}, "
-          f"input_thdn = {input_thdn}"
-        )
-
-        assert xcore_output_thdn < threshold, (
-          f"At sampling rate {fs}, test_freq {test_freq}, "
-          f"XCORE output THDN {xcore_output_thdn} exceeds threshold {threshold}"
-        )
+        for i in range(len(freq_hz)):
+          xcore_output_thdn = THDN(device_output_float[i][int(fs/10):], fs, fund_freq=freq_hz[i])
+          print(f"At fundamental freq {freq_hz[i]}, samp freq {fs}: xcore_output_thdn = {xcore_output_thdn}")
+          assert xcore_output_thdn < thdn_threshold[i], f"At sampling rate {fs}, freq {freq_hz[i]}, XCORE output THDN {xcore_output_thdn} exceeds threshold {thdn_threshold[i]}"
 
         if self.print_output:
           print(f"Device output: {device_output}")

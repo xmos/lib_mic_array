@@ -189,7 +189,7 @@ Decimator
 
 The :cpp:member:`Decimator <mic_array::MicArray::Decimator>` sub-component
 encapsulates the logic of converting blocks of PDM samples into PCM samples. The
-:cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>` class is a
+:cpp:class:`Decimator <mic_array::Decimator>` class is a
 decimator implementation that uses a pair of decimating FIR filters to
 accomplish this.
 

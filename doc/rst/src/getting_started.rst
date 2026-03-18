@@ -307,7 +307,7 @@ following constraints:
   library (see :ref:`default_filters`) are designed for a small set of decimation
   factors and they assume a fixed input PDM frequency of **3.072 MHz**. See :ref:`custom_filters`
   and :ref:`mic_array_example_custom_filter` for using custom filters for the mic array
-  (provided they are compatible with the :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>`
+  (provided they are compatible with the :cpp:class:`Decimator <mic_array::Decimator>`
   implementation)
 
 - Only one mic array instance:

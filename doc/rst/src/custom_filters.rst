@@ -4,7 +4,7 @@
 Custom decimation filters
 *************************
 
-In the :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>`, the tap count and decimation factor
+In the :cpp:class:`Decimator <mic_array::Decimator>`, the tap count and decimation factor
 for the first stage decimator are fixed to ``256`` and ``32`` respectively, as described in :ref:`decimator_stage_1`.
 
 These parameters cannot be changed without implementing a custom decimator, which is outside the scope of this document.
@@ -24,7 +24,7 @@ of ``lib_mic_array`` and save them as ``.pkl`` files. Using these functions as
 a guide, the script can be extended to generate custom filters tailored to the
 application's needs.
 
-Note that in :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>`,
+Note that in :cpp:class:`Decimator <mic_array::Decimator>`,
 both the first and second stage filters are implemented
 using fixed-point arithmetic, which requires the coefficients to be presented
 in a specific format.
@@ -68,15 +68,15 @@ From the ``python`` directory, the workflow is typically:
 Using custom filters
 ====================
 
-When using the :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>` provided by the
+When using the :cpp:class:`Decimator <mic_array::Decimator>` provided by the
 library, the :c:func:`mic_array_init_custom_filter` function is used to
 initialize a mic array instance with a custom 2-stage decimation filter.
 
 .. note::
 
   The custom filter provided to :c:func:`mic_array_init_custom_filter` must
-  be compatible with the :cpp:class:`TwoStageDecimator
-  <mic_array::TwoStageDecimator>` requirements. Specifically, it must be a
+  be compatible with the :cpp:class:`Decimator
+  <mic_array::Decimator>` requirements. Specifically, it must be a
   2-stage filter. The tap count and decimation factor for the first-stage
   decimator are fixed at ``256`` and ``32``, respectively, and the filter must
   be compatible with the :ref:`stage_1_filter_impl`.
@@ -84,7 +84,7 @@ initialize a mic array instance with a custom 2-stage decimation filter.
   The second-stage decimation filter tap count and decimation ratio are flexible,
   provided it is a standard FIR filter compatible with :ref:`stage_2_filter_impl`.
   Using custom filters that are incompatible with the implementation in
-  :cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>` is outside the
+  :cpp:class:`Decimator <mic_array::Decimator>` is outside the
   scope of this documentation.
 
 The :c:type:`mic_array_conf_t` structure is populated with the decimator and
