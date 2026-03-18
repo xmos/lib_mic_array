@@ -20,16 +20,13 @@ using TMicArray =  mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
                                                       MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
                                                       mic_array::ChannelFrameTransmitter>>;
 
-using TMicArray_3stg_decimator =  mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
-                        mic_array::ThreeStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                        mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
-                                                        MIC_ARRAY_CONFIG_MIC_COUNT>,
-                        // std::conditional uses USE_DCOE to determine which
-                        // sample filter is used.
-                        typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
-                                            mic_array::DcoeSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                                            mic_array::NopSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>>::type,
-                        mic_array::FrameOutputHandler<MIC_ARRAY_CONFIG_MIC_COUNT,
+using TMicArray1MicOverride = mic_array::MicArray<1,
+                        mic_array::TwoStageDecimator<1>,
+                        mic_array::StandardPdmRxService<1, 1>,
+                        typename std::conditional<0,
+                                            mic_array::DcoeSampleFilter<1>,
+                                            mic_array::NopSampleFilter<1>>::type,
+                        mic_array::FrameOutputHandler<1,
                                                       MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
                                                       mic_array::ChannelFrameTransmitter>>;
 union UStg2_filter_state {
@@ -88,16 +85,13 @@ inline uint32_t* get_pdm_rx_out_block_double_buf(unsigned stg2_dec_factor) {
 #endif // __cplusplus
 
 MA_C_API
-bool get_decimator_stg_count(void);
+void init_mic_array_storage();
 
 MA_C_API
-void init_mic_array_storage(bool use_3_stg_decimator);
+void init_mic_array_storage_1mic_override(void);
 
 MA_C_API
 void init_mics_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);
-
-MA_C_API
-void init_mics_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);
 
 MA_C_API
 void init_mics_default_filter(pdm_rx_resources_t* pdm_res, const unsigned* channel_map, unsigned stg2_dec_factor);
@@ -112,9 +106,6 @@ MA_C_API
 void start_decimator_task();
 
 MA_C_API
-void start_decimator_task_3stg(void);
-
-MA_C_API
 void start_mic_array_pdm_isr(chanend_t c_frames_out);
 
 MA_C_API
@@ -122,3 +113,6 @@ void start_pdm_task(void);
 
 MA_C_API
 void start_pdm_task_3stg(void);
+
+MA_C_API
+void init_1mic_override(void);

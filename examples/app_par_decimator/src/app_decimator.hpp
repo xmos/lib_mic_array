@@ -188,6 +188,16 @@ class MyTwoStageDecimator
     void ProcessBlock(
         int32_t sample_out[MIC_COUNT],
         uint32_t pdm_block[BLOCK_SIZE]);
+
+    void ProcessBlockSingleStage(
+        int32_t *sample_out,
+        uint32_t *pdm_block) {}
+
+    void ProcessBlockThreeStage(
+        int32_t sample_out[MIC_COUNT],
+        uint32_t *pdm_block) {}
+
+    unsigned num_stages = 2;
   };
 }
 
