@@ -70,9 +70,6 @@ foreach(SAMP_FREQ   16000 32000 48000 "good_3_stage_filter_int.pkl")
 endforeach()
 
 set(APP_INCLUDES    src src/mips/ ${AUTOGEN_OUT_DIR})
-set(APP_C_SRCS  src/app.c)
-
-
 
 if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
 set(APP_HW_TARGET       src/XK-VOICE-L71.xn)
