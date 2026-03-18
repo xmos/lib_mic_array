@@ -1,0 +1,14 @@
+{
+  "1mic_isr_16000fs": 13.7618,
+  "1mic_isr_32000fs": 16.7535,
+  "1mic_isr_48000fs": 20.7294,
+  "1mic_thread_16000fs": 12.4817,
+  "1mic_thread_32000fs": 15.4415,
+  "1mic_thread_48000fs": 19.3856,
+  "2mic_isr_16000fs": 28.5336,
+  "2mic_isr_32000fs": 33.7574,
+  "2mic_isr_48000fs": 40.9973,
+  "2mic_thread_16000fs": 26.0616,
+  "2mic_thread_32000fs": 31.2615,
+  "2mic_thread_48000fs": 38.4295
+}

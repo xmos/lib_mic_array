@@ -4,7 +4,7 @@ project(test_memory)
 
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../../..)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../../../../examples/deps.cmake)
+set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
 set(APP_HW_TARGET XK-VOICE-L71.xn)
 
