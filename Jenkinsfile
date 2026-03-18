@@ -65,7 +65,7 @@ pipeline {
               stage('Examples build') {
                 steps {
                   dir("${REPO_NAME}/examples") {
-                    xcoreBuild()
+                    xcoreBuild(toolsVersion: params.TOOLS_XS3_VERSION)
                   }
                 }
               }
@@ -111,7 +111,7 @@ pipeline {
                 dir("tests") {
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
-                    xcoreBuild()
+                    xcoreBuild(toolsVersion: params.TOOLS_XS3_VERSION)
                     stash includes: '**/*.xe', name: 'test_bin', useDefaultExcludes: false
                   }
                 }
