@@ -12,12 +12,10 @@
 #include "mic_array_task_internal.hpp"
 
 static TMicArray *s_mics = nullptr;
-static TMicArray_3stg_decimator *s_mics_3stg = nullptr;
-static bool s_use_3_stg_decimator = false;
 static bool s_run_1mic_1stg_decimator = false;
-// NOTE: s_mics or s_mics_3stg must persist (remain non-null with its backing storage valid)
+// NOTE: s_mics must persist (remain non-null with its backing storage valid)
 // until mic_array_start() completes. mic_array_start() performs shutdown and
-// then sets s_mics or s_mics_3stg back to nullptr.
+// then sets s_mics back to nullptr.
 
 #if !defined (__XS2A__)
 /////////////////////////////
@@ -25,7 +23,8 @@ static bool s_run_1mic_1stg_decimator = false;
 /////////////////////////////
 bool get_decimator_stg_count(void)
 {
-  return s_use_3_stg_decimator;
+  return 0;
+  //return s_use_3_stg_decimator;
 }
 
 ////////////////////
@@ -79,16 +78,9 @@ void init_mics_default_filter(pdm_rx_resources_t* pdm_res, const unsigned* chann
 
 void init_mic_array_storage(bool use_3_stg_decimator)
 {
-  assert(s_mics == nullptr && s_mics_3stg == nullptr); // Mic array instance already initialised
-
-  s_use_3_stg_decimator = use_3_stg_decimator;
-  if(s_use_3_stg_decimator) {
-    static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray_3stg_decimator)];
-    s_mics_3stg = new (mic_storage) TMicArray_3stg_decimator();
-  } else {
-    static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
-     s_mics = new (mic_storage) TMicArray();
-  }
+  assert(s_mics == nullptr); // Mic array instance already initialised
+  static uint8_t __attribute__((aligned(8))) mic_storage[sizeof(TMicArray)];
+  s_mics = new (mic_storage) TMicArray();
 }
 
 template <typename TMics>
@@ -104,13 +96,7 @@ static inline void init_from_conf(TMics*& mics_ptr, pdm_rx_resources_t* pdm_res,
 
 void init_mics_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
 {
-  if((mic_array_conf->decimator_conf.num_filter_stages == 1) || (mic_array_conf->decimator_conf.num_filter_stages == 2)) {
-    init_from_conf<TMicArray>(s_mics, pdm_res, mic_array_conf);
-  } else if(mic_array_conf->decimator_conf.num_filter_stages == 3) {
-    init_from_conf<TMicArray_3stg_decimator>(s_mics_3stg, pdm_res, mic_array_conf);
-  } else {
-    assert(false && "Unsupported number of filter stages in mic_array_conf");
-  }
+  init_from_conf<TMicArray>(s_mics, pdm_res, mic_array_conf);
 }
 
 void init_mics_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
@@ -125,27 +111,14 @@ void init_mics_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mi
 /////////////////////
 void set_output_channel(chanend_t c_frames_out)
 {
-  if (s_use_3_stg_decimator) {
-    assert(s_mics_3stg != nullptr);
-    s_mics_3stg->OutputHandler.FrameTx.SetChannel(c_frames_out);
-  } else {
-    assert(s_mics != nullptr);
-    s_mics->OutputHandler.FrameTx.SetChannel(c_frames_out);
-  }
+  assert(s_mics != nullptr);
+  s_mics->OutputHandler.FrameTx.SetChannel(c_frames_out);
 }
 
 void shutdown_mic_array(void)
 {
-  if (s_use_3_stg_decimator) {
-    s_mics_3stg->~TMicArray_3stg_decimator();
-  }
-  else {
-    s_mics->~TMicArray();
-  }
-
-  s_mics_3stg = nullptr;
+  s_mics->~TMicArray();
   s_mics = nullptr;
-  s_use_3_stg_decimator = false;
   s_run_1mic_1stg_decimator = false;
 }
 
@@ -178,12 +151,7 @@ void start_mics_with_pdm_isr(TMics* mics_ptr, chanend_t c_frames_out)
 void start_mic_array_pdm_isr(chanend_t c_frames_out)
 {
 #if MIC_ARRAY_CONFIG_USE_PDM_ISR
-  if (s_use_3_stg_decimator) {
-    start_mics_with_pdm_isr<TMicArray_3stg_decimator>(s_mics_3stg, c_frames_out);
-  }
-  else {
-    start_mics_with_pdm_isr<TMicArray>(s_mics, c_frames_out);
-  }
+  start_mics_with_pdm_isr<TMicArray>(s_mics, c_frames_out);
 #endif
 }
 
@@ -203,26 +171,11 @@ void start_decimator_task()
   }
 }
 
-void start_pdm_task_3stg(void)
-{
-  s_mics_3stg->PdmRx.ThreadEntry();
-}
-
-void start_decimator_task_3stg(void)
-{
-  s_mics_3stg->ThreadEntry();
-}
-
 // Override pdm data port. Only used in tests where a chanend is used as a 'port' for input pdm data.
 void _mic_array_override_pdm_port(chanend_t c_pdm)
 {
-  if (s_use_3_stg_decimator) {
-    assert(s_mics_3stg != nullptr);
-    s_mics_3stg->PdmRx.SetPort((port_t)c_pdm);
-  } else {
-    assert(s_mics != nullptr);
-    s_mics->PdmRx.SetPort((port_t)c_pdm);
-  }
+  assert(s_mics != nullptr);
+  s_mics->PdmRx.SetPort((port_t)c_pdm);
 }
 
 // C wrapper

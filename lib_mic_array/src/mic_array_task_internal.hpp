@@ -19,19 +19,6 @@ using TMicArray =  mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
                         mic_array::FrameOutputHandler<MIC_ARRAY_CONFIG_MIC_COUNT,
                                                       MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
                                                       mic_array::ChannelFrameTransmitter>>;
-
-using TMicArray_3stg_decimator =  mic_array::MicArray<MIC_ARRAY_CONFIG_MIC_COUNT,
-                        mic_array::ThreeStageDecimator<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                        mic_array::StandardPdmRxService<MIC_ARRAY_CONFIG_MIC_IN_COUNT,
-                                                        MIC_ARRAY_CONFIG_MIC_COUNT>,
-                        // std::conditional uses USE_DCOE to determine which
-                        // sample filter is used.
-                        typename std::conditional<MIC_ARRAY_CONFIG_USE_DC_ELIMINATION,
-                                            mic_array::DcoeSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>,
-                                            mic_array::NopSampleFilter<MIC_ARRAY_CONFIG_MIC_COUNT>>::type,
-                        mic_array::FrameOutputHandler<MIC_ARRAY_CONFIG_MIC_COUNT,
-                                                      MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME,
-                                                      mic_array::ChannelFrameTransmitter>>;
 union UStg2_filter_state {
   int32_t filter_state_df_6[MIC_ARRAY_CONFIG_MIC_COUNT][STAGE2_TAP_COUNT];
   int32_t filter_state_df_3[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_32K_STAGE_2_TAP_COUNT];
@@ -110,9 +97,6 @@ void shutdown_mic_array(void);
 
 MA_C_API
 void start_decimator_task();
-
-MA_C_API
-void start_decimator_task_3stg(void);
 
 MA_C_API
 void start_mic_array_pdm_isr(chanend_t c_frames_out);

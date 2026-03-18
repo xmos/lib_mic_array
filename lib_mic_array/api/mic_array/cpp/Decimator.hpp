@@ -86,6 +86,20 @@ class TwoStageDecimator
     } stage2;
 
     /**
+     * Stage 3 decimation configuration and state.
+     */
+    struct {
+      /**
+       * Stage 3 FIR filters
+       */
+      filter_fir_s32_t filters[MIC_COUNT];
+      /**
+       * Stage 3 filter decimation factor.
+       */
+      unsigned decimation_factor;
+    } stage3;
+
+    /**
      * @brief Initialize the two-stage decimator from a configuration struct
      * @ref mic_array_decimator_conf_t @p decimator_conf
      *
@@ -144,6 +158,12 @@ class TwoStageDecimator
         int32_t *sample_out,
         uint32_t *pdm_block);
 
+    void ProcessBlockThreeStage(
+        int32_t sample_out[MIC_COUNT],
+        uint32_t *pdm_block);
+
+    unsigned num_stages;
+
   };
 }
 
@@ -157,6 +177,7 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
         mic_array_decimator_conf_t &decimator_conf,
         unsigned pdm_out_words_per_mic)
 {
+  this->num_stages = decimator_conf.num_filter_stages;
   this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
   this->stage1.pdm_history_ptr = (uint32_t*)decimator_conf.filter_conf[0].state;
   this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_words_per_channel;
@@ -164,12 +185,20 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
 
   memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * MIC_COUNT * this->stage1.pdm_history_sz);
 
-  if(decimator_conf.num_filter_stages == 2) {
+  if(decimator_conf.num_filter_stages >= 2) {
     for(int k = 0; k < MIC_COUNT; k++){
       filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_words_per_channel),
                           decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
     }
     this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;
+  }
+
+  if(decimator_conf.num_filter_stages == 3) {
+    for(int k = 0; k < MIC_COUNT; k++){
+      filter_fir_s32_init(&this->stage3.filters[k], decimator_conf.filter_conf[2].state + (k * decimator_conf.filter_conf[2].state_words_per_channel),
+                          decimator_conf.filter_conf[2].num_taps, decimator_conf.filter_conf[2].coef, decimator_conf.filter_conf[2].shr);
+    }
+    this->stage3.decimation_factor = decimator_conf.filter_conf[2].decimation_factor;
   }
 }
 
@@ -192,6 +221,44 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
         filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
       } else {
         sample_out[mic] = filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
+      }
+    }
+  }
+}
+
+template <unsigned MIC_COUNT>
+void mic_array::TwoStageDecimator<MIC_COUNT>
+    ::ProcessBlockThreeStage(
+        int32_t sample_out[MIC_COUNT],
+        uint32_t *pdm_block)
+{
+  unsigned stage1_output_words = this->stage2.decimation_factor * this->stage3.decimation_factor;
+  for(unsigned mic = 0; mic < MIC_COUNT; mic++){
+    uint32_t* hist = this->stage1.pdm_history_ptr + (mic * this->stage1.pdm_history_sz);
+    uint32_t* mic_base = pdm_block + (mic * stage1_output_words);
+    int count2 = this->stage2.decimation_factor - 1;
+    int count3 = this->stage3.decimation_factor - 1;
+    for(unsigned k = 0; k < stage1_output_words; k++)
+    {
+      hist[0] = mic_base[k];
+
+      int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
+      shift_buffer(hist);
+
+      if(count2) {
+        filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
+        count2 -= 1;
+        continue;
+      }
+      int32_t streamB_sample = filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
+      count2 = this->stage2.decimation_factor - 1;
+      if(count3) {
+        filter_fir_s32_add_sample(&this->stage3.filters[mic], streamB_sample);
+        count3 -= 1;
+      }
+      else {
+        sample_out[mic] = filter_fir_s32(&this->stage3.filters[mic], streamB_sample);
+        count3 = this->stage3.decimation_factor - 1;
       }
     }
   }
