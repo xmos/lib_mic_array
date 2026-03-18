@@ -186,7 +186,7 @@ pipeline {
                             if(params.TEST_LEVEL == 'smoke')
                             {
                               echo "Running tests with fixed seed 12345"
-                              sh 'pytest -v --junitxml=pytest_basic_mic.xml --seed 12345 --level ${params.TEST_LEVEL} -k "not 16frame-8n"'
+                              sh "pytest -v --junitxml=pytest_basic_mic.xml --seed 12345 --level ${params.TEST_LEVEL} -k 'not 16frame-8n'"
                             }
                             else
                             {
