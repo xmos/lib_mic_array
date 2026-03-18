@@ -11,9 +11,4 @@
 #define PORT_MCLK_IN    VX_PORT_1D 
 #define PORT_PDM_CLK    VX_PORT_1G 
 #define PORT_PDM_DATA   VX_PORT_1F 
-#elif defined(__XS3A__)
-#include <platform.h>
-#define PORT_MCLK_IN    XS1_PORT_1D
-#define PORT_PDM_CLK    PORT_MIC_CLK 
-#define PORT_PDM_DATA   PORT_MIC_DATA 
-#endif
+#endif // defined(__VX4B__)

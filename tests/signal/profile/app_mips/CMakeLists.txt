@@ -9,9 +9,9 @@ set(APP_DEPENDENT_MODULES   "lib_mic_array")
 set(AUTOGEN_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/autogen")
 
 if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
-set(ISR_LIST "0 1") # ISR and thread-based PDM handling
+set(ISR_LIST 0 1) # ISR and thread-based PDM handling
 else() # VX4
-set(ISR_LIST "0") # Only thread-based PDM handling supported on VX4
+set(ISR_LIST 0) # Only thread-based PDM handling supported on VX4
 endif()
 
 set(NAME_MAP thread;isr)
