@@ -24,7 +24,7 @@ pipeline {
     )
     string(
       name: 'INFR_APPS_VERSION',
-      defaultValue: 'develop', //TODO pin once stable
+      defaultValue: 'feature/fix_version_check',
       description: 'The infr_apps version'
     )
     choice(

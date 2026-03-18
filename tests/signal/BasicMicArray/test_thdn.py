@@ -163,7 +163,7 @@ class Test_BasicMicArray(MicArraySharedBase):
 
   @pytest.mark.uncollect_if(func=thdn_test_lowpower_uncollect)
   @pytest.mark.parametrize("platform", ["python_only", "python_xcore"])
-  @pytest.mark.parametrize("decimator_stgs", [1, 2], ids=["1stg", "2stg"])
+  @pytest.mark.parametrize("decimator_stgs", [1], ids=["1stg"])
   @pytest.mark.parametrize("test_freq", [300, 5000], ids=["300hz", "5000hz"])
   def test_thdn_lowpower(self, pytestconfig, request, platform, decimator_stgs, test_freq):
     duration_s = 2 # running reduced duration. See https://github.com/xmos/lib_mic_array/issues/289

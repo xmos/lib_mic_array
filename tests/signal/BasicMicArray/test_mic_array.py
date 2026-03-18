@@ -127,7 +127,7 @@ class Test_BasicMicArray(MicArraySharedBase):
     assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
 
 
-  @pytest.mark.parametrize("decimator_stgs", [1, 2], ids=["1stg", "2stg"])
+  @pytest.mark.parametrize("decimator_stgs", [1], ids=["1stg"])
   def test_BasicMicArrayLowPower(self, request, decimator_stgs):
     cwd = Path(request.fspath).parent
     filter = self.filter(Path(__file__).parent / "small_768k_to_12k_filter_int.pkl")

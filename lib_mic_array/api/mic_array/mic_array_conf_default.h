@@ -60,29 +60,5 @@
 #ifndef MIC_ARRAY_CONFIG_USE_DC_ELIMINATION
 # define MIC_ARRAY_CONFIG_USE_DC_ELIMINATION    (1)
 #endif
-/** @brief Enable low power mode for the microphone array.
- *
- * In low power mode only the first-stage decimator filter is executed.
- *
- * Note: PDM RX still outputs two samples to the decimator pipeline.
- *
- * Default: 0
- */
-#ifndef MIC_ARRAY_CONFIG_LOW_POWER
-# define MIC_ARRAY_CONFIG_LOW_POWER (0)
-#endif
 
-
-/** @brief Run the second-stage decimator filter in a separate task.
- *
- * This option is only relevant when MIC_ARRAY_CONFIG_LOW_POWER == 1.
- *
- * When enabled, the stage-2 decimator filter runs in a separate thread.
- * When disabled (with MIC_ARRAY_CONFIG_LOW_POWER == 1), the stage-2 filter is not run.
- *
- * Default: 0
- */
-#ifndef MIC_ARRAY_CONFIG_ENABLE_DECIMATOR_STG2_TASK
-# define MIC_ARRAY_CONFIG_ENABLE_DECIMATOR_STG2_TASK (0)
-#endif
 #endif // _MIC_ARRAY_CONF_DEFAULT_H_

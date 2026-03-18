@@ -22,7 +22,7 @@
 #include "custom_filter.h"
 #endif
 
-#if MIC_ARRAY_CONFIG_LOW_POWER
+#if APP_CONFIG_LOW_POWER
 #include "small_768k_to_12k_filter.h"
 #endif
 
@@ -70,7 +70,7 @@ void hwtimer_delay_microseconds(unsigned delay) {
 static
 void get_filter_config(unsigned fs, filt_config_t *cfg) {
 
-#if MIC_ARRAY_CONFIG_LOW_POWER
+#if APP_CONFIG_LOW_POWER
   cfg->stg1_tap_count = SMALL_768K_TO_12K_FILTER_STG1_TAP_COUNT;
   cfg->stg1_decimation_factor = SMALL_768K_TO_12K_FILTER_STG1_DECIMATION_FACTOR;
   cfg->stg2_tap_count = SMALL_768K_TO_12K_FILTER_STG2_TAP_COUNT;
@@ -290,10 +290,12 @@ static void init_mic_conf(mic_array_conf_t *mic_array_conf, mic_array_filter_con
   mic_array_conf->pdmrx_conf.pdm_out_block = (uint32_t*)pdmrx_out_block;
   mic_array_conf->pdmrx_conf.pdm_in_double_buf = (uint32_t*)pdmrx_out_block_double_buf;
   mic_array_conf->pdmrx_conf.channel_map = channel_map;
+  mic_array_conf->pdmrx_conf.num_channels_in = MIC_ARRAY_CONFIG_MIC_COUNT;
+  mic_array_conf->pdmrx_conf.num_channels_out = MIC_ARRAY_CONFIG_MIC_COUNT;
 }
 #endif
 
-#if MIC_ARRAY_CONFIG_LOW_POWER
+#if APP_CONFIG_LOW_POWER
 static
 void init_mic_conf_lp_filter(
     mic_array_conf_t *mic_array_conf,
@@ -306,7 +308,7 @@ void init_mic_conf_lp_filter(
 
   //decimator
   mic_array_conf->decimator_conf.filter_conf = &filter_conf[0];
-  mic_array_conf->decimator_conf.num_filter_stages = 2;
+  mic_array_conf->decimator_conf.num_filter_stages = 1;
   // filter stage 1
   filter_conf[0].coef = (int32_t*)small_768k_to_12k_filter_stg1_coef;
   filter_conf[0].num_taps = SMALL_768K_TO_12K_FILTER_STG1_TAP_COUNT;
@@ -314,20 +316,16 @@ void init_mic_conf_lp_filter(
   filter_conf[0].state = (int32_t*)stg1_filter_state;
   filter_conf[0].shr = SMALL_768K_TO_12K_FILTER_STG1_SHR;
   filter_conf[0].state_words_per_channel = filter_conf[0].num_taps/32; // works on 1-bit samples
-  // filter stage 2
-  filter_conf[1].coef = (int32_t*)small_768k_to_12k_filter_stg2_coef;
-  filter_conf[1].num_taps = SMALL_768K_TO_12K_FILTER_STG2_TAP_COUNT;
-  filter_conf[1].decimation_factor = SMALL_768K_TO_12K_FILTER_STG2_DECIMATION_FACTOR;
-  filter_conf[1].state = (int32_t*)stg2_filter_state;
-  filter_conf[1].shr = SMALL_768K_TO_12K_FILTER_STG2_SHR;
-  filter_conf[1].state_words_per_channel = SMALL_768K_TO_12K_FILTER_STG2_TAP_COUNT;
+
   // pdm rx
-  static uint32_t pdmrx_out_block[MIC_ARRAY_CONFIG_MIC_COUNT][SMALL_768K_TO_12K_FILTER_STG2_DECIMATION_FACTOR];
-  static uint32_t pdmrx_out_block_double_buf[2][MIC_ARRAY_CONFIG_MIC_COUNT * SMALL_768K_TO_12K_FILTER_STG2_DECIMATION_FACTOR] __attribute__((aligned(8)));
-  mic_array_conf->pdmrx_conf.pdm_out_words_per_channel = SMALL_768K_TO_12K_FILTER_STG2_DECIMATION_FACTOR;
+  static uint32_t pdmrx_out_block[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
+  static uint32_t pdmrx_out_block_double_buf[2][MIC_ARRAY_CONFIG_MIC_COUNT * MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME] __attribute__((aligned(8)));
+  mic_array_conf->pdmrx_conf.pdm_out_words_per_channel = MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME;
   mic_array_conf->pdmrx_conf.pdm_out_block = (uint32_t*)pdmrx_out_block;
   mic_array_conf->pdmrx_conf.pdm_in_double_buf = (uint32_t*)pdmrx_out_block_double_buf;
   mic_array_conf->pdmrx_conf.channel_map = channel_map;
+  mic_array_conf->pdmrx_conf.num_channels_in = MIC_ARRAY_CONFIG_MIC_COUNT;
+  mic_array_conf->pdmrx_conf.num_channels_out = MIC_ARRAY_CONFIG_MIC_COUNT;
 }
 #endif
 
@@ -337,11 +335,11 @@ void app_mic(
     chanend_t c_pdm_in,
     chanend_t c_frames_out) //non-streaming
 {
-#if MIC_ARRAY_CONFIG_LOW_POWER
+#if APP_CONFIG_LOW_POWER
   mic_array_conf_t mic_array_conf;
   mic_array_filter_conf_t filter_conf[NUM_DECIMATION_STAGES];
   init_mic_conf_lp_filter(&mic_array_conf, filter_conf, NULL);
-  mic_array_init_custom_filter(&pdm_res, &mic_array_conf);
+  mic_array_init_custom_filter_1mic_1stg_decimator(&pdm_res, &mic_array_conf);
 #elif !USE_CUSTOM_FILTER
   mic_array_init(&pdm_res, NULL, APP_SAMP_FREQ);
 #else
