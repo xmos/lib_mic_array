@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@v0.45.0') _
+@Library('xmos_jenkins_shared_library@v0.48.0') _
 
 getApproval()
 pipeline {
@@ -13,14 +13,14 @@ pipeline {
       description: 'The XTC tools version'
     )
     string(
-      name: 'XMOSDOC_VERSION',
-      defaultValue: 'v8.0.1',
-      description: 'The xmosdoc version'
-    )
-    string(
       name: 'TOOLS_VX4_VERSION',
       defaultValue: '-j --repo arch_vx_slipgate -b master -a XTC 116',
       description: 'The XTC Slipgate tools version'
+    )
+    string(
+      name: 'XMOSDOC_VERSION',
+      defaultValue: 'v8.0.1',
+      description: 'The xmosdoc version'
     )
     string(
       name: 'INFR_APPS_VERSION',
