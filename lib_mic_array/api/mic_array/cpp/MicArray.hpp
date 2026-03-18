@@ -5,7 +5,7 @@
 
 #include <cstdint>
 #include <string>
-#include <cassert>
+#include <xcore/assert.h>
 #include <cstdio>
 #include <cstdlib>
 #include <type_traits>
@@ -189,6 +189,8 @@ namespace  mic_array {
        * and then completes the output shutdown handshake.
        */
       void ThreadEntryLowPower_1Mic1StgDecimator();
+
+      static constexpr unsigned MAX_PDM_OUT_WORDS_PER_CHANNEL = 10;
   };
 
 }
@@ -233,8 +235,7 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
   volatile bool shutdown = false;
   chanend_t c_frame_out = OutputHandler.FrameTx.GetChannel();
   unsigned pdm_out_words_per_channel = PdmRx.pdm_out_words_per_channel;
-  int32_t *sample_out = static_cast<int32_t*>(malloc(sizeof(int32_t) * pdm_out_words_per_channel)); // TODO - remove malloc!!
-  assert(sample_out != nullptr);
+  int32_t sample_out[MAX_PDM_OUT_WORDS_PER_CHANNEL];
 
   while(!shutdown){
     uint32_t *pdm_samples = PdmRx.GetPdmBlockLowPowerOneMic();
@@ -246,6 +247,5 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
   PdmRx.Shutdown();
   OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
                                     // ma_shutdown() will now return
-  free(sample_out);
   return;
 }

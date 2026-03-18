@@ -115,6 +115,7 @@ void init_mics_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_
 
 void init_mics_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
 {
+  assert(mic_array_conf->pdmrx_conf.pdm_out_words_per_channel <= TMicArray::MAX_PDM_OUT_WORDS_PER_CHANNEL);
   s_run_1mic_1stg_decimator = true;
   init_mics_custom_filter(pdm_res, mic_array_conf);
 }
