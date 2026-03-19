@@ -71,8 +71,10 @@ endforeach()
 
 set(APP_INCLUDES    src src/mips/ ${AUTOGEN_OUT_DIR})
 
+# ---- Target specific ----
 if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
 set(APP_HW_TARGET       src/XK-VOICE-L71.xn)
+list(APPEND APP_DEPENDENT_MODULES "lib_board_support(1.5.0)")
 else() # VX4
 set(APP_HW_TARGET       XK-EVK-XU416)
 set(APP_XC_SRCS         "") # prevents including xc
