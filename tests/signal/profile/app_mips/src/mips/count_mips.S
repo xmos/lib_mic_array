@@ -134,7 +134,7 @@ FUNCTION_NAME:
     // Initialize counters to 0
     { li a3, 0  ; li s2, 0 }
     { li s3, 0  ; li s4, 0 }
-    // maccu coefficient is r7 because we just want to add
+    // maccu coefficient is s5 because we just want to add
     { li s5, 1  ; nop }
     // initialize the last timestamp, and jump to the loop
     { xm.gettime a2  ; xm.bu .L_loop_top }
