@@ -1,6 +1,8 @@
 // Copyright 2026 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
+#if defined(__VX4B__)
+
 #include <stdio.h>
 #include <assert.h>
 
@@ -11,8 +13,6 @@
 #include <xsystem/switch.h>
 #include <xcore/hwtimer.h>
 
-#include "device_pll_ctrl.h"
-
 static 
 void delay_1ms(){
     hwtimer_t tmr = hwtimer_alloc();
@@ -21,18 +21,7 @@ void delay_1ms(){
     hwtimer_free(tmr);
 }
 
-/*
- * PLL1 Control Register Fields:
- *
- * PLL1_R_DIVIDER      - Input divisor value.
- * PLL1_F_MULTIPLIER   - Feedback multiplier value.
- * PLL1_OD_DIVIDER     - Output divider value.
- * PLL1_DISABLE        - Disable the PLL when this is 1.
- * PLL1_BYPASS         - When set to 1 the PLL will be bypassed.
- * PLL1_NLOCK          - If set to 1 the chip will not wait for the PLL to relock.
- */
-
-void device_pll_init(void)
+void app_pll_init(void)
 {
     printf("Initializing PLL\n");
     xsystem_tile_id_t tileid = get_local_tile_id();
@@ -82,3 +71,19 @@ void device_pll_init(void)
     sswitch_reg_try_write(tileid, VX_SSB_CSR_APP_CLK1_DIV_NUM, DEVICE_PLL_DIV_0);           // configure app clock divider
     delay_1ms();
 }
+
+#elif defined(__XS3A__)
+
+#include "app_config.h"
+#include "sw_pll.h"
+
+#define DEVICE_PLL_CTL_VAL   0x0A019803 // Valid for all fractional values
+#define DEVICE_PLL_FRAC_NOM  0x800095F9 // 24.576000 MHz
+
+
+void app_pll_init(void)
+{
+    sw_pll_fixed_clock(APP_MCLK_FREQUENCY);
+}
+
+#endif // defined(__XS3A__)

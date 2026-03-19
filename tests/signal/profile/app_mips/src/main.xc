@@ -1,6 +1,8 @@
 // Copyright 2022-2026 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
+#if defined(__XC__)
+
 #include <stdint.h>
 
 #include <xs1.h>
@@ -19,3 +21,5 @@ int main() {
   }
   return 0;
 }
+
+#endif // defined(__XC__)
