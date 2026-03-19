@@ -63,7 +63,13 @@ class TwoStageDecimator
        * Per-mic channel filter state (PDM history) size in 32-bit words for stage-1 filter.
        */
       unsigned pdm_history_sz;
+
+      unsigned pdm_out_words_per_mic;
     } stage1;
+
+  public:
+    chanend_t c_decimator;
+    constexpr TwoStageDecimator() noexcept { }
 
     /**
      * Stage 2 decimation configuration and state.
@@ -79,10 +85,6 @@ class TwoStageDecimator
       unsigned decimation_factor;
     } stage2;
 
-  public:
-
-    constexpr TwoStageDecimator() noexcept { }
-
     /**
      * @brief Initialize the two-stage decimator from a configuration struct
      * @ref mic_array_decimator_conf_t @p decimator_conf
@@ -95,7 +97,7 @@ class TwoStageDecimator
      *
      * @param decimator_conf Decimator pipeline configuration.
      */
-    void Init(mic_array_decimator_conf_t &decimator_conf);
+    void Init(mic_array_decimator_conf_t &decimator_conf, unsigned pdm_out_words_per_mic);
 
     /**
      * @brief Process one block of PDM data.
@@ -126,6 +128,22 @@ class TwoStageDecimator
     void ProcessBlock(
         int32_t sample_out[MIC_COUNT],
         uint32_t *pdm_block);
+
+    /**
+     * @brief Process a single mic, 2 sample PDM block using only the 1st stage decimation filters
+     *
+     * Consumes two PDM words from `pdm_block` and runs the
+     * stage-1 FIR twice. Two output samples are written to
+     * `sample_out[0]` and `sample_out[1]`. This path is used in low-power
+     * configurations where only the stage-1 filter is active.
+     *
+     * @param sample_out  Output sample vector with two consecutive samples.
+     * @param pdm_block   PDM data to be processed (two words).
+     */
+    void ProcessBlockSingleStage(
+        int32_t *sample_out,
+        uint32_t *pdm_block);
+
   };
 }
 
@@ -134,20 +152,25 @@ class TwoStageDecimator
 //////////////////////////////////////////////
 
 template <unsigned MIC_COUNT>
-void mic_array::TwoStageDecimator<MIC_COUNT>::Init(
-    mic_array_decimator_conf_t &decimator_conf)
+void mic_array::TwoStageDecimator<MIC_COUNT>
+    ::Init(
+        mic_array_decimator_conf_t &decimator_conf,
+        unsigned pdm_out_words_per_mic)
 {
   this->stage1.filter_coef = (const uint32_t*)decimator_conf.filter_conf[0].coef;
   this->stage1.pdm_history_ptr = (uint32_t*)decimator_conf.filter_conf[0].state;
   this->stage1.pdm_history_sz = decimator_conf.filter_conf[0].state_words_per_channel;
+  this->stage1.pdm_out_words_per_mic = pdm_out_words_per_mic;
 
   memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * MIC_COUNT * this->stage1.pdm_history_sz);
 
-  for(int k = 0; k < MIC_COUNT; k++){
-    filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_words_per_channel),
-                        decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
+  if(decimator_conf.num_filter_stages == 2) {
+    for(int k = 0; k < MIC_COUNT; k++){
+      filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_words_per_channel),
+                          decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
+    }
+    this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;
   }
-  this->stage2.decimation_factor = decimator_conf.filter_conf[1].decimation_factor;
 }
 
 
@@ -175,11 +198,32 @@ void mic_array::TwoStageDecimator<MIC_COUNT>
 }
 
 
+template <unsigned MIC_COUNT>
+void mic_array::TwoStageDecimator<MIC_COUNT>
+    ::ProcessBlockSingleStage(
+        int32_t *sample_out,
+        uint32_t *pdm_block)
+{
+  uint32_t* hist = this->stage1.pdm_history_ptr;
+  for(unsigned k = 0; k < this->stage1.pdm_out_words_per_mic; k++) {
+    hist[0] = pdm_block[k];
+    sample_out[k] = fir_1x16_bit(hist, this->stage1.filter_coef);
+    shift_buffer(hist);
+  }
+}
+
 static inline
 void mic_array::shift_buffer(uint32_t* buff)
 {
   #if defined(__XS3A__)
   uint32_t* src = &buff[-1];
   asm volatile("vldd %0[0]; vstd %1[0];" :: "r"(src), "r"(buff) : "memory" );
-  #endif // __XS3A__
+  #elif defined(__VX4B__)
+  uint32_t* src = &buff[-1];
+  asm volatile("xm.vldd %0; xm.vstd %1;" :: "r"(src), "r"(buff) : "memory" );
+  #else // C fallback
+  for (unsigned k = 7; k > 0; k--) {
+    buff[k] = buff[k-1];
+  }
+  #endif
 }
