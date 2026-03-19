@@ -146,3 +146,135 @@ class Test_BasicMicArray(MicArraySharedBase):
         print(f"result_diff = {result_diff}")
         assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
 
+
+
+  def thdn_test_lowpower_uncollect(config, platform, decimator_stgs, test_freq):
+    level = config.getoption("level")
+    if level == "smoke":
+      if "xcore" in platform:
+        return True # uncollect xcore run for smoke. Takes 2-3mins per test so run in nightly
+    return False
+
+  def to_float_array(self, x):
+    """Convert integer array to float64 normalized to [-1, 1], or leave floats unchanged."""
+    if np.issubdtype(x.dtype, np.integer):
+      return x.astype(np.float64) / np.iinfo(x.dtype).max
+    return x
+
+  @pytest.mark.uncollect_if(func=thdn_test_lowpower_uncollect)
+  @pytest.mark.parametrize("platform", ["python_only", "python_xcore"])
+  @pytest.mark.parametrize("decimator_stgs", [1], ids=["1stg"])
+  @pytest.mark.parametrize("test_freq", [300, 5000], ids=["300hz", "5000hz"])
+  def test_thdn_lowpower(self, pytestconfig, request, platform, decimator_stgs, test_freq):
+    duration_s = 2 # running reduced duration. See https://github.com/xmos/lib_mic_array/issues/289
+    pdm_freq = 768_000
+
+    thdn_threshold = {
+      (12000, 300): -111.0,
+      (12000, 5000): -105.0,
+      (24000, 300): -79.0,
+      (24000, 5000): -76.0,
+    }
+
+    cwd = Path(request.fspath).parent
+    filter = self.filter(Path(__file__).parent / "small_768k_to_12k_filter_int.pkl")
+
+    # --- num decimator stages dependent behaviour ---
+    stg1_only = (decimator_stgs == 1)
+    dec_factor = filter.s1.DecimationFactor if stg1_only else filter.DecimationFactor
+    fs = int(pdm_freq / dec_factor)
+    device_output_delay_samps = 0 if stg1_only else 1
+    sample_override = duration_s * fs if stg1_only else None
+    output_frame_size = 2 if stg1_only else 1
+    print(f"decimator_stgs = {decimator_stgs}, fs = {fs}")
+    # -------------------------------------------------
+
+    cfg = f"lp_{decimator_stgs}stg_decimator"
+    xe_path = f"{cwd}/bin/{cfg}/test_ma_{cfg}.xe"
+    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+
+    print(f"Test frequency {test_freq}\n")
+
+    # Generate PDM input
+    # Test one freq at a time since low-power mic array is mono
+    sig_sine_pdm, sig_sine_pcm = PdmSignal.sine(
+      [test_freq],
+      [0.52],
+      fs,
+      duration_s,
+      fs_pdm=pdm_freq
+    )
+
+    print("Running python")
+    expected = filter.Filter(sig_sine_pdm.signal, stg1_only=stg1_only)
+
+    if self.print_output:
+      print(f"Expected output: {expected}")
+
+    print(f"Expected output shape: {expected.shape}")
+
+    expected_output_float = self.to_float_array(expected)
+
+    input_thdn = THDN(sig_sine_pcm[0], fs, fund_freq=test_freq)
+    python_output_thdn = THDN(expected_output_float[0], fs, fund_freq=test_freq)
+
+    threshold = thdn_threshold[(fs, test_freq)]
+
+    print(
+      f"test_freq {test_freq}, "
+      f"python_output_thdn = {python_output_thdn}, "
+      f"input_thdn = {input_thdn}"
+    )
+
+    assert python_output_thdn < threshold, (
+      f"At sampling rate {fs}, test_freq {test_freq}, "
+      f"Python output THDN {python_output_thdn} exceeds threshold {threshold}"
+    )
+
+    if "xcore" in platform:
+      print("Running xcore")
+      with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb, extra_xrun_args="--id 0") as dev:
+        assert dev.param["channels"] == 1
+        assert dev.param["s1.dec_factor"] == filter.s1.DecimationFactor
+        assert dev.param["s1.tap_count"] == filter.s1.TapCount
+        assert dev.param["s2.dec_factor"] == filter.s2.DecimationFactor
+        assert dev.param["s2.tap_count"] == filter.s2.TapCount
+        assert dev.param["frame_size"] == output_frame_size
+        assert dev.param["use_isr"] == 0
+
+        if self.debug_print_filters:
+          dev.send_command(DevCommand.PRINT_FILTERS.value)
+
+        device_output = dev.process_signal(sig_sine_pdm, sample_count_override=sample_override)
+
+        print(f"device_output shape: {device_output.shape}")
+
+        device_output_float = self.to_float_array(device_output)
+
+        xcore_output_thdn = THDN(device_output_float[0][int(fs/10):], fs, fund_freq=test_freq)
+
+        print(
+          f"test_freq {test_freq}, "
+          f"xcore_output_thdn = {xcore_output_thdn}, "
+          f"input_thdn = {input_thdn}"
+        )
+
+        assert xcore_output_thdn < threshold, (
+          f"At sampling rate {fs}, test_freq {test_freq}, "
+          f"XCORE output THDN {xcore_output_thdn} exceeds threshold {threshold}"
+        )
+
+        if self.print_output:
+          print(f"Device output: {device_output}")
+
+        dev.send_command(DevCommand.TERMINATE.value)
+
+        end = -device_output_delay_samps or None
+        start = device_output_delay_samps
+        result_diff = np.max(np.abs(expected[:, :end] - device_output[:, start:]))
+        threshold = 12
+        print(f"result_diff = {result_diff}")
+        assert result_diff <= threshold, (
+          f"max diff between python and xcore mic array output ({result_diff}) "
+          f"exceeds threshold ({threshold})"
+        )

@@ -6,7 +6,25 @@ set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 
 set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
-set(APP_HW_TARGET       XK-EVK-XU316)
+# conditional depending on target
+if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
+    set(APP_HW_TARGET       XK-EVK-XU316)
+    set(COMMON_COMPILER_FLAGS  -O2
+                                -g
+                                -report
+                                -mcmodel=large
+                                -Wno-xcore-fptrgroup
+                                -Wno-unknown-pragmas
+                                -Wno-format)
+
+else() # VX4
+    set(APP_HW_TARGET       XK-EVK-XU416)
+    set(COMMON_COMPILER_FLAGS   -Os
+                                -g
+                                -lxc
+                                -Wno-fptrgroup
+                                -Wno-format)
+endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" PROPERTY CMAKE_CONFIGURE_DEPENDS
              "${CMAKE_CURRENT_LIST_DIR}/test_params.json")
@@ -31,6 +49,12 @@ math(EXPR NUM_N_MICS "${NUM_N_MICS} - 1")
 math(EXPR NUM_FRAME_SIZE "${NUM_FRAME_SIZE} - 1")
 math(EXPR NUM_USE_ISR "${NUM_USE_ISR} - 1")
 math(EXPR NUM_SAMP_FREQ "${NUM_SAMP_FREQ} - 1")
+
+# Remove ISR if vx4 as it's not supported
+ if (APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+    set(USE_ISR_LIST "[0]")
+    set(NUM_USE_ISR 0)
+endif()
 
 # Count how many SAMP_FREQ entries are custom (.pkl)
 set(CUSTOM_PKL_COUNT 0)
@@ -84,13 +108,7 @@ foreach(l RANGE 0 ${NUM_SAMP_FREQ})
                 set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr_${samp_freq_str}")
 
                 message(${CONFIG})
-                set(APP_COMPILER_FLAGS_${CONFIG}    -O2
-                                                    -g
-                                                    -report
-                                                    -mcmodel=large
-                                                    -Wno-xcore-fptrgroup
-                                                    -Wno-unknown-pragmas
-                                                    -Wno-format
+                set(APP_COMPILER_FLAGS_${CONFIG}    ${COMMON_COMPILER_FLAGS}
                                                     -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
                                                     -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=${FRAME_SIZE}
                                                     -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
@@ -106,6 +124,15 @@ endforeach()
 
 set(APP_INCLUDES src ${AUTOGEN_OUT_DIR})
 
+set(APP_COMPILER_FLAGS_lp_1stg_decimator       ${COMMON_COMPILER_FLAGS}
+                                                -DMIC_ARRAY_CONFIG_USE_PDM_ISR=0
+                                                -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=2
+                                                -DMIC_ARRAY_CONFIG_MIC_COUNT=1
+                                                -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
+                                                -DAPP_SAMP_FREQ=24000
+                                                -DUSE_CUSTOM_FILTER=0
+                                                -DAPP_CONFIG_LOW_POWER=1
+                                                )
 XMOS_REGISTER_APP()
 
 foreach(target ${APP_BUILD_TARGETS})

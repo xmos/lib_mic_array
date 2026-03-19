@@ -12,9 +12,11 @@
 #include <xcore/chanend.h>
 #include <xcore/parallel.h>
 
-#include "sw_pll.h"
 #include "mic_array.h"
 #include "app_config.h"
+
+// defined in app_pll.c
+extern void app_pll_init(void);
 
 #define AUDIO_FRAME_LEN ( \
     MIC_ARRAY_CONFIG_MIC_IN_COUNT * MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME)
@@ -98,13 +100,15 @@ void init_mic_conf(
     mic_array_conf->pdmrx_conf.pdm_out_block = (uint32_t *)pdmrx_out_block;
     mic_array_conf->pdmrx_conf.pdm_in_double_buf = (uint32_t *)pdmrx_out_block_double_buf;
     mic_array_conf->pdmrx_conf.channel_map = channel_map;
+    mic_array_conf->pdmrx_conf.num_channels_in = MIC_ARRAY_CONFIG_MIC_COUNT;
+    mic_array_conf->pdmrx_conf.num_channels_out = MIC_ARRAY_CONFIG_MIC_COUNT;
 }
 #endif
 
 void mic_array_initialise()
 {
     // Set the pll to the required frequency for the mic array
-    sw_pll_fixed_clock(APP_MCLK_FREQUENCY);
+    app_pll_init();
 
     // Set up the mic array resources
 #if (MIC_ARRAY_CONFIG_MIC_COUNT == 2)

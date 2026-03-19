@@ -39,4 +39,24 @@ FUNCTION_NAME:
 
 #endif //defined(__XS3A__)
 
+#if defined(__VX4B__)
 
+#define FUNCTION_NAME burn_mips
+#define NSTACK_BYTES  16 // minimum
+
+.p2align 1
+.globl FUNCTION_NAME
+.type FUNCTION_NAME,@function
+FUNCTION_NAME:
+    xm.entsp NSTACK_BYTES
+     .L_loop_back:
+       xm.bu .L_loop_back
+    xm.retsp NSTACK_BYTES
+
+.size FUNCTION_NAME, . -FUNCTION_NAME
+.resource_const FUNCTION_NAME, "stack_frame_bytes", NSTACK_BYTES
+.resource_list_empty FUNCTION_NAME, "callees"
+.resource_list_empty FUNCTION_NAME, "tail_callees"
+.resource_list_empty FUNCTION_NAME, "parallel_callees"
+
+#endif // __VX4B__

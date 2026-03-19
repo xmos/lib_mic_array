@@ -5,14 +5,14 @@
 #include <fstream>
 #include <cstdio>
 #include <cstring>
-#include <print.h>
 #include <string.h>
 
 #include <xcore/select.h>
 #include <xcore/channel.h>
 #include <xcore/hwtimer.h>
+#include <xcore/assert.h>
 #include <xcore/channel_streaming.h>
-#include "xassert.h"
+
 #include "mic_array.h"
 #include "app.h"
 
@@ -31,12 +31,13 @@ void app_pdm_rx_isr_setup(
   pdm_rx_config.pdm_out_words_per_channel = MY_STAGE2_DEC_FACTOR;
   pdm_rx_config.pdm_out_block = (uint32_t*)pdmrx_out_block;
   pdm_rx_config.pdm_in_double_buf = (uint32_t*)pdmrx_in_block_double_buf;
+  pdm_rx_config.num_channels_in = 1;
+  pdm_rx_config.num_channels_out = 1;
 
   my_pdm_rx.Init((port_t)c_from_host, pdm_rx_config);
   my_pdm_rx.AssertOnDroppedBlock(false);
   my_pdm_rx.InstallISR();
   my_pdm_rx.UnmaskISR();
-
 }
 
 void test()
@@ -90,7 +91,7 @@ void test()
     s_chan_out_word(c, frame++);
 
     pdm_samples = my_pdm_rx.GetPdmBlock();
-    printf("Received block %d\n", *pdm_samples);
+    printf("Received block %lu\n", *pdm_samples);
 
     s_chan_out_word(c, frame++);
   }
@@ -109,9 +110,8 @@ void assert_when_timeout()
     CASE_THEN(t, timer_handler))
   {
     timer_handler:
-      assert(0 && msg("Error: test timed out due to deadlock"));
+      xassert(0 && "Error: test timed out due to deadlock");
       break;
   }
-
   hwtimer_free(t);
 }
