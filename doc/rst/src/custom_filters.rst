@@ -4,14 +4,13 @@
 Custom decimation filters
 *************************
 
-In the :cpp:class:`Decimator <mic_array::Decimator>`, the tap count and decimation factor
-for the first stage decimator are fixed to ``256`` and ``32`` respectively, as described in :ref:`decimator_stage_1`.
+The :cpp:class:`Decimator <mic_array::Decimator>` supports 1-, 2-, or 3-stage decimation pipelines configured via custom filters.
+This flexibility allows applications to tailor the filter chain to their specific latency and computational requirements.
 
-These parameters cannot be changed without implementing a custom decimator, which is outside the scope of this document.
+Custom filters must comply with implementation requirements for each stage. See :ref:`stage_constraints_custom`
+for details on stage-specific constraints.
 
-However, both the first-stage and second-stage filter coefficients may be
-replaced, and the second-stage decimation factor and tap count may be freely
-modified by running the mic array component with custom filters. This is described in the following sections.
+This document explains how to design and deploy custom decimation filters for 1-, 2-, or 3-stage configurations.
 
 .. _designing_custom_filters:
 
@@ -25,7 +24,7 @@ a guide, the script can be extended to generate custom filters tailored to the
 application's needs.
 
 Note that in :cpp:class:`Decimator <mic_array::Decimator>`,
-both the first and second stage filters are implemented
+the filters are implemented
 using fixed-point arithmetic, which requires the coefficients to be presented
 in a specific format.
 The helper scripts ``python/stage1.py`` and ``python/stage2.py`` generate
@@ -70,22 +69,7 @@ Using custom filters
 
 When using the :cpp:class:`Decimator <mic_array::Decimator>` provided by the
 library, the :c:func:`mic_array_init_custom_filter` function is used to
-initialize a mic array instance with a custom 2-stage decimation filter.
-
-.. note::
-
-  The custom filter provided to :c:func:`mic_array_init_custom_filter` must
-  be compatible with the :cpp:class:`Decimator
-  <mic_array::Decimator>` requirements. Specifically, it must be a
-  2-stage filter. The tap count and decimation factor for the first-stage
-  decimator are fixed at ``256`` and ``32``, respectively, and the filter must
-  be compatible with the :ref:`stage_1_filter_impl`.
-
-  The second-stage decimation filter tap count and decimation ratio are flexible,
-  provided it is a standard FIR filter compatible with :ref:`stage_2_filter_impl`.
-  Using custom filters that are incompatible with the implementation in
-  :cpp:class:`Decimator <mic_array::Decimator>` is outside the
-  scope of this documentation.
+initialize a mic array instance with a custom decimation filter.
 
 The :c:type:`mic_array_conf_t` structure is populated with the decimator and
 PDM RX configurations before calling
@@ -178,3 +162,66 @@ and started by calling :c:func:`mic_array_start`:
     as including the mic array in an application, declaring resources, and overriding
     build-time default configuration, are exactly the same as in the default usage
     model described in :ref:`using_mic_array`.
+
+.. _stage_constraints_custom:
+
+Filter stage constraints
+========================
+
+**Stage 1 (mandatory)**
+
+The first stage decimator has fixed constraints that cannot be changed:
+
+- Tap count: ``256`` (fixed)
+- Decimation factor: ``32`` (fixed)
+- Implementation: Must be compatible with :c:func:`fir_1x16_bit` as described in :ref:`stage_1_filter_impl`
+
+Only the filter coefficients may be customized. The coefficients must be quantized to 16-bit precision
+and formatted appropriately for the VPU implementation. Use the Python helper script ``python/stage1.py``
+to convert floating-point coefficients to the required format.
+
+**Stage 2 (optional)**
+
+If a second stage is included, it must meet these requirements:
+
+- Implementation: Must be compatible with the 32-bit FIR filter from `lib_xcore_math <https://github.com/xmos/lib_xcore_math>`_,
+  specifically :c:func:`xs3_filter_fir_s32()` as described in :ref:`stage_2_filter_impl`
+- Tap count: Configurable (no fixed constraint)
+- Decimation factor: Configurable integer value
+
+Use the Python helper script ``python/stage2.py`` to convert floating-point coefficients to the required format.
+
+**Stage 3 (optional)**
+
+A third stage, if included, must also be compatible with the 32-bit FIR filter from `lib_xcore_math <https://github.com/xmos/lib_xcore_math>`_.
+It has the same flexibility as stage 2:
+
+- Tap count: Configurable
+- Decimation factor: Configurable integer value
+
+**Single-stage decimator configuration**
+
+Single-stage decimation is a special case in which additional decimation is
+expected to be performed in the application. This is useful when downstream
+decimation requirements are not directly represented by the integer-factor FIR
+stages used by :cpp:class:`Decimator <mic_array::Decimator>` (for example,
+rational-factor resampling).
+
+When only stage 1 is used, the decimation factor is fixed at ``32``. If a
+different final output sample rate is required, the application must perform
+the remaining decimation after receiving the stage-1 output from the mic array.
+
+Because further decimation is expected downstream, single-stage operation has
+the following additional constraints:
+
+- The DCOE filter is forcibly disabled, and
+  :c:macro:`MIC_ARRAY_CONFIG_USE_DC_ELIMINATION` is ignored. If required,
+  the application must apply DC elimination after all decimation is complete.
+- The number of output words per channel from PDM RX
+  (:c:member:`pdm_rx_conf_t.pdm_out_words_per_channel`) must match
+  :c:macro:`MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME`.
+- :c:member:`pdm_rx_conf_t.pdm_out_words_per_channel` must not exceed
+  :cpp:member:`mic_array::MicArray::MAX_PDM_OUT_WORDS_PER_CHANNEL`.
+
+These two conditions are checked at runtime. If either condition is violated,
+the mic array initialization asserts.

@@ -218,7 +218,7 @@ thread to receive PCM blocks from the mic array for further processing.
 Shutdown
 --------
 
-The application can to shut down the mic array task by calling :c:func:`ma_shutdown()`.
+The application can shut down the mic array task by calling :c:func:`ma_shutdown()`.
 The shutdown request is sent over the same channel end that is used by :c:func:`ma_frame_rx()`.
 Therefore, the application must ensure that :c:func:`ma_frame_rx()` is not being called concurrently when
 invoking :c:func:`ma_shutdown()`.
@@ -236,6 +236,11 @@ again to restart the mic array.
   the output sample rate. The sample rate cannot be modified while the mic array
   is running; instead, call :c:func:`ma_shutdown()`, reconfigure the desired rate,
   and then restart the mic array.
+
+.. note::
+
+  The same shutdown-restart cycle is used to switch between single-mic and
+  multi-mic operation at runtime. See :ref:`mic_switching` for details.
 
 .. _mic_array_default_use_example:
 

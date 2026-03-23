@@ -83,19 +83,31 @@ namespace  mic_array {
        * @brief The Decimator.
        *
        * The template parameter `TDecimator` is the concrete class implementing
-       * the microphone array's decimation procedure. `TDecimator` is only
-       * required to implement one function, `ProcessBlock()`:
+       * the microphone array's decimation procedure. Depending on the number of
+       * configured stages, `MicArray` will call one of three stage-specific
+       * processing functions:
+       *
        * @code{.cpp}
-       * void ProcessBlock(
+       * // 1-stage: produces pdm_out_words_per_mic PCM samples per mic per call
+       * void ProcessBlockSingleStage(
+       *     int32_t *sample_out,
+       *     uint32_t *pdm_block);
+       *
+       * // 2-stage: produces one PCM sample per mic per call
+       * void ProcessBlockTwoStage(
+       *     int32_t sample_out[MIC_COUNT],
+       *     uint32_t *pdm_block);
+       *
+       * // 3-stage: produces one PCM sample per mic per call
+       * void ProcessBlockThreeStage(
        *     int32_t sample_out[MIC_COUNT],
        *     uint32_t *pdm_block);
        * @endcode
        *
-       * `ProcessBlock()` takes a block of PDM samples via its `pdm_block`
-       * parameter, applies the appropriate decimation logic, and outputs a
-       * single (multi-channel) sample via its `sample_out` parameter.
-       * The size and formatting of the PDM block expected by the decimator
-       * depends on its particular implementation.
+       * Each function takes a block of PDM samples via `pdm_block`, applies the
+       * appropriate decimation logic, and writes output samples to `sample_out`.
+       * The active stage count is determined at initialisation and controls which
+       * function is dispatched by @ref ThreadEntry.
        *
        */
       TDecimator Decimator;
@@ -184,16 +196,15 @@ namespace  mic_array {
       void ThreadEntry();
 
       /**
-       * @brief Entry point for the low-power single-stage decimation thread.
+       * @brief Maximum supported value for PDM RX output words per channel. Only relevant for single-stage decimator mode.
        *
-       * This function loops, collecting PDM
-       * blocks from @ref PdmRx and running the single-stage decimator. Each
-       * block produces two output samples which are delivered sequentially
-       * through @ref OutputHandler. On shutdown it calls @ref PdmRx::Shutdown()
-       * and then completes the output shutdown handshake.
+       * In single-stage decimator mode, this limits
+       * `pdm_rx_conf_t::pdm_out_words_per_channel`.
+       *
+       * The limit is used to size the local output buffer in
+       * `ThreadEntryOneStage()`, and the mic array initialization path asserts
+       * if the configured value exceeds this bound.
        */
-      void ThreadEntryLowPower_1Mic1StgDecimator();
-
       static constexpr unsigned MAX_PDM_OUT_WORDS_PER_CHANNEL = 10;
   };
 
@@ -227,8 +238,9 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
   OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
                                     // ma_shutdown() will now return
   return;
-}
+} // ThreadEntryOneStage
 
+// MicArray::ThreadEntryTwoStage() - Do not remove. Documentation anchor for literalinclude in software_structure.rst
 template <unsigned MIC_COUNT,
           class TDecimator,
           class TPdmRx,
@@ -251,7 +263,7 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
   OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
                                     // ma_shutdown() will now return
   return;
-}
+} // ThreadEntryTwoStage
 
 template <unsigned MIC_COUNT,
           class TDecimator,
@@ -276,9 +288,10 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                     // ma_shutdown() will now return
   return;
 
-}
+} // ThreadEntryThreeStage
 
 
+// MicArray::ThreadEntry() - Do not remove. Documentation anchor for literalinclude in software_structure.rst
 template <unsigned MIC_COUNT,
           class TDecimator,
           class TPdmRx,
@@ -297,4 +310,4 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
   else {
     ThreadEntryThreeStage();
   }
-}
+} // ThreadEntry

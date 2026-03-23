@@ -4,10 +4,10 @@
 Sample filters
 **************
 
-Following the two-stage decimation procedure is an optional post-processing
-stage called the sample filter.  This stage operates on each sample emitted by
-the second stage decimator, one at a time, before the samples are handed off for
-framing or transfer to the rest of the application's audio pipeline.
+Following the decimation pipeline is an optional post-processing stage called
+the sample filter. This stage operates on each sample emitted by the final
+decimation stage, one at a time, before the samples are handed off for framing
+or transfer to the rest of the application's audio pipeline.
 
 .. note::
 

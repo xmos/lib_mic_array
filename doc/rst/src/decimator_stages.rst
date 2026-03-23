@@ -4,10 +4,14 @@
 Decimation filters
 ******************
 
-The mic array unit provided by this library uses a two-stage decimation process,
-implemented in :cpp:class:`Decimator <mic_array::Decimator>`,
+The mic array unit provided by this library supports 1-, 2-, or 3-stage
+decimation, implemented in :cpp:class:`Decimator <mic_array::Decimator>`,
 to convert a high sample rate stream of (1-bit) PDM samples into a lower sample
-rate stream of (32-bit) PCM samples. This is shown in :ref:`decimator_stages_simplified`.
+rate stream of (32-bit) PCM samples.
+
+The default and most widely used configuration is a two-stage decimation
+pipeline, and that two-stage case is the focus of this page. This is shown in
+:ref:`decimator_stages_simplified`.
 
 .. _decimator_stages_simplified:
 
@@ -17,23 +21,24 @@ rate stream of (32-bit) PCM samples. This is shown in :ref:`decimator_stages_sim
 
    Simplified Decimator Model
 
-The first stage filter is a decimating FIR filter with a fixed tap count
-(``S1_TAP_COUNT``) of ``256`` and a fixed decimation factor (``S1_DEC_FACTOR``)
-of ``32``.
+In a two-stage pipeline, the first stage filter is a decimating FIR
+filter with a fixed tap count (``S1_TAP_COUNT``) of ``256`` and a fixed
+decimation factor (``S1_DEC_FACTOR``) of ``32``.
 
-The second stage decimator is a fully configurable FIR filter with tap count
-``S2_TAP_COUNT`` and a decimation factor of ``S2_DEC_FACTOR`` (this can be
-``1``).
+The second stage decimator is a fully
+configurable FIR filter with tap count ``S2_TAP_COUNT`` and a decimation factor
+of ``S2_DEC_FACTOR`` (this can be ``1``).
 
 .. _default_filters:
 
 Filters provided as part of ``lib_mic_array``
 =============================================
 
-``lib_mic_array`` provides first and second stage decimation filter coefficients for filters
-targeting output sampling rates of 16 kHz, 32 kHz and 48 kHz from a starting input PDM frequency
-of 3.072 MHz. The first stage decimation filters have a fixed decimation factor of ``32`` and a
-fixed tap count of ``256``.
+``lib_mic_array`` provides pre-designed two-stage decimation filter
+coefficients targeting output sampling rates of 16 kHz, 32 kHz and 48 kHz from
+a starting input PDM frequency of 3.072 MHz. The first stage decimation
+filters have a fixed decimation factor of ``32`` and a fixed tap count of
+``256``.
 
 The second stage filters decimation factors vary based on the output sampling rate.
 
@@ -216,6 +221,14 @@ rearranged bit-by-bit into a block form suitable for VPU processing.
 The filter state (delay line) consists of 256 one-bit PDM samples (equal to
 the number of filter taps) and requires a buffer of 8 unsigned 32-bit words for storage.
 
+.. note::
+
+  If providing stage-1 custom coefficients, they must remain compatible with the underlying
+  :c:func:`fir_1x16_bit` implementation (tap count ``256``, decimation factor
+  ``32``, and expected coefficient/state format for that kernel).
+  For details on preparing and supplying compatible custom coefficients,
+  see :ref:`custom_filters`.
+
 Filter Conversion Script
 ------------------------
 
@@ -254,3 +267,11 @@ The second stage filter uses the 32-bit FIR filter implementation from
 
 The filter state (delay line) consists of as many 32-bit samples as there are taps in the stage-2 filter,
 and requires that many 32-bit words for storage.
+
+.. note::
+
+  If providing stage-2 custom coefficients, they must remain compatible with the underlying
+  32-bit FIR implementation from
+  `lib_xcore_math <https://github.com/xmos/lib_xcore_math>`_
+  (for example, tap/shift/state configuration must match the ``xs3_filter_fir_s32()`` function requirements).
+  For details on supplying custom coefficients via configuration structures, see :ref:`custom_filters`.

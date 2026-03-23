@@ -65,6 +65,9 @@ class Decimator
        */
       unsigned pdm_history_sz;
 
+      /**
+       * Per-mic, 32-bit PDM output words from the PDM RX stage.
+       */
       unsigned pdm_out_words_per_mic;
     } stage1;
 
