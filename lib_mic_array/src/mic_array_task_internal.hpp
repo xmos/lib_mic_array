@@ -85,7 +85,7 @@ inline uint32_t* get_pdm_rx_out_block_double_buf(unsigned stg2_dec_factor) {
 #endif // __cplusplus
 
 MA_C_API
-void init_mic_array_storage();
+void init_mic_array_storage(void);
 
 MA_C_API
 void init_mics_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf);

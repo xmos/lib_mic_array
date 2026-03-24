@@ -582,7 +582,7 @@ uint32_t* mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
   uint32_t *out_ptr;
   for(int ch = 0; ch < CHANNELS_OUT; ch++) {
     out_ptr = this->pdm_out_block_ptr + (ch * this->pdm_out_words_per_channel);
-    for(int sb = 0; sb < (int)this->pdm_out_words_per_channel; sb++) {
+    for(unsigned sb = 0; sb < this->pdm_out_words_per_channel; sb++) {
       unsigned d = this->channel_map[ch];
       out_ptr[sb] = block[this->pdm_out_words_per_channel - 1 - sb][d];
     }

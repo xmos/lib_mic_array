@@ -243,9 +243,6 @@ pipeline {
             stage('Run tests') {
               steps {
               dir("${REPO_NAME}/tests") {
-                withTools(params.TOOLS_VX4_VERSION) {
-                  sh "xflash --erase-all --target XK-EVK-XU416"
-                }
                 withVenv {
                   dir("unit") {
                     withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
