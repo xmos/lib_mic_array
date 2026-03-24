@@ -4,7 +4,11 @@ lib_mic_array change log
 UNRELEASED
 ----------
 
- * DEPRECATED: Removed XCommon support. 
+  * REMOVED: XCommon build support. Please use XCommon CMake instead.
+
+  * Changes to dependencies:
+
+    - lib_xcore_math: 2.4.0 -> 2.4.1
 
 6.0.0
 -----
