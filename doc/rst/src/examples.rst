@@ -158,3 +158,31 @@ The terminal stdout displays the current sampling rate on each button press:
     Starting at sample rate 16000
     Starting at sample rate 48000
     Starting at sample rate 16000
+
+
+.. _mic_array_app_1mic_override:
+
+``app_1mic_override``
+^^^^^^^^^^^^^^^^^^^^^
+
+The ``app_1mic_override`` example demonstrates the :c:func:`mic_array_enable_1mic_override` API.
+Each time ``Button A`` on the ``XK-VOICE-L71`` is pressed, the mic array is
+shut down and restarted while toggling the 1-mic override.
+
+This alternates between:
+
+- single-mic operation (override enabled), and
+- normal operation using ``MIC_ARRAY_CONFIG_MIC_COUNT`` microphones
+  (``2`` in this example).
+
+This behaviour can be verified by listening to the DAC output of the
+``XK-VOICE-L71`` board.
+
+The terminal stdout displays the mic-override value on each button press:
+
+.. code-block:: console
+
+  Starting at sample rate 16000, 1mic override 1
+  Starting at sample rate 16000, 1mic override 0
+  Starting at sample rate 16000, 1mic override 1
+  Starting at sample rate 16000, 1mic override 0

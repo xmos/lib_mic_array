@@ -43,4 +43,6 @@ Switching back to multi-mic mode
 
 The override is automatically cleared by :c:func:`ma_shutdown`. To return to
 multi-mic operation, simply shut down and restart **without** calling
-:c:func:`mic_array_enable_1mic_override`:
+:c:func:`mic_array_enable_1mic_override`.
+
+An example of the :c:func:`mic_array_enable_1mic_override` API can be found in :ref:`mic_array_app_1mic_override`
