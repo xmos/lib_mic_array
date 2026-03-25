@@ -187,7 +187,7 @@ pipeline {
                             if(params.TEST_LEVEL == 'smoke')
                             {
                               echo "Running tests with fixed seed 12345"
-                              sh "pytest -v --junitxml=pytest_basic_mic.xml --seed 12345 --level ${params.TEST_LEVEL} -k 'not 16frame-8n'"
+                              sh "pytest -v --junitxml=pytest_basic_mic.xml --seed 12345 --level ${params.TEST_LEVEL}"
                             }
                             else
                             {
@@ -248,7 +248,7 @@ pipeline {
                     withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
                   }
                   dir("signal/BasicMicArray") {
-                    withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "(0isr or OneStageFilter) and not 16frame-8n" -v'} // Skipping 16frame-8n. See https://github.com/xmos/lib_mic_array/issues/288
+                    withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "0isr or OneStageFilter" -v'}
                   }
                 } // withVenv
               }}} // stage('Run tests')
