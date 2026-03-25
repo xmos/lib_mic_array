@@ -31,8 +31,6 @@ void app_pdm_rx_isr_setup(
   pdm_rx_config.pdm_out_words_per_channel = MY_STAGE2_DEC_FACTOR;
   pdm_rx_config.pdm_out_block = (uint32_t*)pdmrx_out_block;
   pdm_rx_config.pdm_in_double_buf = (uint32_t*)pdmrx_in_block_double_buf;
-  pdm_rx_config.num_channels_in = 1;
-  pdm_rx_config.num_channels_out = 1;
 
   my_pdm_rx.Init((port_t)c_from_host, pdm_rx_config);
   my_pdm_rx.AssertOnDroppedBlock(false);

@@ -12,6 +12,11 @@
 ////////////////////
 // Mic array init //
 ////////////////////
+void mic_array_enable_1mic_override(void)
+{
+  init_1mic_override();
+}
+
 void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, unsigned output_samp_freq)
 {
   unsigned stg2_decimation_factor = (pdm_res->pdm_freq/STAGE1_DEC_FACTOR)/output_samp_freq;
@@ -20,35 +25,24 @@ void mic_array_init(pdm_rx_resources_t *pdm_res, const unsigned *channel_map, un
   // output sampling freqs are [48000, 32000, 16000]
   assert ((stg2_decimation_factor == 2) || (stg2_decimation_factor == 3) || (stg2_decimation_factor == 6));
 
-  bool use_3_stg_decimator = false;
-  init_mic_array_storage(use_3_stg_decimator);
+  init_mic_array_storage();
   init_mics_default_filter(pdm_res, channel_map, stg2_decimation_factor);
+
+  const unsigned divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
+  mic_array_resources_configure(pdm_res, divide);
+  mic_array_pdm_clock_start(pdm_res);
 }
 
 void mic_array_init_custom_filter(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
 {
   assert(pdm_res);
   assert(mic_array_conf);
-  assert(mic_array_conf->decimator_conf.num_filter_stages == 2 ||
-         mic_array_conf->decimator_conf.num_filter_stages == 3);
+  assert((mic_array_conf->decimator_conf.num_filter_stages == 1) ||
+         (mic_array_conf->decimator_conf.num_filter_stages == 2) ||
+         (mic_array_conf->decimator_conf.num_filter_stages == 3));
 
-  init_mic_array_storage(mic_array_conf->decimator_conf.num_filter_stages == 3);
+  init_mic_array_storage();
   init_mics_custom_filter(pdm_res, mic_array_conf);
-
-  // Configure and start clocks
-  const unsigned divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
-  mic_array_resources_configure(pdm_res, divide);
-  mic_array_pdm_clock_start(pdm_res);
-}
-
-void mic_array_init_custom_filter_1mic_1stg_decimator(pdm_rx_resources_t* pdm_res, mic_array_conf_t* mic_array_conf)
-{
-  assert(pdm_res);
-  assert(mic_array_conf);
-  assert(mic_array_conf->decimator_conf.num_filter_stages == 1);
-
-  init_mic_array_storage(mic_array_conf->decimator_conf.num_filter_stages == 3);
-  init_mics_custom_filter_1mic_1stg_decimator(pdm_res, mic_array_conf);
 
   // Configure and start clocks
   const unsigned divide = pdm_res->mclk_freq / pdm_res->pdm_freq;
@@ -73,34 +67,17 @@ void default_ma_task_start_decimator()
   start_decimator_task();
 }
 
-DECLARE_JOB(default_ma_task_start_pdm_3stg, (void));
-void default_ma_task_start_pdm_3stg(void)
-{
-  start_pdm_task_3stg();
-}
-
-DECLARE_JOB(default_ma_task_start_decimator_3stg, (void));
-void default_ma_task_start_decimator_3stg(void)
-{
-  start_decimator_task_3stg();
-}
-
 void mic_array_start(chanend_t c_frames_out)
 {
+  assert_mic_array_start_ready();
 #if MIC_ARRAY_CONFIG_USE_PDM_ISR
   start_mic_array_pdm_isr(c_frames_out);
 #else
   set_output_channel(c_frames_out);
-  bool use_3_stg_decimator = get_decimator_stg_count();
-  if (use_3_stg_decimator) {
-    PAR_JOBS(
-      PJOB(default_ma_task_start_pdm_3stg, ()),
-      PJOB(default_ma_task_start_decimator_3stg, ()));
-  } else {
-    PAR_JOBS(
-      PJOB(default_ma_task_start_pdm, ()),
-      PJOB(default_ma_task_start_decimator, ()));
-  }
+  PAR_JOBS(
+    PJOB(default_ma_task_start_pdm, ()),
+    PJOB(default_ma_task_start_decimator, ()));
+
 #endif // MIC_ARRAY_CONFIG_USE_PDM_ISR
   shutdown_mic_array();
 }

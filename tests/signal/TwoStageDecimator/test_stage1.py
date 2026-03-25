@@ -1,11 +1,11 @@
 # Copyright 2022-2026 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
- 
+
 ######
-# Test: TwoStageDecimator stage 1 test
+# Test: Decimator::ProcessBlockTwoStage stage 1 test
 #
-# This test is intended to make sure the first stage of the TwoStageDecimator is
-# producing correct results. 
+# This test is intended to make sure the first stage of the Decimator::ProcessBlockTwoStage is
+# producing correct results.
 #
 # Notes:
 #  - This test assumes that the CMake targets for this app are all already
@@ -34,16 +34,16 @@ with open(Path(__file__).parent / "test_params.json") as f:
 class Test_Stage1(object):
   @pytest.fixture(autouse=True)
   def __init_case(self, request):
-    np.set_printoptions(threshold=sys.maxsize,  
+    np.set_printoptions(threshold=sys.maxsize,
                         linewidth=80)
     self.print_out = request.config.getoption("print_output")
 
   def gen_filter(self, s2_tap_count, s2_dec_factor):
-    # This test uses a random first stage filter. No arithmetic saturation is 
+    # This test uses a random first stage filter. No arithmetic saturation is
     # possible, regardless of what we pick.
     s1_coef = np.round(np.ldexp((np.random.random_sample(256) - 0.5), 15)).astype(np.int16)
     s1_filter = filters.Stage1Filter(s1_coef)
-    
+
     # This test uses a simple pass-through filter for the second stage
     #   decimator. (i.e.  b = [1.0, 0, 0, 0, 0, ...]) The output from the full
     # decimator should then be exactly what was output by the first stage, with
@@ -54,7 +54,7 @@ class Test_Stage1(object):
     assert s2_filter.Shr == 0
 
     return filters.TwoStageFilter(s1_filter, s2_filter)
-    
+
 
   @pytest.mark.parametrize("config", params["CONFIG"], ids=[str(param) for param in params["CONFIG"]])
   def test_stage1(self, request, config):
@@ -95,8 +95,8 @@ class Test_Stage1(object):
       if self.print_out: print(f"Device output: {device_output}")
 
       # The second stage filter will usually yield exactly correct results, but
-      # not always, because the 64-bit partial products of the inner product 
-      # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift 
+      # not always, because the 64-bit partial products of the inner product
+      # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift
       # applied to them prior to being summed.
       result_diff = np.max(np.abs(expected - device_output))
       assert result_diff <= 1

@@ -3,7 +3,7 @@ filters_default.h
 
 The filters described below are the first and second stage filters provided by
 this library which are used with the
-:cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>` class template by
+:cpp:class:`Decimator <mic_array::Decimator>` class template by
 default.
 
 Stage 1 - PDM-to-PCM Decimating FIR Filter

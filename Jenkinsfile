@@ -102,6 +102,7 @@ pipeline {
               label 'x86_64 && linux'
             }
             steps {
+              println "Stage running on ${env.NODE_NAME}"
               script {
                 def (server, user, repo) = extractFromScmUrl()
                 env.REPO_NAME = repo
@@ -111,7 +112,7 @@ pipeline {
                 dir("tests") {
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
-                    xcoreBuild(toolsVersion: params.TOOLS_XS3_VERSION)
+                    xcoreBuild(toolsVersion: params.TOOLS_XS3_VERSION, jobs:31)
                     stash includes: '**/*.xe', name: 'test_bin', useDefaultExcludes: false
                   }
                 }
@@ -242,14 +243,14 @@ pipeline {
             stage('Run tests') {
               steps {
               dir("${REPO_NAME}/tests") {
-              withVenv {
-              dir("unit") {
-                withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
-              }
-              dir("signal/BasicMicArray") {
-                withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "(0_isr or lowpower) and not 16frame-8n" -v'} // Skipping 16frame-8n. See https://github.com/xmos/lib_mic_array/issues/288
-              }
-              } // withVenv
+                withVenv {
+                  dir("unit") {
+                    withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
+                  }
+                  dir("signal/BasicMicArray") {
+                    withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "(0isr or OneStageFilter) and not 16frame-8n" -v'} // Skipping 16frame-8n. See https://github.com/xmos/lib_mic_array/issues/288
+                  }
+                } // withVenv
               }}} // stage('Run tests')
           } // stages
           post {

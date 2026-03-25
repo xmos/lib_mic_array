@@ -13,7 +13,6 @@
 
 #include "PdmRx.hpp"
 #include "Decimator.hpp"
-#include "ThreeStageDecimator.hpp"
 #include "SampleFilter.hpp"
 #include "OutputHandler.hpp"
 
@@ -50,6 +49,11 @@ namespace  mic_array {
   class MicArray
   {
 
+    private:
+      void ThreadEntryOneStage();
+      void ThreadEntryTwoStage();
+      void ThreadEntryThreeStage();
+
     public:
       /**
        * @brief The PDM rx service.
@@ -79,19 +83,31 @@ namespace  mic_array {
        * @brief The Decimator.
        *
        * The template parameter `TDecimator` is the concrete class implementing
-       * the microphone array's decimation procedure. `TDecimator` is only
-       * required to implement one function, `ProcessBlock()`:
+       * the microphone array's decimation procedure. Depending on the number of
+       * configured stages, `MicArray` will call one of three stage-specific
+       * processing functions:
+       *
        * @code{.cpp}
-       * void ProcessBlock(
+       * // 1-stage: produces pdm_out_words_per_mic PCM samples per mic per call
+       * void ProcessBlockSingleStage(
+       *     int32_t *sample_out,
+       *     uint32_t *pdm_block);
+       *
+       * // 2-stage: produces one PCM sample per mic per call
+       * void ProcessBlockTwoStage(
+       *     int32_t sample_out[MIC_COUNT],
+       *     uint32_t *pdm_block);
+       *
+       * // 3-stage: produces one PCM sample per mic per call
+       * void ProcessBlockThreeStage(
        *     int32_t sample_out[MIC_COUNT],
        *     uint32_t *pdm_block);
        * @endcode
        *
-       * `ProcessBlock()` takes a block of PDM samples via its `pdm_block`
-       * parameter, applies the appropriate decimation logic, and outputs a
-       * single (multi-channel) sample via its `sample_out` parameter.
-       * The size and formatting of the PDM block expected by the decimator
-       * depends on its particular implementation.
+       * Each function takes a block of PDM samples via `pdm_block`, applies the
+       * appropriate decimation logic, and writes output samples to `sample_out`.
+       * The active stage count is determined at initialisation and controls which
+       * function is dispatched by @ref ThreadEntry.
        *
        */
       TDecimator Decimator;
@@ -180,16 +196,15 @@ namespace  mic_array {
       void ThreadEntry();
 
       /**
-       * @brief Entry point for the low-power single-stage decimation thread.
+       * @brief Maximum supported value for PDM RX output words per channel. Only relevant for single-stage decimator mode.
        *
-       * This function loops, collecting PDM
-       * blocks from @ref PdmRx and running the single-stage decimator. Each
-       * block produces two output samples which are delivered sequentially
-       * through @ref OutputHandler. On shutdown it calls @ref PdmRx::Shutdown()
-       * and then completes the output shutdown handshake.
+       * In single-stage decimator mode, this limits
+       * `pdm_rx_conf_t::pdm_out_words_per_channel`.
+       *
+       * The limit is used to size the local output buffer in
+       * `ThreadEntryOneStage()`, and the mic array initialization path asserts
+       * if the configured value exceeds this bound.
        */
-      void ThreadEntryLowPower_1Mic1StgDecimator();
-
       static constexpr unsigned MAX_PDM_OUT_WORDS_PER_CHANNEL = 10;
   };
 
@@ -198,7 +213,85 @@ namespace  mic_array {
 //////////////////////////////////////////////
 // Template function implementations below. //
 //////////////////////////////////////////////
+template <unsigned MIC_COUNT,
+          class TDecimator,
+          class TPdmRx,
+          class TSampleFilter,
+          class TOutputHandler>
+void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
+                                   TSampleFilter,
+                                   TOutputHandler>::ThreadEntryOneStage()
+{
+  volatile bool shutdown = false;
+  chanend_t c_frame_out = OutputHandler.FrameTx.GetChannel();
+  unsigned pdm_out_words_per_channel = PdmRx.pdm_out_words_per_channel;
+  int32_t sample_out[MIC_COUNT * MAX_PDM_OUT_WORDS_PER_CHANNEL];
 
+  while(!shutdown){
+    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlockSingleStage(sample_out, pdm_samples);
+    shutdown = ma_frame_tx(c_frame_out,
+                        reinterpret_cast<int32_t*>(sample_out),
+                        MIC_COUNT, pdm_out_words_per_channel);
+  }
+  PdmRx.Shutdown();
+  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
+                                    // ma_shutdown() will now return
+  return;
+} // ThreadEntryOneStage
+
+// MicArray::ThreadEntryTwoStage() - Do not remove. Documentation anchor for literalinclude in software_structure.rst
+template <unsigned MIC_COUNT,
+          class TDecimator,
+          class TPdmRx,
+          class TSampleFilter,
+          class TOutputHandler>
+void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
+                                   TSampleFilter,
+                                   TOutputHandler>::ThreadEntryTwoStage()
+{
+  int32_t sample_out[MIC_COUNT] = {0};
+  volatile bool shutdown = false;
+
+  while(!shutdown){
+    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlockTwoStage(sample_out, pdm_samples);
+    SampleFilter.Filter(sample_out);
+    shutdown = OutputHandler.OutputSample(sample_out);
+  }
+  PdmRx.Shutdown();
+  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
+                                    // ma_shutdown() will now return
+  return;
+} // ThreadEntryTwoStage
+
+template <unsigned MIC_COUNT,
+          class TDecimator,
+          class TPdmRx,
+          class TSampleFilter,
+          class TOutputHandler>
+void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
+                                   TSampleFilter,
+                                   TOutputHandler>::ThreadEntryThreeStage()
+{
+  int32_t sample_out[MIC_COUNT] = {0};
+  volatile bool shutdown = false;
+
+  while(!shutdown){
+    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
+    Decimator.ProcessBlockThreeStage(sample_out, pdm_samples);
+    SampleFilter.Filter(sample_out);
+    shutdown = OutputHandler.OutputSample(sample_out);
+  }
+  PdmRx.Shutdown();
+  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
+                                    // ma_shutdown() will now return
+  return;
+
+} // ThreadEntryThreeStage
+
+
+// MicArray::ThreadEntry() - Do not remove. Documentation anchor for literalinclude in software_structure.rst
 template <unsigned MIC_COUNT,
           class TDecimator,
           class TPdmRx,
@@ -208,44 +301,13 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                    TSampleFilter,
                                    TOutputHandler>::ThreadEntry()
 {
-  int32_t sample_out[MIC_COUNT] = {0};
-  volatile bool shutdown = false;
-
-  while(!shutdown){
-    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
-    Decimator.ProcessBlock(sample_out, pdm_samples);
-    SampleFilter.Filter(sample_out);
-    shutdown = OutputHandler.OutputSample(sample_out);
+  if(Decimator.num_stages == 1) {
+    ThreadEntryOneStage();
   }
-  PdmRx.Shutdown();
-  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
-                                    // ma_shutdown() will now return
-  return;
-}
-
-template <unsigned MIC_COUNT,
-          class TDecimator,
-          class TPdmRx,
-          class TSampleFilter,
-          class TOutputHandler>
-void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
-                                   TSampleFilter,
-                                   TOutputHandler>::ThreadEntryLowPower_1Mic1StgDecimator()
-{
-  volatile bool shutdown = false;
-  chanend_t c_frame_out = OutputHandler.FrameTx.GetChannel();
-  unsigned pdm_out_words_per_channel = PdmRx.pdm_out_words_per_channel;
-  int32_t sample_out[MAX_PDM_OUT_WORDS_PER_CHANNEL];
-
-  while(!shutdown){
-    uint32_t *pdm_samples = PdmRx.GetPdmBlockLowPowerOneMic();
-    Decimator.ProcessBlockSingleStage(sample_out, pdm_samples);
-    shutdown = ma_frame_tx(c_frame_out,
-                        reinterpret_cast<int32_t*>(sample_out),
-                        1, pdm_out_words_per_channel);
+  else if(Decimator.num_stages == 2) {
+    ThreadEntryTwoStage();
   }
-  PdmRx.Shutdown();
-  OutputHandler.CompleteShutdown(); // Exchange end token with the app to close channel and indicate completion.
-                                    // ma_shutdown() will now return
-  return;
-}
+  else {
+    ThreadEntryThreeStage();
+  }
+} // ThreadEntry

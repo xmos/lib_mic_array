@@ -32,3 +32,5 @@ needs to call to initialise and start a mic array instance when using the defaul
 .. doxygenfunction:: mic_array_start
 
 .. doxygenfunction:: mic_array_init_custom_filter
+
+.. doxygenfunction:: mic_array_enable_1mic_override

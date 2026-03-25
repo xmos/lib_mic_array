@@ -58,7 +58,7 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_DDR(
 #endif
 
 using TMicArray = mic_array::MicArray<APP_N_MICS,
-                          mic_array::TwoStageDecimator<APP_N_MICS>,
+                          mic_array::Decimator<APP_N_MICS>,
                           mic_array::StandardPdmRxService<APP_N_MICS_IN,
                                                           APP_N_MICS>,
                           typename std::conditional<APP_USE_DC_ELIMINATION,

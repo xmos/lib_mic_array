@@ -37,18 +37,21 @@ string(JSON N_MICS_LIST GET ${JSON_CONTENT} N_MICS)
 string(JSON FRAME_SIZE_LIST GET ${JSON_CONTENT} FRAME_SIZE)
 string(JSON USE_ISR_LIST GET ${JSON_CONTENT} USE_ISR)
 string(JSON SAMP_FREQ_LIST GET ${JSON_CONTENT} SAMP_FREQ)
+string(JSON ONE_MIC_OVERRIDE_LIST GET ${JSON_CONTENT} 1MIC_OVERRIDE)
 
 # Convert JSON lists to CMake lists
 string(JSON NUM_N_MICS LENGTH ${N_MICS_LIST})
 string(JSON NUM_FRAME_SIZE LENGTH ${FRAME_SIZE_LIST})
 string(JSON NUM_USE_ISR LENGTH ${USE_ISR_LIST})
 string(JSON NUM_SAMP_FREQ LENGTH ${SAMP_FREQ_LIST})
+string(JSON NUM_ONE_MIC_OVERRIDE LENGTH ${ONE_MIC_OVERRIDE_LIST})
 
 # Subtract one off each of the lengths because RANGE includes last element
 math(EXPR NUM_N_MICS "${NUM_N_MICS} - 1")
 math(EXPR NUM_FRAME_SIZE "${NUM_FRAME_SIZE} - 1")
 math(EXPR NUM_USE_ISR "${NUM_USE_ISR} - 1")
 math(EXPR NUM_SAMP_FREQ "${NUM_SAMP_FREQ} - 1")
+math(EXPR NUM_ONE_MIC_OVERRIDE "${NUM_ONE_MIC_OVERRIDE} - 1")
 
 # Remove ISR if vx4 as it's not supported
  if (APP_HW_TARGET STREQUAL "XK-EVK-XU416")
@@ -105,34 +108,49 @@ foreach(l RANGE 0 ${NUM_SAMP_FREQ})
             string(JSON FRAME_SIZE GET ${FRAME_SIZE_LIST} ${j})
             foreach(k RANGE 0 ${NUM_USE_ISR})
                 string(JSON USE_ISR GET ${USE_ISR_LIST} ${k})
-                set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr_${samp_freq_str}")
+                foreach(m RANGE 0 ${NUM_ONE_MIC_OVERRIDE})
+                    string(JSON USE_1MIC_OVERRIDE GET ${ONE_MIC_OVERRIDE_LIST} ${m})
+                    set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr_${USE_1MIC_OVERRIDE}mo_${samp_freq_str}")
 
-                message(${CONFIG})
-                set(APP_COMPILER_FLAGS_${CONFIG}    ${COMMON_COMPILER_FLAGS}
-                                                    -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
-                                                    -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=${FRAME_SIZE}
-                                                    -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
-                                                    -DMIC_ARRAY_CONFIG_MIC_IN_COUNT=${N_MICS}
-                                                    -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
-                                                    -DAPP_SAMP_FREQ=${APP_SAMP_FREQ}
-                                                    -DUSE_CUSTOM_FILTER=${USE_CUSTOM_FILT}
-                                                    )
+                    message(${CONFIG})
+                    set(APP_COMPILER_FLAGS_${CONFIG}    ${COMMON_COMPILER_FLAGS}
+                                                        -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
+                                                        -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=${FRAME_SIZE}
+                                                        -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
+                                                        -DMIC_ARRAY_CONFIG_MIC_IN_COUNT=${N_MICS}
+                                                        -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
+                                                        -DAPP_SAMP_FREQ=${APP_SAMP_FREQ}
+                                                        -DUSE_CUSTOM_FILTER=${USE_CUSTOM_FILT}
+                                                        -DAPP_CONFIG_ONE_MIC_OVERRIDE=${USE_1MIC_OVERRIDE}
+                                                        )
+                endforeach()
             endforeach()
         endforeach()
     endforeach()
 endforeach()
 
 set(APP_INCLUDES src ${AUTOGEN_OUT_DIR})
+# One stage filter (small_768k_to_12k_filter.h) + 1-mic override
+set(APP_COMPILER_FLAGS_1stg_filter_1mic_override       ${COMMON_COMPILER_FLAGS}
+                                                        -DMIC_ARRAY_CONFIG_USE_PDM_ISR=0
+                                                        -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=2
+                                                        -DMIC_ARRAY_CONFIG_MIC_COUNT=2 # Set to something other than 1 to test 1-mic overriding
+                                                        -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
+                                                        -DAPP_SAMP_FREQ=24000
+                                                        -DAPP_CONFIG_ONE_STAGE_DECIMATOR=1
+                                                        -DAPP_CONFIG_ONE_MIC_OVERRIDE=1
+                                                        )
 
-set(APP_COMPILER_FLAGS_lp_1stg_decimator       ${COMMON_COMPILER_FLAGS}
-                                                -DMIC_ARRAY_CONFIG_USE_PDM_ISR=0
-                                                -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=2
-                                                -DMIC_ARRAY_CONFIG_MIC_COUNT=1
-                                                -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
-                                                -DAPP_SAMP_FREQ=24000
-                                                -DUSE_CUSTOM_FILTER=0
-                                                -DAPP_CONFIG_LOW_POWER=1
-                                                )
+# One stage filter (small_768k_to_12k_filter.h)
+set(APP_COMPILER_FLAGS_1stg_filter                     ${COMMON_COMPILER_FLAGS}
+                                                        -DMIC_ARRAY_CONFIG_USE_PDM_ISR=0
+                                                        -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=2
+                                                        -DMIC_ARRAY_CONFIG_MIC_COUNT=2 # Set to something other than 1 to test 1-mic overriding
+                                                        -DMIC_ARRAY_CONFIG_USE_DC_ELIMINATION=0
+                                                        -DAPP_SAMP_FREQ=24000
+                                                        -DAPP_CONFIG_ONE_STAGE_DECIMATOR=1
+                                                        )
+
 XMOS_REGISTER_APP()
 
 foreach(target ${APP_BUILD_TARGETS})
