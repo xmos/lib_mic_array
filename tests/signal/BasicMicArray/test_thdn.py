@@ -172,7 +172,7 @@ class Test_BasicMicArray(MicArraySharedBase):
     against per-tone THD+N thresholds. Also verifies sample-level diff between
     Python and xcore integer outputs within a fixed tolerance.
     """
-    duration_s = 2 # running reduced duration. See https://github.com/xmos/lib_mic_array/issues/289
+    duration_s = 4
     pdm_freq = 768_000
     chans = 2
     freq_hz = [300, 5000]
