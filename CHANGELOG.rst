@@ -1,9 +1,10 @@
 lib_mic_array change log
 ========================
 
-UNRELEASED
-----------
+7.0.0
+-----
 
+  * CHANGED: Tests from XC to C using lib_xcore
   * REMOVED: XCommon build support. Please use XCommon CMake instead.
 
   * Changes to dependencies:
