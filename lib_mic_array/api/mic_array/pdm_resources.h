@@ -2,12 +2,10 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #pragma once
 
-#include <stdio.h> // for clock_t
-#include <stdint.h>
+#include <sys/types.h>
+
 #include "api.h"
 #include "etc/xcore_compat.h"
-
-
 
 
 C_API_START
