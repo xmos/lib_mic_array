@@ -37,6 +37,8 @@ import json
 from pathlib import Path
 from mic_array_shared import MicArraySharedBase
 
+MAX_DIFF_TH = 12
+
 with open(Path(__file__).parent / "test_params.json") as f:
     params = json.load(f)
 
@@ -151,8 +153,13 @@ class Test_BasicMicArray(MicArraySharedBase):
     # applied to them prior to being summed.
     result_diff = np.max(np.abs(expected - device_output))
     print(f"result_diff = {result_diff}")
-    threshold = 12
-    assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
+
+    exp_size = expected.size
+    dev_size = device_output.size
+    print(f"expected size: {exp_size}, device output size: {dev_size}")
+
+    assert result_diff <= MAX_DIFF_TH, f"max diff between python and xcore mic array output ({result_diff}) exceeds MAX_DIFF_TH ({MAX_DIFF_TH})"
+    assert exp_size == dev_size, f"Expected and device output sizes differ"
 
 
   @pytest.mark.parametrize("chans", [1, 2], ids=["1mic_override", "2mic"])
@@ -227,12 +234,17 @@ class Test_BasicMicArray(MicArraySharedBase):
     end = -device_output_delay_samps or None
     start = device_output_delay_samps
 
+    exp_size = expected[:, :end].size
+    dev_size = device_output[:, start:].size
     result_diff = np.max(np.abs(expected[:, :end] - device_output[:, start:]))
 
     print(f"result_diff = {result_diff}")
+    print(f"expected size: {exp_size}, device output size: {dev_size}")
 
-    threshold = 12
-    assert result_diff <= threshold, (
+    assert exp_size == dev_size, (
+      f"Expected and device output sizes differ"
+    )
+    assert result_diff <= MAX_DIFF_TH, (
       f"max diff between python and xcore mic array output ({result_diff}) "
-      f"exceeds threshold ({threshold})"
+      f"exceeds MAX_DIFF_TH ({MAX_DIFF_TH})"
     )

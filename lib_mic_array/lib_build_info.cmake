@@ -1,6 +1,6 @@
 set(LIB_NAME lib_mic_array)
 set(LIB_VERSION 7.0.0)
-set(LIB_DEPENDENT_MODULES "lib_xcore_math(develop)") #TODO pin version
+set(LIB_DEPENDENT_MODULES "lib_xcore_math(c966e9810cb409bdbae95cb3cea72c3a146171a0)") #TODO pin version
 set(LIB_INCLUDES
     api
     api/mic_array
