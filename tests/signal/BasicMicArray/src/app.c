@@ -7,6 +7,8 @@
 
 #include <print.h>
 #include <platform.h>
+
+#include <xcore/assert.h>
 #include <xcore/select.h>
 #include <xcore/parallel.h>
 #include <xcore/chanend.h>
