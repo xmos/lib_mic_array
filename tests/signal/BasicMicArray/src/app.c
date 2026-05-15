@@ -423,7 +423,7 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo, chanend_t c_end_ht
       chanend_out_byte(c_fifo, fifo_idx++);
       int t1 = get_reference_time();
       if(t1 - t0 > 10){
-          printstrln("ERROR - Timing fail");
+          xassert(0 && "ERROR - Timing fail");
       }
       if(fifo_idx == FIFO_ENTRIES){
           fifo_idx = 0;
