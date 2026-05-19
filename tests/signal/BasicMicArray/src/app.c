@@ -218,7 +218,7 @@ unsigned cmd_perform_action(unsigned cmd){
 }
 
 static inline
-void cmd_loop(chanend_t c_from_host, chanend_t c_end_htf, chanend_t c_end_hta)
+unsigned cmd_loop(chanend_t c_from_host, chanend_t c_end_htf, chanend_t c_end_hta)
 {
   char cmd_buff[BUFF_SIZE];
   int pp;
@@ -234,10 +234,11 @@ void cmd_loop(chanend_t c_from_host, chanend_t c_end_htf, chanend_t c_end_hta)
     if(ret){
       chan_out_byte(c_end_htf, 1); // signal host fifo task to end
       chan_out_byte(c_end_hta, 1); // signal host to app task to end
-      return;
+      return 1;
     }
     break;
   }
+  return 0;
 }
 
 static inline
@@ -482,7 +483,10 @@ void host_words_to_app(chanend_t c_from_host, streaming_chanend_t c_to_app, chan
     dd--;
         buff_lvl += dd;
         if(dd == 0) {
-            cmd_loop(c_from_host, c_end_htf, c_end_hta);
+            int ret = cmd_loop(c_from_host, c_end_htf, c_end_hta);
+            if (ret){
+              return; // end signal received from cmd loop, end the task
+            }
         }
         else {
             buff_lvl = send_words_to_app(c_to_app, buff, buff_lvl);
