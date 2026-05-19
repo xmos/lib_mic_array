@@ -232,8 +232,8 @@ void cmd_loop(chanend_t c_from_host, chanend_t c_end_htf, chanend_t c_end_hta)
     cmd_print_msg(cmd);
     unsigned ret = cmd_perform_action(cmd);
     if(ret){
-      chanend_out_byte(c_end_htf, 1); // signal host fifo task to end
-      chanend_out_byte(c_end_hta, 1); // signal host to app task to end
+      chan_out_byte(c_end_htf, 1); // signal host fifo task to end
+      chan_out_byte(c_end_hta, 1); // signal host to app task to end
       return;
     }
     break;
@@ -422,7 +422,7 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo, chanend_t c_end_ht
       ma_frame_rx(&frame[0][0], c_frames_in, APP_MIC_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
       memcpy(frame_fifo[fifo_idx], &frame[0][0], sizeof(ma_frame_t));
       int t0 = get_reference_time();
-      chanend_out_byte(c_fifo, fifo_idx++);
+      chan_out_byte(c_fifo, fifo_idx++);
       int t1 = get_reference_time();
       if(t1 - t0 > 10){
           xassert(0 && "ERROR - Timing fail");
@@ -433,7 +433,7 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo, chanend_t c_end_ht
       continue;
     }
     c_end_hta_handler:{
-      (void)chanend_in_byte(c_end_hta);
+      (void)chan_in_byte(c_end_hta);
       ma_shutdown(c_frames_in);
       return; // end signal received from host, end the task
     }
@@ -448,7 +448,7 @@ void app_fifo_to_xscope_task(chanend_t c_fifo, chanend_t c_end_htf)
       CASE_THEN(c_end_htf, c_end_htf_handler))
     {
     c_fifo_handler:{
-        uint8_t idx = chanend_in_byte(c_fifo);
+        uint8_t idx = chan_in_byte(c_fifo);
         ma_frame_t *ptr = &frame_fifo[idx];
 
         // Send it to host sample by sample rather than channel by channel
@@ -460,7 +460,7 @@ void app_fifo_to_xscope_task(chanend_t c_fifo, chanend_t c_end_htf)
         continue;
       }
     c_end_htf_handler:{
-      (void)chanend_in_byte(c_end_htf);
+      (void)chan_in_byte(c_end_htf);
       return; // end signal received from host, end the task
     }
     }
