@@ -7,8 +7,6 @@
 
 #include <print.h>
 #include <platform.h>
-
-#include <xcore/assert.h>
 #include <xcore/select.h>
 #include <xcore/parallel.h>
 #include <xcore/chanend.h>
@@ -63,10 +61,10 @@
 
 typedef chanend_t streaming_chanend_t;
 
+DECLARE_JOB(app_output_task, (chanend_t, chanend_t));
+DECLARE_JOB(app_fifo_to_xscope_task, (chanend_t));
 DECLARE_JOB(app_mic, (chanend_t, chanend_t));
-DECLARE_JOB(app_output_task, (chanend_t, chanend_t, chanend_t));
-DECLARE_JOB(app_fifo_to_xscope_task, (chanend_t, chanend_t));
-DECLARE_JOB(host_words_to_app, (chanend_t, streaming_chanend_t, chanend_t, chanend_t));
+DECLARE_JOB(host_words_to_app, (chanend_t, streaming_chanend_t));
 
 
 typedef struct {
@@ -207,18 +205,17 @@ void cmd_print_msg(unsigned i){
 }
 
 static inline
-unsigned cmd_perform_action(unsigned cmd){
+void cmd_perform_action(unsigned cmd){
     switch(cmd){
         case 0:  break;
-        case 1:  return 1;
+        case 1:  exit(0); break;
         case 2:  app_print_filters(); break;
         default: assert(0); break;
     }
-    return 0;
 }
 
 static inline
-unsigned cmd_loop(chanend_t c_from_host, chanend_t c_end_htf, chanend_t c_end_hta)
+void cmd_loop(chanend_t c_from_host)
 {
   char cmd_buff[BUFF_SIZE];
   int pp;
@@ -230,15 +227,9 @@ unsigned cmd_loop(chanend_t c_from_host, chanend_t c_end_htf, chanend_t c_end_ht
     assert((pp-1) == 4);
     uint32_t cmd = ((uint32_t*)(void*) &cmd_buff[0])[0];
     cmd_print_msg(cmd);
-    unsigned ret = cmd_perform_action(cmd);
-    if(ret){
-      chan_out_byte(c_end_htf, 1); // signal host fifo task to end
-      chan_out_byte(c_end_hta, 1); // signal host to app task to end
-      return 1;
-    }
+    cmd_perform_action(cmd);
     break;
   }
-  return 0;
 }
 
 static inline
@@ -389,11 +380,12 @@ void app_mic(
 
 // Sometimes xscope doesn't keep up causing backpressure so add a FIFO to decouple this, at least up to 8 frames.
 // We can buffer up to 8 chars in a same tile chanend.
+
 typedef int32_t ma_frame_t[APP_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
 ma_frame_t frame_fifo[FIFO_ENTRIES];
 
 
-void app_output_task(chanend_t c_frames_in, chanend_t c_fifo, chanend_t c_end_hta)
+void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
 {
   // Before listening for any frames, use the META_OUT xscope probe to report
   // our configuration to the host. This will help make sure the right version
@@ -415,41 +407,26 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo, chanend_t c_end_ht
   // receive the output of the mic array and send it to the host via a fifo to decouple the backpressure from xscope
   int32_t frame[APP_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
   uint8_t fifo_idx = 0;
-  SELECT_RES(
-    CASE_THEN(c_end_hta, c_end_hta_handler),
-    DEFAULT_THEN(default_handler))
-  {
-    default_handler: {
-      ma_frame_rx(&frame[0][0], c_frames_in, APP_MIC_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
-      memcpy(frame_fifo[fifo_idx], &frame[0][0], sizeof(ma_frame_t));
-      int t0 = get_reference_time();
-      chan_out_byte(c_fifo, fifo_idx++);
-      int t1 = get_reference_time();
-      if(t1 - t0 > 10){
-          xassert(0 && "ERROR - Timing fail");
-      }
-      if(fifo_idx == FIFO_ENTRIES){
-          fifo_idx = 0;
-      }
-      continue;
+  while(1){
+    ma_frame_rx(&frame[0][0], c_frames_in, APP_MIC_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
+    memcpy(frame_fifo[fifo_idx], &frame[0][0], sizeof(ma_frame_t));
+    int t0 = get_reference_time();
+    chanend_out_byte(c_fifo, fifo_idx++);
+    int t1 = get_reference_time();
+    if(t1 - t0 > 10){
+        printstrln("ERROR - Timing fail");
     }
-    c_end_hta_handler:{
-      (void)chan_in_byte(c_end_hta);
-      ma_shutdown(c_frames_in);
-      return; // end signal received from host, end the task
+    if(fifo_idx == FIFO_ENTRIES){
+        fifo_idx = 0;
     }
   }
 }
 
 
-void app_fifo_to_xscope_task(chanend_t c_fifo, chanend_t c_end_htf)
+void app_fifo_to_xscope_task(chanend_t c_fifo)
 {
-    SELECT_RES(
-      CASE_THEN(c_fifo, c_fifo_handler),
-      CASE_THEN(c_end_htf, c_end_htf_handler))
-    {
-    c_fifo_handler:{
-        uint8_t idx = chan_in_byte(c_fifo);
+    while(1){
+        uint8_t idx = chanend_in_byte(c_fifo);
         ma_frame_t *ptr = &frame_fifo[idx];
 
         // Send it to host sample by sample rather than channel by channel
@@ -458,16 +435,11 @@ void app_fifo_to_xscope_task(chanend_t c_fifo, chanend_t c_end_htf)
             xscope_int(DATA_OUT, (*ptr)[ch][smp]);
           }
         }
-        continue;
-      }
-    c_end_htf_handler:{
-      (void)chan_in_byte(c_end_htf);
-      return; // end signal received from host, end the task
-    }
     }
 }
 
-void host_words_to_app(chanend_t c_from_host, streaming_chanend_t c_to_app, chanend_t c_end_htf, chanend_t c_end_hta)
+
+void host_words_to_app(chanend_t c_from_host, streaming_chanend_t c_to_app)
 {
   xscope_connect_data_from_host(c_from_host);
 
@@ -483,10 +455,7 @@ void host_words_to_app(chanend_t c_from_host, streaming_chanend_t c_to_app, chan
     dd--;
         buff_lvl += dd;
         if(dd == 0) {
-            int ret = cmd_loop(c_from_host, c_end_htf, c_end_hta);
-            if (ret){
-              return; // end signal received from cmd loop, end the task
-            }
+            cmd_loop(c_from_host);
         }
         else {
             buff_lvl = send_words_to_app(c_to_app, buff, buff_lvl);
@@ -507,15 +476,11 @@ int main(){
   chanend_t xscope_chan = chanend_alloc();
   xscope_mode_lossless();
 
-  // end of program channels
-  channel_t c_end_hta = chan_alloc(); // host to app (hta)
-  channel_t c_end_htf = chan_alloc(); // host to fifo (htf)
-
   PAR_JOBS(
     PJOB(app_mic, (c_to_app.end_a, c_frames.end_a)),
-    PJOB(app_output_task, (c_frames.end_b, c_fifo.end_a, c_end_hta.end_b)),
-    PJOB(app_fifo_to_xscope_task, (c_fifo.end_b, c_end_htf.end_b)),
-    PJOB(host_words_to_app, (xscope_chan, c_to_app.end_b, c_end_htf.end_a, c_end_hta.end_a))
+    PJOB(app_output_task, (c_frames.end_b, c_fifo.end_a)),
+    PJOB(app_fifo_to_xscope_task, (c_fifo.end_b)),
+    PJOB(host_words_to_app, (xscope_chan, c_to_app.end_b))
   );
   s_chan_free(c_to_app);
   chan_free(c_frames);
