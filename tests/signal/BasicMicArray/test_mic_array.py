@@ -37,6 +37,8 @@ import json
 from pathlib import Path
 from mic_array_shared import MicArraySharedBase
 
+MAX_DIFF_TH = 12
+
 with open(Path(__file__).parent / "test_params.json") as f:
     params = json.load(f)
 
@@ -149,10 +151,15 @@ class Test_BasicMicArray(MicArraySharedBase):
     # not always, because the 64-bit partial products of the inner product
     # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift
     # applied to them prior to being summed.
-    result_diff = np.max(np.abs(expected - device_output))
-    print(f"result_diff = {result_diff}")
-    threshold = 12
-    assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
+    
+    # compare shape
+    exp = expected
+    dev = device_output
+    assert exp.shape == dev.shape, f"shapes differ: {exp.shape} vs {dev.shape}"
+
+    # compare max difference
+    result_diff = np.max(np.abs(exp - dev))
+    assert result_diff <= MAX_DIFF_TH, f"result_diff = {result_diff} exceeds MAX_DIFF_TH = {MAX_DIFF_TH}"
 
 
   @pytest.mark.parametrize("chans", [1, 2], ids=["1mic_override", "2mic"])
@@ -227,12 +234,11 @@ class Test_BasicMicArray(MicArraySharedBase):
     end = -device_output_delay_samps or None
     start = device_output_delay_samps
 
-    result_diff = np.max(np.abs(expected[:, :end] - device_output[:, start:]))
+    # compare shape
+    exp = expected[:, :end]
+    dev = device_output[:, start:]
+    assert exp.shape == dev.shape, f"shapes differ: {exp.shape} vs {dev.shape}"
 
-    print(f"result_diff = {result_diff}")
-
-    threshold = 12
-    assert result_diff <= threshold, (
-      f"max diff between python and xcore mic array output ({result_diff}) "
-      f"exceeds threshold ({threshold})"
-    )
+    # compare max difference
+    result_diff = np.max(np.abs(exp - dev))
+    assert result_diff <= MAX_DIFF_TH, f"result_diff = {result_diff} exceeds MAX_DIFF_TH = {MAX_DIFF_TH}"

@@ -57,6 +57,8 @@
 #define DATA_OUT (1)
 #endif
 
+#define FIFO_ENTRIES (8)
+
 typedef chanend_t streaming_chanend_t;
 
 DECLARE_JOB(app_output_task, (chanend_t, chanend_t));
@@ -378,9 +380,9 @@ void app_mic(
 
 // Sometimes xscope doesn't keep up causing backpressure so add a FIFO to decouple this, at least up to 8 frames.
 // We can buffer up to 8 chars in a same tile chanend.
-const unsigned fifo_entries = 8;
+
 typedef int32_t ma_frame_t[APP_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
-ma_frame_t frame_fifo[fifo_entries];
+ma_frame_t frame_fifo[FIFO_ENTRIES];
 
 
 void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
@@ -414,7 +416,7 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
     if(t1 - t0 > 10){
         printstrln("ERROR - Timing fail");
     }
-    if(fifo_idx == fifo_entries){
+    if(fifo_idx == FIFO_ENTRIES){
         fifo_idx = 0;
     }
   }
