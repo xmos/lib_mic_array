@@ -6,26 +6,29 @@ set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 
 set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
-# conditional depending on target
-if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
-    set(APP_HW_TARGET       XK-EVK-XU316)
-    set(COMMON_COMPILER_FLAGS  -O2
-                                -g
-                                -report
-                                -mcmodel=large
-                                -Wno-xcore-fptrgroup
-                                -Wno-unknown-pragmas
-                                -Wno-format)
-
-else() # VX4
-    set(APP_HW_TARGET       XK-EVK-XU416)
-    set(COMMON_COMPILER_FLAGS   -Os
-                                -g
-                                -lxc
-                                -Wno-fptrgroup
-                                -Wno-format)
+# Target configuration
+if(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "XK-EVK-XU316")
+    set(APP_HW_TARGET XK-EVK-XU316)
+    set(ARCH_COMPILER_FLAGS -O2
+                            -g
+                            -report
+                            -mcmodel=large
+                            -Wno-xcore-fptrgroup
+                            -Wno-unknown-pragmas
+                            -Wno-format)
+else()
+    if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+    set(ARCH_COMPILER_FLAGS -Os
+                            -g
+                            -lxc
+                            -Wno-fptrgroup
+                            -Wno-format)
+    else()
+        message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
+    endif()
 endif()
 
+# Params
 set_property(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" PROPERTY CMAKE_CONFIGURE_DEPENDS
              "${CMAKE_CURRENT_LIST_DIR}/test_params.json")
 
@@ -54,7 +57,7 @@ math(EXPR NUM_SAMP_FREQ "${NUM_SAMP_FREQ} - 1")
 math(EXPR NUM_ONE_MIC_OVERRIDE "${NUM_ONE_MIC_OVERRIDE} - 1")
 
 # Remove ISR if vx4 as it's not supported
- if (APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
     set(USE_ISR_LIST "[0]")
     set(NUM_USE_ISR 0)
 endif()
@@ -113,7 +116,7 @@ foreach(l RANGE 0 ${NUM_SAMP_FREQ})
                     set(CONFIG "${N_MICS}ch_${FRAME_SIZE}smp_${USE_ISR}isr_${USE_1MIC_OVERRIDE}mo_${samp_freq_str}")
 
                     message(${CONFIG})
-                    set(APP_COMPILER_FLAGS_${CONFIG}    ${COMMON_COMPILER_FLAGS}
+                    set(APP_COMPILER_FLAGS_${CONFIG}    ${ARCH_COMPILER_FLAGS}
                                                         -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
                                                         -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=${FRAME_SIZE}
                                                         -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
@@ -131,7 +134,7 @@ endforeach()
 
 set(APP_INCLUDES src ${AUTOGEN_OUT_DIR})
 # One stage filter (small_768k_to_12k_filter.h) + 1-mic override
-set(APP_COMPILER_FLAGS_1stg_filter_1mic_override       ${COMMON_COMPILER_FLAGS}
+set(APP_COMPILER_FLAGS_1stg_filter_1mic_override       ${ARCH_COMPILER_FLAGS}
                                                         -DMIC_ARRAY_CONFIG_USE_PDM_ISR=0
                                                         -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=2
                                                         -DMIC_ARRAY_CONFIG_MIC_COUNT=2 # Set to something other than 1 to test 1-mic overriding
@@ -142,7 +145,7 @@ set(APP_COMPILER_FLAGS_1stg_filter_1mic_override       ${COMMON_COMPILER_FLAGS}
                                                         )
 
 # One stage filter (small_768k_to_12k_filter.h)
-set(APP_COMPILER_FLAGS_1stg_filter                     ${COMMON_COMPILER_FLAGS}
+set(APP_COMPILER_FLAGS_1stg_filter                     ${ARCH_COMPILER_FLAGS}
                                                         -DMIC_ARRAY_CONFIG_USE_PDM_ISR=0
                                                         -DMIC_ARRAY_CONFIG_SAMPLES_PER_FRAME=2
                                                         -DMIC_ARRAY_CONFIG_MIC_COUNT=2 # Set to something other than 1 to test 1-mic overriding

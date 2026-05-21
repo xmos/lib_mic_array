@@ -225,17 +225,32 @@ pipeline {
               dir(REPO_NAME){
                 checkoutScmShallow()
                 dir("tests") {
+                  withTools(params.TOOLS_VX4_VERSION){
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
                     dir("unit") {
-                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION)
+                      xcoreBuild(
+                        toolsVersion: params.TOOLS_VX4_VERSION, 
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        jobs:8
+                      )
                     }
                     dir ("signal/BasicMicArray") {
-                      withTools(params.TOOLS_VX4_VERSION){
-                      xcoreBuild(toolsVersion: params.TOOLS_VX4_VERSION, jobs:8)
-                      }
+                      xcoreBuild(
+                        toolsVersion: params.TOOLS_VX4_VERSION, 
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        jobs:8
+                      )
+                    }
+                    dir ("signal/profile/app_mips") {
+                      xcoreBuild(
+                        toolsVersion: params.TOOLS_VX4_VERSION, 
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        jobs:8
+                      )
                     }
                   } // withVenv
+                  }  // withTools
                 } // dir("tests")
               } // dir(REPO_NAME)
               } // steps
@@ -243,13 +258,18 @@ pipeline {
             stage('Run tests') {
               steps {
               dir("${REPO_NAME}/tests") {
+                withTools(params.TOOLS_VX4_VERSION) {
                 withVenv {
                   dir("unit") {
-                    withTools(params.TOOLS_VX4_VERSION) {sh "xrun --xscope bin/tests-unit.xe"}
+                    sh "xrun --xscope bin/tests-unit.xe"
                   }
                   dir("signal/BasicMicArray") {
-                    withTools(params.TOOLS_VX4_VERSION) {sh 'python -m pytest --level nightly --seed 12345 -k "0isr or OneStageFilter" -v'}
+                    sh 'pytest --level nightly --seed 12345 -k "0isr or OneStageFilter" -v'
                   }
+                  dir ("signal/profile") {
+                    sh 'pytest test_measure_mips.py --APP_HW_TARGET=XK-EVK-XU416 -v'
+                  }
+                } // with tools
                 } // withVenv
               }}} // stage('Run tests')
           } // stages
