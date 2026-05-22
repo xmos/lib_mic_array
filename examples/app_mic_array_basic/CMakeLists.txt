@@ -4,25 +4,9 @@ project(app_mic_array)
 
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
-# conditional depending on target
-set(APP_C_SRCS  src/app.c)
-
-if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0")
-    set(APP_HW_TARGET   xs3/XK-EVK-XU316-AIV.xn)
-    set(APP_INCLUDES    src xs3)
-    list(APPEND APP_C_SRCS 
-        xs3/device_pll_ctrl.c
-    )
-    list(APPEND APP_XC_SRCS 
-        xs3/mapfile.xc
-    )
-else()
-    set(APP_HW_TARGET   XK-EVK-XU416)
-    set(APP_INCLUDES    src vx4)
-    list(APPEND APP_C_SRCS 
-        vx4/device_pll_ctrl.c
-        vx4/mapfile.c
-    )
+# targets (IF NOT DEFINED OR NOT SUPPORTED)
+if(NOT DEFINED APP_HW_TARGET OR NOT APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+    message(FATAL_ERROR "This application is only supported for XK-EVK-XU416. Please re-run cmake with -DAPP_HW_TARGET=XK-EVK-XU416.")
 endif()
 
 set(APP_DEPENDENT_MODULES "lib_mic_array")
