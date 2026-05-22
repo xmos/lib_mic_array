@@ -613,8 +613,10 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
     }
     // Now that we're sure that PdmRx thread has exited, drain any pending blocks
     chanend_t c_pdm_blocks_end_b = this->c_pdm_blocks.end_b;
-    SELECT_RES(CASE_THEN(c_pdm_blocks_end_b, rx_pending_block),
-                 DEFAULT_THEN(empty))
+    SELECT_RES(
+      CASE_THEN(c_pdm_blocks_end_b, rx_pending_block),
+      DEFAULT_THEN(empty)
+    )
     {
       rx_pending_block:
         pdm_samples = GetPdmBlock();
@@ -623,6 +625,7 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>
       empty:
         break;
     }
+    (void)pdm_samples; // Avoid unused variable warning. 
   }
   // Now that shutdown is complete, free the pdmrx channel
   s_chan_free(this->c_pdm_blocks);
