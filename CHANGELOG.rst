@@ -1,6 +1,17 @@
 lib_mic_array change log
 ========================
 
+7.1.0
+-----
+
+  * ADDED: Initial support for vx4 targets.
+  * ADDED: Support for 1-, 2-, or 3-stage decimation pipelines.
+  * ADDED: dynamic 1-mic switching support (`mic_array_enable_1mic_override`).
+
+  * Changes to dependencies:
+
+    - lib_xcore_math: 2.4.1 -> 3.0.0
+
 7.0.0
 -----
 

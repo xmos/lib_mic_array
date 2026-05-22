@@ -48,7 +48,7 @@ if(${DEV_LIB_MIC_ARRAY})
   CPMAddPackage(
     NAME lib_xcore_math
     GIT_REPOSITORY https://github.com/xmos/lib_xcore_math
-    GIT_TAG        v2.1.0
+    GIT_TAG        v3.0.0
   )
   set(USING_CUSTOM_CMAKE TRUE)
   add_subdirectory( tests )
