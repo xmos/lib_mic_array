@@ -1,8 +1,8 @@
 {
-  "1mic_thread_16000fs": 10.81,
-  "1mic_thread_32000fs": 13.16,
-  "1mic_thread_48000fs": 16.50,
-  "2mic_thread_16000fs": 22.74,
-  "2mic_thread_32000fs": 26.94,
-  "2mic_thread_48000fs": 33.10
+  "1mic_thread_16000fs": 11.6162,
+  "1mic_thread_32000fs": 13.9999,
+  "1mic_thread_48000fs": 17.3681,
+  "2mic_thread_16000fs": 23.6923,
+  "2mic_thread_32000fs": 27.9639,
+  "2mic_thread_48000fs": 34.2039
 }

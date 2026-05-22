@@ -8,11 +8,20 @@ set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
 set(AUTOGEN_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/autogen")
 
-if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
-set(ISR_LIST 0 1) # ISR and thread-based PDM handling
-else() # VX4
-set(ISR_LIST 0) # Only thread-based PDM handling supported on VX4
+# Target specific 
+if(NOT DEFINED APP_HW_TARGET)    
+    set(APP_HW_TARGET src/XK-VOICE-L71.xn)
+    set(ISR_LIST 0 1) # ISR and thread-based PDM handling
+    list(APPEND APP_DEPENDENT_MODULES "lib_board_support(1.5.0)")
+else()
+    if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+    set(ISR_LIST 0) # Only thread-based PDM handling supported on VX4
+    set(APP_XC_SRCS "") # prevents including xc
+    else()
+        message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
+    endif()
 endif()
+message(STATUS "Building for target ${APP_HW_TARGET} with ISR_LIST=${ISR_LIST}")
 
 set(NAME_MAP thread;isr)
 # Exactly one custom filter (.pkl) may be listed alongside numeric sample rates.
@@ -70,16 +79,6 @@ foreach(SAMP_FREQ   16000 32000 48000 "good_3_stage_filter_int.pkl")
 endforeach()
 
 set(APP_INCLUDES    src src/mips/ ${AUTOGEN_OUT_DIR})
-
-# ---- Target specific ----
-if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
-set(APP_HW_TARGET       src/XK-VOICE-L71.xn)
-list(APPEND APP_DEPENDENT_MODULES "lib_board_support(1.5.0)")
-else() # VX4
-set(APP_HW_TARGET       XK-EVK-XU416)
-set(APP_XC_SRCS         "") # prevents including xc
-endif()
-
 
 XMOS_REGISTER_APP()
 

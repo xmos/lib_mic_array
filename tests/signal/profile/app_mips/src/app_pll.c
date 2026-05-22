@@ -57,11 +57,11 @@ void app_pll_init(void)
     
     // print reg values
     printf("PLL Configuration:\n");
-    printf("PLL DISABLE: 0x%08lX\n", DEVICE_PLL_DISABLE);
-    printf("PLL MUX VAL: 0x%08lX\n", DEVICE_PLL_MUX_VAL);
-    printf("PLL CTL VAL: 0x%08lX\n", DEVICE_PLL_CTL_VAL);
-    printf("PLL DIV VAL: 0x%08lX\n", DEVICE_PLL_DIV_0);
-    printf("PLL FRAC_NOM: 0x%08lX\n", DEVICE_PLL_FRAC_NOM);
+    printf("PLL DISABLE: 0x%08X\n", DEVICE_PLL_DISABLE);
+    printf("PLL MUX VAL: 0x%08X\n", DEVICE_PLL_MUX_VAL);
+    printf("PLL CTL VAL: 0x%08X\n", DEVICE_PLL_CTL_VAL);
+    printf("PLL DIV VAL: 0x%08X\n", DEVICE_PLL_DIV_0);
+    printf("PLL FRAC_NOM: 0x%08X\n", DEVICE_PLL_FRAC_NOM);
 
     // CONFIGURE
     sswitch_reg_try_write(tileid, VX_SSB_CSR_PLL1_CTRL_NUM, DEVICE_PLL_DISABLE);            // disable PLL before configuration

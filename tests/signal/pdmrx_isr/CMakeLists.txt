@@ -12,10 +12,15 @@ set(APP_COMPILER_FLAGS  -Os
                         -DMIC_ARRAY_CONFIG_USE_PDM_ISR=1
                         )
 
-if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL "3.6.0") # XS3 (XTC 15.3.1)
-set(APP_HW_TARGET       XK-EVK-XU316)
-else() # VX4
-set(APP_HW_TARGET       XK-EVK-XU416)
+# Default target
+if(NOT DEFINED APP_HW_TARGET)
+    set(APP_HW_TARGET XK-EVK-XU316)
+endif()
+
+# Supported targets
+set(SUPPORTED_TARGETS "XK-EVK-XU316;XK-EVK-XU416")
+if(NOT APP_HW_TARGET IN_LIST SUPPORTED_TARGETS)
+  message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}. Supported: ${SUPPORTED_TARGETS}")
 endif()
 
 XMOS_REGISTER_APP()
