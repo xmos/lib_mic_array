@@ -5,7 +5,7 @@ project(tests-unit)
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
 set(APP_INCLUDES src)
-set(APP_DEPENDENT_MODULES "lib_mic_array" "lib_unity(main)") #TODO release lib_unity
+set(APP_DEPENDENT_MODULES "lib_mic_array" "lib_unity(v2.7.0)")
 
 # Target specific compiler flags
 if(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "XK-EVK-XU316") 
