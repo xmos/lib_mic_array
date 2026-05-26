@@ -58,7 +58,7 @@ Setup procedure
 Building
 --------
 
-The following instructions assumes that the `XMOS XTC tools <https://www.xmos.com/software-tools/>`_ has
+The following instructions assume that the `XMOS XTC tools <https://www.xmos.com/software-tools/>`_ have
 been downloaded and installed (see `README` for required version).
 
 Installation instructions can be found `here <https://xmos.com/xtc-install-guide>`_. Particular
@@ -84,7 +84,7 @@ Finally, the application binaries can be built using ``xmake``:
 
   xmake -j -C build
 
-The example build four configurations - ``1mic_isr``, ``1mic_thread``, ``2mic_isr`` and ``2mic_thread``,
+The example builds four configurations - ``1mic_isr``, ``1mic_thread``, ``2mic_isr`` and ``2mic_thread``, 
 which indicate the number of microphones used and whether the PDM RX service runs in an ISR or a hardware thread.
 The executable binaries (.xe files) for each configuration are placed in ``bin/<config>`` directory
 (e.g. ``bin/2mic_isr/app_mic_array_2mic_isr.xe``).
