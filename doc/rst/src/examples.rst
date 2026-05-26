@@ -101,7 +101,7 @@ To run the application from the ``/examples/app_mic_array`` directory, execute:
 The command above runs the ``2mic_isr`` configuration.
 To run a different configuration, replace ``2mic_isr`` in the path with the desired build variant.
 
-When running, the application captures the microphone audio and routes it to the DAC
+When running, the application captures the microphones audio and routes it to the DAC
 on the ``XK-VOICE-L71`` after linearly scaling the PCM samples received from ``lib_mic_array``
 by a factor of 64.
 Connect headphones to the 3.5mm LINE OUT jack on the board to listen to the captured microphone signal.
