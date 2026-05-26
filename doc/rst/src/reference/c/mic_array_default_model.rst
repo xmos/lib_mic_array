@@ -9,7 +9,7 @@ Configuration defines (mic_array_conf_default.h)
 
 An application using the mic array needs to have defines set for compile-time configuration of the mic array instance.
 Defaults for these defines are defined in the header file ``mic_array_conf_default.h``.
-These defines should be overridden in an optional header file  ``mic_array_conf.h`` file or in the application's ``CMakeLists.txt``.
+These defines should be overridden in an optional header file  ``mic_array_conf.h`` or in the application's ``CMakeLists.txt``.
 
 This section fully documents all of the settable defines and their default values.
 

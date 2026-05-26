@@ -12,7 +12,7 @@ PDM microphones produce a high-rate, 1-bit digital bitstream. The library
 captures these PDM streams on the device and performs the required filtering
 and decimation to produce 32-bit PCM audio samples.
 
-For high level description of mic array processing and the library capabilities, refer to :ref:`overview`.
+For a high-level description of mic array processing and the library capabilities, refer to :ref:`overview`.
 To get started with using the library, see :ref:`using_mic_array` and :ref:`examples`.
 
 
