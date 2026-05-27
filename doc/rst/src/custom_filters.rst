@@ -184,7 +184,7 @@ to convert floating-point coefficients to the required format.
 
 If a second stage is included, it must meet these requirements:
 
-- Implementation: Must be compatible with the 32-bit FIR filter from `lib_xcore_math <https://github.com/xmos/lib_xcore_math>`_,
+- Implementation: Must be compatible with the 32-bit FIR filter from `lib_xcore_math <www.xmos.com/libraries/lib_xcore_math>`_,
   specifically :c:func:`xs3_filter_fir_s32()` as described in :ref:`stage_2_filter_impl`
 - Tap count: Configurable (no fixed constraint)
 - Decimation factor: Configurable integer value
@@ -193,7 +193,7 @@ Use the Python helper script ``python/stage2.py`` to convert floating-point coef
 
 **Stage 3 (optional)**
 
-A third stage, if included, must also be compatible with the 32-bit FIR filter from `lib_xcore_math <https://github.com/xmos/lib_xcore_math>`_.
+A third stage, if included, must also be compatible with the 32-bit FIR filter from `lib_xcore_math <www.xmos.com/libraries/lib_xcore_math>`_.
 It has the same flexibility as stage 2:
 
 - Tap count: Configurable

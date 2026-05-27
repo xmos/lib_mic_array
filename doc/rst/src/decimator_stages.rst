@@ -10,7 +10,7 @@ to convert a high sample rate stream of (1-bit) PDM samples into a lower sample
 rate stream of (32-bit) PCM samples.
 
 The default and most widely used configuration is a two-stage decimation
-pipeline, and that two-stage case is the focus of this page. This is shown in
+pipeline, and that two-stage case is the focus of this section. This is shown in
 :ref:`decimator_stages_simplified`.
 
 .. _decimator_stages_simplified:
@@ -262,7 +262,7 @@ sample rate (the sample rate received by the main application code) is
     3.072 MHz / (32*6) = 16 kHz
 
 The second stage filter uses the 32-bit FIR filter implementation from
-`lib_xcore_math <https://github.com/xmos/lib_xcore_math>`_. See
+`lib_xcore_math <www.xmos.com/libraries/lib_xcore_math>`_. See
 ``xs3_filter_fir_s32()`` in that library for more implementation details.
 
 The filter state (delay line) consists of as many 32-bit samples as there are taps in the stage-2 filter,
@@ -272,6 +272,6 @@ and requires that many 32-bit words for storage.
 
   If providing stage-2 custom coefficients, they must remain compatible with the underlying
   32-bit FIR implementation from
-  `lib_xcore_math <https://github.com/xmos/lib_xcore_math>`_
+  `lib_xcore_math <www.xmos.com/libraries/lib_xcore_math>`_
   (for example, tap/shift/state configuration must match the ``xs3_filter_fir_s32()`` function requirements).
   For details on supplying custom coefficients via configuration structures, see :ref:`custom_filters`.
