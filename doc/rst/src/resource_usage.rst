@@ -113,7 +113,11 @@ in :ref:`mic_array_default_model_defines` except for ``MIC_ARRAY_CONFIG_MIC_COUN
 and ``MIC_ARRAY_CONFIG_USE_PDM_ISR``. These two (along with the output sampling rate) are varied to build the
 different configurations that are profiled.
 
+The following tables show MIPS for different configurations of the mic array library for both XS3 and VX4 architectures respectively. 
+
 .. include:: ../../../tests/signal/profile/mic_array_mips_table.rst
+
+.. include:: ../../../tests/signal/profile/mic_array_mips_table_vx4.rst
 
 .. note::
 
@@ -124,7 +128,9 @@ different configurations that are profiled.
   :ref:`default <mic_array_default_model>` mic array API. An example of a custom multi-threaded decimator implementation
   can be found in :ref:`mic_array_par_decimator`.
 
+.. note::
 
+  In vx4 configuration there is not support (yet) for ISR mode, the application will use at least two threads for running the mic array unit. 
 
 Memory
 ======
