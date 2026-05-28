@@ -130,7 +130,7 @@ different configurations that are profiled.
 
 .. note::
 
-  In vx4 configuration there is not current support for ISR mode, the application will use at least two threads for running the mic array unit. 
+  In vx4 configuration, running PDM RX in ISR mode is currently not supported, so the application will use at least two threads for running the mic array unit. 
 
 Memory
 ======
