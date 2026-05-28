@@ -22,8 +22,8 @@ Capabilities
   (3.072 MHz typical)
 * Supports :ref:`1-, 2-, or 3-stage decimation FIR filters <decimator_stages>`
 
-  * First stage is compulsary and has a fixed tap count of 256 and decimation factor of 32
-  * Further stages are optional and hav fully configurable tap count and decimation factor
+  * First stage is compulsory and has a fixed tap count of 256 and decimation factor of 32
+  * Further stages are optional and have fully configurable tap count and decimation factor
   * Custom filter coefficients can be used for any stage
   * Pre-designed two-stage reference filters with total decimation factor of 192, 96 and 64 are provided
     (16 kHz, 32 kHz and 48 kHz output sample rates with 3.072 MHz input PDM clock).
