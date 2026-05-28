@@ -337,7 +337,7 @@ following constraints:
   instantiation of :cpp:class:`MicArray <mic_array::MicArray>` object.
   This overhead is primarily from wrapper code and inclusion of all
   provided filter coefficient sets, even when only a subset is used (see
-  :ref:`mic_array_memory_usage`). For memory‑constrained systems a custom
+  :ref:`mic_array_memory_usage`). For memory-constrained systems a custom
   configuration might be preferable.
 
 For custom usage involving creating a :cpp:class:`MicArray <mic_array::MicArray>`

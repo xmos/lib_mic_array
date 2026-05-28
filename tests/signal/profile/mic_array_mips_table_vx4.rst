@@ -1,4 +1,4 @@
-.. _mic_array_mips:
+.. _mic_array_mips_vx4:
 
 .. list-table:: Estimated MIPS (per configuration)
    :header-rows: 1

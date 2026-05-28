@@ -107,13 +107,13 @@ and no more than `CORE_CLOCK_MHZ/5` millions of issue slots per second, where
 With a core clock rate of 600 MHz, that means that each core should expect at least 75 MIPS.
 
 Table :ref:`mic_array_mips` shows the mic array MIPS by profiling an application that includes the
-mic array. The application used to generate the MIPS numbers runs the :ref:`default <mic_array_default_model>` mic
+mic array. Table :ref:`mic_array_mips_vx4` shows the same for the vx4 architecture.
+
+The application used to generate the MIPS numbers runs the :ref:`default <mic_array_default_model>` mic
 array API (so the decimator running in a single hardware thread) with all defines set to their default values as listed
 in :ref:`mic_array_default_model_defines` except for ``MIC_ARRAY_CONFIG_MIC_COUNT``
 and ``MIC_ARRAY_CONFIG_USE_PDM_ISR``. These two (along with the output sampling rate) are varied to build the
 different configurations that are profiled.
-
-The following tables show MIPS for different configurations of the mic array library for both XS3 and VX4 architectures respectively. 
 
 .. include:: ../../../tests/signal/profile/mic_array_mips_table.rst
 
@@ -130,7 +130,7 @@ The following tables show MIPS for different configurations of the mic array lib
 
 .. note::
 
-  In vx4 configuration there is not support (yet) for ISR mode, the application will use at least two threads for running the mic array unit. 
+  In vx4 configuration there is not current support for ISR mode, the application will use at least two threads for running the mic array unit. 
 
 Memory
 ======

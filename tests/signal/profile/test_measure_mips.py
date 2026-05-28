@@ -36,6 +36,13 @@ def get_rst_file(hw_target: str = "XK-EVK-XU316") -> Path:
     rst_file = options[hw_target]
     return cwd / rst_file
 
+def get_table_reference(hw_target: str = "XK-EVK-XU316") -> str:
+    options = {
+        "XK-EVK-XU316": "_mic_array_mips",
+        "XK-EVK-XU416": "_mic_array_mips_vx4",
+    }
+    return options[hw_target]
+
 def max_mips(lines):
     mips_values = []
     for line in lines:
@@ -46,7 +53,7 @@ def max_mips(lines):
 
     return max(mips_values) if mips_values else None
 
-def write_rst_table(results: dict, outfile: Path):
+def write_rst_table(results: dict, outfile: Path, reference: str):
     """
     Write results dict to an RST list-table.
     cfg key format: '{mics}mic_{pdmrx}_{fs}fs'
@@ -66,7 +73,7 @@ def write_rst_table(results: dict, outfile: Path):
         rows.append((mic_count, pdmrx_mode.upper(), fs_val, mips_str))
 
     lines = []
-    lines.append(".. _mic_array_mips:\n")
+    lines.append(f".. {reference}:\n")
     lines.append(".. list-table:: Estimated MIPS (per configuration)")
     lines.append("   :header-rows: 1")
     lines.append("   :widths: 6 6 8 8")
@@ -121,6 +128,8 @@ def test_measure_mips(pytestconfig):
     # number are in the same ballpark, before overwriting mic_array_mips.json
     outfile = get_mips_file(hw_target)
     outfile_rst = get_rst_file(hw_target)
+    table_refence = get_table_reference(hw_target)
+
     with outfile.open("r") as f:
         ref_data = json.load(f)
         for cfg in ref_data:
@@ -139,5 +148,4 @@ def test_measure_mips(pytestconfig):
             json.dump(results, f, indent=2)
 
         # RST table output
-        rst_out = outfile_rst
-        write_rst_table(results, rst_out)
+        write_rst_table(results, outfile_rst, table_refence)
