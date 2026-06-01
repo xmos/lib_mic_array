@@ -8,7 +8,6 @@
 
 int main(int argc, const char* argv[])
 {
-  xscope_config_io(XSCOPE_IO_BASIC);
 
   UnityGetCommandLineOptions(argc, argv);
   UnityBegin(argv[0]);
@@ -28,8 +27,8 @@ int main(int argc, const char* argv[])
   RUN_TEST_GROUP(deinterleave4);
   RUN_TEST_GROUP(deinterleave8);
   RUN_TEST_GROUP(deinterleave16);
-
   RUN_TEST_GROUP(deinterleave_pdm_samples);
-
+  RUN_TEST_GROUP(fir_1x16_bit);
+  
   return UNITY_END();
 }

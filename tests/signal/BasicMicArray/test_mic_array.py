@@ -37,35 +37,62 @@ import json
 from pathlib import Path
 from mic_array_shared import MicArraySharedBase
 
+MAX_DIFF_TH = 12
+
 with open(Path(__file__).parent / "test_params.json") as f:
     params = json.load(f)
 
-smoke_test_chans = [8]
+smoke_test_chans = [4] # Since 8n-16frame is currently disabled. See https://github.com/xmos/lib_mic_array/issues/288
 smoke_test_frame_sz = [1, 16]
-def ma_test_uncollect(config, chans, frame_size, use_isr, fs):
+def ma_test_uncollect(config, chans, frame_size, use_isr, one_mic_override, fs):
+  """Determine whether to skip test cases based on test level.
+
+  Returns True to uncollect (skip), False to collect (run).
+
+  Smoke tests: Collect only 4ch with 1 or 16 frame sizes.
+  Nightly tests with one_mic_override=0: Collect all configurations.
+  Nightly tests with one_mic_override=1: Collect only 4ch/16frame with custom filters and 16kHz.
+  """
   level = config.getoption("level")
   if level == "smoke":
     if((chans in smoke_test_chans) and (frame_size in smoke_test_frame_sz)):
       return False
     else:
-      return True # uncollect everything other than 1_isr-16frame-8n_mics
-  return False # for level != smoke, collect everything
+      return True # uncollect everything other than 4ch with 1 or 16 frame sizes
+  else: # nightly
+    if one_mic_override == 0: # Collect everything for which one_mic_override=0
+      return False
+    else: # one_mic_override = 1
+      # collect only one config (4ch, 16 frame), for the custom pkl file and one of the supported rates (16000) to keep the test time reasonable
+      # No particular reason why this specific config was selected
+      if((chans == 4) and (frame_size == 16)):
+        if (not isinstance(fs, int)): # custom pkl file
+          return False
+        elif fs == 16000:
+          return False
+        else:
+          # If we've reached here, uncollect!
+          return True
+      else:
+        # If we've reached here, uncollect!
+        return True
 
 class Test_BasicMicArray(MicArraySharedBase):
   @pytest.mark.uncollect_if(func=ma_test_uncollect)
   @pytest.mark.parametrize("chans", params["N_MICS"], ids=[f"{nm}n_mics" for nm in params["N_MICS"]])
   @pytest.mark.parametrize("frame_size", params["FRAME_SIZE"], ids=[f"{fs}frame" for fs in params["FRAME_SIZE"]])
-  @pytest.mark.parametrize("use_isr", params["USE_ISR"], ids=[f"{ui}_isr" for ui in params["USE_ISR"]])
+  @pytest.mark.parametrize("use_isr", params["USE_ISR"], ids=[f"{ui}isr" for ui in params["USE_ISR"]])
+  @pytest.mark.parametrize("one_mic_override", params["1MIC_OVERRIDE"], ids=[f"{ui}mo" for ui in params["1MIC_OVERRIDE"]])
   @pytest.mark.parametrize("fs", params["SAMP_FREQ"], ids=[f"{s}" for s in params["SAMP_FREQ"]])
-  def test_BasicMicArray(self, request, chans, frame_size, use_isr, fs):
+  def test_BasicMicArray(self, request, chans, frame_size, use_isr, one_mic_override, fs):
     cwd = Path(request.fspath).parent
 
     custom_filter_file = None
     if not isinstance(fs, int): # fs must contain the name of the filter .pkl file
       custom_filter_file = fs
-      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_customfs"
+      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{one_mic_override}mo_customfs"
     else:
-      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{fs}fs"
+      cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{one_mic_override}mo_{fs}fs"
 
     xe_path = f'{cwd}/bin/{cfg}/test_ma_{cfg}.xe'
     assert Path(xe_path).exists(), f"Cannot find {xe_path}"
@@ -85,6 +112,9 @@ class Test_BasicMicArray(MicArraySharedBase):
 
     # Total PDM samples (per channel)
     samp_total = samp_per_frame * frames
+
+    if one_mic_override == 1:
+      chans = 1 # Override chans to 1
 
     # Generate random PDM signal
     sig = PdmSignal.random(chans, samp_total)
@@ -121,8 +151,94 @@ class Test_BasicMicArray(MicArraySharedBase):
     # not always, because the 64-bit partial products of the inner product
     # (i.e.  filter_state[:] * filter_coef[:]) have a rounding-right-shift
     # applied to them prior to being summed.
-    result_diff = np.max(np.abs(expected - device_output))
-    print(f"result_diff = {result_diff}")
-    threshold = 12
-    assert result_diff <= threshold, f"max diff between python and xcore mic array output ({result_diff}) exceeds threshold ({threshold})"
+    
+    # compare shape
+    exp = expected
+    dev = device_output
+    assert exp.shape == dev.shape, f"shapes differ: {exp.shape} vs {dev.shape}"
 
+    # compare max difference
+    result_diff = np.max(np.abs(exp - dev))
+    assert result_diff <= MAX_DIFF_TH, f"result_diff = {result_diff} exceeds MAX_DIFF_TH = {MAX_DIFF_TH}"
+
+
+  @pytest.mark.parametrize("chans", [1, 2], ids=["1mic_override", "2mic"])
+  def test_BasicMicArrayOneStageFilter(self, request, chans):
+    """Verify sample-level correctness of the 1-stage filter path using small_768k_to_12k_filter_int.pkl.
+
+    Tests two configurations of the stage-1-only decimator:
+    - chans=1: 1-mic override enabled (MIC_ARRAY_CONFIG_MIC_COUNT set > 1 in the build, overridden at runtime to 1).
+    - chans=2: no override, 2-mic normal operation.
+
+    Generates random PDM input, computes the expected output via the Python stage-1 filter,
+    then compares against the xcore device output sample-by-sample within a fixed tolerance.
+    """
+    cwd = Path(request.fspath).parent
+    filter = self.filter(Path(__file__).parent / "small_768k_to_12k_filter_int.pkl")
+
+    stg1_output_words_per_frame = int(filter.DecimationFactor / filter.s1.DecimationFactor)
+    assert stg1_output_words_per_frame == 2
+
+    samp_per_frame = 32
+    frames = request.config.getoption("frames")
+    decimator_stgs = 1
+    # --- num decimator stages dependent behaviour ---
+    stg1_only = (decimator_stgs == 1)
+    output_frame_size = 2 if stg1_only else 1
+    samp_total = samp_per_frame * frames * output_frame_size
+    device_output_delay_samps = 0 if stg1_only else 1
+    sample_override = frames * output_frame_size if stg1_only else None
+    # -------------------------------------------------
+
+    sig = PdmSignal.random(chans, samp_total)
+
+    expected = filter.Filter(sig.signal, stg1_only=stg1_only)
+
+    if self.print_output:
+      print(f"Expected output: {expected}")
+
+    assert chans in [1,2]
+    if chans == 1:
+      cfg = f"{decimator_stgs}stg_filter_1mic_override"
+    elif chans == 2:
+      cfg = f"{decimator_stgs}stg_filter"
+
+    xe_path = f"{cwd}/bin/{cfg}/test_ma_{cfg}.xe"
+    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+
+    with MicArrayDevice(
+      xe_path,
+      quiet_xgdb=not self.print_xgdb,
+      extra_xrun_args="--id 0"
+    ) as dev:
+
+      assert dev.param["channels"] == chans
+      assert dev.param["s1.dec_factor"] == filter.s1.DecimationFactor
+      assert dev.param["s1.tap_count"] == filter.s1.TapCount
+      if decimator_stgs > 1:
+        assert dev.param["s2.dec_factor"] == filter.s2.DecimationFactor
+        assert dev.param["s2.tap_count"] == filter.s2.TapCount
+      assert dev.param["frame_size"] == output_frame_size
+      assert dev.param["use_isr"] == 0
+
+      if self.debug_print_filters:
+        dev.send_command(DevCommand.PRINT_FILTERS.value)
+
+      device_output = dev.process_signal(sig, sample_count_override=sample_override)
+
+      if self.print_output:
+        print(f"Device output: {device_output}")
+
+      dev.send_command(DevCommand.TERMINATE.value)
+
+    end = -device_output_delay_samps or None
+    start = device_output_delay_samps
+
+    # compare shape
+    exp = expected[:, :end]
+    dev = device_output[:, start:]
+    assert exp.shape == dev.shape, f"shapes differ: {exp.shape} vs {dev.shape}"
+
+    # compare max difference
+    result_diff = np.max(np.abs(exp - dev))
+    assert result_diff <= MAX_DIFF_TH, f"result_diff = {result_diff} exceeds MAX_DIFF_TH = {MAX_DIFF_TH}"

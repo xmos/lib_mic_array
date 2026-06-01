@@ -4,7 +4,11 @@ project(test_memory)
 
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../../..)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../../../../examples/deps.cmake)
+set(APP_DEPENDENT_MODULES   "lib_mic_array")
+
+if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}. This test is only supported on XK-VOICE-L71.xn.")
+endif()
 
 set(APP_HW_TARGET XK-VOICE-L71.xn)
 

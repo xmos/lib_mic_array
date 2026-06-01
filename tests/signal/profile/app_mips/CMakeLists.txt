@@ -4,11 +4,24 @@ project(test_mips)
 
 set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../../..)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../../../../examples/deps.cmake)
-
-set(APP_HW_TARGET XK-VOICE-L71.xn)
+set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
 set(AUTOGEN_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/autogen")
+
+# Target specific 
+if(NOT DEFINED APP_HW_TARGET)    
+    set(APP_HW_TARGET src/XK-VOICE-L71.xn)
+    set(ISR_LIST 0 1) # ISR and thread-based PDM handling
+    list(APPEND APP_DEPENDENT_MODULES "lib_board_support(1.5.0)")
+else()
+    if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+    set(ISR_LIST 0) # Only thread-based PDM handling supported on VX4
+    set(APP_XC_SRCS "") # prevents including xc
+    else()
+        message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
+    endif()
+endif()
+message(STATUS "Building for target ${APP_HW_TARGET} with ISR_LIST=${ISR_LIST}")
 
 set(NAME_MAP thread;isr)
 # Exactly one custom filter (.pkl) may be listed alongside numeric sample rates.
@@ -49,14 +62,13 @@ foreach(SAMP_FREQ   16000 32000 48000 "good_3_stage_filter_int.pkl")
         set(samp_freq_str "${SAMP_FREQ}fs")
     endif()
     foreach(N_MICS  1 2)
-        foreach(USE_ISR   1 0)
+        foreach(USE_ISR   ${ISR_LIST})
             list(GET NAME_MAP ${USE_ISR} tmp)
             set(CONFIG "${N_MICS}mic_${tmp}_${samp_freq_str}")
 
             set(APP_COMPILER_FLAGS_${CONFIG}    -Os
                                                 -g
                                                 -report
-                                                -mcmodel=large
                                                 -DAPP_NAME="MIC_ARRAY_MEASURE_MIPS_${CONFIG}"
                                                 -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
                                                 -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}

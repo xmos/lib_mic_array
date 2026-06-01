@@ -106,14 +106,18 @@ and no more than `CORE_CLOCK_MHZ/5` millions of issue slots per second, where
 `CORE_CLOCK_MHZ` is the core CPU clock rate (specified as ``SystemFrequency`` in the XN file).
 With a core clock rate of 600 MHz, that means that each core should expect at least 75 MIPS.
 
-Table :ref:`mic_array_mips` shows the mic array MIPS by profiling an application that includes the
-mic array. The application used to generate the MIPS numbers runs the :ref:`default <mic_array_default_model>` mic
+Table :ref:`mic_array_mips_xs3` shows the mic array MIPS by profiling an application that includes the
+mic array. Table :ref:`mic_array_mips_vx4` shows the same for the vx4 architecture.
+
+The application used to generate the MIPS numbers runs the :ref:`default <mic_array_default_model>` mic
 array API (so the decimator running in a single hardware thread) with all defines set to their default values as listed
 in :ref:`mic_array_default_model_defines` except for ``MIC_ARRAY_CONFIG_MIC_COUNT``
 and ``MIC_ARRAY_CONFIG_USE_PDM_ISR``. These two (along with the output sampling rate) are varied to build the
 different configurations that are profiled.
 
-.. include:: ../../../tests/signal/profile/mic_array_mips_table.rst
+.. include:: ../../../tests/signal/profile/mic_array_mips_table_xs3.rst
+
+.. include:: ../../../tests/signal/profile/mic_array_mips_table_vx4.rst
 
 .. note::
 
@@ -124,7 +128,9 @@ different configurations that are profiled.
   :ref:`default <mic_array_default_model>` mic array API. An example of a custom multi-threaded decimator implementation
   can be found in :ref:`mic_array_par_decimator`.
 
+.. note::
 
+  In vx4 configuration, running PDM RX in ISR mode is currently not supported, so the application will use at least two threads for running the mic array unit. 
 
 Memory
 ======

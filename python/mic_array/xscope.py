@@ -5,6 +5,7 @@ import os, ctypes, platform, sys, time, queue
 from collections import defaultdict
 import ctypes.util
 import numpy as np
+from time import sleep
 
 """
  Function prototypes to match the c functions defined in xscope_endpoint.h
@@ -159,7 +160,7 @@ class Endpoint(object):
             0 for success
             1 for failure
         """
-        return self.lib_xscope.xscope_ep_connect(hostname.encode(), 
+        return self.lib_xscope.xscope_ep_connect(hostname.encode(),
                                                  port.encode())
 
     def disconnect(self):
@@ -192,6 +193,7 @@ class Endpoint(object):
           0 for success
           1 for failure
         """
+        sleep(0.0001) # Add some delay to fix vx4 tests failing on linux agents. https://github.com/xmos/lib_mic_array/issues/301
         return self.lib_xscope.xscope_ep_request_upload(ctypes.c_uint(len(data)+1), ctypes.c_char_p(data))
 
 if __name__ == '__main__':
@@ -241,14 +243,14 @@ class QueueConsumer(object):
 
   def next(self, count=1):
     # If the queue Empty exception is raised from here it's because the probes
-    # timed out when trying to get values from xscope. At least in some 
+    # timed out when trying to get values from xscope. At least in some
     # scenarios (pytest on my machine), ctrl-c fails to interrupt the script and
-    # just hangs forever if it's blocking on queue.get(). The timeout is 
+    # just hangs forever if it's blocking on queue.get(). The timeout is
     # currently serving as a watchdog so that the pytest process doesn't need
     # to be killed through extraordinary means.
     if count == 1:
       return self.queue.get(timeout=self.probe_timeout)
-      
+
     r = []
     for _ in range(count):
       r.append( self.queue.get(timeout=self.probe_timeout) )

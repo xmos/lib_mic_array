@@ -16,12 +16,48 @@
 #include <xscope.h>
 
 #include "mic_array.h"
+#include "app_config.h"
+
+// If enabled use the one stage filter specified in small_768k_to_12k_filter.h
+#ifndef APP_CONFIG_ONE_STAGE_DECIMATOR
+#define APP_CONFIG_ONE_STAGE_DECIMATOR (0)
+#endif
+
+// If enabled use filter corresponding to the .pkl file specified in test_params.json
+#ifndef USE_CUSTOM_FILTER
+#define USE_CUSTOM_FILTER (0)
+#endif
+
+// If enabled, override the mic input and output channels to 1, despite MIC_ARRAY_CONFIG_MIC_COUNT set to something greater than 1
+#ifndef APP_CONFIG_ONE_MIC_OVERRIDE
+#define APP_CONFIG_ONE_MIC_OVERRIDE (0)
+#endif
+
+#if APP_CONFIG_ONE_MIC_OVERRIDE
+#define APP_MIC_COUNT (1)
+#else
+#define APP_MIC_COUNT (MIC_ARRAY_CONFIG_MIC_COUNT)
+#endif
 
 #if USE_CUSTOM_FILTER
 #include "custom_filter.h"
 #endif
 
-#define BUFF_SIZE    (256)
+#if APP_CONFIG_ONE_STAGE_DECIMATOR
+#include "small_768k_to_12k_filter.h"
+#endif
+
+#define BUFF_SIZE (256)
+
+#ifndef META_OUT
+#define META_OUT (0)
+#endif
+
+#ifndef DATA_OUT
+#define DATA_OUT (1)
+#endif
+
+#define FIFO_ENTRIES (8)
 
 typedef chanend_t streaming_chanend_t;
 
@@ -32,6 +68,7 @@ DECLARE_JOB(host_words_to_app, (chanend_t, streaming_chanend_t));
 
 
 typedef struct {
+  unsigned num_stages;
   unsigned stg1_tap_count;
   unsigned stg1_decimation_factor;
   unsigned stg2_tap_count;
@@ -54,9 +91,16 @@ void hwtimer_delay_microseconds(unsigned delay) {
   hwtimer_free(tmr);
 }
 
-static 
+static
 void get_filter_config(unsigned fs, filt_config_t *cfg) {
-#if !USE_CUSTOM_FILTER
+
+#if APP_CONFIG_ONE_STAGE_DECIMATOR
+  cfg->stg1_tap_count = SMALL_768K_TO_12K_FILTER_STG1_TAP_COUNT;
+  cfg->stg1_decimation_factor = SMALL_768K_TO_12K_FILTER_STG1_DECIMATION_FACTOR;
+  cfg->stg1_coef_ptr = small_768k_to_12k_filter_stg1_coef;
+  cfg->num_stages = 1;
+#elif !USE_CUSTOM_FILTER
+  cfg->num_stages = 2;
   cfg->stg1_tap_count = 256;
   cfg->stg1_decimation_factor = 32;
 
@@ -86,6 +130,7 @@ void get_filter_config(unsigned fs, filt_config_t *cfg) {
     cfg->stg2_shr = stage2_48k_shift;
   }
 #else
+  cfg->num_stages = 2;
   cfg->stg1_tap_count = CUSTOM_FILTER_STG1_TAP_COUNT;
   cfg->stg1_decimation_factor = CUSTOM_FILTER_STG1_DECIMATION_FACTOR;
   cfg->stg2_tap_count = CUSTOM_FILTER_STG2_TAP_COUNT;
@@ -94,6 +139,7 @@ void get_filter_config(unsigned fs, filt_config_t *cfg) {
   cfg->stg2_coef_ptr = custom_filter_stg2_coef;
   cfg->stg2_shr = CUSTOM_FILTER_STG2_SHR;
 #if (NUM_DECIMATION_STAGES==3)
+  cfg->num_stages = 3;
   cfg->stg3_tap_count = CUSTOM_FILTER_STG3_TAP_COUNT;
   cfg->stg3_decimation_factor = CUSTOM_FILTER_STG3_DECIMATION_FACTOR;
   cfg->stg3_coef_ptr = custom_filter_stg3_coef;
@@ -129,20 +175,22 @@ void app_print_filters()
   }
   printf("]\n");
 
-  printf("stage2 filter length: %d\n", filt_cfg.stg2_tap_count);
-  printf("stage2_coef = [\n");
-  initial_list = filt_cfg.stg2_tap_count/4;
-  for(int a = 0; a < initial_list; a++){
-    printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
-      filt_cfg.stg2_coef_ptr[4*a+0], filt_cfg.stg2_coef_ptr[4*a+1],
-      filt_cfg.stg2_coef_ptr[4*a+2], filt_cfg.stg2_coef_ptr[4*a+3]);
-  }
-  for(int a = initial_list*4; a < filt_cfg.stg2_tap_count; a++){
-    printf("0x%08X, ", filt_cfg.stg2_coef_ptr[a]);
-  }
-  printf("]\n");
+  if(filt_cfg.num_stages > 1) {
+    printf("stage2 filter length: %d\n", filt_cfg.stg2_tap_count);
+    printf("stage2_coef = [\n");
+    initial_list = filt_cfg.stg2_tap_count/4;
+    for(int a = 0; a < initial_list; a++){
+      printf("0x%08X, 0x%08X, 0x%08X, 0x%08X, \n",
+        filt_cfg.stg2_coef_ptr[4*a+0], filt_cfg.stg2_coef_ptr[4*a+1],
+        filt_cfg.stg2_coef_ptr[4*a+2], filt_cfg.stg2_coef_ptr[4*a+3]);
+    }
+    for(int a = initial_list*4; a < filt_cfg.stg2_tap_count; a++){
+      printf("0x%08X, ", filt_cfg.stg2_coef_ptr[a]);
+    }
+    printf("]\n");
 
-  printf("stage2_shr = %d\n", filt_cfg.stg2_shr);
+    printf("stage2_shr = %d\n", filt_cfg.stg2_shr);
+  }
 }
 
 static inline
@@ -180,7 +228,7 @@ void cmd_loop(chanend_t c_from_host)
     uint32_t cmd = ((uint32_t*)(void*) &cmd_buff[0])[0];
     cmd_print_msg(cmd);
     cmd_perform_action(cmd);
-    continue;
+    break;
   }
 }
 
@@ -194,7 +242,7 @@ int send_words_to_app(streaming_chanend_t c_to_app, char* buff, int buff_lvl)
     buff_lvl -= sizeof(int);
     hwtimer_delay_microseconds(15);
   }
-  if(buff_lvl) 
+  if(buff_lvl)
   {
     memmove(&buff[0], &next_word[0], buff_lvl);
   }
@@ -223,8 +271,8 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
 #if USE_CUSTOM_FILTER
 static void init_mic_conf(mic_array_conf_t *mic_array_conf, mic_array_filter_conf_t filter_conf[NUM_DECIMATION_STAGES], unsigned *channel_map)
 {
-  static int32_t stg1_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][8];
-  static int32_t stg2_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][CUSTOM_FILTER_STG2_TAP_COUNT];
+  static int32_t stg1_filter_state[APP_MIC_COUNT][8];
+  static int32_t stg2_filter_state[APP_MIC_COUNT][CUSTOM_FILTER_STG2_TAP_COUNT];
   memset(mic_array_conf, 0, sizeof(mic_array_conf_t));
 
   //decimator
@@ -246,7 +294,7 @@ static void init_mic_conf(mic_array_conf_t *mic_array_conf, mic_array_filter_con
   filter_conf[1].state_words_per_channel = CUSTOM_FILTER_STG2_TAP_COUNT;
   // stage 3
 #if (NUM_DECIMATION_STAGES==3)
-  static int32_t stg3_filter_state[MIC_ARRAY_CONFIG_MIC_COUNT][CUSTOM_FILTER_STG3_TAP_COUNT];
+  static int32_t stg3_filter_state[APP_MIC_COUNT][CUSTOM_FILTER_STG3_TAP_COUNT];
   filter_conf[2].coef = (int32_t*)custom_filter_stg3_coef;
   filter_conf[2].num_taps = CUSTOM_FILTER_STG3_TAP_COUNT;
   filter_conf[2].decimation_factor = CUSTOM_FILTER_STG3_DECIMATION_FACTOR;
@@ -257,8 +305,8 @@ static void init_mic_conf(mic_array_conf_t *mic_array_conf, mic_array_filter_con
   #define CUSTOM_FILTER_STG3_DECIMATION_FACTOR (1) /*for PDM RX block size calculation below to work for both 2 and 3 stage filter*/
 #endif
   // pdm rx
-  static uint32_t pdmrx_out_block[MIC_ARRAY_CONFIG_MIC_COUNT][CUSTOM_FILTER_STG2_DECIMATION_FACTOR * CUSTOM_FILTER_STG3_DECIMATION_FACTOR];
-  static uint32_t __attribute__((aligned(8))) pdmrx_out_block_double_buf[2][MIC_ARRAY_CONFIG_MIC_COUNT * CUSTOM_FILTER_STG2_DECIMATION_FACTOR * CUSTOM_FILTER_STG3_DECIMATION_FACTOR];
+  static uint32_t pdmrx_out_block[APP_MIC_COUNT][CUSTOM_FILTER_STG2_DECIMATION_FACTOR * CUSTOM_FILTER_STG3_DECIMATION_FACTOR];
+  static uint32_t __attribute__((aligned(8))) pdmrx_out_block_double_buf[2][APP_MIC_COUNT * CUSTOM_FILTER_STG2_DECIMATION_FACTOR * CUSTOM_FILTER_STG3_DECIMATION_FACTOR];
   mic_array_conf->pdmrx_conf.pdm_out_words_per_channel = CUSTOM_FILTER_STG2_DECIMATION_FACTOR * CUSTOM_FILTER_STG3_DECIMATION_FACTOR;
   mic_array_conf->pdmrx_conf.pdm_out_block = (uint32_t*)pdmrx_out_block;
   mic_array_conf->pdmrx_conf.pdm_in_double_buf = (uint32_t*)pdmrx_out_block_double_buf;
@@ -266,6 +314,36 @@ static void init_mic_conf(mic_array_conf_t *mic_array_conf, mic_array_filter_con
 }
 #endif
 
+#if APP_CONFIG_ONE_STAGE_DECIMATOR
+static
+void init_mic_conf_one_stage_filter(
+    mic_array_conf_t *mic_array_conf,
+    mic_array_filter_conf_t *filter_conf,
+    unsigned *channel_map)
+{
+  static int32_t stg1_filter_state[APP_MIC_COUNT][8];
+  memset(mic_array_conf, 0, sizeof(mic_array_conf_t));
+
+  //decimator
+  mic_array_conf->decimator_conf.filter_conf = &filter_conf[0];
+  mic_array_conf->decimator_conf.num_filter_stages = 1;
+  // filter stage 1
+  filter_conf[0].coef = (int32_t*)small_768k_to_12k_filter_stg1_coef;
+  filter_conf[0].num_taps = SMALL_768K_TO_12K_FILTER_STG1_TAP_COUNT;
+  filter_conf[0].decimation_factor = SMALL_768K_TO_12K_FILTER_STG1_DECIMATION_FACTOR;
+  filter_conf[0].state = (int32_t*)stg1_filter_state;
+  filter_conf[0].shr = SMALL_768K_TO_12K_FILTER_STG1_SHR;
+  filter_conf[0].state_words_per_channel = filter_conf[0].num_taps/32; // works on 1-bit samples
+
+  // pdm rx
+  static uint32_t pdmrx_out_block[APP_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME]; // PDM RX output block size has to be the same as Mic array output frame size!
+  static uint32_t pdmrx_out_block_double_buf[2][APP_MIC_COUNT * MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME] __attribute__((aligned(8)));
+  mic_array_conf->pdmrx_conf.pdm_out_words_per_channel = MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME;
+  mic_array_conf->pdmrx_conf.pdm_out_block = (uint32_t*)pdmrx_out_block;
+  mic_array_conf->pdmrx_conf.pdm_in_double_buf = (uint32_t*)pdmrx_out_block_double_buf;
+  mic_array_conf->pdmrx_conf.channel_map = channel_map;
+}
+#endif
 
 // ------------------------------- THREADS -------------------------------
 
@@ -273,14 +351,26 @@ void app_mic(
     chanend_t c_pdm_in,
     chanend_t c_frames_out) //non-streaming
 {
-#if !USE_CUSTOM_FILTER
-  mic_array_init(&pdm_res, NULL, APP_SAMP_FREQ);
-#else
+#if (APP_CONFIG_ONE_STAGE_DECIMATOR || USE_CUSTOM_FILTER)
   mic_array_conf_t mic_array_conf;
   mic_array_filter_conf_t filter_conf[NUM_DECIMATION_STAGES];
+#if APP_CONFIG_ONE_STAGE_DECIMATOR
+  init_mic_conf_one_stage_filter(&mic_array_conf, filter_conf, NULL);
+#else
   init_mic_conf(&mic_array_conf, filter_conf, NULL);
-  mic_array_init_custom_filter(&pdm_res, &mic_array_conf);
 #endif
+#endif // (APP_CONFIG_ONE_STAGE_DECIMATOR || USE_CUSTOM_FILTER)
+
+#if APP_CONFIG_ONE_MIC_OVERRIDE
+  mic_array_enable_1mic_override();
+#endif
+
+#if (APP_CONFIG_ONE_STAGE_DECIMATOR || USE_CUSTOM_FILTER)
+  mic_array_init_custom_filter(&pdm_res, &mic_array_conf);
+#else
+  mic_array_init(&pdm_res, NULL, APP_SAMP_FREQ);
+#endif
+
   _mic_array_override_pdm_port_c((port_t)c_pdm_in); // get pdm input from channel instead of port.
                                                   // mic_array_init() calls mic_array_resources_configure which would crash
                                                   // if a chanend were to be passed instead of a port for the pdm data port, so
@@ -290,9 +380,9 @@ void app_mic(
 
 // Sometimes xscope doesn't keep up causing backpressure so add a FIFO to decouple this, at least up to 8 frames.
 // We can buffer up to 8 chars in a same tile chanend.
-const unsigned fifo_entries = 8;
-typedef int32_t ma_frame_t[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
-ma_frame_t frame_fifo[fifo_entries];
+
+typedef int32_t ma_frame_t[APP_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
+ma_frame_t frame_fifo[FIFO_ENTRIES];
 
 
 void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
@@ -303,7 +393,7 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
   filt_config_t filt_cfg;
   get_filter_config(APP_SAMP_FREQ, &filt_cfg);
 
-  xscope_int(META_OUT, MIC_ARRAY_CONFIG_MIC_COUNT);
+  xscope_int(META_OUT, APP_MIC_COUNT);
   xscope_int(META_OUT, filt_cfg.stg1_tap_count);
   xscope_int(META_OUT, filt_cfg.stg1_decimation_factor);
   xscope_int(META_OUT, filt_cfg.stg2_tap_count);
@@ -315,11 +405,10 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
 
 
   // receive the output of the mic array and send it to the host via a fifo to decouple the backpressure from xscope
-  int32_t frame[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
+  int32_t frame[APP_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
   uint8_t fifo_idx = 0;
-
   while(1){
-    ma_frame_rx(&frame[0][0], c_frames_in, MIC_ARRAY_CONFIG_MIC_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
+    ma_frame_rx(&frame[0][0], c_frames_in, APP_MIC_COUNT, MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
     memcpy(frame_fifo[fifo_idx], &frame[0][0], sizeof(ma_frame_t));
     int t0 = get_reference_time();
     chanend_out_byte(c_fifo, fifo_idx++);
@@ -327,7 +416,7 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
     if(t1 - t0 > 10){
         printstrln("ERROR - Timing fail");
     }
-    if(fifo_idx == fifo_entries){
+    if(fifo_idx == FIFO_ENTRIES){
         fifo_idx = 0;
     }
   }
@@ -342,7 +431,7 @@ void app_fifo_to_xscope_task(chanend_t c_fifo)
 
         // Send it to host sample by sample rather than channel by channel
         for(int smp = 0; smp < MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME; smp++) {
-          for(int ch = 0; ch < MIC_ARRAY_CONFIG_MIC_COUNT; ch++){
+          for(int ch = 0; ch < APP_MIC_COUNT; ch++){
             xscope_int(DATA_OUT, (*ptr)[ch][smp]);
           }
         }
@@ -382,7 +471,7 @@ int main(){
   streaming_channel_t c_to_app = s_chan_alloc();
 
   // xscope init note: only one channel end is needed
-  // the second one and the xscope service will be 
+  // the second one and the xscope service will be
   // automatically started and routed by the tools
   chanend_t xscope_chan = chanend_alloc();
   xscope_mode_lossless();

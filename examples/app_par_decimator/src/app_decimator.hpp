@@ -127,7 +127,7 @@ class MyTwoStageDecimator
      *
      * `s2_filter_shr` is the final right-shift applied to the stage 2 filter's
      * accumulator prior to output. See
-     * <a href="https://github.com/xmos/lib_xcore_math">lib_xcore_math's</a>
+     * <a href="www.xmos.com/libraries/lib_xcore_math">lib_xcore_math's</a>
      * documentation of `filter_fir_s32_t` for more details.
      *
      * @param s1_filter_coef  @parblock
@@ -185,9 +185,19 @@ class MyTwoStageDecimator
      * @param sample_out  Output sample vector.
      * @param pdm_block   PDM data to be processed.
      */
-    void ProcessBlock(
+    void ProcessBlockTwoStage(
         int32_t sample_out[MIC_COUNT],
         uint32_t pdm_block[BLOCK_SIZE]);
+
+    void ProcessBlockSingleStage(
+        int32_t *sample_out,
+        uint32_t *pdm_block) {}
+
+    void ProcessBlockThreeStage(
+        int32_t sample_out[MIC_COUNT],
+        uint32_t *pdm_block) {}
+
+    unsigned num_stages = 2;
   };
 }
 
@@ -214,7 +224,7 @@ void par_mic_array::MyTwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>::I
 
 template <unsigned MIC_COUNT, unsigned S2_DEC_FACTOR, unsigned S2_TAP_COUNT>
 void par_mic_array::MyTwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
-    ::ProcessBlock(
+    ::ProcessBlockTwoStage(
         int32_t sample_out[MIC_COUNT],
         uint32_t pdm_block[BLOCK_SIZE])
 {

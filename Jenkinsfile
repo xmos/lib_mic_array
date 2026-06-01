@@ -8,9 +8,14 @@ pipeline {
 
   parameters {
     string(
-      name: 'TOOLS_VERSION',
+      name: 'TOOLS_XS3_VERSION',
       defaultValue: '15.3.1',
       description: 'The XTC tools version'
+    )
+    string(
+      name: 'TOOLS_VX4_VERSION',
+      defaultValue: '-j --repo arch_vx_slipgate -b develop -a XTC 1184',
+      description: 'The XTC Slipgate tools version'
     )
     string(
       name: 'XMOSDOC_VERSION',
@@ -60,7 +65,7 @@ pipeline {
               stage('Examples build') {
                 steps {
                   dir("${REPO_NAME}/examples") {
-                    xcoreBuild()
+                    xcoreBuild(toolsVersion: params.TOOLS_XS3_VERSION)
                   }
                 }
               }
@@ -97,6 +102,7 @@ pipeline {
               label 'x86_64 && linux'
             }
             steps {
+              println "Stage running on ${env.NODE_NAME}"
               script {
                 def (server, user, repo) = extractFromScmUrl()
                 env.REPO_NAME = repo
@@ -106,7 +112,7 @@ pipeline {
                 dir("tests") {
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
-                    xcoreBuild()
+                    xcoreBuild(toolsVersion: params.TOOLS_XS3_VERSION, jobs:31)
                     stash includes: '**/*.xe', name: 'test_bin', useDefaultExcludes: false
                   }
                 }
@@ -124,7 +130,7 @@ pipeline {
         sh "git clone git@github.com:xmos/xmos_cmake_toolchain.git --branch v1.0.0"
         dir(REPO_NAME) {
           checkoutScmShallow()
-          withTools(params.TOOLS_VERSION) {
+          withTools(params.TOOLS_XS3_VERSION) {
             sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
             sh "cd build.xcore && make all -j 16"
           }
@@ -139,10 +145,8 @@ pipeline {
 
     stage('Tests') {
       parallel {
-        stage('XS3 tests') {
-          agent {
-            label 'xcore.ai'
-          }
+        stage('XS3 Tests') {
+          agent {label 'xcore.ai'}
           stages {
             stage("Checkout and Build") {
               steps {
@@ -159,7 +163,7 @@ pipeline {
             stage('Run tests') {
               steps {
                 dir("${REPO_NAME}/tests") {
-                  withTools(params.TOOLS_VERSION) {
+                  withTools(params.TOOLS_XS3_VERSION) {
                     withVenv {
 
                       // This ensures a project for XS2 can be built and runs OK
@@ -183,7 +187,7 @@ pipeline {
                             if(params.TEST_LEVEL == 'smoke')
                             {
                               echo "Running tests with fixed seed 12345"
-                              sh "pytest -v --junitxml=pytest_basic_mic.xml --seed 12345 --level ${params.TEST_LEVEL} "
+                              sh "pytest -v --junitxml=pytest_basic_mic.xml --seed 12345 --level ${params.TEST_LEVEL}"
                             }
                             else
                             {
@@ -209,11 +213,71 @@ pipeline {
             } // stage('Run tests')
           } // stages
           post {
-            cleanup {
-              xcoreCleanSandbox()
-            }
-          }
-        } // stage('HW tests')
+            cleanup {xcoreCleanSandbox()}
+          } // post
+        } // XS3 Tests
+
+        stage('VX4 Tests') {
+          agent {label "vx4"}
+          stages {
+            stage("Checkout and Build") {
+              steps {
+              dir(REPO_NAME){
+                checkoutScmShallow()
+                dir("tests") {
+                  withTools(params.TOOLS_VX4_VERSION){
+                  createVenv(reqFile: "requirements.txt")
+                  withVenv {
+                    dir("unit") {
+                      xcoreBuild(
+                        toolsVersion: params.TOOLS_VX4_VERSION, 
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        jobs:8
+                      )
+                    }
+                    dir ("signal/BasicMicArray") {
+                      xcoreBuild(
+                        toolsVersion: params.TOOLS_VX4_VERSION, 
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        jobs:8
+                      )
+                    }
+                    dir ("signal/profile/app_mips") {
+                      xcoreBuild(
+                        toolsVersion: params.TOOLS_VX4_VERSION, 
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        jobs:8
+                      )
+                    }
+                  } // withVenv
+                  }  // withTools
+                } // dir("tests")
+              } // dir(REPO_NAME)
+              } // steps
+            } // stage("Checkout and Build")
+            stage('Run tests') {
+              steps {
+              dir("${REPO_NAME}/tests") {
+                withTools(params.TOOLS_VX4_VERSION) {
+                withVenv {
+                  dir("unit") {
+                    sh "xrun --xscope bin/tests-unit.xe"
+                  }
+                  dir("signal/BasicMicArray") {
+                    sh 'pytest --level nightly --seed 12345 -k "0isr or OneStageFilter" -v'
+                  }
+                  dir ("signal/profile") {
+                    sh 'pytest test_measure_mips.py --APP_HW_TARGET=XK-EVK-XU416 -v'
+                  }
+                } // with tools
+                } // withVenv
+              }}} // stage('Run tests')
+          } // stages
+          post {
+            cleanup {xcoreCleanSandbox()}
+          } //post
+        } // VX4 Tests
+
       } // parallel
     } // stage('Tests')
 

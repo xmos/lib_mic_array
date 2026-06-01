@@ -9,9 +9,8 @@ mic array unit and its sub-components.
 
 The template parameters of these class templates are (mainly) used for two
 different purposes. Non-type template parameters are used to specify certain
-quantitative configuration values, such as the number of microphone channels or
-the second stage decimator tap count. Type template parameters, on the other
-hand, are used for configuring the behaviour of sub-components.
+quantitative configuration values, such as the number of microphone channels.
+Type template parameters, on the other hand, are used for configuring the behaviour of sub-components.
 
 High level view
 ===============
@@ -59,7 +58,7 @@ A ``MicArray`` object comprises 4 sub-components:
      - Capturing PDM data from a port
    * - :cpp:member:`Decimator <mic_array::MicArray::Decimator>`
      - ``TDecimator``
-     - 2-stage decimation on blocks of PDM data
+     - 1-, 2-, or 3-stage decimation on blocks of PDM data
    * - :cpp:member:`SampleFilter <mic_array::MicArray::SampleFilter>`
      - ``TSampleFilter``
      - Post-processing of decimated samples
@@ -105,26 +104,22 @@ Aside from aggregating its sub-components into a single logical entity, the
 ``MicArray`` class template also holds the high-level logic for capturing,
 processing and coordinating movement of the audio stream data.
 
-The following code snippet is the implementation for the main mic array thread
-(or "decimation thread"; not to be confused with (optional) PDM capture thread).
+At the top level, ``MicArray::ThreadEntry()`` dispatches to a stage-specific
+thread entry function based on the configured number of decimator stages:
 
-.. code-block:: c++
+.. literalinclude:: ../../../lib_mic_array/api/mic_array/cpp/MicArray.hpp
+  :start-after: // MicArray::ThreadEntry()
+  :end-at:     // ThreadEntry
 
-  int32_t sample_out[MIC_COUNT] = {0};
-  volatile bool shutdown = false;
+The two-stage path is the most common configuration. Its thread loop is shown
+below:
 
-  while(!shutdown){
-    uint32_t *pdm_samples = PdmRx.GetPdmBlock();
-    Decimator.ProcessBlock(sample_out, pdm_samples);
-    SampleFilter.Filter(sample_out);
-    shutdown = OutputHandler.OutputSample(sample_out);
-  }
-  PdmRx.Shutdown();
-  OutputHandler.CompleteShutdown();
-  }
+.. literalinclude:: ../../../lib_mic_array/api/mic_array/cpp/MicArray.hpp
+  :start-after: // MicArray::ThreadEntryTwoStage()
+  :end-at: // ThreadEntryTwoStage
 
-
-The thread loops till ``OutputHandler.OutputSample()`` indicates a shutdown request and on each iteration,
+The thread loops until ``OutputHandler.OutputSample()``
+indicates a shutdown request. On each iteration, it:
 
 * Requests a block of PDM sample data from the PDM rx service. This is a
   blocking call which only returns once a complete block becomes
@@ -189,12 +184,12 @@ Decimator
 
 The :cpp:member:`Decimator <mic_array::MicArray::Decimator>` sub-component
 encapsulates the logic of converting blocks of PDM samples into PCM samples. The
-:cpp:class:`TwoStageDecimator <mic_array::TwoStageDecimator>` class is a
-decimator implementation that uses a pair of decimating FIR filters to
-accomplish this.
+:cpp:class:`Decimator <mic_array::Decimator>` class is a
+decimator implementation that supports 1-, 2-, or 3-stage cascaded FIR
+decimation.
 
 The first stage has a fixed tap count of ``256`` and a fixed decimation factor
-of ``32``. The second stage has a configurable tap count and decimation factor.
+of ``32``. Additional stages have configurable tap counts and decimation factors.
 
 For more details, see :ref:`decimator_stages`.
 

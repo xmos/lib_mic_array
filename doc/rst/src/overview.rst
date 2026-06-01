@@ -20,12 +20,12 @@ Capabilities
   are supported
 * Configurable clock divider allows user-selectable PDM sample clock frequency
   (3.072 MHz typical)
-* Configurable :ref:`two-stage decimating FIR filter <decimator_stages>`
+* Supports :ref:`1-, 2-, or 3-stage decimation FIR filters <decimator_stages>`
 
-  * First stage has fixed tap count of 256 and decimation factor of 32
-  * Second stage has fully configurable tap count and decimation factor
-  * Custom filter coefficients can be used for either stage
-  * Pre-designed reference filters with total decimation factor of 192, 96 and 64 are provided
+  * First stage is compulsory and has a fixed tap count of 256 and decimation factor of 32
+  * Further stages are optional and have fully configurable tap count and decimation factor
+  * Custom filter coefficients can be used for any stage
+  * Pre-designed two-stage reference filters with total decimation factor of 192, 96 and 64 are provided
     (16 kHz, 32 kHz and 48 kHz output sample rates with 3.072 MHz input PDM clock).
   * Filter generation scripts and examples are included to support custom filter design.
 
@@ -103,9 +103,9 @@ Step 2: First stage decimation
 ------------------------------
 
 The conversion from the high-sample-rate PDM stream to lower-sample-rate PCM
-stream involves two stages of decimating filters. After the decimation thread
-receives a block of PDM samples, the samples are filtered by the first stage
-decimator.
+stream involves one or more stages of decimating FIR filters. After the
+decimation thread receives a block of PDM samples, the samples are filtered by
+the first stage decimator.
 
 The first stage decimator has a fixed decimation factor of ``32`` and a fixed
 tap count of ``256``. An application is free to supply its own filter

@@ -7,3 +7,8 @@ LICENSE.rst
 build.xcore
 tests/**/.pytest_cache/*.md
 tests/.pytest_cache/*.md
+**/app_mic_array_basic*/*.md
+**/audio-test-tools
+tests/signal/profile/mic_array_mips_table_xs3.rst
+tests/signal/profile/mic_array_mips_table_vx4.rst
+tests/signal/profile/mic_array_memory_table.rst

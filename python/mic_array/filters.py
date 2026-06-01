@@ -217,9 +217,12 @@ class TwoStageFilter(object):
   def NumStages(self):
     return 2
 
-  def Filter(self, pdm_signal: np.ndarray) -> np.ndarray:
+  def Filter(self, pdm_signal: np.ndarray, stg1_only=False) -> np.ndarray:
     s1_output = self.s1.FilterInt16(pdm_signal)
-    return self.s2.FilterInt32(s1_output)
+    if stg1_only:
+      return s1_output
+    else:
+      return self.s2.FilterInt32(s1_output)
 
 class ThreeStageFilter(object):
 

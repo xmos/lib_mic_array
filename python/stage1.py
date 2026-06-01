@@ -60,7 +60,7 @@ if __name__ == "__main__":
     with open(out_path, "w") as f:
       header_utils.print_header(args, [sys.stdout, f])
       main(args.coef_pkl_file, prefix=args.file_prefix, outstreams=[sys.stdout, f])
-      header_utils.print_footer([sys.stdout, f])
+      header_utils.print_footer([sys.stdout, f], num_filter_stages=1)
   else:
     main(args.coef_pkl_file, outstreams=[sys.stdout])
 

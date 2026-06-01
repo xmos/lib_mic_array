@@ -13,6 +13,7 @@ lib_mic_array: PDM microphone array library
    src/getting_started
    src/examples
    src/resource_usage
+   src/mic_switching
    src/software_structure
    src/decimator_stages
    src/custom_filters

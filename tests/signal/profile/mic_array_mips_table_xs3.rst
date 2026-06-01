@@ -1,6 +1,6 @@
-.. _mic_array_mips:
+.. _mic_array_mips_xs3:
 
-.. list-table:: Estimated MIPS (per configuration)
+.. list-table:: Estimated MIPS XS3 (per configuration)
    :header-rows: 1
    :widths: 6 6 8 8
 
@@ -11,48 +11,48 @@
    * - 1
      - ISR
      - 16000
-     - 14.146
+     - 13.810
    * - 1
      - ISR
      - 32000
-     - 17.234
+     - 16.849
    * - 1
      - ISR
      - 48000
-     - 21.305
+     - 20.873
    * - 1
      - THREAD
      - 16000
-     - 12.930
+     - 12.514
    * - 1
      - THREAD
      - 32000
-     - 15.954
+     - 15.409
    * - 1
      - THREAD
      - 48000
-     - 19.961
+     - 19.290
    * - 2
      - ISR
      - 16000
-     - 29.310
+     - 28.685
    * - 2
      - ISR
      - 32000
-     - 34.621
+     - 34.013
    * - 2
      - ISR
      - 48000
-     - 41.934
+     - 41.358
    * - 2
      - THREAD
      - 16000
-     - 27.006
+     - 26.142
    * - 2
      - THREAD
      - 32000
-     - 32.285
+     - 31.421
    * - 2
      - THREAD
      - 48000
-     - 39.533
+     - 38.670

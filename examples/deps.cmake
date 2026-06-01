@@ -6,7 +6,7 @@ if(NOT EXISTS ${XMOS_SANDBOX_DIR}/fwk_io)
     FetchContent_Declare(
         fwk_io
         GIT_REPOSITORY git@github.com:xmos/fwk_io
-        GIT_TAG feature/xcommon_cmake
+        GIT_TAG b88f0d700a8f8eda8e686c4a088ff7d648ef69f6
         SOURCE_DIR ${XMOS_SANDBOX_DIR}/fwk_io
     )
     FetchContent_Populate(fwk_io)

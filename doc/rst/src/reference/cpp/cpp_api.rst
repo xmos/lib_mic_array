@@ -37,10 +37,10 @@ StandardPdmRxService
 
 
 
-TwoStageDecimator
------------------
+Decimator
+---------
 
-.. doxygenclass:: mic_array::TwoStageDecimator
+.. doxygenclass:: mic_array::Decimator
   :members:
 
 .. raw:: latex

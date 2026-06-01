@@ -8,3 +8,8 @@ def pytest_addoption(parser):
     help=("Overwrite mic_array_memory.json and regenerate mic_array_memory_table.rst. "
          "The comparison check which flags mips/memory being out of range doesn't run in this case.")
   )
+  parser.addoption(
+    "--APP_HW_TARGET",
+    default="XK-EVK-XU316",
+    help="Hardware target board. Supported: XK-EVK-XU316 (default, xs3), XK-EVK-XU416 (vx4)"
+  )
