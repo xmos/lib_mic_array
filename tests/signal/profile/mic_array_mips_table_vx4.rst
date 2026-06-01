@@ -1,6 +1,6 @@
 .. _mic_array_mips_vx4:
 
-.. list-table:: Estimated MIPS (per configuration)
+.. list-table:: Estimated MIPS VX4 (per configuration)
    :header-rows: 1
    :widths: 6 6 8 8
 
