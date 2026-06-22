@@ -175,8 +175,8 @@ class Test_BasicMicArray(MicArraySharedBase):
     duration_s = 4
     pdm_freq = 768_000
     chans = 2
-    freq_hz = [300, 5000]
-    thdn_threshold = [-79.0, -76.0]
+    freq_hz = [31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 7500]
+    thdn_threshold = [-79.0, -76.0, -75.0, -74.0, -73.0, -72.0, -71.0, -70.0, -69.0, -68.0, -67.0, -66.0, -65.0, -64.0, -63.0, -62.0, -61.0, -60.0, -59.0, -58.0, -57.0, -56.0, -55.0, -54.0, -53.0]
 
     cwd = Path(request.fspath).parent
     filter = self.filter(Path(__file__).parent / "small_768k_to_12k_filter_int.pkl")
@@ -219,6 +219,9 @@ class Test_BasicMicArray(MicArraySharedBase):
       input_thdn = THDN(sig_sine_pcm[i], fs, fund_freq=freq_hz[i])
       python_output_thdn = THDN(expected_output_float[i], fs, fund_freq=freq_hz[i])
       print(f"At fundamental freq {freq_hz[i]}, samp freq {fs}: python_output_thdn = {python_output_thdn}, input_thdn = {input_thdn}")
+
+    for i in range(len(freq_hz)):
+      python_output_thdn = THDN(expected_output_float[i], fs, fund_freq=freq_hz[i])
       assert python_output_thdn < thdn_threshold[i], (
           f"At sampling rate {fs}, freq {freq_hz[i]}, "
           f"Python output THDN {python_output_thdn} exceeds threshold {thdn_threshold[i]}"
