@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+UNRELEASED
+----------
+
+  * FIXED: Optional header file (``mic_array_conf.h``) in external application. 
+
 7.1.0
 -----
 
