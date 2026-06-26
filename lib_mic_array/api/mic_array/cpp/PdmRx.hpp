@@ -473,6 +473,34 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::SetPort(port_t 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
 {
+
+  uint32_t good_frames = 0;
+  while(1){
+    // During boot, the PDM port may read all 0s or all 1s.
+    // Output 0x55 (zero) to the buffer until we get a valid frame.
+    uint32_t data = port_in(this->p_pdm_mics);
+    this->blocks[0][--phase] =  0x55555555;
+
+    if(!phase){
+      this->phase = this->num_phases;
+      uint32_t* ready_block = this->blocks[0];
+      this->blocks[0] = this->blocks[1];
+      this->blocks[1] = ready_block;
+
+      s_chan_out_word(this->c_pdm_blocks.end_a, reinterpret_cast<uint32_t>(ready_block));
+    }
+    if (data == 0x00000000 || data == 0xFFFFFFFF) {
+      good_frames = 0;
+      continue;
+    }
+    good_frames++;
+    if (good_frames > 1) {
+      // Pin can toggle between 0 and 1, so we need to wait for a few good
+      // frames before we start using the data.
+      break;
+    }
+  }
+
   while(1){
     this->blocks[0][--phase] =  port_in(this->p_pdm_mics);
 
