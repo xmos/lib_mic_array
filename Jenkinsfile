@@ -169,6 +169,8 @@ pipeline {
                       // This ensures a project for XS2 can be built and runs OK
                       sh "xsim test_xs2_benign/bin/xs2.xe"
 
+                      sh "xrun -l"
+
                       // Run this first to ensure the XTAG is up and running for subsequent tests
                       timeout(time: 2, unit: 'MINUTES') {
                         sh "xrun --xscope --id 0 unit/bin/tests-unit.xe"
