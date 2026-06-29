@@ -499,14 +499,11 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
 
       s_chan_out_word(this->c_pdm_blocks.end_a, reinterpret_cast<uint32_t>(ready_block));
     }
-    if (data == 0x00000000 || data == 0xFFFFFFFF) {
-      good_frames = 0;
-      continue;
-    }
-    good_frames++;
+    // During boot the pin can toggle between all-0s and all-1s, so wait for a
+    // couple of consecutive valid frames before using the data
+    bool bad_frame = (data == 0x00000000) || (data == 0xFFFFFFFF);
+    good_frames = bad_frame ? 0 : (good_frames + 1);
     if (good_frames > 1) {
-      // Pin can toggle between 0 and 1, so we need to wait for a few good
-      // frames before we start using the data.
       break;
     }
   }
