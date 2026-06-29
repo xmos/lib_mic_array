@@ -82,40 +82,22 @@ class Stage1Filter(object):
     # Simulate the PdmRx thread boot loop (StandardPdmRxService::ThreadEntry,
     # PdmRx.hpp): words are received one at a time; 0x55555555 is written to
     # the buffer (discarding real data) until good_frames > 1, i.e. 2
-    # consecutive words that are neither all-0 (0x00000000) nor all-1
-    # (0xFFFFFFFF). Bit layout: bit (c + CHANS*s) of word w =
-    # to_binary[c, w*spw+s], where to_binary(+1)=0, to_binary(-1)=1.
-
-    CHANS, SAMPS_IN = pdm_signal.shape
-    BOOT_WORD = np.uint32(0x55555555)
-    spw = 32 // CHANS  # PDM samples per channel packed per interleaved word
-    total_words = SAMPS_IN // spw
-    binary = ((1 - pdm_signal) // 2).astype(np.uint32)
-
-    words = np.zeros(total_words, dtype=np.uint32)
-    for s in range(spw):
-      for c in range(CHANS):
-        words |= binary[c, s::spw][:total_words] << np.uint32(c + CHANS * s)
+    # consecutive words that are neither all-0 nor all-1
 
     good_frames = 0
-    boot_words = 0
-    for word in words:
-      boot_words += 1
-      if word == np.uint32(0x00000000) or word == np.uint32(0xFFFFFFFF):
+
+    for start in range(0, pdm_signal.shape[1], 32):
+      pdm_signal[:,start:start+32] = np.tile([-1, 1], 16).T  # write 0x55555555 to buffer
+
+      if np.all(pdm_signal[:,start:start+32] == 1) or np.all(pdm_signal[:,start:start+32] == -1):
         good_frames = 0
-      else:
-        good_frames += 1
+        continue
+      good_frames += 1
       if good_frames > 1:
         break
 
-    pdm_signal = pdm_signal.copy()
-    for w in range(boot_words):
-      for s in range(spw):
-        for c in range(CHANS):
-          bit = int((BOOT_WORD >> np.uint32(c + CHANS * s)) & np.uint32(1))
-          pdm_signal[c, w * spw + s] = np.int32(-1 if bit else 1)
-
     return pdm_signal
+
 
   def FilterInt16(self, pdm_signal: np.ndarray) -> np.ndarray:
     if pdm_signal.ndim == 1:
