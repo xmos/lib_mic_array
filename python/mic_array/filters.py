@@ -87,11 +87,14 @@ class Stage1Filter(object):
     good_frames = 0
 
     for start in range(0, pdm_signal.shape[1], 32):
-      pdm_signal[:,start:start+32] = np.tile([-1, 1], 16).T  # write 0x55555555 to buffer
-
       if np.all(pdm_signal[:,start:start+32] == 1) or np.all(pdm_signal[:,start:start+32] == -1):
         good_frames = 0
+        pdm_signal[:,start:start+32] = np.tile([-1, 1], 16).T  # write 0x55555555 to buffer
         continue
+
+      # signal gets modified either way
+      pdm_signal[:,start:start+32] = np.tile([-1, 1], 16).T  # write 0x55555555 to buffer
+
       good_frames += 1
       if good_frames > 1:
         break
