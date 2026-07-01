@@ -241,22 +241,21 @@ void mic_array::Decimator<MIC_COUNT>
     bool prev_word_bad = this->stage1.pdm_word_was_bad[mic];
 
     for(unsigned k = 0; k < this->stage2.decimation_factor; k++){
-      uint32_t pdm_val = *(pdm_block + (mic*this->stage2.decimation_factor + k));
+      hist[0] = *(pdm_block + (mic*this->stage2.decimation_factor + k));
 
-      constexpr unsigned max_leading_run = 6;
-      unsigned leading_zeros = __builtin_clz(pdm_val);
-      unsigned leading_ones = __builtin_clz(~pdm_val);
+      constexpr unsigned max_leading_run = 3;
+      unsigned leading_zeros = __builtin_clz(hist[0]);
+      unsigned leading_ones = __builtin_clz(~hist[0]);
       unsigned max_leading_run_len = (leading_zeros > leading_ones) ? leading_zeros : leading_ones;
 
       bool this_word_bad = max_leading_run_len > max_leading_run;
 
+
       if(this_word_bad || prev_word_bad) {
-        pdm_val = 0x55555555; // write 0x55555555 to buffer
+        hist[0] = 0x55555555; // write 0x55555555 to buffer
       }
 
       prev_word_bad = this_word_bad;
-
-      hist[0] = pdm_val;
 
       int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
       shift_buffer(hist);
