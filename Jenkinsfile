@@ -175,7 +175,9 @@ pipeline {
                       timeout(time: 2, unit: 'MINUTES') {
                         sh "xrun --xscope --id 0 unit/bin/tests-unit.xe"
                       }
-
+                      dir("signal/profile") {
+                          sh "pytest -v"
+                      }
                       // note no xdist for HW tests as only 1 hw instance
                       // Each test has it's own conftest.py so we need to run these seprarately
                       dir("signal/pdmrx_isr") {
@@ -204,9 +206,7 @@ pipeline {
                       dir("signal/FilterDesign") {
                           runPytest('-v')
                       }
-                      dir("signal/profile") {
-                          sh "pytest -v"
-                      }
+
                     }
                   }
                   archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true
