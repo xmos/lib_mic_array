@@ -244,9 +244,13 @@ void mic_array::Decimator<MIC_COUNT>
       hist[0] = *(pdm_block + (mic*this->stage2.decimation_factor + k));
 
       constexpr unsigned max_leading_run = 3;
-      unsigned leading_zeros = __builtin_clz(hist[0]);
-      unsigned leading_ones = __builtin_clz(~hist[0]);
-      unsigned max_leading_run_len = (leading_zeros > leading_ones) ? leading_zeros : leading_ones;
+      // leading_zeros and leading_ones are mutually exclusive (only one can
+      // be non-zero for a given word), so XOR the word with its own sign
+      // mask (0x00000000 or 0xFFFFFFFF) to fold whichever run it has down
+      // to a leading-zero run, then use a single clz (a single-cycle
+      // instruction on XS3A) instead of two clz calls plus a max().
+      uint32_t sign_mask = (uint32_t)((int32_t)hist[0] >> 31);
+      unsigned max_leading_run_len = __builtin_clz(hist[0] ^ sign_mask);
 
       bool this_word_bad = max_leading_run_len > max_leading_run;
 
