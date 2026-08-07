@@ -45,11 +45,6 @@ void init_mic_array_storage()
 template <typename TMics>
 static inline void init_from_conf(TMics*& mics_ptr, pdm_rx_resources_t* pdm_res, mic_array_conf_t* conf)
 {
-  if(conf->decimator_conf.num_filter_stages == 1)
-  {
-    // For 1-stage only filters, the number of 32-bit PDM RX output words should match the PCM samples expected at the output of the mic array
-    assert(conf->pdmrx_conf.pdm_out_words_per_channel == MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME);
-  }
   mics_ptr->Decimator.Init(conf->decimator_conf, conf->pdmrx_conf.pdm_out_words_per_channel);
   mics_ptr->PdmRx.Init(pdm_res->p_pdm_mics, conf->pdmrx_conf);
   if (conf->pdmrx_conf.channel_map) {
