@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@v0.49.0') _
+@Library('xmos_jenkins_shared_library@v0.52.0') _
 
 getApproval()
 pipeline {
@@ -169,11 +169,15 @@ pipeline {
                       // This ensures a project for XS2 can be built and runs OK
                       sh "xsim test_xs2_benign/bin/xs2.xe"
 
+                      sh "xrun -l"
+
                       // Run this first to ensure the XTAG is up and running for subsequent tests
                       timeout(time: 2, unit: 'MINUTES') {
                         sh "xrun --xscope --id 0 unit/bin/tests-unit.xe"
                       }
-
+                      dir("signal/profile") {
+                          sh "pytest -v"
+                      }
                       // note no xdist for HW tests as only 1 hw instance
                       // Each test has it's own conftest.py so we need to run these seprarately
                       dir("signal/pdmrx_isr") {
@@ -202,9 +206,7 @@ pipeline {
                       dir("signal/FilterDesign") {
                           runPytest('-v')
                       }
-                      dir("signal/profile") {
-                          sh "pytest -v"
-                      }
+
                     }
                   }
                   archiveArtifacts artifacts: "**/*.pkl", allowEmptyArchive: true

@@ -473,6 +473,41 @@ void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::SetPort(port_t 
 template <unsigned CHANNELS_IN, unsigned CHANNELS_OUT>
 void mic_array::StandardPdmRxService<CHANNELS_IN, CHANNELS_OUT>::ThreadEntry()
 {
+
+  // // The boot pattern is interleaved silence on each channel, so 0101.. for 1 mic
+  // // 00110011 for 2 mics etc. After deinterleaving, each channel ends up with the
+  // // 0x55555555 (0101..) silence pattern. The pre-deinterleave pattern is
+  // // CHANNELS_IN zeros followed by CHANNELS_IN ones, repeated.
+  // uint32_t boot_pattern = (CHANNELS_IN == 1)  ? 0x55555555 :
+  //                         (CHANNELS_IN == 2)  ? 0x33333333 :
+  //                         (CHANNELS_IN == 4)  ? 0x0F0F0F0F :
+  //                         (CHANNELS_IN == 8)  ? 0x00FF00FF :
+  //                                               0x0000FFFF; // 16 mics
+
+  // uint32_t good_frames = 0;
+  // while(1){
+  //   // During boot, the PDM port may read all 0s or all 1s.
+  //   // Output 0x55 (zero) to the buffer until we get a valid frame.
+  //   uint32_t data = port_in(this->p_pdm_mics);
+  //   this->blocks[0][--phase] =  boot_pattern;
+
+  //   if(!phase){
+  //     this->phase = this->num_phases;
+  //     uint32_t* ready_block = this->blocks[0];
+  //     this->blocks[0] = this->blocks[1];
+  //     this->blocks[1] = ready_block;
+
+  //     s_chan_out_word(this->c_pdm_blocks.end_a, reinterpret_cast<uint32_t>(ready_block));
+  //   }
+  //   // During boot the pin can toggle between all-0s and all-1s, so wait for a
+  //   // couple of consecutive valid frames before using the data
+  //   bool bad_frame = (data == 0x00000000) || (data == 0xFFFFFFFF);
+  //   good_frames = bad_frame ? 0 : (good_frames + 1);
+  //   if (good_frames > 1) {
+  //     break;
+  //   }
+  // }
+
   while(1){
     this->blocks[0][--phase] =  port_in(this->p_pdm_mics);
 
