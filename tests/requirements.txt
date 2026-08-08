@@ -1,7 +1,7 @@
 # pip_version 25.*
 # python_version 3.12
 
-pytest==8.3.2
+pytest==9.0.3
 pytest-xdist==3.6.1
 numpy==1.26.4
 scipy==1.15.3
