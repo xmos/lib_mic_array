@@ -1,6 +1,11 @@
 lib_mic_array change log
 ========================
 
+7.2.0
+-----
+
+  * REMOVED: Redundant inclusion of xccompat.h file
+
 7.1.0
 -----
 

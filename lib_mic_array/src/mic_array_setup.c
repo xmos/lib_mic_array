@@ -5,7 +5,6 @@
 
 #include <platform.h>
 #include <xs1.h>
-#include <xccompat.h>
 #include <xclib.h>
 #include <xscope.h>
 
