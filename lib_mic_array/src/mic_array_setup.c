@@ -5,8 +5,6 @@
 
 #include <platform.h>
 #include <xs1.h>
-#include <xccompat.h>
-#include <xclib.h>
 #include <xscope.h>
 
 #include <stdio.h>
@@ -52,7 +50,7 @@ void mic_array_inpw8(const port_t p_pdm_mics)
   #if defined(__XS3A__)
   asm volatile("inpw %0, res[%1], 8" : "=r"(tmp)
                     : "r" (p_pdm_mics));
-  #elif defined(__VX4B__)
+  #elif defined(__VX4B__) || defined(__riscv_xxcore)
   asm volatile("xm.inpw %0, %1, 8": "=r"(tmp): "r"(p_pdm_mics));
   #else
   #warning "mic_array_inpw8 not supported yet on this architecture."

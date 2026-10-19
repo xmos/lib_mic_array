@@ -129,7 +129,7 @@ void set_output_channel(chanend_t c_frames_out)
 
 #if defined(__XS3A__)
 #define CLEAR_KEDI() asm volatile("clrsr %0" : : "n"(XS1_SR_KEDI_MASK));
-#elif defined(__VX4B__)
+#elif defined(__VX4B__) || defined(__riscv_xxcore)
 // VX4 processors do not have a dual-issue mode due to VLIW instructions.
 // Remove any definition of CLEAR_KEDI so any acciddental use of it will be caught at compile time.
 #undef CLEAR_KEDI

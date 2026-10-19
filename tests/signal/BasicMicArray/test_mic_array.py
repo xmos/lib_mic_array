@@ -32,7 +32,7 @@ import numpy as np
 from mic_array.pdm_signal import PdmSignal
 from micarray_device import MicArrayDevice
 import pytest
-from conftest import DevCommand
+from conftest import DevCommand, device_executable, device_runner
 import json
 from pathlib import Path
 from mic_array_shared import MicArraySharedBase
@@ -50,16 +50,20 @@ def ma_test_uncollect(config, chans, frame_size, use_isr, one_mic_override, fs):
   Returns True to uncollect (skip), False to collect (run).
 
   Smoke tests: Collect only 4ch with 1 or 16 frame sizes.
-  Nightly tests with one_mic_override=0: Collect all configurations.
-  Nightly tests with one_mic_override=1: Collect only 4ch/16frame with custom filters and 16kHz.
+  Default tests with one_mic_override=0: Collect all configurations.
+  Default tests with one_mic_override=1: Collect only 4ch/16frame with custom filters and 16kHz.
+  Extended tests: Collect all configurations.
   """
+  if config.getoption("runner") == "xgdb" and use_isr:
+    return True
+
   level = config.getoption("level")
   if level == "smoke":
     if((chans in smoke_test_chans) and (frame_size in smoke_test_frame_sz)):
       return False
     else:
       return True # uncollect everything other than 4ch with 1 or 16 frame sizes
-  else: # nightly
+  elif level == "default":
     if one_mic_override == 0: # Collect everything for which one_mic_override=0
       return False
     else: # one_mic_override = 1
@@ -76,6 +80,8 @@ def ma_test_uncollect(config, chans, frame_size, use_isr, one_mic_override, fs):
       else:
         # If we've reached here, uncollect!
         return True
+  else: # extended
+    return False
 
 class Test_BasicMicArray(MicArraySharedBase):
   @pytest.mark.uncollect_if(func=ma_test_uncollect)
@@ -94,8 +100,7 @@ class Test_BasicMicArray(MicArraySharedBase):
     else:
       cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{one_mic_override}mo_{fs}fs"
 
-    xe_path = f'{cwd}/bin/{cfg}/test_ma_{cfg}.xe'
-    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+    xe_path = device_executable(request, cfg)
 
     frames = request.config.getoption("frames")
     # Generate random filter
@@ -126,7 +131,12 @@ class Test_BasicMicArray(MicArraySharedBase):
     if self.print_output: print(f"Expected output: {expected}")
 
     ## Now see what the device says.
-    with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb, extra_xrun_args="--id 0") as dev:
+    with MicArrayDevice(
+      xe_path,
+      runner=device_runner(request),
+      quiet_xgdb=not self.print_xgdb,
+      extra_xrun_args="--id 0"
+    ) as dev:
 
       # Make sure we're talking to the correct application
       assert dev.param["channels"] == chans
@@ -203,11 +213,11 @@ class Test_BasicMicArray(MicArraySharedBase):
     elif chans == 2:
       cfg = f"{decimator_stgs}stg_filter"
 
-    xe_path = f"{cwd}/bin/{cfg}/test_ma_{cfg}.xe"
-    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+    xe_path = device_executable(request, cfg)
 
     with MicArrayDevice(
       xe_path,
+      runner=device_runner(request),
       quiet_xgdb=not self.print_xgdb,
       extra_xrun_args="--id 0"
     ) as dev:

@@ -1,6 +1,13 @@
 lib_mic_array change log
 ========================
 
+UNRELEASED
+----------
+
+  * ADDED: Support for Unit and Basic Mic Array tests on vx4 targets.
+  * CHANGED: Migrated XS3-specific example builds to use the XK-VOICE-L71 board.
+  * FIXED: Load-Store exception in the custom filter example
+
 7.1.0
 -----
 

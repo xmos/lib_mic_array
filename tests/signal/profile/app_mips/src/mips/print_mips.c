@@ -29,9 +29,9 @@ void print_mips(const unsigned use_pdm_rx_isr)
     const float usec = t / 100.0f;  // microseconds since the count started
     const float ipus = c / usec;    // instructions per microsecond
     const float mips = ipus;        // million instructions per second
-    unsigned burns = (use_pdm_rx_isr)? 6 : 5;
+    const unsigned measurement_threads = (use_pdm_rx_isr)? 6 : 5;
 
-    const float ma_mips = 600 - burns*mips;
+    const float ma_mips = 600 - measurement_threads*mips;
 
     printf(" mic_array: %0.04f MIPS\n", ma_mips);
   }
