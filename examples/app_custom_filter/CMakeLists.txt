@@ -20,6 +20,7 @@ foreach(N_MICS  1 2)
                                             -DBOARD_SUPPORT_BOARD=XK_VOICE_L71
                                             -DAPP_NAME="MIC_ARRAY_${CONFIG}"
                                             -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
+                                            -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
                                             -DAPP_MIC_COUNT=${N_MICS})
     endforeach()
 endforeach()
