@@ -32,7 +32,7 @@ import numpy as np
 from mic_array.pdm_signal import PdmSignal
 from micarray_device import MicArrayDevice
 import pytest
-from conftest import DevCommand
+from conftest import DevCommand, device_executable, device_runner
 import json
 from pathlib import Path
 from mic_array_shared import MicArraySharedBase
@@ -53,6 +53,9 @@ def ma_test_uncollect(config, chans, frame_size, use_isr, one_mic_override, fs):
   Nightly tests with one_mic_override=0: Collect all configurations.
   Nightly tests with one_mic_override=1: Collect only 4ch/16frame with custom filters and 16kHz.
   """
+  if config.getoption("runner") == "xgdb" and use_isr:
+    return True
+
   level = config.getoption("level")
   if level == "smoke":
     if((chans in smoke_test_chans) and (frame_size in smoke_test_frame_sz)):
@@ -94,8 +97,7 @@ class Test_BasicMicArray(MicArraySharedBase):
     else:
       cfg = f"{chans}ch_{frame_size}smp_{use_isr}isr_{one_mic_override}mo_{fs}fs"
 
-    xe_path = f'{cwd}/bin/{cfg}/test_ma_{cfg}.xe'
-    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+    xe_path = device_executable(request, cfg)
 
     frames = request.config.getoption("frames")
     # Generate random filter
@@ -126,7 +128,12 @@ class Test_BasicMicArray(MicArraySharedBase):
     if self.print_output: print(f"Expected output: {expected}")
 
     ## Now see what the device says.
-    with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb, extra_xrun_args="--id 0") as dev:
+    with MicArrayDevice(
+      xe_path,
+      runner=device_runner(request),
+      quiet_xgdb=not self.print_xgdb,
+      extra_xrun_args="--id 0"
+    ) as dev:
 
       # Make sure we're talking to the correct application
       assert dev.param["channels"] == chans
@@ -203,11 +210,11 @@ class Test_BasicMicArray(MicArraySharedBase):
     elif chans == 2:
       cfg = f"{decimator_stgs}stg_filter"
 
-    xe_path = f"{cwd}/bin/{cfg}/test_ma_{cfg}.xe"
-    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+    xe_path = device_executable(request, cfg)
 
     with MicArrayDevice(
       xe_path,
+      runner=device_runner(request),
       quiet_xgdb=not self.print_xgdb,
       extra_xrun_args="--id 0"
     ) as dev:

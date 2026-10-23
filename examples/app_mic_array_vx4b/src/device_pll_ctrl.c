@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include <print.h>
-#include <platform.h>
 #include <vx4b_defines.h>
 #include <xsystem/local_tile.h>
 #include <xsystem/switch.h>

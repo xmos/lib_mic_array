@@ -147,3 +147,11 @@ void main_tile_0(){
     // intentionally left empty
     return;
 }
+
+#if defined(__riscv)
+int main(void)
+{
+    main_tile_1();
+    return 0;
+}
+#endif

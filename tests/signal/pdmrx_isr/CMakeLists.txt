@@ -14,11 +14,11 @@ set(APP_COMPILER_FLAGS  -Os
 
 # Default target
 if(NOT DEFINED APP_HW_TARGET)
-    set(APP_HW_TARGET XK-EVK-XU316)
+  set(APP_HW_TARGET src/XK-VOICE-L71.xn)
 endif()
 
 # Supported targets
-set(SUPPORTED_TARGETS "XK-EVK-XU316;XK-EVK-XU416")
+set(SUPPORTED_TARGETS "src/XK-VOICE-L71.xn;XK-EVK-XU416")
 if(NOT APP_HW_TARGET IN_LIST SUPPORTED_TARGETS)
   message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}. Supported: ${SUPPORTED_TARGETS}")
 endif()

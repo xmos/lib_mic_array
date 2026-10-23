@@ -8,20 +8,31 @@ set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
 set(AUTOGEN_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/autogen")
 
-# Target specific 
-if(NOT DEFINED APP_HW_TARGET)    
+# New VX4 toolchain target
+if(NOT DEFINED APP_HW_TARGET_VX)
+    set(APP_HW_TARGET_VX ${CMAKE_CURRENT_LIST_DIR}/../../../../XK-EVK-XU416.xml)
+endif()
+
+# Target specific
+if(XMOS_IS_RV)
+    set(ISR_LIST 0) # Only thread-based PDM handling supported on VX4
+    set(APP_C_SRCS
+        src/app.c
+        src/app_pll.c
+        src/main.c
+        src/mips/print_mips.c
+    )
+elseif(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "src/XK-VOICE-L71.xn")
     set(APP_HW_TARGET src/XK-VOICE-L71.xn)
     set(ISR_LIST 0 1) # ISR and thread-based PDM handling
     list(APPEND APP_DEPENDENT_MODULES "lib_board_support(1.5.0)")
-else()
-    if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+elseif(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
     set(ISR_LIST 0) # Only thread-based PDM handling supported on VX4
     set(APP_XC_SRCS "") # prevents including xc
-    else()
-        message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
-    endif()
+else()
+    message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
 endif()
-message(STATUS "Building for target ${APP_HW_TARGET} with ISR_LIST=${ISR_LIST}")
+message(STATUS "Building with ISR_LIST=${ISR_LIST}")
 
 set(NAME_MAP thread;isr)
 # Exactly one custom filter (.pkl) may be listed alongside numeric sample rates.
@@ -68,12 +79,14 @@ foreach(SAMP_FREQ   16000 32000 48000 "good_3_stage_filter_int.pkl")
 
             set(APP_COMPILER_FLAGS_${CONFIG}    -Os
                                                 -g
-                                                -report
                                                 -DAPP_NAME="MIC_ARRAY_MEASURE_MIPS_${CONFIG}"
                                                 -DMIC_ARRAY_CONFIG_USE_PDM_ISR=${USE_ISR}
                                                 -DMIC_ARRAY_CONFIG_MIC_COUNT=${N_MICS}
                                                 -DAPP_SAMP_FREQ=${APP_SAMP_FREQ}
                                                 -DUSE_CUSTOM_FILTER=${USE_CUSTOM_FILT})
+            if(NOT XMOS_IS_RV)
+                list(APPEND APP_COMPILER_FLAGS_${CONFIG} -report)
+            endif()
         endforeach()
     endforeach()
 endforeach()
@@ -83,7 +96,7 @@ set(APP_INCLUDES    src src/mips/ ${AUTOGEN_OUT_DIR})
 XMOS_REGISTER_APP()
 
 foreach(target ${APP_BUILD_TARGETS})
-    if (target MATCHES "customfs$")
+    if (target MATCHES "customfs")
         add_dependencies(${target} gen_custom_filter_mips_test)
     endif()
 endforeach()

@@ -15,3 +15,14 @@ set(LIB_COMPILER_FLAGS -g -Os)
 set(LIB_OPTIONAL_HEADERS    mic_array_conf.h)
 
 XMOS_REGISTER_MODULE()
+
+if(XMOS_IS_RV)
+    foreach(target ${APP_BUILD_TARGETS})
+        target_compile_options(${target} PRIVATE
+            -D__VX4B__
+            -fno-function-sections
+            -fno-data-sections
+        )
+        target_link_options(${target} INTERFACE -Wl,--no-gc-sections)
+    endforeach()
+endif()

@@ -6,7 +6,7 @@ set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../../examples/deps.cmake)
 
-set(APP_HW_TARGET       XK-EVK-XU316)
+set(APP_HW_TARGET       src/XK-VOICE-L71.xn)
 
 set(COMPILER_FLAGS_COMMON   -O3
                             -g

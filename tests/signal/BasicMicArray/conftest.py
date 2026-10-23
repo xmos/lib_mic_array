@@ -6,6 +6,7 @@ import random
 import numpy as np
 import sys
 import pytest
+from pathlib import Path
 
 FLAGS = [
   "print-output",
@@ -15,6 +16,7 @@ FLAGS = [
 
 def pytest_addoption(parser):
     parser.addoption("--build-dir", action="store", default='.')
+    parser.addoption("--runner", choices=["xrun", "xgdb"], default="xrun")
     parser.addoption("--frames", type=int, default=40)
     parser.addoption(
                       "--level",
@@ -28,6 +30,16 @@ def pytest_addoption(parser):
     addflag = lambda x: parser.addoption(f"--{x}", action="store_true")
 
     [addflag(x) for x in FLAGS]
+
+
+def device_executable(request, config):
+    path = Path(request.fspath).parent / "bin" / config / f"test_ma_{config}.xe"
+    assert path.exists(), f"Cannot find {path}"
+    return str(path)
+
+
+def device_runner(request):
+    return request.config.getoption("runner")
 
 
 class DevCommand(enum.Enum):

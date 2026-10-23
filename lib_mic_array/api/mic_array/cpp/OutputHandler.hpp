@@ -330,6 +330,6 @@ bool mic_array::ChannelFrameTransmitter<MIC_COUNT,SAMPLE_COUNT>::OutputFrame(
 template <unsigned MIC_COUNT, unsigned SAMPLE_COUNT>
 void mic_array::ChannelFrameTransmitter<MIC_COUNT,SAMPLE_COUNT>::CompleteShutdown()
 {
-  chanend_out_control_token(this->c_frame_out, XS1_CT_END); // close the channel only when not shutting down
-  chanend_check_control_token(this->c_frame_out, XS1_CT_END);
+  chanend_out_end_token(this->c_frame_out); // close the channel only when not shutting down
+  chanend_check_end_token(this->c_frame_out);
 }
