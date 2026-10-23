@@ -20,7 +20,8 @@ Summary
 The XMOS microphone array library is designed to allow interfacing to PDM microphones coupled with efficient decimation to user configurable output
 sample rates.
 
-This library is only available for XS3 devices due to requiring the XS3 vector unit. It will build without errors for XS2 targets however no mic_array APIs will be available.
+This library is only available for XS3 or VX4 devices due to requiring the XS3 or VX4 vector unit.
+It will build without errors for XS2 targets however no mic_array APIs will be available.
 Please see versions prior to v5.0.0 for XS2 support.
 
 ********

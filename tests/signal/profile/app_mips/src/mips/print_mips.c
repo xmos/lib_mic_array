@@ -29,7 +29,11 @@ void print_mips(const unsigned use_pdm_rx_isr)
     const float usec = t / 100.0f;  // microseconds since the count started
     const float ipus = c / usec;    // instructions per microsecond
     const float mips = ipus;        // million instructions per second
-    unsigned burns = (use_pdm_rx_isr)? 6 : 5;
+  #if defined(__riscv)
+    const unsigned burns = 4;
+  #else
+    const unsigned burns = (use_pdm_rx_isr)? 6 : 5;
+  #endif
 
     const float ma_mips = 600 - burns*mips;
 
@@ -43,3 +47,4 @@ void print_mips(const unsigned use_pdm_rx_isr)
 //  million instructions per second = instructions per microsecond
 //  6 threads using [mips] MIPS, and one thread (mic array) using [ma_mips] MIPS
 //  600 = 6*mips + ma_mips -->  ma_mips = 600 - 6*mips
+// On RISC-V, [ma_mips] includes the mic array and frame receiver on the single processor.

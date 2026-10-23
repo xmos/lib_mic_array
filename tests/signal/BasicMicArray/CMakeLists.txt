@@ -6,9 +6,17 @@ set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 
 set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
+if(NOT DEFINED APP_HW_TARGET_VX)
+    set(APP_HW_TARGET_VX ${CMAKE_CURRENT_LIST_DIR}/../../../XK-EVK-XU416.xml)
+endif()
+
 # Target configuration
-if(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "XK-EVK-XU316")
-    set(APP_HW_TARGET XK-EVK-XU316)
+if(XMOS_IS_RV)
+    set(ARCH_COMPILER_FLAGS -Os
+                            -g
+                            -Wno-format)
+elseif(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "src/XK-VOICE-L71.xn")
+    set(APP_HW_TARGET src/XK-VOICE-L71.xn)
     set(ARCH_COMPILER_FLAGS -O2
                             -g
                             -report
@@ -16,16 +24,14 @@ if(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "XK-EVK-XU316")
                             -Wno-xcore-fptrgroup
                             -Wno-unknown-pragmas
                             -Wno-format)
-else()
-    if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+elseif(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
     set(ARCH_COMPILER_FLAGS -Os
                             -g
                             -lxc
                             -Wno-fptrgroup
                             -Wno-format)
-    else()
-        message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
-    endif()
+else()
+    message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
 endif()
 
 # Params
@@ -56,8 +62,8 @@ math(EXPR NUM_USE_ISR "${NUM_USE_ISR} - 1")
 math(EXPR NUM_SAMP_FREQ "${NUM_SAMP_FREQ} - 1")
 math(EXPR NUM_ONE_MIC_OVERRIDE "${NUM_ONE_MIC_OVERRIDE} - 1")
 
-# Remove ISR if vx4 as it's not supported
-if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+# Remove ISR if VX4 as it's not supported
+if(XMOS_IS_RV OR APP_HW_TARGET STREQUAL "XK-EVK-XU416")
     set(USE_ISR_LIST "[0]")
     set(NUM_USE_ISR 0)
 endif()
@@ -157,7 +163,20 @@ set(APP_COMPILER_FLAGS_1stg_filter                     ${ARCH_COMPILER_FLAGS}
 XMOS_REGISTER_APP()
 
 foreach(target ${APP_BUILD_TARGETS})
-    if (target MATCHES "customfs$")
+    if(XMOS_IS_RV)
+        # The new VX4 toolchain v0.6.0 detects config.xscope but does not pass xscope configuration to xpack.
+        string(REGEX REPLACE "_objlib$" "" package_target "${target}")
+        string(REGEX REPLACE "^test_ma_" "" config "${package_target}")
+        add_custom_command(TARGET ${package_target} POST_BUILD
+            COMMAND "$ENV{XMOS_TOOL_PATH}/bin/xpack"
+                    -o "${CMAKE_CURRENT_LIST_DIR}/bin/${config}/${package_target}.xe"
+                    --elf "32770:0:c:$<TARGET_FILE:${package_target}_frag_INIT_n32770_t0_0>"
+                    --elf "32770:0:g:$<TARGET_FILE:${package_target}_frag_APP_n32770_t0_0>"
+                    --config "${APP_HW_TARGET_VX}"
+                    --xscope "$ENV{XMOS_CMAKE_PATH}/etc/vx/xscope-trivial.config"
+            VERBATIM)
+    endif()
+    if (target MATCHES "customfs")
         add_dependencies(${target} gen_custom_filter)
     endif()
 endforeach()

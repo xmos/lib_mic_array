@@ -13,9 +13,14 @@ pipeline {
       description: 'The XTC tools version'
     )
     string(
-      name: 'TOOLS_VX4_VERSION',
+      name: 'TOOLS_VX4_TRANSITIONAL_VERSION',
       defaultValue: '-j --repo arch_vx_slipgate -b develop -a XTC 1184',
-      description: 'The XTC Slipgate tools version'
+      description: 'The transitional VX4 XTC tools version'
+    )
+    string(
+      name: 'TOOLS_VX4_NEW_VERSION',
+      defaultValue: 'bob@0.6.0',
+      description: 'The new VX4 toolchain version'
     )
     string(
       name: 'XMOSDOC_VERSION',
@@ -217,7 +222,7 @@ pipeline {
           } // post
         } // XS3 Tests
 
-        stage('VX4 Tests') {
+        stage('VX4 Transitional Tests') {
           agent {label "vx4"}
           stages {
             stage("Checkout and Build") {
@@ -225,27 +230,27 @@ pipeline {
               dir(REPO_NAME){
                 checkoutScmShallow()
                 dir("tests") {
-                  withTools(params.TOOLS_VX4_VERSION){
+                  withTools(params.TOOLS_VX4_TRANSITIONAL_VERSION){
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
                     dir("unit") {
                       xcoreBuild(
-                        toolsVersion: params.TOOLS_VX4_VERSION, 
-                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        toolsVersion: params.TOOLS_VX4_TRANSITIONAL_VERSION,
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416',
                         jobs:8
                       )
                     }
                     dir ("signal/BasicMicArray") {
                       xcoreBuild(
-                        toolsVersion: params.TOOLS_VX4_VERSION, 
-                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        toolsVersion: params.TOOLS_VX4_TRANSITIONAL_VERSION,
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416',
                         jobs:8
                       )
                     }
                     dir ("signal/profile/app_mips") {
                       xcoreBuild(
-                        toolsVersion: params.TOOLS_VX4_VERSION, 
-                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        toolsVersion: params.TOOLS_VX4_TRANSITIONAL_VERSION,
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416',
                         jobs:8
                       )
                     }
@@ -258,7 +263,7 @@ pipeline {
             stage('Run tests') {
               steps {
               dir("${REPO_NAME}/tests") {
-                withTools(params.TOOLS_VX4_VERSION) {
+                withTools(params.TOOLS_VX4_TRANSITIONAL_VERSION) {
                 withVenv {
                   dir("unit") {
                     sh "xrun --xscope bin/tests-unit.xe"
@@ -276,7 +281,69 @@ pipeline {
           post {
             cleanup {xcoreCleanSandbox()}
           } //post
-        } // VX4 Tests
+        } // VX4 Transitional Tests
+
+        stage('New VX4 Toolchain Tests') {
+          agent {label "vx4"}
+          steps {
+            println "Stage running on ${env.NODE_NAME}"
+            script {
+              def (server, user, repo) = extractFromScmUrl()
+              env.REPO_NAME = repo
+            }
+            dir(REPO_NAME) {
+              checkoutScmShallow()
+              dir("examples/app_mic_array_vx4b") {
+                xcoreBuild(
+                  buildDir: 'build_vx4_new',
+                  toolsVersion: params.TOOLS_VX4_NEW_VERSION,
+                  cmakeOpts: "-DAPP_HW_TARGET_VX=${WORKSPACE}/${REPO_NAME}/XK-EVK-XU416.xml",
+                  jobs:8
+                )
+              }
+              dir("tests") {
+                createVenv(reqFile: "requirements.txt")
+                withVenv {
+                  dir("unit") {
+                    xcoreBuild(
+                      buildDir: 'build_vx4_new',
+                      toolsVersion: params.TOOLS_VX4_NEW_VERSION,
+                      cmakeOpts: "-DAPP_HW_TARGET_VX=${WORKSPACE}/${REPO_NAME}/XK-EVK-XU416.xml",
+                      jobs:8
+                    )
+                  }
+                  dir("signal/BasicMicArray") {
+                    xcoreBuild(
+                      buildDir: 'build_vx4_new',
+                      toolsVersion: params.TOOLS_VX4_NEW_VERSION,
+                      cmakeOpts: "-DAPP_HW_TARGET_VX=${WORKSPACE}/${REPO_NAME}/XK-EVK-XU416.xml",
+                      jobs:8
+                    )
+                  }
+                  dir("signal/profile/app_mips") {
+                    xcoreBuild(
+                      buildDir: 'build_vx4_new',
+                      toolsVersion: params.TOOLS_VX4_NEW_VERSION,
+                      cmakeOpts: "-DAPP_HW_TARGET_VX=${WORKSPACE}/${REPO_NAME}/XK-EVK-XU416.xml",
+                      jobs:8
+                    )
+                  }
+                  withTools(params.TOOLS_VX4_NEW_VERSION) {
+                    timeout(time: 2, unit: 'MINUTES') {
+                      sh 'xgdb unit/bin/tests-unit.xe --batch --return-child-result -ex "connect --reset" -ex load -ex run -ex quit'
+                    }
+                    dir("signal/BasicMicArray") {
+                      sh 'pytest --runner=xgdb --level smoke --seed 12345 -v'
+                    }
+                  }
+                }
+              }
+            }
+          }
+          post {
+            cleanup {xcoreCleanSandbox()}
+          }
+        } // New VX4 Toolchain Tests
 
       } // parallel
     } // stage('Tests')

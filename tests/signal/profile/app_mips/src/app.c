@@ -149,7 +149,9 @@ int main_tile_1(chanend_t c_audio_frames)
         #if MIC_ARRAY_CONFIG_USE_PDM_ISR
         PJOB(burn_mips, ()),
         #endif
+        #if !defined(__riscv)
         PJOB(burn_mips, ()),
+        #endif
         PJOB(burn_mips, ()),
         PJOB(burn_mips, ()),
         PJOB(burn_mips, ()),
@@ -169,3 +171,4 @@ int main_tile_1(chanend_t c_audio_frames)
 
 // If we're using the ISR we'll use 5 burn_mips(). Otherwise just 4. Either way the printed MIPS will
 // be all the mic array work.
+// On RISC-V, one burner is omitted so the frame receiver can share the single eight-thread processor.

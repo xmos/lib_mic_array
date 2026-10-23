@@ -5,7 +5,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <print.h>
 #include <platform.h>
 #include <xcore/select.h>
 #include <xcore/parallel.h>
@@ -57,6 +56,22 @@
 #define DATA_OUT (1)
 #endif
 
+#if defined(__VX4B__)
+/**
+ * @brief Registers and enables the xscope probes used by this test.
+ *
+ * Presently, the new VX4 toolchain requires this function override.
+ * As the new VX4 toolchain evolves, it may become unnecessary to manually register xscope probes.
+ */
+void xscope_user_init(void)
+{
+  xscope_register(2,
+                  XSCOPE_CONTINUOUS, "meta_out", XSCOPE_INT, "Value",
+                  XSCOPE_CONTINUOUS, "data_out", XSCOPE_INT, "Value");
+  xscope_enable();
+}
+#endif
+
 #define FIFO_ENTRIES (8)
 
 typedef chanend_t streaming_chanend_t;
@@ -86,8 +101,9 @@ typedef struct {
 
 static inline
 void hwtimer_delay_microseconds(unsigned delay) {
+  const unsigned timer_ticks_per_microsecond = 100;
   hwtimer_t tmr = hwtimer_alloc();
-  hwtimer_delay(tmr, delay * XS1_TIMER_MHZ);
+  hwtimer_delay(tmr, delay * timer_ticks_per_microsecond);
   hwtimer_free(tmr);
 }
 
@@ -266,7 +282,7 @@ pdm_rx_resources_t pdm_res = PDM_RX_RESOURCES_SDR(
                                 PORT_PDM_DATA,
                                 24576000,
                                 3072000,
-                                XS1_CLKBLK_1);
+                                MIC_ARRAY_CONFIG_CLOCK_BLOCK_A);
 
 #if USE_CUSTOM_FILTER
 static void init_mic_conf(mic_array_conf_t *mic_array_conf, mic_array_filter_conf_t filter_conf[NUM_DECIMATION_STAGES], unsigned *channel_map)
@@ -414,7 +430,7 @@ void app_output_task(chanend_t c_frames_in, chanend_t c_fifo)
     chanend_out_byte(c_fifo, fifo_idx++);
     int t1 = get_reference_time();
     if(t1 - t0 > 10){
-        printstrln("ERROR - Timing fail");
+        puts("ERROR - Timing fail");
     }
     if(fifo_idx == FIFO_ENTRIES){
         fifo_idx = 0;

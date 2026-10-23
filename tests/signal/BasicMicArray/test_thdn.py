@@ -31,7 +31,7 @@ import pytest
 import numpy as np
 from mic_array.pdm_signal import PdmSignal
 from micarray_device import MicArrayDevice
-from conftest import DevCommand
+from conftest import DevCommand, device_executable, device_runner
 import json
 from pathlib import Path
 from thdncalculator import THDN
@@ -55,7 +55,7 @@ class Test_BasicMicArray(MicArraySharedBase):
   def test_thdn(self, pytestconfig, request, fs, platform):
     chans = 2
     frame_size = 1
-    use_isr = 1
+    use_isr = 0 if device_runner(request) == "xgdb" else 1
     duration_s = 7
     freq_hz = {16000: [300, 7000], 32000: [300, 14000], 48000: [300, 20000]}
     thdn_threshold = {16000: [-123.0, -127.0], 32000: [-120.0, -121.0], 48000: [-108.0, -108.0]}
@@ -78,8 +78,7 @@ class Test_BasicMicArray(MicArraySharedBase):
 
     cwd = Path(request.fspath).parent
 
-    xe_path = f'{cwd}/bin/{cfg}/test_ma_{cfg}.xe'
-    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+    xe_path = device_executable(request, cfg)
 
     print(f"duration: {duration_s}s, freqs: {freq_hz[fs]}, fs: {fs}, custom_filter_file: {custom_filter_file}")
 
@@ -106,7 +105,12 @@ class Test_BasicMicArray(MicArraySharedBase):
 
     if "xcore" in platform:
       # run on xcore only when not running smoke
-      with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb, extra_xrun_args="--id 0") as dev:
+      with MicArrayDevice(
+        xe_path,
+        runner=device_runner(request),
+        quiet_xgdb=not self.print_xgdb,
+        extra_xrun_args="--id 0"
+      ) as dev:
         # Make sure we're talking to the correct application
         assert dev.param["channels"] == chans
         assert dev.param["s1.dec_factor"] == filter.s1.DecimationFactor
@@ -192,8 +196,7 @@ class Test_BasicMicArray(MicArraySharedBase):
     # -------------------------------------------------
 
     cfg = f"{decimator_stgs}stg_filter"
-    xe_path = f"{cwd}/bin/{cfg}/test_ma_{cfg}.xe"
-    assert Path(xe_path).exists(), f"Cannot find {xe_path}"
+    xe_path = device_executable(request, cfg)
 
     print(f"Test frequencies {freq_hz}\n")
 
@@ -226,7 +229,12 @@ class Test_BasicMicArray(MicArraySharedBase):
 
     if "xcore" in platform:
       print("Running xcore")
-      with MicArrayDevice(xe_path, quiet_xgdb=not self.print_xgdb, extra_xrun_args="--id 0") as dev:
+      with MicArrayDevice(
+        xe_path,
+        runner=device_runner(request),
+        quiet_xgdb=not self.print_xgdb,
+        extra_xrun_args="--id 0"
+      ) as dev:
         assert dev.param["channels"] == chans
         assert dev.param["s1.dec_factor"] == filter.s1.DecimationFactor
         assert dev.param["s1.tap_count"] == filter.s1.TapCount
