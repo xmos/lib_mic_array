@@ -328,11 +328,13 @@ pipeline {
                       jobs:8
                     )
                   }
-                  timeout(time: 2, unit: 'MINUTES') {
-                    sh 'xgdb unit/bin/tests-unit.xe --batch --return-child-result -ex "connect --reset" -ex load -ex run -ex quit'
-                  }
-                  dir("signal/BasicMicArray") {
-                    sh 'pytest --runner=xgdb --level smoke --seed 12345 -v'
+                  withTools(params.TOOLS_VX4_NEW_VERSION) {
+                    timeout(time: 2, unit: 'MINUTES') {
+                      sh 'xgdb unit/bin/tests-unit.xe --batch --return-child-result -ex "connect --reset" -ex load -ex run -ex quit'
+                    }
+                    dir("signal/BasicMicArray") {
+                      sh 'pytest --runner=xgdb --level smoke --seed 12345 -v'
+                    }
                   }
                 }
               }

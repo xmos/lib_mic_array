@@ -36,4 +36,21 @@ int main(void)
   return 0;
 }
 
-#endif // defined(__riscv)
+#elif defined(__VX4B__)
+
+#include <stdint.h>
+#include <platform.h>
+#include <netmain.h>
+#include <xcore/chanend.h>
+
+extern int main_tile_0(chanend_t c_audio_frames);
+extern int main_tile_1(chanend_t c_audio_frames);
+
+DECLARE_CHAN(c)
+
+NETWORK_MAIN(
+  TILE_MAIN(main_tile_1, 1, (CHAN(c))),
+  TILE_MAIN(main_tile_0, 0, (CHAN(c)))
+)
+
+#endif
