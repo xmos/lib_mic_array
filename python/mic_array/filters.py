@@ -78,12 +78,38 @@ class Stage1Filter(object):
     S[:,P:] = sig_in
     return S
 
+  def boot_logic(self, pdm_signal: np.ndarray) -> np.ndarray:
+    # Simulate the PdmRx thread boot loop (StandardPdmRxService::ThreadEntry,
+    # PdmRx.hpp): words are received one at a time; 0x55555555 is written to
+    # the buffer (discarding real data) until good_frames > 1, i.e. 2
+    # consecutive words that are neither all-0 nor all-1
+
+    good_frames = 0
+
+    for start in range(0, pdm_signal.shape[1], 32):
+      if np.all(pdm_signal[:,start:start+32] == 1) or np.all(pdm_signal[:,start:start+32] == -1):
+        good_frames = 0
+        pdm_signal[:,start:start+32] = np.tile([-1, 1], 16).T  # write 0x55555555 to buffer
+        continue
+
+      # signal gets modified either way
+      pdm_signal[:,start:start+32] = np.tile([-1, 1], 16).T  # write 0x55555555 to buffer
+
+      good_frames += 1
+      if good_frames > 1:
+        break
+
+    return pdm_signal
+
+
   def FilterInt16(self, pdm_signal: np.ndarray) -> np.ndarray:
     if pdm_signal.ndim == 1:
       pdm_signal = pdm_signal[np.newaxis,:]
     CHANS, SAMPS_IN = pdm_signal.shape
     Q = self.DecimationFactor
     N_pcm = SAMPS_IN // self.DecimationFactor
+
+    pdm_signal = self.boot_logic(pdm_signal)
 
     S = self._pad_input(pdm_signal)
     coefs = self.Coef.astype(np.int32)[:,np.newaxis]
