@@ -21,3 +21,10 @@
 
 
 #endif
+
+#if defined(__riscv_xxcore)
+#include <vx4b_defines.h>
+#define MIC_ARRAY_CONFIG_CLOCK_BLOCK_A VX_CLKBLK_1
+#else
+#define MIC_ARRAY_CONFIG_CLOCK_BLOCK_A XS1_CLKBLK_1
+#endif

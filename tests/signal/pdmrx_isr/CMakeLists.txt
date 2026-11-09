@@ -14,7 +14,7 @@ set(APP_COMPILER_FLAGS  -Os
 
 # Default target
 if(NOT DEFINED APP_HW_TARGET)
-    set(APP_HW_TARGET XK-EVK-XU316)
+  set(APP_HW_TARGET XK-EVK-XU316)
 endif()
 
 # Supported targets

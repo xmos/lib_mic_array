@@ -11,6 +11,7 @@
 #include <xcore/parallel.h>
 #include <xcore/hwtimer.h>
 
+#include "app.h"
 #include "app_config.h"
 #include "mic_array.h"
 #include "device_pll_ctrl.h"
@@ -87,6 +88,10 @@ void user_audio(chanend_t c_mic_audio)
     uint64_t den = 0;
 
     printf("mic start\n");
+    ma_frame_rx(buff_ptr, (chanend_t)c_mic_audio, MIC_ARRAY_CONFIG_MIC_COUNT, APP_N_SAMPLES);
+    buff_ptr += APP_N_SAMPLES;
+    frame_counter--;
+
     t2 = hwtimer_get_time(tmr);
     while (frame_counter--)
     {
@@ -124,14 +129,35 @@ void user_audio(chanend_t c_mic_audio)
     // write samples to a binary file
     printf("Writing output to %s\n", APP_FILENAME);
     FILE *f = fopen(APP_FILENAME, "wb");
-    assert(f != NULL);
-    fwrite(tmp_buff, sizeof(int32_t), APP_BUFF_SIZE, f);
-    fclose(f);
+    if (f == NULL)
+    {
+        perror("Failed to open audio output");
+        ma_shutdown(c_mic_audio);
+        return;
+    }
+
+    int output_ok = 1;
+    const size_t written = fwrite(tmp_buff, sizeof(int32_t), APP_BUFF_SIZE, f);
+    if (written != APP_BUFF_SIZE)
+    {
+        fprintf(stderr, "Incomplete audio output: wrote %zu of %zu samples\n",
+                written, (size_t)APP_BUFF_SIZE);
+        output_ok = 0;
+    }
+    if (fclose(f) != 0)
+    {
+        perror("Failed to close audio output");
+        output_ok = 0;
+    }
     ma_shutdown(c_mic_audio);
-    printf("Done\n");
+    if (output_ok)
+    {
+        printf("Done\n");
+    }
 }
 
-void main_tile_1(){
+void app_main(void)
+{
     channel_t c_mic_audio = chan_alloc();
     xscope_mode_lossless();
 
@@ -141,9 +167,4 @@ void main_tile_1(){
         PJOB(user_audio, (c_mic_audio.end_b))
     );
     chan_free(c_mic_audio);
-}
-
-void main_tile_0(){
-    // intentionally left empty
-    return;
 }

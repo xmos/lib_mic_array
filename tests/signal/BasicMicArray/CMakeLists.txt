@@ -7,7 +7,11 @@ set(XMOS_SANDBOX_DIR    ${CMAKE_CURRENT_LIST_DIR}/../../../..)
 set(APP_DEPENDENT_MODULES   "lib_mic_array")
 
 # Target configuration
-if(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "XK-EVK-XU316")
+if(XMOS_IS_RV)
+    set(ARCH_COMPILER_FLAGS -Os
+                            -g
+                            -Wno-format)
+elseif(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "XK-EVK-XU316")
     set(APP_HW_TARGET XK-EVK-XU316)
     set(ARCH_COMPILER_FLAGS -O2
                             -g
@@ -16,16 +20,14 @@ if(NOT DEFINED APP_HW_TARGET OR APP_HW_TARGET STREQUAL "XK-EVK-XU316")
                             -Wno-xcore-fptrgroup
                             -Wno-unknown-pragmas
                             -Wno-format)
-else()
-    if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+elseif(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
     set(ARCH_COMPILER_FLAGS -Os
                             -g
                             -lxc
                             -Wno-fptrgroup
                             -Wno-format)
-    else()
-        message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
-    endif()
+else()
+    message(FATAL_ERROR "Unsupported target ${APP_HW_TARGET}.")
 endif()
 
 # Params
@@ -56,8 +58,8 @@ math(EXPR NUM_USE_ISR "${NUM_USE_ISR} - 1")
 math(EXPR NUM_SAMP_FREQ "${NUM_SAMP_FREQ} - 1")
 math(EXPR NUM_ONE_MIC_OVERRIDE "${NUM_ONE_MIC_OVERRIDE} - 1")
 
-# Remove ISR if vx4 as it's not supported
-if(APP_HW_TARGET STREQUAL "XK-EVK-XU416")
+# Remove ISR if VX4 as it's not supported
+if(XMOS_IS_RV OR APP_HW_TARGET STREQUAL "XK-EVK-XU416")
     set(USE_ISR_LIST "[0]")
     set(NUM_USE_ISR 0)
 endif()
@@ -157,7 +159,7 @@ set(APP_COMPILER_FLAGS_1stg_filter                     ${ARCH_COMPILER_FLAGS}
 XMOS_REGISTER_APP()
 
 foreach(target ${APP_BUILD_TARGETS})
-    if (target MATCHES "customfs$")
+    if (target MATCHES "customfs")
         add_dependencies(${target} gen_custom_filter)
     endif()
 endforeach()

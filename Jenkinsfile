@@ -8,18 +8,23 @@ pipeline {
 
   parameters {
     string(
-      name: 'TOOLS_XS3_VERSION',
+      name: 'TOOLS_VERSION_XS',
       defaultValue: '15.3.1',
-      description: 'The XTC tools version'
+      description: 'XTC tools version'
     )
     string(
-      name: 'TOOLS_VX4_VERSION',
-      defaultValue: '-j --repo arch_vx_slipgate -b develop -a XTC 1184',
-      description: 'The XTC Slipgate tools version'
+      name: 'TOOLS_VERSION_VX',
+      defaultValue: 'bob@develop',
+      description: 'VX tools version'
+    )
+    string(
+      name: 'TOOLS_VERSION_VX_XCC',
+      defaultValue: 'slipgate@master:143',
+      description: 'VX (XTC) tools version'
     )
     string(
       name: 'XMOSDOC_VERSION',
-      defaultValue: 'v8.0.2',
+      defaultValue: 'v8.1.2',
       description: 'The xmosdoc version')
 
     string(
@@ -28,7 +33,7 @@ pipeline {
       description: 'The infr_apps version'
     )
     choice(
-        name: 'TEST_LEVEL', choices: ['smoke', 'nightly'],
+        name: 'TEST_LEVEL', choices: ['smoke', 'default', 'extended'],
         description: 'The level of test coverage to run')
   }
 
@@ -38,6 +43,12 @@ pipeline {
     buildDiscarder(xmosDiscardBuildSettings(onlyArtifacts = false))
   }
 
+  // Setting the PIP_USE_PEP517 environment variable works around a problem recently
+  // found in the configuration of xmosdoc.
+  // It should be removed once the problem has been resolved.
+  environment {
+    PIP_USE_PEP517 = '1'
+  }
 
   stages {
       stage('🏗️ Build') {
@@ -65,7 +76,7 @@ pipeline {
               stage('Examples build') {
                 steps {
                   dir("${REPO_NAME}/examples") {
-                    xcoreBuild(toolsVersion: params.TOOLS_XS3_VERSION)
+                    xcoreBuild(toolsVersion: params.TOOLS_VERSION_XS)
                   }
                 }
               }
@@ -112,7 +123,7 @@ pipeline {
                 dir("tests") {
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
-                    xcoreBuild(toolsVersion: params.TOOLS_XS3_VERSION, jobs:31)
+                    xcoreBuild(toolsVersion: params.TOOLS_VERSION_XS, jobs:31)
                     stash includes: '**/*.xe', name: 'test_bin', useDefaultExcludes: false
                   }
                 }
@@ -130,7 +141,7 @@ pipeline {
         sh "git clone git@github.com:xmos/xmos_cmake_toolchain.git --branch v1.0.0"
         dir(REPO_NAME) {
           checkoutScmShallow()
-          withTools(params.TOOLS_XS3_VERSION) {
+          withTools(params.TOOLS_VERSION_XS) {
             sh "cmake -B build.xcore -DDEV_LIB_MIC_ARRAY=1 -DCMAKE_TOOLCHAIN_FILE=../xmos_cmake_toolchain/xs3a.cmake"
             sh "cd build.xcore && make all -j 16"
           }
@@ -163,7 +174,7 @@ pipeline {
             stage('Run tests') {
               steps {
                 dir("${REPO_NAME}/tests") {
-                  withTools(params.TOOLS_XS3_VERSION) {
+                  withTools(params.TOOLS_VERSION_XS) {
                     withVenv {
 
                       // This ensures a project for XS2 can be built and runs OK
@@ -217,7 +228,7 @@ pipeline {
           } // post
         } // XS3 Tests
 
-        stage('VX4 Tests') {
+        stage('VX4 Transitional Tests') {
           agent {label "vx4"}
           stages {
             stage("Checkout and Build") {
@@ -225,27 +236,27 @@ pipeline {
               dir(REPO_NAME){
                 checkoutScmShallow()
                 dir("tests") {
-                  withTools(params.TOOLS_VX4_VERSION){
+                  withTools(params.TOOLS_VERSION_VX_XCC){
                   createVenv(reqFile: "requirements.txt")
                   withVenv {
                     dir("unit") {
                       xcoreBuild(
-                        toolsVersion: params.TOOLS_VX4_VERSION, 
-                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        toolsVersion: params.TOOLS_VERSION_VX_XCC,
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416',
                         jobs:8
                       )
                     }
                     dir ("signal/BasicMicArray") {
                       xcoreBuild(
-                        toolsVersion: params.TOOLS_VX4_VERSION, 
-                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        toolsVersion: params.TOOLS_VERSION_VX_XCC,
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416',
                         jobs:8
                       )
                     }
                     dir ("signal/profile/app_mips") {
                       xcoreBuild(
-                        toolsVersion: params.TOOLS_VX4_VERSION, 
-                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416', 
+                        toolsVersion: params.TOOLS_VERSION_VX_XCC,
+                        cmakeOpts: '-DAPP_HW_TARGET=XK-EVK-XU416',
                         jobs:8
                       )
                     }
@@ -258,13 +269,13 @@ pipeline {
             stage('Run tests') {
               steps {
               dir("${REPO_NAME}/tests") {
-                withTools(params.TOOLS_VX4_VERSION) {
+                withTools(params.TOOLS_VERSION_VX_XCC) {
                 withVenv {
                   dir("unit") {
                     sh "xrun --xscope bin/tests-unit.xe"
                   }
                   dir("signal/BasicMicArray") {
-                    sh 'pytest --level nightly --seed 12345 -k "0isr or OneStageFilter" -v'
+                    sh "pytest --level ${params.TEST_LEVEL} --seed 12345 -k \"0isr or OneStageFilter\" -v"
                   }
                   dir ("signal/profile") {
                     sh 'pytest test_measure_mips.py --APP_HW_TARGET=XK-EVK-XU416 -v'
@@ -276,7 +287,53 @@ pipeline {
           post {
             cleanup {xcoreCleanSandbox()}
           } //post
-        } // VX4 Tests
+        } // VX4 Transitional Tests
+
+        stage('New VX4 Toolchain Tests') {
+          agent {label "vx4"}
+          stages {
+            stage("Checkout and Build") {
+              steps {
+                println "Stage running on ${env.NODE_NAME}"
+                script {
+                  def (server, user, repo) = extractFromScmUrl()
+                  env.REPO_NAME = repo
+                }
+                dir(REPO_NAME) {
+                  checkoutScmShallow()
+                  dir("tests") {
+                    createVenv(reqFile: "requirements.txt")
+                    withVenv {
+                      dir("unit") {
+                        xcoreBuild(
+                          buildDir: 'build_vx4_new',
+                          toolsVersion: params.TOOLS_VERSION_VX,
+                          jobs:8
+                        )
+                      }
+                    }
+                  }
+                }
+              }
+            } // stage("Checkout and Build")
+            stage('Run tests') {
+              steps {
+                dir("${REPO_NAME}/tests") {
+                  withVenv {
+                    withTools(params.TOOLS_VERSION_VX) {
+                      timeout(time: 2, unit: 'MINUTES') {
+                        sh 'xgdb unit/bin/tests-unit.xe --batch --return-child-result -ex "connect --reset" -ex load -ex run -ex quit'
+                      }
+                    }
+                  }
+                }
+              }
+            } // stage('Run tests')
+          } // stages
+          post {
+            cleanup {xcoreCleanSandbox()}
+          }
+        } // New VX4 Toolchain Tests
 
       } // parallel
     } // stage('Tests')
