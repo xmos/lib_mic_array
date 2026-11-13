@@ -8,6 +8,10 @@ UNRELEASED
   * CHANGED: Migrated XS3-specific example builds to use the XK-VOICE-L71 board.
   * FIXED: Load-Store exception in the custom filter example
 
+  * Changes to dependencies:
+
+    - lib_xcore_math: 3.0.0 -> 3.0.1
+
 7.1.0
 -----
 
