@@ -47,6 +47,7 @@ examples/AN00218_app_hires_DAS_fixed/doc/pdf/AN00218.pdf
 .lock-waf_*
 .waf-*/
 build/
+build_*/
 build.xcore
 
 # Python cache information
