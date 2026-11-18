@@ -1,5 +1,5 @@
 set(LIB_NAME lib_mic_array)
-set(LIB_VERSION 7.1.0)
+set(LIB_VERSION 7.2.0)
 set(LIB_DEPENDENT_MODULES "lib_xcore_math(3.0.1)")
 set(LIB_INCLUDES
     api
