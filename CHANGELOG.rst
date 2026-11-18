@@ -1,12 +1,17 @@
 lib_mic_array change log
 ========================
 
-UNRELEASED
-----------
+7.2.0
+-----
 
   * ADDED: Support for Unit and Basic Mic Array tests on vx4 targets.
   * CHANGED: Migrated XS3-specific example builds to use the XK-VOICE-L71 board.
+  * CHANGED: Frame transfer and shutdown use the lib_xcore end token API
+    (``chanend_out_end_token``/``chanend_check_end_token``) instead of explicit
+    ``XS1_CT_END`` control tokens.
   * FIXED: Load-Store exception in the custom filter example
+  * REMOVED: Unneeded assert on PDM output words per channel for 1-stage
+    decimation configurations.
 
   * Changes to dependencies:
 
