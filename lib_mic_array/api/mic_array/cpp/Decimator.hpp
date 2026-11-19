@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <cassert>
 
@@ -69,6 +70,14 @@ class Decimator
        * Per-mic, 32-bit PDM output words from the PDM RX stage.
        */
       unsigned pdm_out_words_per_mic;
+
+      /**
+       * Per-mic flag indicating whether the most recently processed PDM word
+       * was flagged as bad (excessive leading run of 0s or 1s). Used so that
+       * the word immediately following a bad word is also replaced, since it
+       * may itself be corrupted.
+       */
+      bool pdm_word_was_bad[MIC_COUNT];
     } stage1;
 
   public:
@@ -197,8 +206,11 @@ void mic_array::Decimator<MIC_COUNT>
   this->stage1.pdm_out_words_per_mic = pdm_out_words_per_mic;
 
   memset(this->stage1.pdm_history_ptr, 0x55, sizeof(int32_t) * MIC_COUNT * this->stage1.pdm_history_sz);
+  memset(this->stage1.pdm_word_was_bad, 0, sizeof(this->stage1.pdm_word_was_bad));
 
   if(decimator_conf.num_filter_stages >= 2) {
+    memset(decimator_conf.filter_conf[1].state, 0, sizeof(int32_t) * MIC_COUNT * decimator_conf.filter_conf[1].state_words_per_channel);
+
     for(int k = 0; k < MIC_COUNT; k++){
       filter_fir_s32_init(&this->stage2.filters[k], decimator_conf.filter_conf[1].state + (k * decimator_conf.filter_conf[1].state_words_per_channel),
                           decimator_conf.filter_conf[1].num_taps, decimator_conf.filter_conf[1].coef, decimator_conf.filter_conf[1].shr);
@@ -207,6 +219,8 @@ void mic_array::Decimator<MIC_COUNT>
   }
 
   if(decimator_conf.num_filter_stages == 3) {
+    memset(decimator_conf.filter_conf[2].state, 0, sizeof(int32_t) * MIC_COUNT * decimator_conf.filter_conf[2].state_words_per_channel);
+
     for(int k = 0; k < MIC_COUNT; k++){
       filter_fir_s32_init(&this->stage3.filters[k], decimator_conf.filter_conf[2].state + (k * decimator_conf.filter_conf[2].state_words_per_channel),
                           decimator_conf.filter_conf[2].num_taps, decimator_conf.filter_conf[2].coef, decimator_conf.filter_conf[2].shr);
@@ -224,9 +238,29 @@ void mic_array::Decimator<MIC_COUNT>
 {
   for(unsigned mic = 0; mic < MIC_COUNT; mic++){
     uint32_t* hist = this->stage1.pdm_history_ptr + (mic * this->stage1.pdm_history_sz);
+    bool prev_word_bad = this->stage1.pdm_word_was_bad[mic];
 
     for(unsigned k = 0; k < this->stage2.decimation_factor; k++){
       hist[0] = *(pdm_block + (mic*this->stage2.decimation_factor + k));
+
+      constexpr unsigned max_leading_run = 3;
+      // leading_zeros and leading_ones are mutually exclusive (only one can
+      // be non-zero for a given word), so XOR the word with its own sign
+      // mask (0x00000000 or 0xFFFFFFFF) to fold whichever run it has down
+      // to a leading-zero run, then use a single clz (a single-cycle
+      // instruction on XS3A) instead of two clz calls plus a max().
+      uint32_t sign_mask = (uint32_t)((int32_t)hist[0] >> 31);
+      unsigned max_leading_run_len = __builtin_clz(hist[0] ^ sign_mask);
+
+      bool this_word_bad = max_leading_run_len > max_leading_run;
+
+
+      if(this_word_bad || prev_word_bad) {
+        hist[0] = 0x55555555; // write 0x55555555 to buffer
+      }
+
+      prev_word_bad = this_word_bad;
+
       int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
       shift_buffer(hist);
 
@@ -236,6 +270,8 @@ void mic_array::Decimator<MIC_COUNT>
         sample_out[mic] = filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
       }
     }
+
+    this->stage1.pdm_word_was_bad[mic] = prev_word_bad;
   }
 }
 
